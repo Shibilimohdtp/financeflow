@@ -1,3 +1,5 @@
+import '../core/errors/app_error.dart';
+
 enum LoanType {
   homeLoan,
   personalLoan,
@@ -201,6 +203,7 @@ class Loan {
 
   double get progressPercentage {
     if (principalAmount <= 0) return 0.0;
+    if (status == LoanStatus.paidOff || outstandingPrincipal <= 0.0) return 1.0;
     return (totalPrincipalPaid / principalAmount).clamp(0.0, 1.0);
   }
 
@@ -315,3 +318,185 @@ class Loan {
     updatedAt: DateTime.parse(json['updatedAt'] as String),
   );
 }
+
+enum EmiPaymentStatus {
+  paid,
+  overdue,
+  upcoming;
+
+  String get displayName {
+    switch (this) {
+      case EmiPaymentStatus.paid:
+        return 'Paid';
+      case EmiPaymentStatus.overdue:
+        return 'Overdue';
+      case EmiPaymentStatus.upcoming:
+        return 'Upcoming';
+    }
+  }
+
+  static EmiPaymentStatus fromString(String val) {
+    switch (val.toLowerCase()) {
+      case 'paid':
+        return EmiPaymentStatus.paid;
+      case 'overdue':
+      case 'missed':
+        return EmiPaymentStatus.overdue;
+      case 'upcoming':
+      case 'pending':
+      default:
+        return EmiPaymentStatus.upcoming;
+    }
+  }
+}
+
+class EmiPayment {
+  final String id;
+  final String loanId;
+  final int installmentNumber;
+  final DateTime dueDate;
+  final DateTime paymentDate;
+  final double principalPaid;
+  final double interestPaid;
+  final double emiAmount;
+  final String? accountId;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const EmiPayment({
+    required this.id,
+    required this.loanId,
+    required this.installmentNumber,
+    required this.dueDate,
+    required this.paymentDate,
+    required this.principalPaid,
+    required this.interestPaid,
+    required this.emiAmount,
+    this.accountId,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  void validate() {
+    if (loanId.trim().isEmpty) {
+      throw const ValidationError(
+        message: 'Loan ID is required for recording an EMI payment.',
+      );
+    }
+    if (installmentNumber <= 0) {
+      throw const ValidationError(
+        message: 'Installment number must be greater than 0.',
+      );
+    }
+    if (emiAmount <= 0) {
+      throw const ValidationError(
+        message: 'Payment amount must be greater than 0.',
+      );
+    }
+    if (principalPaid < 0 || interestPaid < 0) {
+      throw const ValidationError(
+        message: 'Principal and interest paid cannot be negative.',
+      );
+    }
+  }
+
+  EmiPayment copyWith({
+    String? id,
+    String? loanId,
+    int? installmentNumber,
+    DateTime? dueDate,
+    DateTime? paymentDate,
+    double? principalPaid,
+    double? interestPaid,
+    double? emiAmount,
+    String? accountId,
+    String? notes,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return EmiPayment(
+      id: id ?? this.id,
+      loanId: loanId ?? this.loanId,
+      installmentNumber: installmentNumber ?? this.installmentNumber,
+      dueDate: dueDate ?? this.dueDate,
+      paymentDate: paymentDate ?? this.paymentDate,
+      principalPaid: principalPaid ?? this.principalPaid,
+      interestPaid: interestPaid ?? this.interestPaid,
+      emiAmount: emiAmount ?? this.emiAmount,
+      accountId: accountId ?? this.accountId,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'loanId': loanId,
+    'installmentNumber': installmentNumber,
+    'dueDate': dueDate.toIso8601String(),
+    'paymentDate': paymentDate.toIso8601String(),
+    'principalPaid': principalPaid,
+    'interestPaid': interestPaid,
+    'emiAmount': emiAmount,
+    'accountId': accountId,
+    'notes': notes,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory EmiPayment.fromJson(Map<String, dynamic> json) => EmiPayment(
+    id: json['id'] as String,
+    loanId: json['loanId'] as String,
+    installmentNumber: json['installmentNumber'] as int,
+    dueDate: DateTime.parse(json['dueDate'] as String),
+    paymentDate: DateTime.parse(json['paymentDate'] as String),
+    principalPaid: (json['principalPaid'] as num).toDouble(),
+    interestPaid: (json['interestPaid'] as num).toDouble(),
+    emiAmount: (json['emiAmount'] as num).toDouble(),
+    accountId: json['accountId'] as String?,
+    notes: json['notes'] as String?,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    updatedAt: DateTime.parse(json['updatedAt'] as String),
+  );
+}
+
+class EmiInstallment {
+  final int installmentNumber;
+  final DateTime dueDate;
+  final double openingBalance;
+  final double emiAmount;
+  final double principalPaid;
+  final double interestPaid;
+  final double closingBalance;
+  final EmiPaymentStatus status;
+  final EmiPayment? payment;
+
+  const EmiInstallment({
+    required this.installmentNumber,
+    required this.dueDate,
+    required this.openingBalance,
+    required this.emiAmount,
+    required this.principalPaid,
+    required this.interestPaid,
+    required this.closingBalance,
+    required this.status,
+    this.payment,
+  });
+
+  bool get isPaid => status == EmiPaymentStatus.paid;
+  bool get isOverdue => status == EmiPaymentStatus.overdue;
+  bool get isUpcoming => status == EmiPaymentStatus.upcoming;
+
+  int daysOverdue({DateTime? referenceDate}) {
+    if (!isOverdue) return 0;
+    final ref = referenceDate ?? DateTime.now();
+    final today = DateTime(ref.year, ref.month, ref.day);
+    final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+    final diff = today.difference(due).inDays;
+    return diff > 0 ? diff : 0;
+  }
+}
+

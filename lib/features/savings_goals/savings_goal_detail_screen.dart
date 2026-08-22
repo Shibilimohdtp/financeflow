@@ -417,6 +417,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Could not load goal: $e')),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'savings_goal_detail_add_fab',
         onPressed: () => _openAddContribution(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Contribution'),

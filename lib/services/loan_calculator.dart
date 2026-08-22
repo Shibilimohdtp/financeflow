@@ -9,6 +9,8 @@ class AmortizationScheduleItem {
   final double principalPaid;
   final double interestPaid;
   final double closingBalance;
+  final EmiPaymentStatus status;
+  final EmiPayment? payment;
 
   const AmortizationScheduleItem({
     required this.monthNumber,
@@ -18,7 +20,22 @@ class AmortizationScheduleItem {
     required this.principalPaid,
     required this.interestPaid,
     required this.closingBalance,
+    this.status = EmiPaymentStatus.upcoming,
+    this.payment,
   });
+
+  bool get isPaid => status == EmiPaymentStatus.paid;
+  bool get isOverdue => status == EmiPaymentStatus.overdue;
+  bool get isUpcoming => status == EmiPaymentStatus.upcoming;
+
+  int daysOverdue({DateTime? referenceDate}) {
+    if (!isOverdue) return 0;
+    final ref = referenceDate ?? DateTime.now();
+    final today = DateTime(ref.year, ref.month, ref.day);
+    final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+    final diff = today.difference(due).inDays;
+    return diff > 0 ? diff : 0;
+  }
 }
 
 class LoanCalculator {
@@ -100,11 +117,21 @@ class LoanCalculator {
     return candidate;
   }
 
-  /// Generate complete amortization schedule
-  static List<AmortizationScheduleItem> generateSchedule(Loan loan) {
+  /// Generate complete amortization schedule with payment statuses
+  static List<AmortizationScheduleItem> generateSchedule(
+    Loan loan, {
+    List<EmiPayment> payments = const [],
+    DateTime? asOfDate,
+  }) {
     final List<AmortizationScheduleItem> schedule = [];
     double currentBalance = loan.principalAmount;
     final monthlyRate = (loan.interestRate / 12.0) / 100.0;
+    final today = asOfDate ?? DateTime.now();
+    final todayDateOnly = DateTime(today.year, today.month, today.day);
+
+    final paymentMap = {
+      for (final p in payments) p.installmentNumber: p,
+    };
 
     for (int month = 1; month <= loan.tenureMonths; month++) {
       if (currentBalance <= 0) break;
@@ -114,12 +141,24 @@ class LoanCalculator {
         loan.startDate.month + month,
         loan.paymentDay.clamp(1, 28),
       );
+      final dueDateOnly = DateTime(dueDate.year, dueDate.month, dueDate.day);
 
       final double interestForMonth;
       final double principalForMonth;
       final double emi = loan.emiAmount;
 
-      if (loan.interestType == InterestType.reducingBalance) {
+      if (month == loan.tenureMonths) {
+        if (loan.interestType == InterestType.reducingBalance) {
+          interestForMonth = currentBalance * monthlyRate;
+        } else {
+          final totalInterest =
+              loan.principalAmount *
+              (loan.interestRate / 100.0) *
+              (loan.tenureMonths / 12.0);
+          interestForMonth = totalInterest / loan.tenureMonths;
+        }
+        principalForMonth = currentBalance;
+      } else if (loan.interestType == InterestType.reducingBalance) {
         interestForMonth = currentBalance * monthlyRate;
         principalForMonth = (emi - interestForMonth).clamp(0.0, currentBalance);
       } else {
@@ -138,6 +177,16 @@ class LoanCalculator {
               principalPaidSafe(principalForMonth, currentBalance))
           .clamp(0.0, double.infinity);
 
+      final payment = paymentMap[month];
+      final EmiPaymentStatus status;
+      if (payment != null) {
+        status = EmiPaymentStatus.paid;
+      } else if (dueDateOnly.isBefore(todayDateOnly)) {
+        status = EmiPaymentStatus.overdue;
+      } else {
+        status = EmiPaymentStatus.upcoming;
+      }
+
       schedule.add(
         AmortizationScheduleItem(
           monthNumber: month,
@@ -147,6 +196,8 @@ class LoanCalculator {
           principalPaid: principalForMonth,
           interestPaid: interestForMonth,
           closingBalance: closing,
+          status: status,
+          payment: payment,
         ),
       );
 
@@ -154,6 +205,107 @@ class LoanCalculator {
     }
 
     return schedule;
+  }
+
+  /// Identify all overdue/missed installments
+  static List<AmortizationScheduleItem> getMissedInstallments(
+    Loan loan, {
+    List<EmiPayment> payments = const [],
+    DateTime? asOfDate,
+  }) {
+    final schedule = generateSchedule(
+      loan,
+      payments: payments,
+      asOfDate: asOfDate,
+    );
+    return schedule.where((item) => item.isOverdue).toList();
+  }
+
+  /// Recalculate loan summary figures (principal paid, interest paid, outstanding balance, next due date, status)
+  static Loan recalculateLoanState({
+    required Loan loan,
+    required List<EmiPayment> payments,
+    DateTime? asOfDate,
+  }) {
+    final schedule = generateSchedule(
+      loan,
+      payments: payments,
+      asOfDate: asOfDate,
+    );
+
+    double totalPrincipalPaid = 0.0;
+    double totalInterestPaid = 0.0;
+    for (final p in payments) {
+      totalPrincipalPaid += p.principalPaid;
+      totalInterestPaid += p.interestPaid;
+    }
+
+    double outstandingPrincipal = (loan.principalAmount - totalPrincipalPaid)
+        .clamp(0.0, double.infinity);
+
+    final unpaid =
+        schedule.where((item) => item.status != EmiPaymentStatus.paid).toList();
+
+    final DateTime nextDueDate;
+    final LoanStatus status;
+
+    if (unpaid.isEmpty || outstandingPrincipal <= 0.50) {
+      outstandingPrincipal = 0.0;
+      totalPrincipalPaid = loan.principalAmount;
+      nextDueDate =
+          schedule.isNotEmpty ? schedule.last.dueDate : loan.expectedEndDate;
+      status = LoanStatus.paidOff;
+    } else {
+      nextDueDate = unpaid.first.dueDate;
+      status =
+          (loan.status == LoanStatus.archived || loan.status == LoanStatus.paused)
+              ? loan.status
+              : LoanStatus.active;
+    }
+
+    return loan.copyWith(
+      totalPrincipalPaid: totalPrincipalPaid,
+      totalInterestPaid: totalInterestPaid,
+      outstandingPrincipal: outstandingPrincipal,
+      nextDueDate: nextDueDate,
+      status: status,
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  /// Calculate principal & interest split for a specific installment number
+  static ({double principal, double interest, double emi, DateTime dueDate})
+  calculateInstallmentSplit({
+    required Loan loan,
+    required int installmentNumber,
+  }) {
+    final schedule = generateSchedule(loan);
+    final item = schedule.firstWhere(
+      (it) => it.monthNumber == installmentNumber,
+      orElse:
+          () => schedule.isNotEmpty
+              ? schedule.last
+              : AmortizationScheduleItem(
+                monthNumber: installmentNumber,
+                dueDate: DateTime(
+                  loan.startDate.year,
+                  loan.startDate.month + installmentNumber,
+                  loan.paymentDay.clamp(1, 28),
+                ),
+                openingBalance: loan.outstandingPrincipal,
+                emiAmount: loan.emiAmount,
+                principalPaid: loan.emiAmount,
+                interestPaid: 0.0,
+                closingBalance: 0.0,
+              ),
+    );
+
+    return (
+      principal: item.principalPaid,
+      interest: item.interestPaid,
+      emi: item.emiAmount,
+      dueDate: item.dueDate,
+    );
   }
 
   static double principalPaidSafe(

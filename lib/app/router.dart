@@ -77,6 +77,7 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: screens),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'shell_add_transaction_fab',
         onPressed: () => _openAddTransactionSheet(context),
         tooltip: 'Add Transaction',
         child: const Icon(Icons.add_rounded, size: 28),

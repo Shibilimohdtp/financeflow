@@ -370,9 +370,13 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                             subtitle: Row(
                               children: [
-                                Text(
-                                  DateFormatter.formatTransactionDate(tx.date),
-                                  style: theme.textTheme.bodySmall,
+                                Flexible(
+                                  child: Text(
+                                    DateFormatter.formatTransactionDate(tx.date),
+                                    style: theme.textTheme.bodySmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 const SizedBox(width: StillwaterTokens.spaceXs),
                                 FfSourceBadge(

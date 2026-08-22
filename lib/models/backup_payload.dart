@@ -79,6 +79,7 @@ class BackupDataPayload {
   final List<GoalContribution> goalContributions;
   final List<Subscription> subscriptions;
   final List<Loan> loans;
+  final List<EmiPayment> emiPayments;
   final List<Investment> investments;
   final List<AlertItem> alerts;
   final Map<String, dynamic> settings;
@@ -93,6 +94,7 @@ class BackupDataPayload {
     this.goalContributions = const [],
     this.subscriptions = const [],
     this.loans = const [],
+    this.emiPayments = const [],
     this.investments = const [],
     this.alerts = const [],
     this.settings = const {},
@@ -109,6 +111,7 @@ class BackupDataPayload {
         goalContributions.map(_goalContributionToJson).toList(),
     'subscriptions': subscriptions.map(_subscriptionToJson).toList(),
     'loans': loans.map(_loanToJson).toList(),
+    'emiPayments': emiPayments.map((e) => e.toJson()).toList(),
     'investments': investments.map(_investmentToJson).toList(),
     'alerts': alerts.map((a) => a.toJson()).toList(),
     'settings': settings,
@@ -158,6 +161,11 @@ class BackupDataPayload {
       loans:
           (json['loans'] as List<dynamic>?)
               ?.map((e) => _loanFromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      emiPayments:
+          (json['emiPayments'] as List<dynamic>?)
+              ?.map((e) => EmiPayment.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       investments:

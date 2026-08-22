@@ -390,6 +390,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen>
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'subscriptions_add_fab',
         onPressed: () => _openAddSheet(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Plan'),

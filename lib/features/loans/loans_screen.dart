@@ -198,9 +198,12 @@ class LoansScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Next due: ${DateFormatter.formatTransactionDate(loan.nextDueDate)} (${days == 0 ? "Today" : (days == 1 ? "Tomorrow" : "in $days d")})',
+                                  days < 0
+                                      ? 'Overdue: ${DateFormatter.formatTransactionDate(loan.nextDueDate)} (${days.abs()}d ago)'
+                                      : 'Next due: ${DateFormatter.formatTransactionDate(loan.nextDueDate)} (${days == 0 ? "Today" : (days == 1 ? "Tomorrow" : "in $days d")})',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     fontSize: 11,
+                                    fontWeight: days < 0 ? FontWeight.bold : FontWeight.normal,
                                     color:
                                         days <= 3
                                             ? context.secColors.error
@@ -283,6 +286,7 @@ class LoansScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'loans_add_fab',
         onPressed: () => _openAddSheet(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Loan'),

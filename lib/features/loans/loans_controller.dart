@@ -23,6 +23,25 @@ final loansSummaryProvider = Provider<
   );
 });
 
+/// Stream of EMI payment records for a specific loan
+final loanPaymentsStreamProvider =
+    StreamProvider.family<List<EmiPayment>, String>((ref, loanId) {
+      try {
+        final repo = ref.watch(loanRepositoryProvider);
+        return repo.watchPaymentsForLoan(loanId);
+      } catch (_) {
+        return Stream.value(const []);
+      }
+    });
+
+/// Complete Amortization Schedule including payment statuses for a loan
+final loanScheduleProvider =
+    Provider.family<List<AmortizationScheduleItem>, Loan>((ref, loan) {
+      final payments =
+          ref.watch(loanPaymentsStreamProvider(loan.id)).value ?? const [];
+      return LoanCalculator.generateSchedule(loan, payments: payments);
+    });
+
 class LoansController extends StateNotifier<AsyncValue<void>> {
   final LoanRepository _repository;
   static const _uuid = Uuid();
@@ -42,6 +61,8 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
     required double emiAmount,
     int paymentDay = 5,
     String? notes,
+    bool markPastInstallmentsPaid = false,
+    DateTime? asOfDate,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -51,13 +72,16 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
         startDate.month + tenureMonths,
         startDate.day,
       );
-      final nextDue = LoanCalculator.computeNextDueDate(
-        paymentDay: paymentDay,
-        fromDate: startDate,
+
+      final loanId = 'loan_${_uuid.v4()}';
+      final firstInstallmentDueDate = DateTime(
+        startDate.year,
+        startDate.month + 1,
+        paymentDay.clamp(1, 28),
       );
 
-      final loan = Loan(
-        id: 'loan_${_uuid.v4()}',
+      Loan loan = Loan(
+        id: loanId,
         name: name,
         lender: lender,
         loanType: loanType,
@@ -73,7 +97,7 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
         totalPrincipalPaid: 0.0,
         totalInterestPaid: 0.0,
         outstandingPrincipal: principalAmount,
-        nextDueDate: nextDue,
+        nextDueDate: firstInstallmentDueDate,
         status: LoanStatus.active,
         notes: notes,
         createdAt: now,
@@ -81,6 +105,35 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
       );
 
       await _repository.saveLoan(loan);
+
+      if (markPastInstallmentsPaid) {
+        final missed = LoanCalculator.getMissedInstallments(
+          loan,
+          asOfDate: asOfDate ?? now,
+        );
+        if (missed.isNotEmpty) {
+          final pastPayments =
+              missed.map((item) {
+                return EmiPayment(
+                  id: 'emi_${_uuid.v4()}',
+                  loanId: loan.id,
+                  installmentNumber: item.monthNumber,
+                  dueDate: item.dueDate,
+                  paymentDate: item.dueDate,
+                  principalPaid: item.principalPaid,
+                  interestPaid: item.interestPaid,
+                  emiAmount: item.emiAmount,
+                  accountId: accountId,
+                  notes: 'Marked paid on loan setup',
+                  createdAt: now,
+                  updatedAt: now,
+                );
+              }).toList();
+
+          await _repository.recordMultipleEmiPayments(pastPayments);
+        }
+      }
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -90,7 +143,11 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
   Future<void> updateLoan(Loan loan) async {
     state = const AsyncValue.loading();
     try {
-      final updated = loan.copyWith(updatedAt: DateTime.now());
+      final payments = await _repository.getPaymentsForLoan(loan.id);
+      final updated = LoanCalculator.recalculateLoanState(
+        loan: loan,
+        payments: payments,
+      );
       await _repository.saveLoan(updated);
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -108,34 +165,144 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> markEmiPaid({
+  /// Mark a specific installment number as paid
+  Future<void> markInstallmentPaid({
     required Loan loan,
-    required double emiAmount,
+    required int installmentNumber,
+    DateTime? paymentDate,
+    String? accountId,
+    String? notes,
   }) async {
     state = const AsyncValue.loading();
     try {
-      // Calculate split for this installment
-      final monthlyRate = (loan.interestRate / 12.0) / 100.0;
-      final interest = (loan.outstandingPrincipal * monthlyRate).clamp(
-        0.0,
-        emiAmount,
-      );
-      final principal = (emiAmount - interest).clamp(
-        0.0,
-        loan.outstandingPrincipal,
-      );
-      final nextDue = LoanCalculator.computeNextDueDate(
-        paymentDay: loan.paymentDay,
-        fromDate: loan.nextDueDate.add(const Duration(days: 28)),
+      final split = LoanCalculator.calculateInstallmentSplit(
+        loan: loan,
+        installmentNumber: installmentNumber,
       );
 
-      await _repository.recordEmiPayment(
+      final payment = EmiPayment(
+        id: 'emi_${_uuid.v4()}',
         loanId: loan.id,
-        principalPaid: principal,
-        interestPaid: interest,
-        nextDueDate: nextDue,
+        installmentNumber: installmentNumber,
+        dueDate: split.dueDate,
+        paymentDate: paymentDate ?? DateTime.now(),
+        principalPaid: split.principal,
+        interestPaid: split.interest,
+        emiAmount: split.emi,
+        accountId: accountId ?? loan.accountId,
+        notes: notes,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
+      await _repository.recordEmiPayment(payment);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Mark the next unpaid installment as paid
+  Future<void> markEmiPaid({
+    required Loan loan,
+    double? emiAmount,
+    int? installmentNumber,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final payments = await _repository.getPaymentsForLoan(loan.id);
+      final schedule = LoanCalculator.generateSchedule(loan, payments: payments);
+      final unpaid =
+          schedule.where((it) => it.status != EmiPaymentStatus.paid).toList();
+
+      if (unpaid.isEmpty) {
+        state = const AsyncValue.data(null);
+        return;
+      }
+
+      final targetInstallment =
+          installmentNumber != null
+              ? schedule.firstWhere(
+                (it) => it.monthNumber == installmentNumber,
+                orElse: () => unpaid.first,
+              )
+              : unpaid.first;
+
+      final payment = EmiPayment(
+        id: 'emi_${_uuid.v4()}',
+        loanId: loan.id,
+        installmentNumber: targetInstallment.monthNumber,
+        dueDate: targetInstallment.dueDate,
+        paymentDate: DateTime.now(),
+        principalPaid: targetInstallment.principalPaid,
+        interestPaid: targetInstallment.interestPaid,
+        emiAmount: emiAmount ?? targetInstallment.emiAmount,
+        accountId: loan.accountId,
+        notes: 'EMI Payment #${targetInstallment.monthNumber}',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      await _repository.recordEmiPayment(payment);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Mark all overdue/missed installments as paid
+  Future<void> markAllOverduePaid({
+    required Loan loan,
+    DateTime? paymentDate,
+    String? accountId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final payments = await _repository.getPaymentsForLoan(loan.id);
+      final overdue = LoanCalculator.getMissedInstallments(
+        loan,
+        payments: payments,
+      );
+
+      if (overdue.isEmpty) {
+        state = const AsyncValue.data(null);
+        return;
+      }
+
+      final now = DateTime.now();
+      final newPayments =
+          overdue.map((item) {
+            return EmiPayment(
+              id: 'emi_${_uuid.v4()}',
+              loanId: loan.id,
+              installmentNumber: item.monthNumber,
+              dueDate: item.dueDate,
+              paymentDate: paymentDate ?? now,
+              principalPaid: item.principalPaid,
+              interestPaid: item.interestPaid,
+              emiAmount: item.emiAmount,
+              accountId: accountId ?? loan.accountId,
+              notes: 'Bulk overdue payment',
+              createdAt: now,
+              updatedAt: now,
+            );
+          }).toList();
+
+      await _repository.recordMultipleEmiPayments(newPayments);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Delete a recorded EMI payment and recalculate
+  Future<void> deletePayment(String paymentId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.deleteEmiPayment(paymentId);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

@@ -300,6 +300,7 @@ class InvestmentsScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'investments_add_fab',
         onPressed: () => _openAddSheet(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Investment'),

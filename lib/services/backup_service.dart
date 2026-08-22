@@ -137,6 +137,7 @@ class BackupService {
     final contributions = await _goalRepo.getAllContributions();
     final subscriptions = await _subscriptionRepo.getAllSubscriptions();
     final loans = await _loanRepo.getAllLoans();
+    final emiPayments = await _loanRepo.getAllPayments();
     final investments = await _investmentRepo.getAllInvestments();
     final alerts = await _alertRepo.getAllAlerts();
 
@@ -162,6 +163,7 @@ class BackupService {
       goalContributions: contributions,
       subscriptions: subscriptions,
       loans: loans,
+      emiPayments: emiPayments,
       investments: investments,
       alerts: alerts,
     );
@@ -309,6 +311,9 @@ class BackupService {
         for (final l in payload.loans) {
           await _loanRepo.saveLoan(l);
         }
+        if (payload.emiPayments.isNotEmpty) {
+          await _loanRepo.recordMultipleEmiPayments(payload.emiPayments);
+        }
         for (final inv in payload.investments) {
           await _investmentRepo.saveInvestment(inv);
         }
@@ -367,6 +372,9 @@ class BackupService {
         }
         for (final l in payload.loans) {
           await _loanRepo.saveLoan(l);
+        }
+        if (payload.emiPayments.isNotEmpty) {
+          await _loanRepo.recordMultipleEmiPayments(payload.emiPayments);
         }
         for (final inv in payload.investments) {
           await _investmentRepo.saveInvestment(inv);

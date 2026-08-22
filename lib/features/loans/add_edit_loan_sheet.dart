@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
+import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
 import '../../repositories/account_repository.dart';
@@ -36,6 +37,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
   late InterestType _interestType;
   late DateTime _startDate;
   String? _selectedAccountId;
+  bool _markPastPaid = false;
 
   @override
   void initState() {
@@ -98,6 +100,38 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
       _emiController.text = calculated.toStringAsFixed(2);
       setState(() {});
     }
+  }
+
+  List<AmortizationScheduleItem> _getPastInstallmentsPreview() {
+    if (widget.initialLoan != null) return const [];
+    final p = double.tryParse(_principalController.text.trim()) ?? 0.0;
+    final r = double.tryParse(_rateController.text.trim()) ?? 0.0;
+    final n = int.tryParse(_tenureController.text.trim()) ?? 0;
+    final emi = double.tryParse(_emiController.text.trim()) ?? 0.0;
+    final day = (int.tryParse(_paymentDayController.text.trim()) ?? 5).clamp(1, 28);
+
+    if (p <= 0 || n <= 0 || emi <= 0) return const [];
+
+    final now = DateTime.now();
+    final tempLoan = Loan(
+      id: 'preview',
+      name: 'Preview',
+      lender: 'Preview',
+      principalAmount: p,
+      interestRate: r,
+      interestType: _interestType,
+      tenureMonths: n,
+      startDate: _startDate,
+      expectedEndDate: DateTime(_startDate.year, _startDate.month + n, _startDate.day),
+      emiAmount: emi,
+      paymentDay: day,
+      outstandingPrincipal: p,
+      nextDueDate: DateTime(_startDate.year, _startDate.month + 1, day),
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    return LoanCalculator.getMissedInstallments(tempLoan, asOfDate: now);
   }
 
   Future<void> _selectDate() async {
@@ -165,6 +199,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
             _notesController.text.trim().isEmpty
                 ? null
                 : _notesController.text.trim(),
+        markPastInstallmentsPaid: _markPastPaid,
       );
     }
 
@@ -184,6 +219,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final accounts = ref.watch(allAccountsStreamProvider).value ?? [];
+    final pastInstallments = _getPastInstallmentsPreview();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -368,6 +404,69 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   ),
                 ],
               ),
+
+              // Past loan notification and confirmation toggle
+              if (pastInstallments.isNotEmpty) ...[
+                const SizedBox(height: StillwaterTokens.spaceMd),
+                Container(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 20,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: StillwaterTokens.spaceSm),
+                          Expanded(
+                            child: Text(
+                              'Past Loan Detected',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: StillwaterTokens.space2Xs),
+                      Text(
+                        'Found ${pastInstallments.length} past installments (${DateFormatter.formatTransactionDate(pastInstallments.first.dueDate)} – ${DateFormatter.formatTransactionDate(pastInstallments.last.dueDate)}) totaling ${CurrencyFormatter.formatINR(pastInstallments.fold(0.0, (s, it) => s + it.emiAmount))}.',
+                        style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _markPastPaid,
+                        title: Text(
+                          'Mark past ${pastInstallments.length} EMIs as already paid',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          _markPastPaid
+                              ? 'Past installments will be recorded as paid. Next due date will advance to next upcoming EMI.'
+                              : 'Keep past installments as overdue until manually paid.',
+                          style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                        ),
+                        onChanged: (val) {
+                          setState(() => _markPastPaid = val ?? false);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               const Divider(),
 

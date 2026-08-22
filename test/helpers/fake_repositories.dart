@@ -20,6 +20,8 @@ import 'package:financeflow/repositories/investment_repository.dart';
 import 'package:financeflow/repositories/loan_repository.dart';
 import 'package:financeflow/repositories/savings_goal_repository.dart';
 import 'package:financeflow/repositories/settings_repository.dart';
+import 'package:financeflow/core/errors/app_error.dart';
+import 'package:financeflow/services/loan_calculator.dart';
 import 'package:financeflow/repositories/subscription_repository.dart';
 import 'package:financeflow/repositories/transaction_repository.dart';
 
@@ -590,14 +592,20 @@ class FakeSubscriptionRepository implements SubscriptionRepository {
 
 class FakeLoanRepository implements LoanRepository {
   final Map<String, Loan> _loans = {};
+  final List<EmiPayment> _payments = [];
   final StreamController<List<Loan>> _controller =
       StreamController<List<Loan>>.broadcast();
+  final StreamController<List<EmiPayment>> _paymentsController =
+      StreamController<List<EmiPayment>>.broadcast();
 
-  FakeLoanRepository([List<Loan>? initial]) {
-    if (initial != null) {
-      for (final l in initial) {
+  FakeLoanRepository([List<Loan>? initialLoans, List<EmiPayment>? initialPayments]) {
+    if (initialLoans != null) {
+      for (final l in initialLoans) {
         _loans[l.id] = l;
       }
+    }
+    if (initialPayments != null) {
+      _payments.addAll(initialPayments);
     }
   }
 
@@ -622,7 +630,9 @@ class FakeLoanRepository implements LoanRepository {
   @override
   Future<void> deleteLoan(String id) async {
     _loans.remove(id);
+    _payments.removeWhere((p) => p.loanId == id);
     _controller.add(_loans.values.toList());
+    _paymentsController.add(List.from(_payments));
   }
 
   @override
@@ -635,27 +645,103 @@ class FakeLoanRepository implements LoanRepository {
   }
 
   @override
-  Future<void> recordEmiPayment({
-    required String loanId,
-    required double principalPaid,
-    required double interestPaid,
-    required DateTime nextDueDate,
-  }) async {
-    final existing = _loans[loanId];
-    if (existing != null) {
-      final newRemaining = (existing.outstandingPrincipal - principalPaid).clamp(0.0, double.infinity);
-      _loans[loanId] = existing.copyWith(
-        outstandingPrincipal: newRemaining,
-        totalPrincipalPaid: existing.totalPrincipalPaid + principalPaid,
-        totalInterestPaid: existing.totalInterestPaid + interestPaid,
-        status: newRemaining == 0 ? LoanStatus.paidOff : existing.status,
+  Future<List<EmiPayment>> getPaymentsForLoan(String loanId) async {
+    return _payments.where((p) => p.loanId == loanId).toList()
+      ..sort((a, b) => a.installmentNumber.compareTo(b.installmentNumber));
+  }
+
+  @override
+  Stream<List<EmiPayment>> watchPaymentsForLoan(String loanId) async* {
+    yield await getPaymentsForLoan(loanId);
+    yield* _paymentsController.stream.map(
+      (list) => list.where((p) => p.loanId == loanId).toList()
+        ..sort((a, b) => a.installmentNumber.compareTo(b.installmentNumber)),
+    );
+  }
+
+  @override
+  Future<List<EmiPayment>> getAllPayments() async => List.from(_payments);
+
+  @override
+  Future<void> recordEmiPayment(EmiPayment payment) async {
+    payment.validate();
+
+    final duplicate = _payments.any(
+      (p) => p.loanId == payment.loanId && p.installmentNumber == payment.installmentNumber && p.id != payment.id,
+    );
+
+    if (duplicate) {
+      throw ValidationError(
+        message: 'EMI installment #${payment.installmentNumber} has already been marked as paid.',
       );
+    }
+
+    final existingIdx = _payments.indexWhere((p) => p.id == payment.id);
+    if (existingIdx != -1) {
+      _payments[existingIdx] = payment;
+    } else {
+      _payments.add(payment);
+    }
+
+    final loan = _loans[payment.loanId];
+    if (loan != null) {
+      final loanPayments = _payments.where((p) => p.loanId == payment.loanId).toList();
+      final updated = LoanCalculator.recalculateLoanState(loan: loan, payments: loanPayments);
+      _loans[payment.loanId] = updated;
       _controller.add(_loans.values.toList());
     }
+
+    _paymentsController.add(List.from(_payments));
+  }
+
+  @override
+  Future<void> recordMultipleEmiPayments(List<EmiPayment> payments) async {
+    if (payments.isEmpty) return;
+
+    for (final p in payments) {
+      p.validate();
+      final duplicate = _payments.any(
+        (existing) => existing.loanId == p.loanId && existing.installmentNumber == p.installmentNumber,
+      );
+      if (!duplicate) {
+        _payments.add(p);
+      }
+    }
+
+    final loanId = payments.first.loanId;
+    final loan = _loans[loanId];
+    if (loan != null) {
+      final loanPayments = _payments.where((p) => p.loanId == loanId).toList();
+      final updated = LoanCalculator.recalculateLoanState(loan: loan, payments: loanPayments);
+      _loans[loanId] = updated;
+      _controller.add(_loans.values.toList());
+    }
+
+    _paymentsController.add(List.from(_payments));
+  }
+
+  @override
+  Future<void> deleteEmiPayment(String paymentId) async {
+    final idx = _payments.indexWhere((p) => p.id == paymentId);
+    if (idx == -1) return;
+
+    final loanId = _payments[idx].loanId;
+    _payments.removeAt(idx);
+
+    final loan = _loans[loanId];
+    if (loan != null) {
+      final loanPayments = _payments.where((p) => p.loanId == loanId).toList();
+      final updated = LoanCalculator.recalculateLoanState(loan: loan, payments: loanPayments);
+      _loans[loanId] = updated;
+      _controller.add(_loans.values.toList());
+    }
+
+    _paymentsController.add(List.from(_payments));
   }
 
   void dispose() {
     _controller.close();
+    _paymentsController.close();
   }
 }
 

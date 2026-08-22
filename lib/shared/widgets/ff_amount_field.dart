@@ -83,6 +83,14 @@ class FfAmountField extends StatelessWidget {
                     focusedErrorBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     hintText: hintText ?? '0',
+                    suffixIcon:
+                        controller.text.isEmpty
+                            ? null
+                            : IconButton(
+                              tooltip: 'Clear amount',
+                              icon: const Icon(Icons.clear_rounded),
+                              onPressed: controller.clear,
+                            ),
                   ),
                   onChanged: onChanged,
                 ),

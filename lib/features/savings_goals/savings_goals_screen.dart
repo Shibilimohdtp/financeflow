@@ -357,6 +357,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'savings_goals_add_fab',
         onPressed: () => _openAddGoal(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Goal'),
