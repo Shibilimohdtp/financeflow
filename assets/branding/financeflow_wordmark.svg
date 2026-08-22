@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 120" width="100%" height="100%">
+  <defs>
+    <style>
+      .wordmark-text {
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 72px;
+        font-weight: 800;
+        letter-spacing: -1.5px;
+      }
+    </style>
+  </defs>
+  <text x="10" y="86" class="wordmark-text" fill="#0E5F55">Finance<tspan fill="#71624A" font-weight="500">Flow</tspan></text>
+</svg>

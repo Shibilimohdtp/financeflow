@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="appBgGrad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#147B6E" />
+      <stop offset="60%" stop-color="#0E5F55" />
+      <stop offset="100%" stop-color="#073B35" />
+    </radialGradient>
+    <linearGradient id="markGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2FAF8" />
+      <stop offset="100%" stop-color="#D3EDE6" />
+    </linearGradient>
+    <linearGradient id="goldGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAE3BC" />
+      <stop offset="100%" stop-color="#E9B366" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base: Deepwater -->
+  <rect width="1024" height="1024" rx="224" fill="url(#appBgGrad)" />
+
+  <!-- Center Mark (Scaled to ~600x600 centered at 512, 512) -->
+  <g transform="translate(212, 212) scale(1.171875)">
+    <!-- Outer Ripple Arc (Still Water Boundary) -->
+    <path d="M 256 68 C 359.83 68 444 152.17 444 256 C 444 359.83 359.83 444 256 444 C 172.58 444 101.44 389.75 76.5 315" fill="none" stroke="url(#markGlow)" stroke-width="44" stroke-linecap="round" />
+    <!-- Inner Current (Cashflow Movement) -->
+    <path d="M 136 256 C 136 189.73 189.73 136 256 136 C 322.27 136 376 189.73 376 256 C 376 298.67 353.76 336.14 320 358" fill="none" stroke="url(#markGlow)" stroke-width="38" stroke-linecap="round" />
+    <!-- Horizon Flow Arc -->
+    <path d="M 196 288 C 212.8 275.5 233.5 268 256 268 C 283.4 268 308 280.2 324 300" fill="none" stroke="url(#markGlow)" stroke-width="30" stroke-linecap="round" />
+    <!-- Protected Spark -->
+    <circle cx="256" cy="202" r="32" fill="url(#goldGlow)" />
+  </g>
+</svg>

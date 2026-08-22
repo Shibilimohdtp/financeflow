@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Monochrome White Silhouette on Transparent -->
+  <path d="M 256 68 C 359.83 68 444 152.17 444 256 C 444 359.83 359.83 444 256 444 C 172.58 444 101.44 389.75 76.5 315" fill="none" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" />
+  <path d="M 136 256 C 136 189.73 189.73 136 256 136 C 322.27 136 376 189.73 376 256 C 376 298.67 353.76 336.14 320 358" fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" />
+  <path d="M 196 288 C 212.8 275.5 233.5 268 256 268 C 283.4 268 308 280.2 324 300" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" />
+  <circle cx="256" cy="202" r="28" fill="#FFFFFF" />
+</svg>

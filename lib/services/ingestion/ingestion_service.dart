@@ -1,0 +1,223 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/ingestion/parsed_transaction.dart';
+import '../../models/transaction.dart';
+import '../../repositories/pending_transaction_repository.dart';
+import '../../repositories/transaction_repository.dart';
+import 'duplicate_matcher.dart';
+import 'parsers/csv_column_mapper.dart';
+import 'parsers/csv_parser.dart';
+import 'parsers/notification_parser_registry.dart';
+import 'parsers/sms_parser_registry.dart';
+import 'transaction_merge_service.dart';
+
+class IngestionService {
+  final TransactionRepository _transactionRepository;
+  final PendingTransactionRepository _pendingTransactionRepository;
+  final NotificationParserRegistry _notificationRegistry;
+  final SmsParserRegistry _smsRegistry;
+
+  IngestionService({
+    required TransactionRepository transactionRepository,
+    required PendingTransactionRepository pendingTransactionRepository,
+    NotificationParserRegistry? notificationRegistry,
+    SmsParserRegistry? smsRegistry,
+  }) : _transactionRepository = transactionRepository,
+       _pendingTransactionRepository = pendingTransactionRepository,
+       _notificationRegistry =
+           notificationRegistry ?? NotificationParserRegistry(),
+       _smsRegistry = smsRegistry ?? SmsParserRegistry();
+
+  /// Process CSV content, identify duplicates against existing database, and return a staged review session
+  Future<ImportReviewSession> processCsv({
+    required String csvContent,
+    String? sourceFileName,
+    CsvColumnMapping? customMapping,
+    String defaultAccountId = 'acc_primary_cash',
+  }) async {
+    // 1. Parse CSV rows
+    final result = CsvParser.parse(
+      csvContent,
+      customMapping: customMapping,
+      defaultAccountId: defaultAccountId,
+      sourceFileName: sourceFileName,
+    );
+
+    // 2. Fetch all existing transactions for duplicate detection
+    final existingTransactions =
+        await _transactionRepository.getAllTransactions();
+
+    // 3. Match each row against existing transactions
+    final evaluatedItems = <ParsedTransaction>[];
+    for (final item in result.parsedTransactions) {
+      final duplicateMatch = DuplicateMatcher.findDuplicate(
+        incoming: item,
+        existingTransactions: existingTransactions,
+      );
+
+      evaluatedItems.add(
+        item.copyWith(
+          duplicateStatus: duplicateMatch.level,
+          matchedTransactionId: duplicateMatch.matchedTransaction?.id,
+          matchedTransaction: duplicateMatch.matchedTransaction,
+          duplicateReasons: duplicateMatch.reasons,
+          duplicateConfidence: duplicateMatch.confidence,
+          duplicateResolution: duplicateMatch.recommendedAction,
+        ),
+      );
+    }
+
+    return ImportReviewSession(
+      sourceName: sourceFileName ?? 'CSV Statement',
+      source: TransactionSource.csv,
+      items: evaluatedItems,
+    );
+  }
+
+  /// Process an incoming notification on-device
+  Future<ParsedTransaction?> processNotification({
+    required String packageName,
+    required String title,
+    required String text,
+    DateTime? timestamp,
+    String defaultAccountId = 'acc_primary_cash',
+    bool autoStagePending = true,
+  }) async {
+    final parsed = _notificationRegistry.parse(
+      packageName: packageName,
+      title: title,
+      text: text,
+      timestamp: timestamp,
+      defaultAccountId: defaultAccountId,
+    );
+
+    if (parsed == null) return null;
+
+    // Check duplicate
+    final existingTransactions =
+        await _transactionRepository.getAllTransactions();
+    final duplicateMatch = DuplicateMatcher.findDuplicate(
+      incoming: parsed,
+      existingTransactions: existingTransactions,
+    );
+
+    final resolved = parsed.copyWith(
+      duplicateStatus: duplicateMatch.level,
+      matchedTransactionId: duplicateMatch.matchedTransaction?.id,
+      matchedTransaction: duplicateMatch.matchedTransaction,
+      duplicateReasons: duplicateMatch.reasons,
+      duplicateConfidence: duplicateMatch.confidence,
+      duplicateResolution: duplicateMatch.recommendedAction,
+    );
+
+    if (autoStagePending) {
+      await _pendingTransactionRepository.savePendingTransaction(resolved);
+    }
+
+    return resolved;
+  }
+
+  /// Process an incoming SMS on-device
+  Future<ParsedTransaction?> processSms({
+    required String sender,
+    required String body,
+    DateTime? timestamp,
+    String defaultAccountId = 'acc_primary_cash',
+    bool autoStagePending = true,
+  }) async {
+    final parsed = _smsRegistry.parse(
+      sender: sender,
+      body: body,
+      timestamp: timestamp,
+      defaultAccountId: defaultAccountId,
+    );
+
+    if (parsed == null) return null;
+
+    // Check duplicate
+    final existingTransactions =
+        await _transactionRepository.getAllTransactions();
+    final duplicateMatch = DuplicateMatcher.findDuplicate(
+      incoming: parsed,
+      existingTransactions: existingTransactions,
+    );
+
+    final resolved = parsed.copyWith(
+      duplicateStatus: duplicateMatch.level,
+      matchedTransactionId: duplicateMatch.matchedTransaction?.id,
+      matchedTransaction: duplicateMatch.matchedTransaction,
+      duplicateReasons: duplicateMatch.reasons,
+      duplicateConfidence: duplicateMatch.confidence,
+      duplicateResolution: duplicateMatch.recommendedAction,
+    );
+
+    if (autoStagePending) {
+      await _pendingTransactionRepository.savePendingTransaction(resolved);
+    }
+
+    return resolved;
+  }
+
+  /// Commit an ImportReviewSession to the database
+  /// Returns the list of created and modified Transaction IDs for undo/audit
+  Future<List<String>> commitSession(ImportReviewSession session) async {
+    final toSave = <Transaction>[];
+    final createdIds = <String>[];
+    final pendingToRemove = <String>[];
+
+    for (final item in session.items) {
+      pendingToRemove.add(item.tempId);
+
+      if (!item.isIncluded) {
+        continue;
+      }
+
+      if (item.duplicateResolution == DuplicateResolution.merge &&
+          item.matchedTransaction != null) {
+        // Merge with existing transaction
+        final mergedTx = TransactionMergeService.mergeWithExisting(
+          existing: item.matchedTransaction!,
+          incoming: item,
+        );
+        toSave.add(mergedTx);
+        createdIds.add(mergedTx.id);
+      } else if (item.duplicateResolution == DuplicateResolution.exclude ||
+          item.duplicateResolution == DuplicateResolution.ignore) {
+        // Excluded
+        continue;
+      } else if (item.isValid) {
+        // Add as new transaction
+        final newTx = item.toTransaction();
+        toSave.add(newTx);
+        createdIds.add(newTx.id);
+      }
+    }
+
+    if (toSave.isNotEmpty) {
+      await _transactionRepository.saveTransactions(toSave);
+    }
+
+    // Clean up from pending staging if any existed
+    if (pendingToRemove.isNotEmpty) {
+      await _pendingTransactionRepository.removePendingTransactions(
+        pendingToRemove,
+      );
+    }
+
+    return createdIds;
+  }
+
+  /// Revert an imported batch of transactions (Undo Import)
+  Future<void> undoImport(List<String> transactionIds) async {
+    if (transactionIds.isEmpty) return;
+    await _transactionRepository.deleteTransactions(transactionIds);
+  }
+}
+
+final ingestionServiceProvider = Provider<IngestionService>((ref) {
+  final txRepo = ref.watch(transactionRepositoryProvider);
+  final pendingRepo = ref.watch(pendingTransactionRepositoryProvider);
+  return IngestionService(
+    transactionRepository: txRepo,
+    pendingTransactionRepository: pendingRepo,
+  );
+});
