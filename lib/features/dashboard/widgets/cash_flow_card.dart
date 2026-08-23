@@ -3,42 +3,48 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/transaction.dart';
 import '../../../services/balance_calculator.dart';
+import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
 
 class CashFlowCard extends StatelessWidget {
   final MonthlyCashFlow cashFlow;
   final DateTime month;
+  final String? periodLabel;
   final bool isPrivacyBlur;
   final VoidCallback onToggleBlur;
   final VoidCallback? onPreviousMonth;
   final VoidCallback? onNextMonth;
   final VoidCallback? onPickMonth;
   final VoidCallback? onOpenAnalytics;
+  final List<BarChartItem>? chartItems;
 
   const CashFlowCard({
     super.key,
     required this.cashFlow,
     required this.month,
+    this.periodLabel,
     required this.isPrivacyBlur,
     required this.onToggleBlur,
     this.onPreviousMonth,
     this.onNextMonth,
     this.onPickMonth,
     this.onOpenAnalytics,
+    this.chartItems,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final finColors = context.finColors;
+    final displayPeriod = periodLabel ?? DateFormatter.formatMonthYear(month);
 
     return Semantics(
       container: true,
       label:
           isPrivacyBlur
               ? 'Monthly cash flow hidden for privacy'
-              : 'Monthly cash flow for ${DateFormatter.formatMonthYear(month)}: Net savings ${cashFlow.netSavings}, Income ${cashFlow.totalIncome}, Expenses ${cashFlow.totalExpense}',
+              : 'Cash flow for $displayPeriod: Net savings ${cashFlow.netSavings}, Income ${cashFlow.totalIncome}, Expenses ${cashFlow.totalExpense}',
       child: Container(
         padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
         decoration: BoxDecoration(
@@ -59,7 +65,7 @@ class CashFlowCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Row: Month & Navigation
+            // Header Row: Period & Navigation
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -78,7 +84,7 @@ class CashFlowCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              DateFormatter.formatMonthYear(month),
+                              displayPeriod,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -105,7 +111,7 @@ class CashFlowCard extends StatelessWidget {
                     if (onPreviousMonth != null)
                       IconButton(
                         icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                        tooltip: 'Previous month',
+                        tooltip: 'Previous period',
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
@@ -117,7 +123,7 @@ class CashFlowCard extends StatelessWidget {
                     if (onNextMonth != null)
                       IconButton(
                         icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                        tooltip: 'Next month',
+                        tooltip: 'Next period',
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
@@ -132,7 +138,7 @@ class CashFlowCard extends StatelessWidget {
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                         ),
-                        child: const Text('Breakdown'),
+                        child: const Text('Analytics'),
                       ),
                   ],
                 ),
@@ -274,9 +280,68 @@ class CashFlowCard extends StatelessWidget {
                 ),
               ],
             ),
+
+            // Optional Chart Section if chart items exist
+            if (chartItems != null && chartItems!.isNotEmpty) ...[
+              const SizedBox(height: StillwaterTokens.spaceLg),
+              Row(
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: finColors.expense,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.space2Xs),
+                      Text(
+                        'Expenses',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: StillwaterTokens.spaceMd),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: finColors.income,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.space2Xs),
+                      Text(
+                        'Income',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: StillwaterTokens.spaceXs),
+              FfBarChart(
+                items: chartItems!,
+                height: 120,
+                semanticsSummary: 'Cash flow activity chart for $displayPeriod',
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
+

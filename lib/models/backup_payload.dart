@@ -5,6 +5,8 @@ import 'category.dart';
 import 'goal_contribution.dart';
 import 'investment.dart';
 import 'loan.dart';
+import 'money_record.dart';
+import 'money_repayment.dart';
 import 'savings_goal.dart';
 import 'subscription.dart';
 import 'transaction.dart';
@@ -22,6 +24,8 @@ class BackupMetadata {
   final int loanCount;
   final int investmentCount;
   final int alertCount;
+  final int moneyRecordCount;
+  final int moneyRepaymentCount;
 
   const BackupMetadata({
     this.formatVersion = 1,
@@ -36,6 +40,8 @@ class BackupMetadata {
     required this.loanCount,
     required this.investmentCount,
     this.alertCount = 0,
+    this.moneyRecordCount = 0,
+    this.moneyRepaymentCount = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -51,6 +57,8 @@ class BackupMetadata {
     'loanCount': loanCount,
     'investmentCount': investmentCount,
     'alertCount': alertCount,
+    'moneyRecordCount': moneyRecordCount,
+    'moneyRepaymentCount': moneyRepaymentCount,
   };
 
   factory BackupMetadata.fromJson(Map<String, dynamic> json) => BackupMetadata(
@@ -66,6 +74,8 @@ class BackupMetadata {
     loanCount: json['loanCount'] as int? ?? 0,
     investmentCount: json['investmentCount'] as int? ?? 0,
     alertCount: json['alertCount'] as int? ?? 0,
+    moneyRecordCount: json['moneyRecordCount'] as int? ?? 0,
+    moneyRepaymentCount: json['moneyRepaymentCount'] as int? ?? 0,
   );
 }
 
@@ -82,6 +92,8 @@ class BackupDataPayload {
   final List<EmiPayment> emiPayments;
   final List<Investment> investments;
   final List<AlertItem> alerts;
+  final List<MoneyRecord> moneyRecords;
+  final List<MoneyRepayment> moneyRepayments;
   final Map<String, dynamic> settings;
 
   const BackupDataPayload({
@@ -97,6 +109,8 @@ class BackupDataPayload {
     this.emiPayments = const [],
     this.investments = const [],
     this.alerts = const [],
+    this.moneyRecords = const [],
+    this.moneyRepayments = const [],
     this.settings = const {},
   });
 
@@ -114,6 +128,8 @@ class BackupDataPayload {
     'emiPayments': emiPayments.map((e) => e.toJson()).toList(),
     'investments': investments.map(_investmentToJson).toList(),
     'alerts': alerts.map((a) => a.toJson()).toList(),
+    'moneyRecords': moneyRecords.map((r) => r.toJson()).toList(),
+    'moneyRepayments': moneyRepayments.map((r) => r.toJson()).toList(),
     'settings': settings,
   };
 
@@ -176,6 +192,16 @@ class BackupDataPayload {
       alerts:
           (json['alerts'] as List<dynamic>?)
               ?.map((e) => AlertItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      moneyRecords:
+          (json['moneyRecords'] as List<dynamic>?)
+              ?.map((e) => MoneyRecord.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      moneyRepayments:
+          (json['moneyRepayments'] as List<dynamic>?)
+              ?.map((e) => MoneyRepayment.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       settings: json['settings'] as Map<String, dynamic>? ?? const {},

@@ -16,6 +16,8 @@ import 'schemas/goal_contribution_entity.dart';
 import 'schemas/investment_entity.dart';
 import 'schemas/loan_entity.dart';
 import 'schemas/emi_payment_entity.dart';
+import 'schemas/money_record_entity.dart';
+import 'schemas/money_repayment_entity.dart';
 import 'schemas/pending_transaction_entity.dart';
 import 'schemas/savings_goal_entity.dart';
 import 'schemas/subscription_entity.dart';
@@ -41,6 +43,8 @@ class IsarService {
     LoanEntitySchema,
     EmiPaymentEntitySchema,
     InvestmentEntitySchema,
+    MoneyRecordEntitySchema,
+    MoneyRepaymentEntitySchema,
     AlertEntitySchema,
     AiActivityLogEntitySchema,
   ];

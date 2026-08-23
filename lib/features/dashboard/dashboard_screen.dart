@@ -25,6 +25,8 @@ import '../savings_goals/savings_goals_controller.dart';
 import '../settings/settings_controller.dart';
 import '../subscriptions/subscriptions_screen.dart';
 import '../transactions/add_edit_transaction_sheet.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
+import '../ai/ai_query_sheet.dart';
 import 'dashboard_controller.dart';
 import 'insights_controller.dart';
 import 'widgets/account_summary_strip.dart';
@@ -103,8 +105,10 @@ class DashboardScreen extends ConsumerWidget {
     final totalBalanceAsync = ref.watch(totalNetWorthProvider);
     final accountsAsync = ref.watch(accountsWithBalancesProvider);
     final cashFlowAsync = ref.watch(monthlyCashFlowProvider);
+    final cashFlowChartAsync = ref.watch(dashboardCashFlowChartProvider);
     final recentTxAsync = ref.watch(recentTransactionsProvider);
     final selectedMonth = ref.watch(selectedDashboardMonthProvider);
+    final selectedPeriod = ref.watch(selectedDashboardPeriodProvider);
     final topCategoriesAsync = ref.watch(topSpendingCategoriesProvider);
     final overallBudgetAsync = ref.watch(overallBudgetSummaryProvider);
     final overallGoalAsync = ref.watch(overallSavingsGoalSummaryProvider);
@@ -190,6 +194,21 @@ class DashboardScreen extends ConsumerWidget {
             onPressed:
                 onOpenAlerts ?? () => _push(context, const AlertsInboxScreen()),
           ),
+          IconButton(
+            icon: Icon(
+              Icons.auto_awesome,
+              color: context.aiColors.accent,
+            ),
+            tooltip: 'Ask Your Finances',
+            visualDensity: VisualDensity.compact,
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const AiQuerySheet(),
+              );
+            },
+          ),
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
             child: Center(child: FfPrivacyBadge(label: 'On-device')),
@@ -199,8 +218,10 @@ class DashboardScreen extends ConsumerWidget {
       body: RefreshIndicator(
         color: theme.colorScheme.primary,
         onRefresh: () async {
+          ref.invalidate(dashboardTransactionsProvider);
           ref.invalidate(monthTransactionsProvider);
           ref.invalidate(monthlyCashFlowProvider);
+          ref.invalidate(dashboardCashFlowChartProvider);
           ref.invalidate(accountsWithBalancesProvider);
           ref.invalidate(recentTransactionsProvider);
           ref.invalidate(topSpendingCategoriesProvider);
@@ -235,7 +256,63 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceMd),
 
-              // 2. Quick Actions
+              // 2. Period Selector Pills (This Month, Last Month, This Year, Custom)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StillwaterTokens.spaceLg,
+                ),
+                child: FfSegmentedPill<DashboardPeriod>(
+                  options: const [
+                    FfSegmentOption(
+                      value: DashboardPeriod.thisMonth,
+                      label: 'This Month',
+                    ),
+                    FfSegmentOption(
+                      value: DashboardPeriod.lastMonth,
+                      label: 'Last Month',
+                    ),
+                    FfSegmentOption(
+                      value: DashboardPeriod.thisYear,
+                      label: 'This Year',
+                    ),
+                    FfSegmentOption(
+                      value: DashboardPeriod.custom,
+                      label: 'Custom',
+                    ),
+                  ],
+                  selectedValue: selectedPeriod,
+                  onSelected: (chosen) async {
+                    if (chosen == DashboardPeriod.custom) {
+                      final now = DateTime.now();
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2035),
+                        initialDateRange: DateTimeRange(
+                          start: DateTime(now.year, now.month, 1),
+                          end: now,
+                        ),
+                      );
+                      if (picked != null) {
+                        ref
+                            .read(dashboardCustomRangeProvider.notifier)
+                            .state = (start: picked.start, end: picked.end);
+                        ref
+                            .read(selectedDashboardPeriodProvider.notifier)
+                            .state = chosen;
+                      }
+                    } else {
+                      ref
+                          .read(selectedDashboardPeriodProvider.notifier)
+                          .state = chosen;
+                    }
+                  },
+                ),
+              ),
+
+              const SizedBox(height: StillwaterTokens.spaceMd),
+
+              // 3. Quick Actions
               HomeQuickActions(
                 onAddTransaction: onAddTransaction,
                 onTransfer: () => _openTransfer(context),
@@ -247,7 +324,7 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 3. Actionable & Upcoming Items (Unreviewed imports, upcoming EMIs, upcoming subscriptions, budget breaches)
+              // 4. Actionable & Upcoming Items
               ActionableItemsSection(
                 pendingReviewCount: pendingCount,
                 upcomingLoans: upcomingLoans,
@@ -281,7 +358,7 @@ class DashboardScreen extends ConsumerWidget {
                   overBudgetCount > 0)
                 const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 4. Cash Flow Summary
+              // 5. Cash Flow & Visualization Summary
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: StillwaterTokens.spaceLg,
@@ -291,6 +368,8 @@ class DashboardScreen extends ConsumerWidget {
                       (cashFlow) => CashFlowCard(
                         cashFlow: cashFlow,
                         month: selectedMonth,
+                        periodLabel: selectedPeriod.label,
+                        chartItems: cashFlowChartAsync.valueOrNull,
                         isPrivacyBlur: isPrivacyBlur,
                         onToggleBlur: () {
                           ref

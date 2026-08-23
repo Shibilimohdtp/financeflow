@@ -68,6 +68,22 @@ class TimeSeriesPoint {
   });
 }
 
+class AccountSpend {
+  final String accountId;
+  final String accountName;
+  final double totalExpense;
+  final double totalIncome;
+  final int transactionCount;
+
+  const AccountSpend({
+    required this.accountId,
+    required this.accountName,
+    required this.totalExpense,
+    required this.totalIncome,
+    required this.transactionCount,
+  });
+}
+
 class DayOfWeekSpend {
   final int weekday; // 1 = Mon, 7 = Sun
   final String dayName;
@@ -97,8 +113,14 @@ class AnalyticsReport {
   final List<MerchantSpend> topMerchants;
   final List<TimeSeriesPoint> timeSeries;
   final List<DayOfWeekSpend> dayOfWeekBreakdown;
+  final List<AccountSpend> accountBreakdown;
+  final List<Transaction> largestTransactions;
+  final List<CategorySpend> incomeSources;
+  final Map<String, List<Transaction>> categoryTransactions;
   final double? previousPeriodExpense;
   final double? previousPeriodIncome;
+  final double? expenseChangePercentage;
+  final double? incomeChangePercentage;
 
   const AnalyticsReport({
     required this.startDate,
@@ -115,8 +137,14 @@ class AnalyticsReport {
     required this.topMerchants,
     required this.timeSeries,
     required this.dayOfWeekBreakdown,
+    this.accountBreakdown = const [],
+    this.largestTransactions = const [],
+    this.incomeSources = const [],
+    this.categoryTransactions = const {},
     this.previousPeriodExpense,
     this.previousPeriodIncome,
+    this.expenseChangePercentage,
+    this.incomeChangePercentage,
   });
 }
 
@@ -179,6 +207,52 @@ class AnalyticsCalculator {
     }
   }
 
+  static ({DateTime start, DateTime end}) getPreviousDateRange(
+    AnalyticsTimeRange range,
+    DateTime currentStart,
+    DateTime currentEnd,
+  ) {
+    switch (range) {
+      case AnalyticsTimeRange.week:
+        final prevStart = currentStart.subtract(const Duration(days: 7));
+        final prevEnd = currentEnd.subtract(const Duration(days: 7));
+        return (start: prevStart, end: prevEnd);
+      case AnalyticsTimeRange.month:
+        final prevMonthDate = DateTime(
+          currentStart.year,
+          currentStart.month - 1,
+          1,
+        );
+        final prevEndMonth = DateTime(
+          prevMonthDate.year,
+          prevMonthDate.month + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
+        return (start: prevMonthDate, end: prevEndMonth);
+      case AnalyticsTimeRange.year:
+        final prevYearDate = DateTime(currentStart.year - 1, 1, 1);
+        final prevEndYear = DateTime(
+          currentStart.year - 1,
+          12,
+          31,
+          23,
+          59,
+          59,
+          999,
+        );
+        return (start: prevYearDate, end: prevEndYear);
+      case AnalyticsTimeRange.custom:
+        final duration = currentEnd.difference(currentStart);
+        final prevEnd = currentStart.subtract(const Duration(milliseconds: 1));
+        final prevStart = prevEnd.subtract(duration);
+        return (start: prevStart, end: prevEnd);
+    }
+  }
+
   static AnalyticsReport calculateReport({
     required List<Transaction> allTransactions,
     required AnalyticsTimeRange timeRange,
@@ -217,7 +291,16 @@ class AnalyticsCalculator {
       ({String name, String icon, String color, double amount, int count})
     >
     catMap = {};
+    final Map<
+      String,
+      ({String name, String icon, String color, double amount, int count})
+    >
+    incomeCatMap = {};
     final Map<String, ({double amount, int count})> merchantMap = {};
+    final Map<String, ({String name, double expense, double income, int count})>
+    accountMap = {};
+    final Map<String, List<Transaction>> categoryTransactions = {};
+
     final Map<int, ({double amount, int count})> weekdayMap = {
       1: (amount: 0.0, count: 0),
       2: (amount: 0.0, count: 0),
@@ -229,8 +312,44 @@ class AnalyticsCalculator {
     };
 
     for (final tx in inRangeTxs) {
+      // Map category transactions
+      categoryTransactions.putIfAbsent(tx.categoryId, () => []).add(tx);
+
+      // Account breakdown
+      final accId = tx.accountId.isNotEmpty ? tx.accountId : 'acc_default';
+      final currentAcc =
+          accountMap[accId] ??
+          (name: 'Account', expense: 0.0, income: 0.0, count: 0);
+      accountMap[accId] = (
+        name: currentAcc.name,
+        expense:
+            currentAcc.expense +
+            (tx.type == TransactionType.expense ? tx.amount : 0.0),
+        income:
+            currentAcc.income +
+            (tx.type == TransactionType.income ? tx.amount : 0.0),
+        count: currentAcc.count + 1,
+      );
+
       if (tx.type == TransactionType.income) {
         totalIncome += tx.amount;
+
+        final existingIncCat =
+            incomeCatMap[tx.categoryId] ??
+            (
+              name: tx.categoryName.isNotEmpty ? tx.categoryName : 'Income',
+              icon: tx.categoryIcon,
+              color: tx.categoryColor,
+              amount: 0.0,
+              count: 0,
+            );
+        incomeCatMap[tx.categoryId] = (
+          name: tx.categoryName.isNotEmpty ? tx.categoryName : 'Income',
+          icon: tx.categoryIcon,
+          color: tx.categoryColor,
+          amount: existingIncCat.amount + tx.amount,
+          count: existingIncCat.count + 1,
+        );
       } else if (tx.type == TransactionType.expense) {
         totalExpense += tx.amount;
         expenseCount++;
@@ -275,6 +394,11 @@ class AnalyticsCalculator {
           count: existingW.count + 1,
         );
       }
+    }
+
+    // Sort category transactions by date descending
+    for (final entry in categoryTransactions.entries) {
+      entry.value.sort((a, b) => b.date.compareTo(a.date));
     }
 
     final netSavings = totalIncome - totalExpense;
@@ -340,6 +464,26 @@ class AnalyticsCalculator {
       );
     }
 
+    // Process Income Sources
+    final sortedIncCats =
+        incomeCatMap.entries.toList()
+          ..sort((a, b) => b.value.amount.compareTo(a.value.amount));
+    final incomeSources =
+        sortedIncCats
+            .map(
+              (e) => CategorySpend(
+                categoryId: e.key,
+                categoryName: e.value.name,
+                categoryIcon: e.value.icon,
+                categoryColor: e.value.color,
+                amount: e.value.amount,
+                percentage:
+                    totalIncome > 0 ? (e.value.amount / totalIncome) : 0.0,
+                transactionCount: e.value.count,
+              ),
+            )
+            .toList();
+
     // Process Top Merchants
     final sortedMerchants =
         merchantMap.entries.toList()
@@ -353,6 +497,30 @@ class AnalyticsCalculator {
             transactionCount: e.value.count,
           );
         }).toList();
+
+    // Process Account Breakdown
+    final sortedAccounts =
+        accountMap.entries.toList()
+          ..sort((a, b) => b.value.expense.compareTo(a.value.expense));
+    final accountBreakdown =
+        sortedAccounts
+            .map(
+              (e) => AccountSpend(
+                accountId: e.key,
+                accountName: e.value.name,
+                totalExpense: e.value.expense,
+                totalIncome: e.value.income,
+                transactionCount: e.value.count,
+              ),
+            )
+            .toList();
+
+    // Process Largest Transactions
+    final largestTransactions =
+        List<Transaction>.from(
+            inRangeTxs.where((t) => t.type == TransactionType.expense),
+          )..sort((a, b) => b.amount.compareTo(a.amount));
+    final topLargest = largestTransactions.take(5).toList();
 
     // Process Day of Week Breakdown
     const dayNames = {
@@ -379,6 +547,31 @@ class AnalyticsCalculator {
     // Time series points generation
     final timeSeries = _generateTimeSeries(inRangeTxs, timeRange, start, end);
 
+    // Calculate Previous Period Comparison
+    final prevBounds = getPreviousDateRange(timeRange, start, end);
+    final prevInRangeTxs =
+        allTransactions.where((t) {
+          return !t.date.isBefore(prevBounds.start) &&
+              !t.date.isAfter(prevBounds.end);
+        }).toList();
+
+    final prevExpense = prevInRangeTxs
+        .where((t) => t.type == TransactionType.expense)
+        .fold<double>(0.0, (sum, t) => sum + t.amount);
+    final prevIncome = prevInRangeTxs
+        .where((t) => t.type == TransactionType.income)
+        .fold<double>(0.0, (sum, t) => sum + t.amount);
+
+    double? expenseChangePct;
+    if (prevExpense > 0) {
+      expenseChangePct = ((totalExpense - prevExpense) / prevExpense) * 100;
+    }
+
+    double? incomeChangePct;
+    if (prevIncome > 0) {
+      incomeChangePct = ((totalIncome - prevIncome) / prevIncome) * 100;
+    }
+
     return AnalyticsReport(
       startDate: start,
       endDate: end,
@@ -394,6 +587,14 @@ class AnalyticsCalculator {
       topMerchants: topMerchants,
       timeSeries: timeSeries,
       dayOfWeekBreakdown: dayOfWeekBreakdown,
+      accountBreakdown: accountBreakdown,
+      largestTransactions: topLargest,
+      incomeSources: incomeSources,
+      categoryTransactions: categoryTransactions,
+      previousPeriodExpense: prevExpense > 0 ? prevExpense : null,
+      previousPeriodIncome: prevIncome > 0 ? prevIncome : null,
+      expenseChangePercentage: expenseChangePct,
+      incomeChangePercentage: incomeChangePct,
     );
   }
 

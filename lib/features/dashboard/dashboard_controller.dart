@@ -1,26 +1,88 @@
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/transaction.dart';
 import '../../services/balance_calculator.dart';
+import '../../shared/widgets/charts/ff_bar_chart.dart';
 import '../accounts/accounts_controller.dart';
 import '../settings/settings_controller.dart';
 
-// Selected Dashboard Month (defaults to DateTime.now())
+enum DashboardPeriod {
+  thisMonth('This Month'),
+  lastMonth('Last Month'),
+  thisYear('This Year'),
+  custom('Custom');
+
+  final String label;
+  const DashboardPeriod(this.label);
+}
+
+// Selected Dashboard Period mode
+final selectedDashboardPeriodProvider = StateProvider<DashboardPeriod>((ref) {
+  return DashboardPeriod.thisMonth;
+});
+
+// Selected Dashboard Month (defaults to DateTime.now() for backwards-compatibility and month browsing)
 final selectedDashboardMonthProvider = StateProvider<DateTime>((ref) {
   return DateTime.now();
 });
 
-// Stream of transactions for the selected dashboard month
-final monthTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
-  final month = ref.watch(selectedDashboardMonthProvider);
+// Custom date range for custom period
+final dashboardCustomRangeProvider =
+    StateProvider<({DateTime start, DateTime end})?>((ref) => null);
+
+// Calculated Date Range for active dashboard period
+final dashboardDateRangeProvider = Provider<({DateTime start, DateTime end})>((ref) {
+  final period = ref.watch(selectedDashboardPeriodProvider);
+  final selectedMonth = ref.watch(selectedDashboardMonthProvider);
+  final custom = ref.watch(dashboardCustomRangeProvider);
+  final now = DateTime.now();
+
+  switch (period) {
+    case DashboardPeriod.thisMonth:
+      final start = DateTime(selectedMonth.year, selectedMonth.month, 1, 0, 0, 0);
+      final end = DateTime(selectedMonth.year, selectedMonth.month + 1, 0, 23, 59, 59, 999);
+      return (start: start, end: end);
+
+    case DashboardPeriod.lastMonth:
+      final prevMonth = DateTime(now.year, now.month - 1, 1, 0, 0, 0);
+      final end = DateTime(prevMonth.year, prevMonth.month + 1, 0, 23, 59, 59, 999);
+      return (start: prevMonth, end: end);
+
+    case DashboardPeriod.thisYear:
+      final start = DateTime(now.year, 1, 1, 0, 0, 0);
+      final end = DateTime(now.year, 12, 31, 23, 59, 59, 999);
+      return (start: start, end: end);
+
+    case DashboardPeriod.custom:
+      if (custom != null) {
+        return custom;
+      }
+      final start = DateTime(now.year, now.month, 1, 0, 0, 0);
+      final end = DateTime(now.year, now.month + 1, 0, 23, 59, 59, 999);
+      return (start: start, end: end);
+  }
+});
+
+// Stream of transactions for the selected dashboard period
+final dashboardTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+  final range = ref.watch(dashboardDateRangeProvider);
   final repo = ref.watch(transactionRepositoryProvider);
-  return repo.watchTransactionsByMonth(month);
+  return repo.watchSearchAndFilterTransactions(
+    startDate: range.start,
+    endDate: range.end,
+  );
+});
+
+// Backward-compatible alias for monthTransactionsProvider
+final monthTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+  return ref.watch(dashboardTransactionsProvider.future).asStream();
 });
 
 // Monthly Cash Flow computed from real stored transactions
 final monthlyCashFlowProvider = Provider<AsyncValue<MonthlyCashFlow>>((ref) {
-  final monthTxAsync = ref.watch(monthTransactionsProvider);
+  final txAsync = ref.watch(dashboardTransactionsProvider);
 
-  return monthTxAsync.when(
+  return txAsync.when(
     data: (transactions) {
       final cashFlow = BalanceCalculator.calculateMonthlyCashFlow(transactions);
       return AsyncValue.data(cashFlow);
@@ -30,7 +92,94 @@ final monthlyCashFlowProvider = Provider<AsyncValue<MonthlyCashFlow>>((ref) {
   );
 });
 
-// Top spending categories for the selected month
+// Cash Flow Chart items for dashboard chart visualization
+final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>((ref) {
+  final txAsync = ref.watch(dashboardTransactionsProvider);
+  final range = ref.watch(dashboardDateRangeProvider);
+  final period = ref.watch(selectedDashboardPeriodProvider);
+
+  return txAsync.when(
+    data: (transactions) {
+      final List<BarChartItem> items = [];
+
+      if (period == DashboardPeriod.thisYear) {
+        // 12 monthly points
+        const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        for (int m = 1; m <= 12; m++) {
+          double mExp = 0.0;
+          double mInc = 0.0;
+          for (final tx in transactions) {
+            if (tx.date.year == range.start.year && tx.date.month == m) {
+              if (tx.type == TransactionType.expense) mExp += tx.amount;
+              if (tx.type == TransactionType.income) mInc += tx.amount;
+            }
+          }
+          items.add(
+            BarChartItem(
+              label: monthLabels[m - 1],
+              value: mExp,
+              secondaryValue: mInc > 0 ? mInc : null,
+            ),
+          );
+        }
+      } else {
+        // Group by days or interval chunks
+        final totalDays = range.end.difference(range.start).inDays + 1;
+        if (totalDays <= 14) {
+          for (int d = 0; d < totalDays; d++) {
+            final dayDate = range.start.add(Duration(days: d));
+            double dExp = 0.0;
+            double dInc = 0.0;
+            for (final tx in transactions) {
+              if (tx.date.year == dayDate.year &&
+                  tx.date.month == dayDate.month &&
+                  tx.date.day == dayDate.day) {
+                if (tx.type == TransactionType.expense) dExp += tx.amount;
+                if (tx.type == TransactionType.income) dInc += tx.amount;
+              }
+            }
+            items.add(
+              BarChartItem(
+                label: '${dayDate.day}',
+                value: dExp,
+                secondaryValue: dInc > 0 ? dInc : null,
+              ),
+            );
+          }
+        } else {
+          // Group into 4 or 6 intervals across the month / range
+          final intervals = 5;
+          final stepDays = max(1, (totalDays / intervals).ceil());
+          for (int i = 0; i < totalDays; i += stepDays) {
+            final startD = range.start.add(Duration(days: i));
+            final endD = range.start.add(Duration(days: min(i + stepDays - 1, totalDays - 1)));
+            double chunkExp = 0.0;
+            double chunkInc = 0.0;
+            for (final tx in transactions) {
+              if (!tx.date.isBefore(startD) && tx.date.isBefore(endD.add(const Duration(days: 1)))) {
+                if (tx.type == TransactionType.expense) chunkExp += tx.amount;
+                if (tx.type == TransactionType.income) chunkInc += tx.amount;
+              }
+            }
+            items.add(
+              BarChartItem(
+                label: '${startD.day}-${endD.day}',
+                value: chunkExp,
+                secondaryValue: chunkInc > 0 ? chunkInc : null,
+              ),
+            );
+          }
+        }
+      }
+
+      return AsyncValue.data(items);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
+});
+
+// Top spending categories for the selected period
 final topSpendingCategoriesProvider = Provider<
   AsyncValue<
     List<
@@ -45,9 +194,9 @@ final topSpendingCategoriesProvider = Provider<
     >
   >
 >((ref) {
-  final monthTxAsync = ref.watch(monthTransactionsProvider);
+  final txAsync = ref.watch(dashboardTransactionsProvider);
 
-  return monthTxAsync.when(
+  return txAsync.when(
     data: (transactions) {
       final expenses =
           transactions.where((t) => t.type == TransactionType.expense).toList();
@@ -122,3 +271,4 @@ final totalNetWorthProvider = Provider<AsyncValue<double>>((ref) {
     error: (e, st) => AsyncValue.error(e, st),
   );
 });
+

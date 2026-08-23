@@ -66,36 +66,39 @@ class FfSegmentedPill<T> extends StatelessWidget {
                       ),
                     ),
                     child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (option.icon != null) ...[
-                            Icon(
-                              option.icon,
-                              size: 16,
-                              color:
-                                  isSelected
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.secondary,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (option.icon != null) ...[
+                              Icon(
+                                option.icon,
+                                size: 16,
+                                color:
+                                    isSelected
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.secondary,
+                              ),
+                              const SizedBox(width: StillwaterTokens.space2Xs),
+                            ],
+                            Text(
+                              option.label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                color:
+                                    isSelected
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.secondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: StillwaterTokens.space2Xs),
                           ],
-                          Text(
-                            option.label,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.secondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

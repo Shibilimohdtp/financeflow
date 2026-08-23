@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/analytics/analytics_controller.dart';
 import 'package:financeflow/features/analytics/analytics_screen.dart';
+import 'package:financeflow/features/analytics/widgets/category_transactions_sheet.dart';
+import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/services/analytics_calculator.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
@@ -10,6 +13,22 @@ void main() {
   testWidgets('AnalyticsScreen renders metrics and charts when data exists', (
     WidgetTester tester,
   ) async {
+    final sampleTx = Transaction(
+      id: 'tx_dining_1',
+      amount: 1500.0,
+      type: TransactionType.expense,
+      categoryId: 'cat_dining',
+      categoryName: 'Dining',
+      categoryIcon: 'restaurant',
+      categoryColor: 'clay',
+      date: DateTime(2026, 8, 15),
+      createdAt: DateTime(2026, 8, 15),
+      updatedAt: DateTime(2026, 8, 15),
+      accountId: 'acc_hdfc',
+      merchant: 'Swiggy',
+      source: TransactionSource.manual,
+    );
+
     final testReport = AnalyticsReport(
       startDate: DateTime(2026, 8, 1),
       endDate: DateTime(2026, 8, 31),
@@ -30,6 +49,18 @@ void main() {
           amount: 15000.0,
           percentage: 0.6,
           transactionCount: 10,
+        ),
+      ],
+      categoryTransactions: {
+        'cat_dining': [sampleTx],
+      },
+      accountBreakdown: const [
+        AccountSpend(
+          accountId: 'acc_hdfc',
+          accountName: 'HDFC Salary',
+          totalExpense: 15000.0,
+          totalIncome: 75000.0,
+          transactionCount: 12,
         ),
       ],
       topMerchants: const [
@@ -60,6 +91,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          rawAccountsStreamProvider.overrideWith(
+            (ref) => Stream.value([]),
+          ),
           analyticsReportProvider.overrideWithValue(
             AsyncValue.data(testReport),
           ),
@@ -73,15 +107,25 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Analytics & Trends'), findsOneWidget);
+    expect(find.text('Analytics & Intelligence'), findsOneWidget);
     expect(find.text('Total Inflow'), findsOneWidget);
     expect(find.text('₹75,000'), findsOneWidget);
     expect(find.text('Total Outflow'), findsOneWidget);
     expect(find.text('₹25,000'), findsOneWidget);
     expect(find.text('Net Savings'), findsOneWidget);
     expect(find.text('₹50,000'), findsOneWidget);
-    expect(find.text('Category Breakdown'), findsOneWidget);
+    expect(find.text('Expense Category Breakdown'), findsOneWidget);
     expect(find.text('Dining'), findsWidgets);
     expect(find.text('Swiggy'), findsOneWidget);
+
+    // Test clicking category row opens CategoryTransactionsSheet
+    await tester.drag(find.byType(ListView), const Offset(0, -650));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dining').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CategoryTransactionsSheet), findsOneWidget);
+    expect(find.text('Total Spent in Period'), findsOneWidget);
   });
 }
+

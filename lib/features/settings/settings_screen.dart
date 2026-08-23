@@ -23,6 +23,7 @@ import '../ingestion/permissions/notification_permission_screen.dart';
 import '../ingestion/permissions/sms_permission_screen.dart';
 import '../investments/investments_screen.dart';
 import '../loans/loans_screen.dart';
+import '../personal_debts/lending_borrowing_screen.dart';
 import '../savings_goals/savings_goals_screen.dart';
 import '../security/security_settings_screen.dart';
 import '../subscriptions/subscriptions_screen.dart';
@@ -85,6 +86,12 @@ class SettingsScreen extends ConsumerWidget {
                       label: 'Loans & EMI Tracker',
                       subtitle: 'Amortization, outstanding debt & EMIs',
                       onTap: () => _push(context, const LoansScreen()),
+                    ),
+                    _NavRow(
+                      icon: Icons.handshake_outlined,
+                      label: 'Lending & Borrowing',
+                      subtitle: 'Track money lent to & borrowed from others',
+                      onTap: () => _push(context, const LendingBorrowingScreen()),
                     ),
                     _NavRow(
                       icon: Icons.repeat_rounded,

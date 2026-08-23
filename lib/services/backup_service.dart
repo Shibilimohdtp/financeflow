@@ -10,6 +10,7 @@ import '../repositories/budget_repository.dart';
 import '../repositories/category_repository.dart';
 import '../repositories/investment_repository.dart';
 import '../repositories/loan_repository.dart';
+import '../repositories/money_record_repository.dart';
 import '../repositories/savings_goal_repository.dart';
 import '../repositories/subscription_repository.dart';
 import '../repositories/transaction_repository.dart';
@@ -33,6 +34,7 @@ class BackupService {
   final LoanRepository _loanRepo;
   final InvestmentRepository _investmentRepo;
   final AlertRepository _alertRepo;
+  final MoneyRecordRepository? _moneyRecordRepo;
 
   BackupService({
     required AccountRepository accountRepo,
@@ -44,6 +46,7 @@ class BackupService {
     required LoanRepository loanRepo,
     required InvestmentRepository investmentRepo,
     required AlertRepository alertRepo,
+    MoneyRecordRepository? moneyRecordRepo,
   }) : _accountRepo = accountRepo,
        _transactionRepo = transactionRepo,
        _categoryRepo = categoryRepo,
@@ -52,7 +55,8 @@ class BackupService {
        _subscriptionRepo = subscriptionRepo,
        _loanRepo = loanRepo,
        _investmentRepo = investmentRepo,
-       _alertRepo = alertRepo;
+       _alertRepo = alertRepo,
+       _moneyRecordRepo = moneyRecordRepo;
 
   // ==================== Cryptographic Utilities ====================
 
@@ -140,6 +144,8 @@ class BackupService {
     final emiPayments = await _loanRepo.getAllPayments();
     final investments = await _investmentRepo.getAllInvestments();
     final alerts = await _alertRepo.getAllAlerts();
+    final moneyRecords = await _moneyRecordRepo?.getAllRecords() ?? const [];
+    final moneyRepayments = await _moneyRecordRepo?.getAllRepayments() ?? const [];
 
     final metadata = BackupMetadata(
       createdAt: DateTime.now(),
@@ -151,6 +157,8 @@ class BackupService {
       loanCount: loans.length,
       investmentCount: investments.length,
       alertCount: alerts.length,
+      moneyRecordCount: moneyRecords.length,
+      moneyRepaymentCount: moneyRepayments.length,
     );
 
     final payload = BackupDataPayload(
@@ -166,6 +174,8 @@ class BackupService {
       emiPayments: emiPayments,
       investments: investments,
       alerts: alerts,
+      moneyRecords: moneyRecords,
+      moneyRepayments: moneyRepayments,
     );
 
     final rawJson = jsonEncode(payload.toJson());
@@ -323,6 +333,14 @@ class BackupService {
         for (final alt in payload.alerts) {
           await _alertRepo.saveAlert(alt);
         }
+        if (_moneyRecordRepo != null) {
+          for (final r in payload.moneyRecords) {
+            await _moneyRecordRepo.saveRecord(r);
+          }
+          for (final rep in payload.moneyRepayments) {
+            await _moneyRecordRepo.addRepayment(rep);
+          }
+        }
 
         return RestoreResult(
           isSuccess: true,
@@ -378,6 +396,14 @@ class BackupService {
         }
         for (final inv in payload.investments) {
           await _investmentRepo.saveInvestment(inv);
+        }
+        if (_moneyRecordRepo != null) {
+          for (final r in payload.moneyRecords) {
+            await _moneyRecordRepo.saveRecord(r);
+          }
+          for (final rep in payload.moneyRepayments) {
+            await _moneyRecordRepo.addRepayment(rep);
+          }
         }
 
         return RestoreResult(
