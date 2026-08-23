@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/app_settings.dart';
-import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
@@ -36,33 +37,84 @@ class GeminiConsentScreen extends ConsumerWidget {
               );
             },
           ),
+          const Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            child: Center(child: FfPrivacyBadge(label: 'Optional AI')),
+          ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // Privacy boundary hero card
+          // ── 1. Privacy Boundary Disclosure Hero ───────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Privacy Boundary Disclosure',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: context.aiColors.accent,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          color: context.aiColors.accent,
+                          size: 20,
+                        ),
+                        const SizedBox(width: StillwaterTokens.spaceSm),
+                        Text(
+                          'Privacy Boundary',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: context.aiColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceSm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isConsentGranted
+                                ? context.secColors.verified.withValues(
+                                  alpha: 0.15,
+                                )
+                                : theme.colorScheme.secondary.withValues(
+                                  alpha: 0.15,
+                                ),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusFull,
+                        ),
+                      ),
+                      child: Text(
+                        isConsentGranted ? 'Consent Active' : 'Disabled',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              isConsentGranted
+                                  ? context.secColors.verified
+                                  : theme.colorScheme.secondary,
+                        ),
                       ),
                     ),
-                    const FfPrivacyBadge(label: 'Optional AI'),
                   ],
                 ),
                 const SizedBox(height: StillwaterTokens.spaceSm),
                 Text(
-                  'Gemini AI is strictly optional. FinanceFlow is 100% complete and operational offline using on-device rules even when Gemini is disabled.',
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                  'Gemini AI is strictly optional. FinanceFlow is 100% complete and fully operational offline with local on-device rules even when Gemini is disabled.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -70,10 +122,10 @@ class GeminiConsentScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // What leaves device vs What stays on device
-          Text('Data Minimization Policy', style: theme.textTheme.titleMedium),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          // ── 2. Data Minimization Policy ──────────────────────────────
+          const FfSectionHeader(title: 'Data Minimization Policy'),
           FfCard(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -86,42 +138,23 @@ class GeminiConsentScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: StillwaterTokens.spaceSm),
                     Text(
-                      'What may be sent (Minimally)',
-                      style: theme.textTheme.titleSmall,
+                      'Strict Data Scrubbing & Anonymization',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: StillwaterTokens.spaceSm),
                 Text(
-                  '• Cleaned merchant name (e.g. "Swiggy")\n'
-                  '• Transaction amount (e.g. ₹420)\n'
-                  '• List of default category names for categorization',
-                  style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
-                ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
-                const Divider(),
-                const SizedBox(height: StillwaterTokens.spaceMd),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.cancel_outlined,
-                      color: context.secColors.error,
-                      size: 20,
-                    ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
-                    Text(
-                      'What NEVER leaves this phone',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                Text(
-                  '• Raw SMS messages or notification bodies\n'
-                  '• Bank account numbers, PINs, or card digits\n'
-                  '• Transaction notes, receipts, or attachments\n'
-                  '• Full financial history or unassociated data',
-                  style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
+                  '• Account numbers, personal names, phone numbers, and exact timestamps are completely stripped before processing.\n'
+                  '• Only anonymized merchant names and amounts are analyzed when categorization confidence is low.\n'
+                  '• No user account or profile is sent to Google.\n'
+                  '• All queries and responses are recorded in your on-device AI Activity Log.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    height: 1.5,
+                  ),
                 ),
               ],
             ),
@@ -129,88 +162,44 @@ class GeminiConsentScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // User Consent Status Card
-          FfCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Gemini Assistance Status',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    Text(
-                      isConsentGranted ? 'Enabled' : 'Disabled',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color:
-                            isConsentGranted
-                                ? context.secColors.verified
-                                : theme.colorScheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
-                if (settings.geminiConsentDate != null) ...[
-                  const SizedBox(height: StillwaterTokens.spaceXs),
-                  Text(
-                    'Consent granted on ${DateFormatter.formatFullDate(settings.geminiConsentDate!)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                    ),
+          // ── 3. Consent Controls ──────────────────────────────────────
+          const FfSectionHeader(title: 'Consent Controls'),
+          FfGroupedContainer(
+            children: [
+              SwitchListTile.adaptive(
+                title: const Text('Enable Gemini AI Assistance'),
+                subtitle: Text(
+                  isConsentGranted
+                      ? 'Consent granted on ${settings.geminiConsentDate != null ? DateFormatter.formatShortDate(settings.geminiConsentDate!) : "this device"}'
+                      : 'AI assistance is disabled',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.secondary,
                   ),
-                ],
-              ],
-            ),
-          ),
-
-          const SizedBox(height: StillwaterTokens.spaceXl),
-
-          if (isConsentGranted)
-            FfButton(
-              label: 'Revoke Consent & Disable Gemini',
-              variant: FfButtonVariant.destructive,
-              onPressed: () async {
-                await ref
-                    .read(geminiControllerProvider.notifier)
-                    .revokeConsent();
-                if (context.mounted) {
-                  FfSnackbar.show(
-                    context,
-                    message: 'Gemini disabled. Reverted to on-device rules.',
-                  );
-                }
-              },
-            )
-          else
-            FfButton(
-              label: 'I Understand & Agree to Boundary Terms',
-              variant: FfButtonVariant.filled,
-              onPressed: () async {
-                await ref
-                    .read(geminiControllerProvider.notifier)
-                    .grantConsent();
-                if (context.mounted) {
-                  FfSnackbar.show(
-                    context,
-                    message: 'Gemini assistance enabled.',
-                  );
-                }
-              },
-            ),
-
-          const SizedBox(height: StillwaterTokens.spaceMd),
-
-          FfButton(
-            label: 'View Local AI Activity Audit Log',
-            variant: FfButtonVariant.outlined,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AiActivityLogScreen()),
-              );
-            },
+                ),
+                value: isConsentGranted,
+                activeColor: theme.colorScheme.primary,
+                onChanged: (val) async {
+                  if (val) {
+                    await ref
+                        .read(geminiControllerProvider.notifier)
+                        .grantConsent();
+                  } else {
+                    await ref
+                        .read(geminiControllerProvider.notifier)
+                        .revokeConsent();
+                  }
+                  if (context.mounted) {
+                    FfSnackbar.show(
+                      context,
+                      message:
+                          val
+                              ? 'Gemini AI assistance enabled with data minimization.'
+                              : 'Gemini AI assistance disabled.',
+                    );
+                  }
+                },
+              ),
+            ],
           ),
 
           const SizedBox(height: StillwaterTokens.space4Xl),

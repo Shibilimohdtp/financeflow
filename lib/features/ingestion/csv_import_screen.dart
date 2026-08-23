@@ -8,7 +8,8 @@ import '../../models/category.dart';
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
@@ -74,146 +75,144 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
       builder:
           (ctx) => StatefulBuilder(
             builder: (ctx, setModalState) {
-              return Container(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                height: MediaQuery.of(context).size.height * 0.75,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Map CSV Columns',
-                          style: context.textTheme.titleMedium,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
-                    Text(
-                      'Select which column in your CSV file matches each transaction field.',
-                      style: context.textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-                    Expanded(
-                      child: ListView(
-                        children: [
-                          _buildDropdownRow(
-                            'Date Column *',
-                            mapping.dateIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                dateIndex: idx,
-                                clearDate: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                          _buildDropdownRow(
-                            'Merchant / Narration *',
-                            mapping.merchantIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                merchantIndex: idx,
-                                clearMerchant: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                          _buildDropdownRow(
-                            'Debit Column',
-                            mapping.debitIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                debitIndex: idx,
-                                clearDebit: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                          _buildDropdownRow(
-                            'Credit Column',
-                            mapping.creditIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                creditIndex: idx,
-                                clearCredit: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                          _buildDropdownRow(
-                            'Amount (Single Column)',
-                            mapping.amountIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                amountIndex: idx,
-                                clearAmount: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                          _buildDropdownRow(
-                            'Reference / UTR',
-                            mapping.referenceIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                referenceIndex: idx,
-                                clearReference: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                          _buildDropdownRow(
-                            'Category',
-                            mapping.categoryIndex,
-                            headers,
-                            (idx) {
-                              final newMap = mapping.copyWith(
-                                categoryIndex: idx,
-                                clearCategory: idx == null,
-                              );
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateMapping(newMap);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                        ],
+              return SafeArea(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.75,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const FfSheetHeader(
+                        title: 'Map CSV Columns',
+                        subtitle:
+                            'Select which column in your CSV matches each transaction field',
                       ),
-                    ),
-                  ],
+                      const Divider(height: 1, thickness: 1),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StillwaterTokens.spaceLg,
+                            vertical: StillwaterTokens.spaceMd,
+                          ),
+                          children: [
+                            _buildDropdownRow(
+                              'Date Column *',
+                              mapping.dateIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  dateIndex: idx,
+                                  clearDate: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                            _buildDropdownRow(
+                              'Merchant / Narration *',
+                              mapping.merchantIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  merchantIndex: idx,
+                                  clearMerchant: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                            _buildDropdownRow(
+                              'Debit Column',
+                              mapping.debitIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  debitIndex: idx,
+                                  clearDebit: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                            _buildDropdownRow(
+                              'Credit Column',
+                              mapping.creditIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  creditIndex: idx,
+                                  clearCredit: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                            _buildDropdownRow(
+                              'Amount (Single Column)',
+                              mapping.amountIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  amountIndex: idx,
+                                  clearAmount: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                            _buildDropdownRow(
+                              'Reference / UTR',
+                              mapping.referenceIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  referenceIndex: idx,
+                                  clearReference: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                            _buildDropdownRow(
+                              'Category',
+                              mapping.categoryIndex,
+                              headers,
+                              (idx) {
+                                final newMap = mapping.copyWith(
+                                  categoryIndex: idx,
+                                  clearCategory: idx == null,
+                                );
+                                ref
+                                    .read(csvImportControllerProvider.notifier)
+                                    .updateMapping(newMap);
+                                Navigator.of(ctx).pop();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -227,12 +226,33 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     List<String> headers,
     ValueChanged<int?> onChanged,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: StillwaterTokens.spaceXs),
+    final theme = context.theme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceMd,
+        vertical: StillwaterTokens.spaceXs,
+      ),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        border: Border.all(
+          color: theme.dividerColor,
+          width: StillwaterTokens.borderWidthHairline,
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(label, style: context.textTheme.bodyMedium)),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
           DropdownButton<int?>(
             value:
                 (currentIndex != null &&
@@ -275,22 +295,20 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Import CSV Statement'),
-        actions: [
-          if (state.hasSession)
-            IconButton(
-              icon: const Icon(Icons.tune_rounded),
-              tooltip: 'Adjust Column Mapping',
-              onPressed: () => _showMappingSheet(context),
-            ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            child: Center(child: FfPrivacyBadge(label: '100% Offline')),
+          ),
         ],
       ),
       body: Column(
         children: [
-          // 1. Offline Privacy Notice Banner
+          // ── 1. Offline Privacy Notice Banner ──────────────────────────
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceMd,
+              horizontal: StillwaterTokens.spaceLg,
               vertical: StillwaterTokens.spaceSm,
             ),
             color: context.secColors.verified.withValues(alpha: 0.1),
@@ -301,10 +319,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   size: 18,
                   color: context.secColors.verified,
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: StillwaterTokens.spaceSm),
                 Expanded(
                   child: Text(
-                    'Files are read only on this device. No statement data leaves your phone.',
+                    'Files are read locally on this device. Statement data never leaves your phone.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: context.secColors.verified,
                       fontSize: 11,
@@ -315,7 +333,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             ),
           ),
 
-          // 2. Loading / Progress State
+          // ── 2. Loading / Progress State ──────────────────────────────
           if (state.isLoading) ...[
             LinearProgressIndicator(
               backgroundColor: theme.colorScheme.surfaceContainerLow,
@@ -335,7 +353,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               ),
           ],
 
-          // 3. Error Banner
+          // ── 3. Error Banner ──────────────────────────────────────────
           if (state.errorMessage != null)
             Container(
               padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
@@ -364,7 +382,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               ),
             ),
 
-          // 4. Main Body Content
+          // ── 4. Main Body Content ─────────────────────────────────────
           Expanded(
             child:
                 !state.hasSession
@@ -377,7 +395,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                     ),
           ),
 
-          // 5. Commit Action Bottom Bar
+          // ── 5. Commit Action Bottom Bar ──────────────────────────────
           if (state.hasSession) _buildBottomCommitBar(context, state.session!),
         ],
       ),
@@ -390,48 +408,64 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     return ListView(
       padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
       children: [
-        FfCard(
-          variant: FfCardVariant.elevated,
+        Container(
+          padding: const EdgeInsets.all(StillwaterTokens.spaceXl),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            border: Border.all(
+              color: theme.dividerColor,
+              width: StillwaterTokens.borderWidthHairline,
+            ),
+          ),
           child: Column(
             children: [
-              Icon(
-                Icons.file_upload_outlined,
-                size: 48,
-                color: theme.colorScheme.primary,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusMd,
+                  ),
+                ),
+                child: Icon(
+                  Icons.file_upload_outlined,
+                  size: 24,
+                  color: theme.colorScheme.primary,
+                ),
               ),
               const SizedBox(height: StillwaterTokens.spaceMd),
               Text(
                 'Select Bank Statement CSV',
-                style: theme.textTheme.titleMedium,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: StillwaterTokens.spaceXs),
               Text(
                 'Supports HDFC, ICICI, SBI, Axis, and custom CSV statement formats.',
-                style: theme.textTheme.bodySmall,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.secondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: StillwaterTokens.spaceLg),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FfButton(
-                    label: 'Choose CSV File',
-                    leadingIcon: const Icon(Icons.folder_open_rounded),
-                    onPressed: () {
-                      // Demo file chooser trigger: load standard HDFC statement
-                      _loadSampleData('hdfc');
-                    },
-                  ),
-                ],
+              FfButton(
+                label: 'Choose CSV File',
+                leadingIcon: const Icon(Icons.folder_open_rounded, size: 18),
+                onPressed: () {
+                  _loadSampleData('hdfc');
+                },
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: StillwaterTokens.spaceXl),
+        const SizedBox(height: StillwaterTokens.space2Xl),
 
-        Text('Or Test with Sample Data', style: theme.textTheme.titleSmall),
-        const SizedBox(height: StillwaterTokens.spaceSm),
+        _SectionLabel(label: 'Or Test with Sample Data'),
+        const SizedBox(height: StillwaterTokens.spaceXs),
         Row(
           children: [
             Expanded(
@@ -460,46 +494,73 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ],
         ),
 
-        const SizedBox(height: StillwaterTokens.spaceXl),
+        const SizedBox(height: StillwaterTokens.space2Xl),
 
-        // Paste CSV text option
-        ListTile(
-          title: const Text('Paste Raw CSV Text'),
-          trailing: Icon(
-            _showPasteArea ? Icons.expand_less : Icons.expand_more,
-          ),
-          onTap: () {
-            setState(() {
-              _showPasteArea = !_showPasteArea;
-            });
-          },
-        ),
-
-        if (_showPasteArea) ...[
-          TextField(
-            controller: _pasteController,
-            maxLines: 6,
-            decoration: const InputDecoration(
-              hintText: 'Paste CSV content with headers here...',
-              border: OutlineInputBorder(),
+        _SectionLabel(label: 'Or Paste Raw CSV Text'),
+        const SizedBox(height: StillwaterTokens.spaceXs),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            border: Border.all(
+              color: theme.dividerColor,
+              width: StillwaterTokens.borderWidthHairline,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          FfButton(
-            label: 'Parse Pasted CSV',
-            variant: FfButtonVariant.secondary,
-            onPressed: () {
-              if (_pasteController.text.trim().isNotEmpty) {
-                ref
-                    .read(csvImportControllerProvider.notifier)
-                    .loadCsvContent(
-                      _pasteController.text,
-                      fileName: 'Pasted_Statement.csv',
-                    );
-              }
-            },
+          child: Column(
+            children: [
+              ListTile(
+                title: const Text('Paste Raw CSV Content'),
+                subtitle: const Text('Enter CSV text directly from clipboard'),
+                trailing: Icon(
+                  _showPasteArea
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                ),
+                onTap: () => setState(() => _showPasteArea = !_showPasteArea),
+              ),
+              if (_showPasteArea) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _pasteController,
+                        maxLines: 6,
+                        decoration: const InputDecoration(
+                          hintText: 'Paste CSV rows here...',
+                          border: OutlineInputBorder(),
+                        ),
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      FfButton(
+                        label: 'Parse Pasted CSV',
+                        onPressed: () {
+                          final text = _pasteController.text.trim();
+                          if (text.isNotEmpty) {
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .loadCsvContent(
+                                  text,
+                                  fileName: 'Pasted_Statement.csv',
+                                );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
+
+        const SizedBox(height: StillwaterTokens.space4Xl),
       ],
     );
   }
@@ -513,289 +574,103 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final theme = context.theme;
 
     return ListView(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceLg,
+        vertical: StillwaterTokens.spaceMd,
+      ),
       children: [
-        // Review Metrics Card
-        FfCard(
-          variant: FfCardVariant.tinted,
+        // Session Summary Card
+        Container(
+          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            border: Border.all(
+              color: theme.dividerColor,
+              width: StillwaterTokens.borderWidthHairline,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    session.sourceName,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      session.sourceName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: () => _showMappingSheet(context),
-                    icon: const Icon(Icons.tune, size: 16),
+                    icon: const Icon(Icons.tune_rounded, size: 16),
                     label: const Text('Edit Columns'),
+                    onPressed: () => _showMappingSheet(context),
                   ),
                 ],
               ),
-              const Divider(),
-              Wrap(
-                spacing: StillwaterTokens.spaceSm,
-                runSpacing: StillwaterTokens.space3Xs,
+              const SizedBox(height: StillwaterTokens.spaceSm),
+              Row(
                 children: [
-                  _buildMetricPill(
-                    '${session.totalCount} Total',
-                    theme.colorScheme.primary,
+                  _SummaryPill(
+                    label: '${session.totalCount} Total',
+                    color: theme.colorScheme.primary,
                   ),
-                  _buildMetricPill(
-                    '${session.newCount} New',
-                    context.secColors.verified,
+                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  _SummaryPill(
+                    label: '${session.validCount} Valid',
+                    color: context.secColors.verified,
                   ),
-                  if (session.duplicateCount > 0)
-                    _buildMetricPill(
-                      '${session.duplicateCount} Duplicates',
-                      context.aiColors.accent,
+                  if (session.duplicateCount > 0) ...[
+                    const SizedBox(width: StillwaterTokens.spaceXs),
+                    _SummaryPill(
+                      label: '${session.duplicateCount} Duplicates',
+                      color: context.theme.colorScheme.error,
                     ),
-                  if (session.needsReviewCount > 0)
-                    _buildMetricPill(
-                      '${session.needsReviewCount} Needs Review',
-                      context.aiColors.accent,
-                    ),
-                  if (session.excludedCount > 0)
-                    _buildMetricPill(
-                      '${session.excludedCount} Excluded',
-                      theme.disabledColor,
-                    ),
+                  ],
                 ],
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: StillwaterTokens.spaceMd),
+        const SizedBox(height: StillwaterTokens.space2Xl),
 
-        Text(
-          'Transactions Preview (${session.includedCount} selected)',
-          style: theme.textTheme.titleSmall,
-        ),
-        const SizedBox(height: StillwaterTokens.spaceSm),
-
-        // List of Parsed Rows
-        ...session.items.map(
-          (item) => _buildRowCard(context, item, categories, accounts),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricPill(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceSm,
-        vertical: StillwaterTokens.space3Xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRowCard(
-    BuildContext context,
-    ParsedTransaction item,
-    List<Category> categories,
-    List<Account> accounts,
-  ) {
-    final theme = context.theme;
-    final isExpense = item.type == TransactionType.expense;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: StillwaterTokens.spaceSm),
-      child: FfCard(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Checkbox(
-                  value: item.isIncluded,
-                  onChanged: (val) {
-                    ref
-                        .read(csvImportControllerProvider.notifier)
-                        .toggleRowInclusion(item.tempId, val ?? false);
-                  },
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.normalizedMerchant.isNotEmpty
-                            ? item.normalizedMerchant
-                            : item.rawMerchant,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          decoration:
-                              item.isIncluded
-                                  ? null
-                                  : TextDecoration.lineThrough,
-                        ),
-                      ),
-                      if (item.rawMerchant != item.normalizedMerchant &&
-                          item.rawMerchant.isNotEmpty)
-                        Text(
-                          'Raw: ${item.rawMerchant}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                          ),
-                        ),
-                      Text(
-                        DateFormatter.formatTransactionDate(item.date),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      CurrencyFormatter.format(
-                        item.amount,
-                        showSign: true,
-                        isExpense: isExpense,
-                        isIncome: !isExpense,
-                      ),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color:
-                            isExpense
-                                ? context.finColors.expense
-                                : context.finColors.income,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        item.categoryName,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+        // Parsed Rows Preview
+        _SectionLabel(label: 'Parsed Transactions (${session.items.length})'),
+        const SizedBox(height: StillwaterTokens.spaceXs),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            border: Border.all(
+              color: theme.dividerColor,
+              width: StillwaterTokens.borderWidthHairline,
             ),
-
-            // Duplicate Alert & Action
-            if (item.isDuplicate) ...[
-              const SizedBox(height: StillwaterTokens.space3Xs),
-              Container(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-                decoration: BoxDecoration(
-                  color: context.aiColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < session.items.length; i++) ...[
+                _ParsedTransactionRow(
+                  item: session.items[i],
+                  categories: categories,
+                ),
+                if (i < session.items.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: StillwaterTokens.borderWidthHairline,
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: context.aiColors.accent,
-                        ),
-                        const SizedBox(width: StillwaterTokens.space3Xs),
-                        Text(
-                          item.duplicateStatus.displayName,
-                          style: TextStyle(
-                            color: context.aiColors.accent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (item.duplicateReasons.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          item.duplicateReasons.join(' · '),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: StillwaterTokens.space3Xs),
-                    Row(
-                      children: [
-                        const Text('Action: ', style: TextStyle(fontSize: 11)),
-                        DropdownButton<DuplicateResolution>(
-                          value: item.duplicateResolution,
-                          isDense: true,
-                          underline: const SizedBox.shrink(),
-                          items:
-                              DuplicateResolution.values.map((res) {
-                                return DropdownMenuItem(
-                                  value: res,
-                                  child: Text(
-                                    res.displayName,
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                );
-                              }).toList(),
-                          onChanged: (res) {
-                            if (res != null) {
-                              ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .updateRowField(
-                                    item.tempId,
-                                    duplicateResolution: res,
-                                  );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              ],
             ],
-
-            // Validation Warning
-            if (item.warnings.isNotEmpty ||
-                item.validationErrors.isNotEmpty) ...[
-              const SizedBox(height: StillwaterTokens.space3Xs),
-              Text(
-                [...item.validationErrors, ...item.warnings].join(' · '),
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 10),
-              ),
-            ],
-          ],
+          ),
         ),
-      ),
+
+        const SizedBox(height: StillwaterTokens.space4Xl),
+      ],
     );
   }
 
@@ -808,68 +683,183 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     return Container(
       padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(top: BorderSide(color: theme.dividerColor)),
+        color: theme.cardColor,
+        border: Border(
+          top: BorderSide(
+            color: theme.dividerColor,
+            width: StillwaterTokens.borderWidthHairline,
+          ),
+        ),
       ),
       child: SafeArea(
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${session.includedCount} Ready to Import',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Saves directly to local Isar DB',
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
-                  ),
-                ],
+              child: FfButton(
+                label: 'Discard',
+                variant: FfButtonVariant.outlined,
+                onPressed: () {
+                  ref.read(csvImportControllerProvider.notifier).reset();
+                },
               ),
             ),
-            FfButton(
-              label: 'Import Transactions',
-              leadingIcon: const Icon(Icons.check_circle_outline),
-              onPressed:
-                  session.includedCount > 0
-                      ? () async {
-                        try {
-                          final committedIds =
-                              await ref
-                                  .read(csvImportControllerProvider.notifier)
-                                  .commitImport();
-
-                          if (context.mounted) {
-                            FfSnackbar.show(
-                              context,
-                              message:
-                                  'Successfully imported ${committedIds.length} transactions.',
-                              actionLabel: 'Undo',
-                              onAction: () async {
-                                await ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .undoLastImport();
-                              },
-                            );
-                            Navigator.of(context).pop();
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            FfSnackbar.show(
-                              context,
-                              message: 'Import failed: $e',
-                            );
-                          }
-                        }
-                      }
-                      : null,
+            const SizedBox(width: StillwaterTokens.spaceMd),
+            Expanded(
+              flex: 2,
+              child: FfButton(
+                label: 'Import Transactions',
+                leadingIcon: const Icon(Icons.check_rounded, size: 18),
+                onPressed: () async {
+                  final imported =
+                      await ref
+                          .read(csvImportControllerProvider.notifier)
+                          .commitImport();
+                  if (context.mounted) {
+                    FfSnackbar.show(
+                      context,
+                      message:
+                          'Imported ${imported.length} transactions successfully.',
+                    );
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ParsedTransactionRow extends StatelessWidget {
+  final ParsedTransaction item;
+  final List<Category> categories;
+
+  const _ParsedTransactionRow({required this.item, required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final isIncome = item.type == TransactionType.income;
+    final amountColor =
+        isIncome ? context.finColors.income : context.finColors.expense;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceMd,
+        vertical: StillwaterTokens.spaceSm,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: amountColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isIncome
+                  ? Icons.arrow_downward_rounded
+                  : Icons.arrow_upward_rounded,
+              size: 18,
+              color: amountColor,
+            ),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.normalizedMerchant,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${DateFormatter.formatTransactionDate(item.date)} · ${item.categoryName}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isIncome ? '+' : '−'} ${CurrencyFormatter.formatINR(item.amount)}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: amountColor,
+                ),
+              ),
+              if (item.duplicateStatus != DuplicateMatchLevel.none)
+                Text(
+                  'Duplicate',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: context.theme.colorScheme.error,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryPill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _SummaryPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceSm,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      child: Text(
+        label.toUpperCase(),
+        style: context.textTheme.labelSmall?.copyWith(
+          letterSpacing: 0.8,
+          color: context.theme.colorScheme.secondary,
+          fontSize: 10,
         ),
       ),
     );

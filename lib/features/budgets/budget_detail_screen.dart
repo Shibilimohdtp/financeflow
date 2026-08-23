@@ -10,10 +10,14 @@ import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
-import '../../shared/widgets/ff_source_badge.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import '../dashboard/dashboard_controller.dart';
 import '../transactions/transaction_detail_screen.dart';
 import '../transactions/transactions_controller.dart';
@@ -29,6 +33,7 @@ class BudgetDetailScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => AddEditBudgetSheet(initialBudget: budget),
     );
   }
@@ -38,7 +43,7 @@ class BudgetDetailScreen extends ConsumerWidget {
       context,
       title: 'Delete Budget?',
       message:
-          'Are you sure you want to delete "${budget.name}"? Past transactions will remain recorded.',
+          'Are you sure you want to remove "${budget.name}"? Past transactions will remain recorded.',
       confirmLabel: 'Delete',
       isDestructive: true,
     );
@@ -98,20 +103,21 @@ class BudgetDetailScreen extends ConsumerWidget {
     // Matching transactions for this budget in this period
     final matchingTransactions =
         allTransactions.where((tx) {
-          if (tx.type != TransactionType.expense) return false;
-          if (tx.categoryId != budget.categoryId) return false;
-          return !tx.date.isBefore(bounds.start) &&
-              !tx.date.isAfter(bounds.end);
-        }).toList();
+            if (tx.type != TransactionType.expense) return false;
+            if (tx.categoryId != budget.categoryId) return false;
+            return !tx.date.isBefore(bounds.start) &&
+                !tx.date.isAfter(bounds.end);
+          }).toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
 
-    final Color progressColor;
-    if (summary.isExceeded) {
-      progressColor = finColors.expense;
-    } else if (summary.isApproachingThreshold) {
-      progressColor = theme.colorScheme.tertiary;
-    } else {
-      progressColor = theme.colorScheme.primary;
-    }
+    final isExceeded = summary.isExceeded;
+    final isApproaching = summary.isApproachingThreshold;
+    final Color progressColor =
+        isExceeded
+            ? finColors.expense
+            : (isApproaching
+                ? theme.colorScheme.tertiary
+                : theme.colorScheme.primary);
 
     return Scaffold(
       appBar: AppBar(
@@ -148,115 +154,79 @@ class BudgetDetailScreen extends ConsumerWidget {
                   ),
                 ],
           ),
+          const Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            child: Center(child: FfPrivacyBadge(label: 'On-device')),
+          ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // 1. Hero Summary Card
+          // ── 1. Spend Progress Hero Card ─────────────────────────────
           FfCard(
+            variant: FfCardVariant.elevated,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        FfCategoryTile(
-                          iconIdentifier: budget.categoryIcon ?? 'category',
-                          colorTokenIdentifier: budget.categoryColor ?? 'slate',
-                        ),
-                        const SizedBox(width: StillwaterTokens.spaceSm),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              budget.categoryName ?? 'Category',
-                              style: theme.textTheme.titleMedium,
-                            ),
-                            Text(
-                              budget.period.displayName,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    FfCategoryTile(
+                      iconIdentifier: budget.categoryIcon ?? 'category',
+                      colorTokenIdentifier: budget.categoryColor ?? 'shore',
+                      size: 48,
                     ),
-                    if (summary.isExceeded)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceSm,
-                          vertical: StillwaterTokens.space2Xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: finColors.expenseContainer,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusFull,
+                    const SizedBox(width: StillwaterTokens.spaceMd),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            budget.name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          'Exceeded',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: finColors.expense,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(height: 2),
+                          Text(
+                            '${budget.categoryName ?? 'Category'} · ${budget.period.displayName}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                            ),
                           ),
-                        ),
-                      )
-                    else if (summary.isApproachingThreshold)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceSm,
-                          vertical: StillwaterTokens.space2Xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.tertiaryContainer,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusFull,
-                          ),
-                        ),
-                        child: Text(
-                          'Near Limit',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onTertiaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
-
                 const SizedBox(height: StillwaterTokens.spaceLg),
-
-                // Amount Spent vs Limit
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      CurrencyFormatter.format(summary.amountSpent),
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: summary.isExceeded ? finColors.expense : null,
+                      CurrencyFormatter.formatINR(summary.amountSpent),
+                      style: StillwaterTypography.numHero(
+                        color:
+                            isExceeded
+                                ? finColors.expense
+                                : theme.colorScheme.onSurface,
                       ),
                     ),
                     Text(
-                      'Limit: ${CurrencyFormatter.format(budget.amountLimit)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
+                      'of ${CurrencyFormatter.formatINR(budget.amountLimit)}',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.secondary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: StillwaterTokens.spaceSm),
-
-                // Progress Bar
+                const SizedBox(height: StillwaterTokens.spaceMd),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(
                     StillwaterTokens.radiusFull,
@@ -268,29 +238,24 @@ class BudgetDetailScreen extends ConsumerWidget {
                     minHeight: 8,
                   ),
                 ),
-
                 const SizedBox(height: StillwaterTokens.spaceMd),
-
-                // Percentage and Remaining
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${(summary.percentageUsed * 100).toStringAsFixed(0)}% used',
+                      '${(summary.percentageUsed * 100).toStringAsFixed(0)}% spent',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      summary.isExceeded
-                          ? '${CurrencyFormatter.format(summary.amountOverBudget)} over budget'
-                          : '${CurrencyFormatter.format(summary.remainingAmount)} remaining',
+                      isExceeded
+                          ? '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit'
+                          : '${CurrencyFormatter.formatINR(summary.remainingAmount)} remaining',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color:
-                            summary.isExceeded
-                                ? finColors.expense
-                                : finColors.income,
-                        fontWeight: FontWeight.w600,
+                            isExceeded ? finColors.expense : finColors.income,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -301,35 +266,36 @@ class BudgetDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // 2. Daily Allowance & Forecast Strip
+          // ── 2. Pace & Schedule Metrics ──────────────────────────────
           Row(
             children: [
               Expanded(
                 child: FfCard(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Daily Allowance',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
+                        'DAILY ALLOWANCE',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.space2Xs),
+                      const SizedBox(height: StillwaterTokens.spaceXs),
                       Text(
-                        CurrencyFormatter.format(
+                        CurrencyFormatter.formatINR(
                           summary.dailyAllowanceRemaining,
                         ),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: StillwaterTypography.numMd(
+                          color: theme.colorScheme.primary,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.space3Xs),
+                      const SizedBox(height: 2),
                       Text(
-                        '${summary.daysRemaining} days left',
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        'for ${summary.daysRemaining} remaining days',
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.secondary,
                         ),
                       ),
@@ -337,38 +303,34 @@ class BudgetDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceMd),
+              const SizedBox(width: StillwaterTokens.spaceSm),
               Expanded(
                 child: FfCard(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Projected Spend',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: StillwaterTokens.space2Xs),
-                      Text(
-                        CurrencyFormatter.format(
-                          summary.projectedPeriodEndSpending,
-                        ),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              summary.projectedPeriodEndSpending >
-                                      budget.amountLimit
-                                  ? finColors.expense
-                                  : null,
-                        ),
-                      ),
-                      const SizedBox(height: StillwaterTokens.space3Xs),
-                      Text(
-                        'At current pace',
+                        'SPENDING PACE',
                         style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      Text(
+                        summary.isExceeded
+                            ? 'Over Limit'
+                            : (summary.isApproachingThreshold
+                                ? 'Pacing High'
+                                : 'On Track'),
+                        style: StillwaterTypography.numMd(color: progressColor),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${matchingTransactions.length} expenses recorded',
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.secondary,
                         ),
                       ),
@@ -379,91 +341,75 @@ class BudgetDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXl),
+          const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // 3. Transactions Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // ── 3. Plan Configuration ───────────────────────────────────
+          const FfSectionHeader(title: 'Budget Settings'),
+          FfGroupedContainer(
             children: [
-              Text(
-                'Transactions (${matchingTransactions.length})',
-                style: theme.textTheme.titleMedium,
+              FfListRow(
+                icon: Icons.date_range_outlined,
+                title: 'Period Bounds',
+                subtitle:
+                    '${DateFormatter.formatShortDate(bounds.start)} – ${DateFormatter.formatShortDate(bounds.end)}',
+                showChevron: false,
               ),
-              const FfPrivacyBadge(label: 'On-device'),
+              FfListRow(
+                icon: Icons.notifications_active_outlined,
+                title: 'Alert Notification',
+                subtitle:
+                    'Notify at ${(budget.alertThreshold * 100).toInt()}% threshold (${CurrencyFormatter.formatINR(budget.amountLimit * budget.alertThreshold)})',
+                showChevron: false,
+              ),
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: StillwaterTokens.spaceLg),
 
-          if (matchingTransactions.isEmpty) ...[
-            FfCard(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                  child: Text(
-                    'No expenses recorded in ${budget.name} for this period.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+          // ── 4. Transactions List for this Period ────────────────────
+          FfSectionHeader(
+            title: 'Transactions (${matchingTransactions.length})',
+          ),
+          if (matchingTransactions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: StillwaterTokens.spaceLg,
               ),
-            ),
-          ] else ...[
-            FfCard(
-              padding: EdgeInsets.zero,
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: matchingTransactions.length,
-                separatorBuilder: (ctx, i) => const Divider(),
-                itemBuilder: (ctx, i) {
-                  final tx = matchingTransactions[i];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceMd,
-                      vertical: StillwaterTokens.space2Xs,
-                    ),
-                    leading: FfCategoryTile(
-                      iconIdentifier: tx.categoryIcon,
-                      colorTokenIdentifier: tx.categoryColor,
-                    ),
-                    title: Text(
-                      tx.merchant,
-                      style: theme.textTheme.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Row(
-                      children: [
-                        Text(
-                          DateFormatter.formatTransactionDate(tx.date),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        const SizedBox(width: StillwaterTokens.spaceXs),
-                        FfSourceBadge(source: tx.source),
-                      ],
-                    ),
-                    trailing: FfAmountText(
-                      amount: tx.amount,
-                      type: tx.type,
-                      size: FfAmountSize.md,
-                      showSign: true,
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (_) => TransactionDetailScreen(transaction: tx),
-                        ),
-                      );
-                    },
-                  );
-                },
+              child: FfEmptyState(
+                icon: Icons.receipt_long_outlined,
+                title: 'No expenses in this cycle',
+                description:
+                    'Transactions categorized under "${budget.categoryName ?? 'this category'}" will automatically appear here.',
               ),
+            )
+          else
+            FfGroupedContainer(
+              children:
+                  matchingTransactions.map((tx) {
+                    return FfListRow(
+                      leading: FfCategoryTile(
+                        iconIdentifier: tx.categoryIcon,
+                        colorTokenIdentifier: tx.categoryColor,
+                        size: 36,
+                      ),
+                      title: tx.merchant,
+                      subtitle: DateFormatter.formatFullDate(tx.date),
+                      trailing: FfAmountText(
+                        amount: tx.amount,
+                        type: tx.type,
+                        size: FfAmountSize.sm,
+                      ),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (_) => TransactionDetailScreen(transaction: tx),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
             ),
-          ],
 
           const SizedBox(height: StillwaterTokens.space3Xl),
         ],

@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/transaction.dart';
-import '../settings/settings_controller.dart';
+import '../../repositories/transaction_repository.dart';
+import '../accounts/accounts_controller.dart';
+import 'transaction_list_utils.dart';
+
+enum TransactionSort { newest, oldest, amountHigh, amountLow }
 
 class TransactionFilterState {
   final String searchQuery;
@@ -9,6 +13,9 @@ class TransactionFilterState {
   final String? selectedAccountId;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String? paymentMethod;
+  final String? tag;
+  final TransactionSort sort;
 
   const TransactionFilterState({
     this.searchQuery = '',
@@ -17,6 +24,9 @@ class TransactionFilterState {
     this.selectedAccountId,
     this.startDate,
     this.endDate,
+    this.paymentMethod,
+    this.tag,
+    this.sort = TransactionSort.newest,
   });
 
   TransactionFilterState copyWith({
@@ -30,6 +40,11 @@ class TransactionFilterState {
     DateTime? startDate,
     DateTime? endDate,
     bool clearDates = false,
+    String? paymentMethod,
+    bool clearPaymentMethod = false,
+    String? tag,
+    bool clearTag = false,
+    TransactionSort? sort,
   }) {
     return TransactionFilterState(
       searchQuery: searchQuery ?? this.searchQuery,
@@ -42,6 +57,10 @@ class TransactionFilterState {
           clearAccount ? null : (selectedAccountId ?? this.selectedAccountId),
       startDate: clearDates ? null : (startDate ?? this.startDate),
       endDate: clearDates ? null : (endDate ?? this.endDate),
+      paymentMethod:
+          clearPaymentMethod ? null : (paymentMethod ?? this.paymentMethod),
+      tag: clearTag ? null : (tag ?? this.tag),
+      sort: sort ?? this.sort,
     );
   }
 
@@ -51,7 +70,19 @@ class TransactionFilterState {
       selectedCategoryId != null ||
       selectedAccountId != null ||
       startDate != null ||
-      endDate != null;
+      endDate != null ||
+      paymentMethod != null ||
+      tag != null ||
+      sort != TransactionSort.newest;
+
+  bool get hasAdvancedFilters =>
+      selectedCategoryId != null ||
+      selectedAccountId != null ||
+      startDate != null ||
+      endDate != null ||
+      paymentMethod != null ||
+      tag != null ||
+      sort != TransactionSort.newest;
 }
 
 final transactionFilterProvider = StateProvider<TransactionFilterState>((ref) {
@@ -61,14 +92,14 @@ final transactionFilterProvider = StateProvider<TransactionFilterState>((ref) {
 final filteredTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
   final filter = ref.watch(transactionFilterProvider);
   final repo = ref.watch(transactionRepositoryProvider);
+  final accounts = ref.watch(rawAccountsStreamProvider).value ?? const [];
 
-  return repo.watchSearchAndFilterTransactions(
-    query: filter.searchQuery,
-    type: filter.selectedType,
-    categoryId: filter.selectedCategoryId,
-    accountId: filter.selectedAccountId,
-    startDate: filter.startDate,
-    endDate: filter.endDate,
+  return repo.watchAllTransactions().map(
+    (transactions) => applyTransactionFilter(
+      transactions: transactions,
+      filter: filter,
+      accounts: accounts,
+    ),
   );
 });
 

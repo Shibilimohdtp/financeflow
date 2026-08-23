@@ -89,9 +89,7 @@ class StillwaterTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: StillwaterColors.lightPrimary,
           foregroundColor: StillwaterColors.lightOnPrimary,
-          minimumSize: const Size.fromHeight(
-            StillwaterTokens.buttonHeightPrimary,
-          ),
+          minimumSize: const Size(0, StillwaterTokens.buttonHeightPrimary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
           ),
@@ -104,9 +102,7 @@ class StillwaterTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: StillwaterColors.lightPrimary,
-          minimumSize: const Size.fromHeight(
-            StillwaterTokens.buttonHeightPrimary,
-          ),
+          minimumSize: const Size(0, StillwaterTokens.buttonHeightPrimary),
           side: const BorderSide(
             color: StillwaterColors.lightBorderDefault,
             width: StillwaterTokens.borderWidthDefault,
@@ -182,29 +178,31 @@ class StillwaterTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: StillwaterColors.lightSurfaceDefault,
         elevation: 0,
-        height: 68,
+        height: 72,
         indicatorColor: StillwaterColors.lightSurfaceTintPrimary,
+        indicatorShape: const StadiumBorder(),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return textTheme.labelSmall?.copyWith(
+            return textTheme.labelMedium?.copyWith(
               color: StillwaterColors.lightPrimary,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             );
           }
-          return textTheme.labelSmall?.copyWith(
+          return textTheme.labelMedium?.copyWith(
             color: StillwaterColors.lightTextSecondary,
+            fontWeight: FontWeight.w600,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(
               color: StillwaterColors.lightPrimary,
-              size: 24,
+              size: 22,
             );
           }
           return const IconThemeData(
             color: StillwaterColors.lightTextSecondary,
-            size: 24,
+            size: 22,
           );
         }),
       ),
@@ -218,7 +216,7 @@ class StillwaterTheme {
         ),
         dragHandleColor: StillwaterColors.lightBorderStrong,
         dragHandleSize: Size(32, 4),
-        showDragHandle: true,
+        showDragHandle: false,
       ),
       dialogTheme: DialogTheme(
         backgroundColor: StillwaterColors.lightSurfaceElevated,
@@ -333,9 +331,7 @@ class StillwaterTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: StillwaterColors.darkPrimary,
           foregroundColor: StillwaterColors.darkOnPrimary,
-          minimumSize: const Size.fromHeight(
-            StillwaterTokens.buttonHeightPrimary,
-          ),
+          minimumSize: const Size(0, StillwaterTokens.buttonHeightPrimary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
           ),
@@ -348,9 +344,7 @@ class StillwaterTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: StillwaterColors.darkPrimary,
-          minimumSize: const Size.fromHeight(
-            StillwaterTokens.buttonHeightPrimary,
-          ),
+          minimumSize: const Size(0, StillwaterTokens.buttonHeightPrimary),
           side: const BorderSide(
             color: StillwaterColors.darkBorderDefault,
             width: StillwaterTokens.borderWidthDefault,
@@ -426,29 +420,31 @@ class StillwaterTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: StillwaterColors.darkSurfaceDefault,
         elevation: 0,
-        height: 68,
+        height: 72,
         indicatorColor: StillwaterColors.darkSurfaceTintPrimary,
+        indicatorShape: const StadiumBorder(),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return textTheme.labelSmall?.copyWith(
+            return textTheme.labelMedium?.copyWith(
               color: StillwaterColors.darkPrimary,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             );
           }
-          return textTheme.labelSmall?.copyWith(
+          return textTheme.labelMedium?.copyWith(
             color: StillwaterColors.darkTextSecondary,
+            fontWeight: FontWeight.w600,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(
               color: StillwaterColors.darkPrimary,
-              size: 24,
+              size: 22,
             );
           }
           return const IconThemeData(
             color: StillwaterColors.darkTextSecondary,
-            size: 24,
+            size: 22,
           );
         }),
       ),
@@ -462,7 +458,7 @@ class StillwaterTheme {
         ),
         dragHandleColor: StillwaterColors.darkBorderStrong,
         dragHandleSize: Size(32, 4),
-        showDragHandle: true,
+        showDragHandle: false,
       ),
       dialogTheme: DialogTheme(
         backgroundColor: StillwaterColors.darkSurfaceElevated,

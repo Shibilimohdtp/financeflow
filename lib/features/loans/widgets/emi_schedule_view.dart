@@ -45,10 +45,7 @@ class EmiScheduleView extends ConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(
-            context,
-            message: 'Failed to record payment: $e',
-          );
+          FfSnackbar.show(context, message: 'Failed to record payment: $e');
         }
       }
     }
@@ -80,8 +77,7 @@ class EmiScheduleView extends ConsumerWidget {
         if (context.mounted) {
           FfSnackbar.show(
             context,
-            message:
-                'Recorded ${overdueItems.length} overdue EMI payments.',
+            message: 'Recorded ${overdueItems.length} overdue EMI payments.',
           );
         }
       } catch (e) {
@@ -105,9 +101,7 @@ class EmiScheduleView extends ConsumerWidget {
     final upcomingItems = schedule.where((it) => it.isUpcoming).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${loan.name} Schedule'),
-      ),
+      appBar: AppBar(title: Text('${loan.name} Schedule')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -124,13 +118,17 @@ class EmiScheduleView extends ConsumerWidget {
                 _buildStatBadge(
                   label: '${paidItems.length} Paid',
                   color: context.secColors.verified,
-                  backgroundColor: context.secColors.verified.withValues(alpha: 0.12),
+                  backgroundColor: context.secColors.verified.withValues(
+                    alpha: 0.12,
+                  ),
                 ),
                 if (overdueItems.isNotEmpty)
                   _buildStatBadge(
                     label: '${overdueItems.length} Overdue',
                     color: context.secColors.error,
-                    backgroundColor: context.secColors.error.withValues(alpha: 0.12),
+                    backgroundColor: context.secColors.error.withValues(
+                      alpha: 0.12,
+                    ),
                   ),
                 _buildStatBadge(
                   label: '${upcomingItems.length} Upcoming',
@@ -170,7 +168,8 @@ class EmiScheduleView extends ConsumerWidget {
                   FfButton(
                     label: 'Mark All Paid',
                     size: FfButtonSize.sm,
-                    onPressed: () => _markAllOverduePaid(context, ref, overdueItems),
+                    onPressed:
+                        () => _markAllOverduePaid(context, ref, overdueItems),
                   ),
                 ],
               ),
@@ -198,30 +197,39 @@ class EmiScheduleView extends ConsumerWidget {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                          color: item.isPaid
-                              ? context.secColors.verified.withValues(alpha: 0.15)
-                              : item.isOverdue
-                                  ? context.secColors.error.withValues(alpha: 0.15)
-                                  : theme.colorScheme.primary.withValues(alpha: 0.08),
+                          color:
+                              item.isPaid
+                                  ? context.secColors.verified.withValues(
+                                    alpha: 0.15,
+                                  )
+                                  : item.isOverdue
+                                  ? context.secColors.error.withValues(
+                                    alpha: 0.15,
+                                  )
+                                  : theme.colorScheme.primary.withValues(
+                                    alpha: 0.08,
+                                  ),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
-                          child: item.isPaid
-                              ? Icon(
-                                  Icons.check_rounded,
-                                  size: 18,
-                                  color: context.secColors.verified,
-                                )
-                              : Text(
-                                  '#${item.monthNumber}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: item.isOverdue
-                                        ? context.secColors.error
-                                        : theme.colorScheme.primary,
+                          child:
+                              item.isPaid
+                                  ? Icon(
+                                    Icons.check_rounded,
+                                    size: 18,
+                                    color: context.secColors.verified,
+                                  )
+                                  : Text(
+                                    '#${item.monthNumber}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          item.isOverdue
+                                              ? context.secColors.error
+                                              : theme.colorScheme.primary,
+                                    ),
                                   ),
-                                ),
                         ),
                       ),
                       const SizedBox(width: StillwaterTokens.spaceMd),
@@ -236,7 +244,10 @@ class EmiScheduleView extends ConsumerWidget {
                                 Text(
                                   DateFormatter.formatFullDate(item.dueDate),
                                   style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: item.isOverdue ? FontWeight.bold : FontWeight.w600,
+                                    fontWeight:
+                                        item.isOverdue
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(width: StillwaterTokens.spaceXs),
@@ -278,10 +289,17 @@ class EmiScheduleView extends ConsumerWidget {
                       if (!item.isPaid) ...[
                         const SizedBox(width: StillwaterTokens.spaceSm),
                         IconButton(
-                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          icon: const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 20,
+                          ),
                           tooltip: 'Mark Installment #${item.monthNumber} Paid',
-                          color: item.isOverdue ? context.secColors.error : theme.colorScheme.primary,
-                          onPressed: () => _markInstallmentPaid(context, ref, item),
+                          color:
+                              item.isOverdue
+                                  ? context.secColors.error
+                                  : theme.colorScheme.primary,
+                          onPressed:
+                              () => _markInstallmentPaid(context, ref, item),
                         ),
                       ],
                     ],

@@ -7,8 +7,12 @@ import '../../models/loan.dart';
 import '../../repositories/loan_repository.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loan_detail_screen.dart';
 import 'loans_controller.dart';
@@ -20,6 +24,7 @@ class LoansScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => const AddEditLoanSheet(),
     );
   }
@@ -46,6 +51,13 @@ class LoansScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'loans_add_fab',
+        tooltip: 'Add loan',
+        onPressed: () => _openAddSheet(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Loan'),
+      ),
       body: loansAsync.when(
         data: (loans) {
           final activeLoans =
@@ -54,26 +66,60 @@ class LoansScreen extends ConsumerWidget {
               loans.where((l) => l.status != LoanStatus.active).toList();
 
           return ListView(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.fromLTRB(
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceMd,
+              StillwaterTokens.spaceLg,
+              104,
+            ),
             children: [
-              // Total Outstanding Principal Hero Card
+              // ── 1. Summary Hero ─────────────────────────────────────────
               FfCard(
                 variant: FfCardVariant.elevated,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Total Outstanding Debt',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'TOTAL OUTSTANDING DEBT',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            letterSpacing: 1.1,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (summary.activeLoansCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: StillwaterTokens.spaceSm,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusFull,
+                              ),
+                            ),
+                            child: Text(
+                              '${summary.activeLoansCount} active',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: StillwaterTokens.space2Xs),
+                    const SizedBox(height: StillwaterTokens.spaceXs),
                     Text(
                       CurrencyFormatter.formatINR(summary.totalOutstanding),
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                      style: StillwaterTypography.numHero(
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: StillwaterTokens.spaceSm),
@@ -84,12 +130,13 @@ class LoansScreen extends ConsumerWidget {
                           'Monthly EMI: ${CurrencyFormatter.formatINR(summary.totalMonthlyEmi)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.secondary,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
-                          '${summary.activeLoansCount} active loans',
+                          '${loans.length} total ${loans.length == 1 ? 'record' : 'records'}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.secondary,
                           ),
                         ),
                       ],
@@ -101,25 +148,23 @@ class LoansScreen extends ConsumerWidget {
               const SizedBox(height: StillwaterTokens.spaceLg),
 
               if (loans.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.space2Xl,
-                    ),
-                    child: FfEmptyState(
-                      icon: Icons.account_balance_outlined,
-                      title: 'No loans or EMIs recorded',
-                      description:
-                          'Track home loans, personal loans, vehicle loans, and credit card EMIs completely on-device.',
-                      actionLabel: 'Add Loan',
-                      onAction: () => _openAddSheet(context),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: StillwaterTokens.space2Xl,
+                  ),
+                  child: FfEmptyState(
+                    icon: Icons.account_balance_outlined,
+                    title: 'No loans or EMIs recorded',
+                    description:
+                        'Track home loans, personal loans, vehicle loans, and credit card EMIs completely on-device.',
+                    actionLabel: 'Add Loan',
+                    onAction: () => _openAddSheet(context),
                   ),
                 )
               else ...[
+                // ── 2. Active Loans ─────────────────────────────────────────
                 if (activeLoans.isNotEmpty) ...[
-                  Text('Active Loans', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
+                  const FfSectionHeader(title: 'Active Loans'),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -129,7 +174,14 @@ class LoansScreen extends ConsumerWidget {
                             const SizedBox(height: StillwaterTokens.spaceSm),
                     itemBuilder: (context, index) {
                       final loan = activeLoans[index];
-                      final days = loan.daysUntilDue();
+                      final isOverdue = loan.nextDueDate.isBefore(
+                        DateTime.now(),
+                      );
+                      final paidProgress =
+                          loan.principalAmount > 0
+                              ? (loan.totalPrincipalPaid / loan.principalAmount)
+                                  .clamp(0.0, 1.0)
+                              : 0.0;
 
                       return FfCard(
                         onTap: () => _openDetail(context, loan),
@@ -137,8 +189,24 @@ class LoansScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Container(
+                                  width: StillwaterTokens.iconTileSize,
+                                  height: StillwaterTokens.iconTileSize,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primaryContainer
+                                        .withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusSm,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    _getLoanTypeIcon(loan.loanType),
+                                    size: 20,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: StillwaterTokens.spaceMd),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -146,12 +214,14 @@ class LoansScreen extends ConsumerWidget {
                                     children: [
                                       Text(
                                         loan.name,
-                                        style: theme.textTheme.titleMedium,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
+                                      const SizedBox(height: 2),
                                       Text(
-                                        '${loan.lender} · ${loan.loanType.displayName}',
+                                        '${loan.lender} · ${loan.interestRate}% ${loan.interestType.displayName.toLowerCase()}',
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color:
@@ -168,14 +238,13 @@ class LoansScreen extends ConsumerWidget {
                                       CurrencyFormatter.formatINR(
                                         loan.outstandingPrincipal,
                                       ),
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                      style: StillwaterTypography.numMd(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
                                     ),
                                     Text(
                                       'EMI: ${CurrencyFormatter.formatINR(loan.emiAmount)}',
-                                      style: theme.textTheme.bodySmall
+                                      style: theme.textTheme.labelSmall
                                           ?.copyWith(
                                             color: theme.colorScheme.secondary,
                                           ),
@@ -184,38 +253,58 @@ class LoansScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceSm),
-                            LinearProgressIndicator(
-                              value: loan.progressPercentage,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              color: context.secColors.verified,
-                              minHeight: 4,
-                              borderRadius: BorderRadius.circular(2),
+                            const SizedBox(height: StillwaterTokens.spaceMd),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusFull,
+                              ),
+                              child: LinearProgressIndicator(
+                                value: paidProgress,
+                                backgroundColor:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                color: theme.colorScheme.primary,
+                                minHeight: 6,
+                              ),
                             ),
-                            const SizedBox(height: StillwaterTokens.space2Xs),
+                            const SizedBox(height: StillwaterTokens.spaceSm),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  days < 0
-                                      ? 'Overdue: ${DateFormatter.formatTransactionDate(loan.nextDueDate)} (${days.abs()}d ago)'
-                                      : 'Next due: ${DateFormatter.formatTransactionDate(loan.nextDueDate)} (${days == 0 ? "Today" : (days == 1 ? "Tomorrow" : "in $days d")})',
+                                  '${(paidProgress * 100).toStringAsFixed(0)}% paid off',
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 11,
-                                    fontWeight: days < 0 ? FontWeight.bold : FontWeight.normal,
-                                    color:
-                                        days <= 3
-                                            ? context.secColors.error
-                                            : theme.colorScheme.secondary,
+                                    color: theme.colorScheme.secondary,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                Text(
-                                  '${(loan.progressPercentage * 100).toStringAsFixed(0)}% paid',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 11,
+                                if (isOverdue)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: context.finColors.expenseContainer,
+                                      borderRadius: BorderRadius.circular(
+                                        StillwaterTokens.radiusXs,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Overdue',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: context.finColors.expense,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    'Due on ${loan.paymentDay}th',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.secondary,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ],
@@ -225,72 +314,75 @@ class LoansScreen extends ConsumerWidget {
                   ),
                 ],
 
+                // ── 3. Closed / Archived Loans ──────────────────────────────
                 if (closedLoans.isNotEmpty) ...[
                   const SizedBox(height: StillwaterTokens.space2Xl),
-                  Text(
-                    'Paid Off & Archived',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: closedLoans.length,
-                    separatorBuilder:
-                        (_, __) =>
-                            const SizedBox(height: StillwaterTokens.spaceSm),
-                    itemBuilder: (context, index) {
-                      final loan = closedLoans[index];
-                      return FfCard(
-                        onTap: () => _openDetail(context, loan),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle_rounded,
-                              color: context.secColors.verified,
-                              size: 24,
-                            ),
-                            const SizedBox(width: StillwaterTokens.spaceMd),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    loan.name,
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                  Text(
-                                    '${loan.lender} · Paid Off',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: context.secColors.verified,
-                                    ),
-                                  ),
-                                ],
+                  const FfSectionHeader(title: 'Paid Off & Archived'),
+                  FfGroupedContainer(
+                    children:
+                        closedLoans.map((loan) {
+                          return FfListRow(
+                            leading: Container(
+                              width: StillwaterTokens.iconTileSize,
+                              height: StillwaterTokens.iconTileSize,
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(
+                                  StillwaterTokens.radiusSm,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.check_circle_outline_rounded,
+                                size: 20,
+                                color: context.finColors.income,
                               ),
                             ),
-                            Text(
-                              CurrencyFormatter.formatINR(loan.principalAmount),
-                              style: theme.textTheme.titleSmall,
+                            title: loan.name,
+                            subtitle:
+                                '${loan.lender} · Closed ${DateFormatter.formatShortDate(loan.updatedAt)}',
+                            trailingText: CurrencyFormatter.formatINR(
+                              loan.principalAmount,
                             ),
-                          ],
-                        ),
-                      );
-                    },
+                            onTap: () => _openDetail(context, loan),
+                          );
+                        }).toList(),
                   ),
                 ],
               ],
+
+              const SizedBox(height: StillwaterTokens.space4Xl),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading:
+            () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                child: CircularProgressIndicator(),
+              ),
+            ),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'loans_add_fab',
-        onPressed: () => _openAddSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Loan'),
-      ),
     );
+  }
+
+  static IconData _getLoanTypeIcon(LoanType type) {
+    switch (type) {
+      case LoanType.homeLoan:
+        return Icons.home_outlined;
+      case LoanType.personalLoan:
+        return Icons.person_outline_rounded;
+      case LoanType.vehicleLoan:
+        return Icons.directions_car_outlined;
+      case LoanType.educationLoan:
+        return Icons.school_outlined;
+      case LoanType.creditCardEmi:
+        return Icons.credit_card_outlined;
+      case LoanType.bnpl:
+        return Icons.shopping_bag_outlined;
+      case LoanType.other:
+        return Icons.handshake_outlined;
+    }
   }
 }

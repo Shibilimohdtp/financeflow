@@ -212,7 +212,10 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       final payments = await _repository.getPaymentsForLoan(loan.id);
-      final schedule = LoanCalculator.generateSchedule(loan, payments: payments);
+      final schedule = LoanCalculator.generateSchedule(
+        loan,
+        payments: payments,
+      );
       final unpaid =
           schedule.where((it) => it.status != EmiPaymentStatus.paid).toList();
 

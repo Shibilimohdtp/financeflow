@@ -62,11 +62,13 @@ class FfButton extends StatelessWidget {
                   leadingIcon!,
                   const SizedBox(width: StillwaterTokens.spaceXs),
                 ],
-                Text(
-                  label,
-                  style: TextStyle(fontSize: fontSize),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(fontSize: fontSize),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
               ],
             );

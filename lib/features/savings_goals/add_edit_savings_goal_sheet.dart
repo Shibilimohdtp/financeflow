@@ -6,11 +6,11 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/savings_goal.dart';
-import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_button.dart';
+import '../../repositories/account_repository.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
-import '../accounts/accounts_controller.dart';
 import 'savings_goals_controller.dart';
 
 class AddEditSavingsGoalSheet extends ConsumerStatefulWidget {
@@ -25,17 +25,16 @@ class AddEditSavingsGoalSheet extends ConsumerStatefulWidget {
 
 class _AddEditSavingsGoalSheetState
     extends ConsumerState<AddEditSavingsGoalSheet> {
-  late TextEditingController _nameController;
-  late TextEditingController _amountController;
-  late TextEditingController _notesController;
-  DateTime _targetDate = DateTime.now().add(
-    const Duration(days: 180),
-  ); // default 6 months
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _amountController;
+  late final TextEditingController _notesController;
+  late DateTime _targetDate;
   Account? _selectedAccount;
-
-  String? _nameError;
-  String? _amountError;
+  bool _showAdvanced = false;
   bool _isSubmitting = false;
+
+  bool get isEditing => widget.initialGoal != null;
 
   @override
   void initState() {
@@ -45,16 +44,18 @@ class _AddEditSavingsGoalSheetState
     _amountController = TextEditingController(
       text:
           initial != null
-              ? initial.targetAmount.toStringAsFixed(
-                initial.targetAmount.truncateToDouble() == initial.targetAmount
-                    ? 0
-                    : 2,
-              )
+              ? (initial.targetAmount.truncateToDouble() == initial.targetAmount
+                  ? initial.targetAmount.toInt().toString()
+                  : initial.targetAmount.toString())
               : '',
     );
     _notesController = TextEditingController(text: initial?.notes ?? '');
     _targetDate =
         initial?.targetDate ?? DateTime.now().add(const Duration(days: 180));
+    _showAdvanced =
+        initial != null &&
+        ((initial.notes?.isNotEmpty ?? false) ||
+            initial.linkedAccountId != null);
   }
 
   @override
@@ -65,31 +66,29 @@ class _AddEditSavingsGoalSheetState
     super.dispose();
   }
 
+  Future<void> _selectTargetDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _targetDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked != null) {
+      setState(() => _targetDate = picked);
+    }
+  }
+
   Future<void> _submit() async {
-    setState(() {
-      _nameError = null;
-      _amountError = null;
-    });
+    if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() {
-        _nameError = 'Goal name is required.';
-      });
-      return;
-    }
-
     final amount = CurrencyFormatter.parse(_amountController.text);
     if (amount == null || amount <= 0) {
-      setState(() {
-        _amountError = 'Please enter a target amount greater than zero.';
-      });
+      FfSnackbar.show(context, message: 'Please enter a valid target amount.');
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       final now = DateTime.now();
@@ -98,7 +97,8 @@ class _AddEditSavingsGoalSheetState
         name: name,
         targetAmount: amount,
         targetDate: _targetDate,
-        linkedAccountId: _selectedAccount?.id,
+        linkedAccountId:
+            _selectedAccount?.id ?? widget.initialGoal?.linkedAccountId,
         notes:
             _notesController.text.trim().isNotEmpty
                 ? _notesController.text.trim()
@@ -115,15 +115,13 @@ class _AddEditSavingsGoalSheetState
         FfSnackbar.show(
           context,
           message:
-              widget.initialGoal != null
-                  ? 'Goal updated on this device.'
-                  : 'Goal created on this device.',
+              isEditing
+                  ? 'Savings goal updated.'
+                  : 'Savings goal created on-device.',
         );
       }
     } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
+      setState(() => _isSubmitting = false);
       if (mounted) {
         FfSnackbar.show(context, message: 'Could not save goal: $e');
       }
@@ -133,183 +131,242 @@ class _AddEditSavingsGoalSheetState
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
+    final accountsAsync = ref.watch(allAccountsStreamProvider);
 
-    if (_selectedAccount == null &&
-        widget.initialGoal?.linkedAccountId != null) {
-      _selectedAccount =
-          accounts
-              .where((a) => a.id == widget.initialGoal!.linkedAccountId)
-              .firstOrNull;
-    }
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                  vertical: StillwaterTokens.spaceSm,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.initialGoal != null
-                          ? 'Edit Savings Goal'
-                          : 'New Savings Goal',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
+              FfSheetHeader(
+                title: isEditing ? 'Edit Savings Goal' : 'Create Savings Goal',
+                subtitle: 'Track savings progress on-device',
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, thickness: 1),
 
-              // Form fields
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                  children: [
-                    // Target Amount Field
-                    FfAmountField(
-                      controller: _amountController,
-                      errorText: _amountError,
-                      autoFocus: widget.initialGoal == null,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Goal Name
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Goal Name *',
-                        hintText: 'e.g. Emergency Fund, New Laptop, Vacation',
-                        errorText: _nameError,
-                        prefixIcon: const Icon(Icons.flag_outlined),
-                      ),
-                      textCapitalization: TextCapitalization.sentences,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Target Date Selector
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event_outlined),
-                      title: const Text('Target Date'),
-                      subtitle: Text(
-                        DateFormat('dd MMMM yyyy').format(_targetDate),
-                      ),
-                      trailing: const Icon(Icons.edit_calendar_rounded),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _targetDate,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2040),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _targetDate = picked;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-
-                    // Optional Linked Account
-                    Text(
-                      'Linked Account (Optional)',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.space2Xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<Account?>(
-                          isExpanded: true,
-                          value: _selectedAccount,
-                          items: [
-                            const DropdownMenuItem<Account?>(
-                              value: null,
-                              child: Text('None (General Goal)'),
-                            ),
-                            ...accounts.map((acc) {
-                              return DropdownMenuItem<Account?>(
-                                value: acc,
-                                child: Text(acc.name),
-                              );
-                            }),
-                          ],
-                          onChanged: (acc) {
-                            setState(() {
-                              _selectedAccount = acc;
-                            });
+              // Form Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StillwaterTokens.spaceLg,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Goal Name
+                        _SectionLabel(label: 'Goal Name'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        TextFormField(
+                          controller: _nameController,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: const InputDecoration(
+                            hintText:
+                                'e.g. Emergency Fund, Japan Trip, Vehicle',
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please enter goal name';
+                            }
+                            return null;
                           },
                         ),
-                      ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Target Amount
+                        _SectionLabel(label: 'Target Amount (₹)'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        TextFormField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: '100000',
+                            prefixText: '₹ ',
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please enter target amount';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Target Date
+                        _SectionLabel(label: 'Target Date'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        InkWell(
+                          onTap: _selectTargetDate,
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusMd,
+                          ),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: StillwaterTokens.spaceMd,
+                                vertical: StillwaterTokens.spaceSm,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  StillwaterTokens.radiusMd,
+                                ),
+                              ),
+                              suffixIcon: const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 18,
+                              ),
+                            ),
+                            child: Text(
+                              DateFormat('dd MMMM yyyy').format(_targetDate),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Optional Details toggle
+                        InkWell(
+                          onTap:
+                              () => setState(
+                                () => _showAdvanced = !_showAdvanced,
+                              ),
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusMd,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: StillwaterTokens.spaceXs,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _showAdvanced
+                                      ? Icons.keyboard_arrow_up_rounded
+                                      : Icons.keyboard_arrow_down_rounded,
+                                  size: 20,
+                                  color: theme.colorScheme.secondary,
+                                ),
+                                const SizedBox(width: StillwaterTokens.spaceXs),
+                                Text(
+                                  _showAdvanced
+                                      ? 'Hide optional fields'
+                                      : 'Dedicated Account & Notes (Optional)',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        if (_showAdvanced) ...[
+                          const SizedBox(height: StillwaterTokens.spaceSm),
+                          // Dedicated Target Account
+                          accountsAsync.when(
+                            data: (accounts) {
+                              final activeAccounts =
+                                  accounts.where((a) => !a.isArchived).toList();
+                              return DropdownButtonFormField<Account>(
+                                value: _selectedAccount,
+                                decoration: InputDecoration(
+                                  labelText: 'Dedicated Savings Account',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: StillwaterTokens.spaceMd,
+                                    vertical: StillwaterTokens.spaceSm,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusMd,
+                                    ),
+                                  ),
+                                ),
+                                items: [
+                                  const DropdownMenuItem(
+                                    value: null,
+                                    child: Text('No dedicated account'),
+                                  ),
+                                  ...activeAccounts.map(
+                                    (a) => DropdownMenuItem(
+                                      value: a,
+                                      child: Text(a.name),
+                                    ),
+                                  ),
+                                ],
+                                onChanged:
+                                    (val) =>
+                                        setState(() => _selectedAccount = val),
+                              );
+                            },
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                          ),
+
+                          const SizedBox(height: StillwaterTokens.spaceMd),
+
+                          // Notes
+                          TextFormField(
+                            controller: _notesController,
+                            maxLines: 2,
+                            decoration: const InputDecoration(
+                              labelText: 'Notes',
+                              hintText: 'e.g. Set aside 10% bonus each quarter',
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: StillwaterTokens.spaceMd),
+                      ],
                     ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Notes Field
-                    TextField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes (Optional)',
-                        hintText: 'Add details or motivation for this goal',
-                        prefixIcon: Icon(Icons.notes_rounded),
-                      ),
-                      maxLines: 2,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.space2Xl),
-
-                    // Save Button
-                    FfButton(
-                      label:
-                          widget.initialGoal != null
-                              ? 'Save Changes'
-                              : 'Create Goal',
-                      isLoading: _isSubmitting,
-                      onPressed: _submit,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-                  ],
+                  ),
                 ),
+              ),
+              FfSheetFooter(
+                secondaryLabel: 'Cancel',
+                primaryLabel: isEditing ? 'Save Changes' : 'Create Goal',
+                isPrimaryLoading: _isSubmitting,
+                onPrimaryPressed: _isSubmitting ? null : _submit,
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      child: Text(
+        label.toUpperCase(),
+        style: context.textTheme.labelSmall?.copyWith(
+          letterSpacing: 0.8,
+          color: context.theme.colorScheme.secondary,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 }

@@ -7,11 +7,11 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/goal_contribution.dart';
 import '../../models/savings_goal.dart';
-import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_button.dart';
+import '../../repositories/account_repository.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
-import '../accounts/accounts_controller.dart';
 import 'savings_goals_controller.dart';
 
 class AddGoalContributionSheet extends ConsumerStatefulWidget {
@@ -26,12 +26,11 @@ class AddGoalContributionSheet extends ConsumerStatefulWidget {
 
 class _AddGoalContributionSheetState
     extends ConsumerState<AddGoalContributionSheet> {
-  late TextEditingController _amountController;
-  late TextEditingController _notesController;
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _amountController;
+  late final TextEditingController _notesController;
   DateTime _date = DateTime.now();
   Account? _selectedAccount;
-
-  String? _amountError;
   bool _isSubmitting = false;
 
   @override
@@ -48,22 +47,28 @@ class _AddGoalContributionSheetState
     super.dispose();
   }
 
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+    );
+    if (picked != null) {
+      setState(() => _date = picked);
+    }
+  }
+
   Future<void> _submit() async {
-    setState(() {
-      _amountError = null;
-    });
+    if (!_formKey.currentState!.validate()) return;
 
     final amount = CurrencyFormatter.parse(_amountController.text);
     if (amount == null || amount <= 0) {
-      setState(() {
-        _amountError = 'Please enter a contribution amount greater than zero.';
-      });
+      FfSnackbar.show(context, message: 'Please enter a valid deposit amount.');
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       final contribution = GoalContribution(
@@ -88,13 +93,11 @@ class _AddGoalContributionSheetState
         FfSnackbar.show(
           context,
           message:
-              'Added contribution of ${CurrencyFormatter.format(amount)} to "${widget.goal.name}".',
+              'Added deposit of ${CurrencyFormatter.formatINR(amount)} to "${widget.goal.name}".',
         );
       }
     } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
+      setState(() => _isSubmitting = false);
       if (mounted) {
         FfSnackbar.show(context, message: 'Could not save contribution: $e');
       }
@@ -104,160 +107,185 @@ class _AddGoalContributionSheetState
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
+    final accountsAsync = ref.watch(allAccountsStreamProvider);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                  vertical: StillwaterTokens.spaceSm,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Add Contribution', style: theme.textTheme.titleLarge),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
+              FfSheetHeader(
+                title: 'Add Funds',
+                subtitle: 'Contributing to "${widget.goal.name}"',
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, thickness: 1),
 
-              // Form
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                  children: [
-                    Text(
-                      'Contributing towards "${widget.goal.name}"',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-
-                    // Amount
-                    FfAmountField(
-                      controller: _amountController,
-                      errorText: _amountError,
-                      autoFocus: true,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Date Selector
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today_outlined),
-                      title: const Text('Date'),
-                      subtitle: Text(DateFormat('dd MMMM yyyy').format(_date)),
-                      trailing: const Icon(Icons.edit_calendar_rounded),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _date,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 30),
+              // Form Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StillwaterTokens.spaceLg,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Deposit Amount
+                        _SectionLabel(label: 'Deposit Amount (₹)'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        TextFormField(
+                          controller: _amountController,
+                          autofocus: true,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
                           ),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _date = picked;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-
-                    // Optional Source Account
-                    Text(
-                      'Source Account (Optional)',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.space2Xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<Account?>(
-                          isExpanded: true,
-                          value: _selectedAccount,
-                          items: [
-                            const DropdownMenuItem<Account?>(
-                              value: null,
-                              child: Text('Unlinked / Cash'),
-                            ),
-                            ...accounts.map((acc) {
-                              return DropdownMenuItem<Account?>(
-                                value: acc,
-                                child: Text(acc.name),
-                              );
-                            }),
-                          ],
-                          onChanged: (acc) {
-                            setState(() {
-                              _selectedAccount = acc;
-                            });
+                          decoration: const InputDecoration(
+                            hintText: '5000',
+                            prefixText: '₹ ',
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please enter amount';
+                            }
+                            return null;
                           },
                         ),
-                      ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Date
+                        _SectionLabel(label: 'Deposit Date'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        InkWell(
+                          onTap: _selectDate,
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusMd,
+                          ),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: StillwaterTokens.spaceMd,
+                                vertical: StillwaterTokens.spaceSm,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  StillwaterTokens.radiusMd,
+                                ),
+                              ),
+                              suffixIcon: const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 18,
+                              ),
+                            ),
+                            child: Text(
+                              DateFormat('dd MMMM yyyy').format(_date),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Source Account
+                        _SectionLabel(label: 'Source Account (Optional)'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        accountsAsync.when(
+                          data: (accounts) {
+                            final activeAccounts =
+                                accounts.where((a) => !a.isArchived).toList();
+                            return DropdownButtonFormField<Account>(
+                              value: _selectedAccount,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: StillwaterTokens.spaceMd,
+                                  vertical: StillwaterTokens.spaceSm,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    StillwaterTokens.radiusMd,
+                                  ),
+                                ),
+                              ),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('Direct / Cash Deposit'),
+                                ),
+                                ...activeAccounts.map(
+                                  (a) => DropdownMenuItem(
+                                    value: a,
+                                    child: Text(a.name),
+                                  ),
+                                ),
+                              ],
+                              onChanged:
+                                  (val) =>
+                                      setState(() => _selectedAccount = val),
+                            );
+                          },
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Notes
+                        _SectionLabel(label: 'Notes (Optional)'),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        TextFormField(
+                          controller: _notesController,
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. Monthly salary savings transfer',
+                          ),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceMd),
+                      ],
                     ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Notes
-                    TextField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Note (Optional)',
-                        hintText: 'e.g. Monthly salary transfer, bonus',
-                        prefixIcon: Icon(Icons.notes_rounded),
-                      ),
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.space2Xl),
-
-                    // Submit Button
-                    FfButton(
-                      label: 'Save Contribution',
-                      isLoading: _isSubmitting,
-                      onPressed: _submit,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-                  ],
+                  ),
                 ),
+              ),
+              FfSheetFooter(
+                secondaryLabel: 'Cancel',
+                primaryLabel: 'Confirm Deposit',
+                isPrimaryLoading: _isSubmitting,
+                onPrimaryPressed: _isSubmitting ? null : _submit,
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      child: Text(
+        label.toUpperCase(),
+        style: context.textTheme.labelSmall?.copyWith(
+          letterSpacing: 0.8,
+          color: context.theme.colorScheme.secondary,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 }

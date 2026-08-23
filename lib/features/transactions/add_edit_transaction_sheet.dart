@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -9,17 +10,21 @@ import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../services/categorization_service.dart';
-import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
+import '../../theme/stillwater_colors.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import 'transactions_controller.dart';
 
-/// A mobile-first, local-only entry surface.  Defaults are calculated from the
-/// user's on-device history and are never persisted separately or sent away.
+/// A redesigned, clean, minimal, mobile-first transaction entry surface.
+/// Principles: Calm, Precise, Local-First, Fast.
+///
+/// Daily Entry Target Flow: Amount -> Payee -> Category -> Account -> Save (1-3 taps).
 class AddEditTransactionSheet extends ConsumerStatefulWidget {
   final Transaction? initialTransaction;
 
@@ -37,19 +42,23 @@ class _AddEditTransactionSheetState
   late final TextEditingController _merchantController;
   late final TextEditingController _notesController;
   late final TextEditingController _tagsController;
+
   Category? _selectedCategory;
   Account? _selectedAccount;
   Account? _selectedToAccount;
   DateTime _selectedDate = DateTime.now();
   String _selectedPaymentMethod = 'UPI';
+
   bool _moreDetailsOpen = false;
   bool _isSubmitting = false;
   bool _defaultsApplied = false;
+
   CategorySuggestion? _suggestedCategory;
   String? _amountError;
   String? _merchantError;
   String? _categoryError;
   String? _accountError;
+  String? _toAccountError;
 
   static const _allPaymentMethods = <String>[
     'UPI',
@@ -68,7 +77,7 @@ class _AddEditTransactionSheetState
     final initial = widget.initialTransaction;
     _selectedType = initial?.type ?? TransactionType.expense;
     _amountController = TextEditingController(
-      text: initial == null ? '' : _amountText(initial.amount),
+      text: initial == null ? '' : _formatInitialAmount(initial.amount),
     );
     _merchantController = TextEditingController(text: initial?.merchant ?? '');
     _notesController = TextEditingController(text: initial?.notes ?? '');
@@ -78,10 +87,18 @@ class _AddEditTransactionSheetState
     _selectedDate = initial?.date ?? DateTime.now();
     _selectedPaymentMethod =
         initial?.paymentMethod ?? _defaultPaymentFor(_selectedType);
+
+    if (initial != null &&
+        (initial.notes != null ||
+            initial.tags.isNotEmpty ||
+            initial.paymentMethod != null)) {
+      _moreDetailsOpen = true;
+    }
+
     _merchantController.addListener(_onMerchantChanged);
   }
 
-  String _amountText(double amount) =>
+  String _formatInitialAmount(double amount) =>
       amount == amount.truncateToDouble()
           ? amount.toInt().toString()
           : amount.toStringAsFixed(2);
@@ -112,8 +129,8 @@ class _AddEditTransactionSheetState
       'Other',
     ],
     TransactionType.transfer => const [
-      'UPI',
       'IMPS / NEFT',
+      'UPI',
       'Net Banking',
       'Other',
     ],
@@ -144,6 +161,7 @@ class _AddEditTransactionSheetState
       return;
     }
     _defaultsApplied = true;
+
     final recentForType =
         history.where((tx) => tx.type == _selectedType).toList();
     if (recentForType.isNotEmpty) {
@@ -151,14 +169,22 @@ class _AddEditTransactionSheetState
       _selectedAccount =
           accounts.where((a) => a.id == recent.accountId).firstOrNull ??
           accounts.first;
+
+      final relevant = _prioritizedCategories(categories, history);
       _selectedCategory =
-          categories.where((c) => c.id == recent.categoryId).firstOrNull;
+          relevant.where((c) => c.id == recent.categoryId).firstOrNull ??
+          (relevant.isNotEmpty ? relevant.first : null);
+
       if (recent.paymentMethod != null &&
           _paymentMethods.contains(recent.paymentMethod)) {
         _selectedPaymentMethod = recent.paymentMethod!;
       }
     } else {
       _selectedAccount = accounts.first;
+      final relevant = _prioritizedCategories(categories, history);
+      if (relevant.isNotEmpty) {
+        _selectedCategory = relevant.first;
+      }
     }
   }
 
@@ -180,6 +206,7 @@ class _AddEditTransactionSheetState
             .where((t) => t.type == _selectedType)
             .map((t) => t.categoryId)
             .toList();
+
     relevant.sort((a, b) {
       final ai = recentIds.indexOf(a.id);
       final bi = recentIds.indexOf(b.id);
@@ -196,18 +223,25 @@ class _AddEditTransactionSheetState
     List<Account> accounts,
     List<Transaction> history,
   ) {
+    if (_selectedType == type) return;
+
     setState(() {
       _selectedType = type;
       _categoryError = null;
       _accountError = null;
+      _toAccountError = null;
+
       if (!_paymentMethods.contains(_selectedPaymentMethod)) {
         _selectedPaymentMethod = _defaultPaymentFor(type);
       }
+
       final relevant = _prioritizedCategories(categories, history);
-      if (_needsCategory &&
-          !relevant.any((c) => c.id == _selectedCategory?.id)) {
-        _selectedCategory = relevant.isEmpty ? null : relevant.first;
+      if (_needsCategory) {
+        if (!relevant.any((c) => c.id == _selectedCategory?.id)) {
+          _selectedCategory = relevant.isNotEmpty ? relevant.first : null;
+        }
       }
+
       if (_selectedAccount == null && accounts.isNotEmpty) {
         _selectedAccount = accounts.first;
       }
@@ -218,8 +252,9 @@ class _AddEditTransactionSheetState
     final chosen = await showModalBottomSheet<Category>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder:
-          (context) => _CategoryPicker(
+          (context) => _CategoryPickerSheet(
             categories: categories,
             selected: _selectedCategory,
           ),
@@ -234,29 +269,40 @@ class _AddEditTransactionSheetState
 
   Future<void> _showAccountPicker({
     required List<Account> accounts,
-    required bool destination,
+    required bool isDestination,
   }) async {
     final available =
-        destination && _selectedAccount != null
+        isDestination && _selectedAccount != null
             ? accounts.where((a) => a.id != _selectedAccount!.id).toList()
             : accounts;
+
     final chosen = await showModalBottomSheet<Account>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder:
-          (context) => _AccountPicker(
+          (context) => _AccountPickerSheet(
+            title:
+                isDestination
+                    ? 'Choose destination account'
+                    : 'Choose source account',
             accounts: available,
-            selected: destination ? _selectedToAccount : _selectedAccount,
+            selected: isDestination ? _selectedToAccount : _selectedAccount,
           ),
     );
+
     if (chosen != null && mounted) {
       setState(() {
-        if (destination) {
+        if (isDestination) {
           _selectedToAccount = chosen;
+          _toAccountError = null;
         } else {
           _selectedAccount = chosen;
-          if (_selectedToAccount?.id == chosen.id) _selectedToAccount = null;
+          _accountError = null;
+          if (_selectedToAccount?.id == chosen.id) {
+            _selectedToAccount = null;
+          }
         }
-        _accountError = null;
       });
     }
   }
@@ -264,61 +310,103 @@ class _AddEditTransactionSheetState
   void _setDate(DateTime date) =>
       setState(() => _selectedDate = DateTime(date.year, date.month, date.day));
 
-  Future<void> _pickDate() async {
-    final date = await showDatePicker(
+  Future<void> _pickCustomDate() async {
+    final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            datePickerTheme: DatePickerThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusXl),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
-    if (date != null) _setDate(date);
+    if (picked != null) _setDate(picked);
+  }
+
+  void _swapTransferAccounts() {
+    if (_selectedAccount == null && _selectedToAccount == null) return;
+    setState(() {
+      final temp = _selectedAccount;
+      _selectedAccount = _selectedToAccount;
+      _selectedToAccount = temp;
+      _accountError = null;
+      _toAccountError = null;
+    });
   }
 
   Future<void> _submit() async {
     if (_isSubmitting) return;
+
     setState(() {
       _amountError = null;
       _merchantError = null;
       _categoryError = null;
       _accountError = null;
+      _toAccountError = null;
     });
+
     final amount = CurrencyFormatter.parse(_amountController.text);
     if (amount == null || amount <= 0) {
-      setState(() => _amountError = 'Enter an amount greater than zero.');
+      setState(
+        () => _amountError = 'Please enter an amount greater than zero.',
+      );
       return;
     }
+
     final merchant = _merchantController.text.trim();
     if (merchant.isEmpty) {
       setState(
         () =>
-            _merchantError =
-                _selectedType == TransactionType.transfer
-                    ? 'Enter a transfer reference or recipient.'
-                    : 'Enter a payee or source.',
+            _merchantError = switch (_selectedType) {
+              TransactionType.transfer =>
+                'Enter a transfer reference or recipient.',
+              TransactionType.income => 'Enter a payer or source.',
+              TransactionType.investment =>
+                'Enter the investment name or platform.',
+              TransactionType.loanEmi => 'Enter the lender or loan name.',
+              _ => 'Payee / Merchant name is required.',
+            },
       );
       return;
     }
+
     if (_selectedAccount == null) {
-      setState(() => _accountError = 'Select an account.');
+      setState(() => _accountError = 'Please select an account.');
       return;
     }
-    if (_selectedType == TransactionType.transfer &&
-        _selectedToAccount == null) {
-      setState(() => _accountError = 'Select a destination account.');
-      return;
+
+    if (_selectedType == TransactionType.transfer) {
+      if (_selectedToAccount == null) {
+        setState(
+          () => _toAccountError = 'Please select a destination account.',
+        );
+        return;
+      }
+      if (_selectedAccount!.id == _selectedToAccount!.id) {
+        setState(
+          () =>
+              _toAccountError = 'Source and destination accounts must differ.',
+        );
+        return;
+      }
     }
-    if (_selectedType == TransactionType.transfer &&
-        _selectedAccount!.id == _selectedToAccount!.id) {
-      setState(
-        () => _accountError = 'Source and destination must be different.',
-      );
-      return;
-    }
+
     if (_needsCategory && _selectedCategory == null) {
-      setState(() => _categoryError = 'Select a category.');
+      setState(() => _categoryError = 'Please select a category.');
       return;
     }
+
     setState(() => _isSubmitting = true);
+
     try {
       final now = DateTime.now();
       final tx = Transaction(
@@ -349,6 +437,7 @@ class _AddEditTransactionSheetState
         createdAt: widget.initialTransaction?.createdAt ?? now,
         updatedAt: now,
       );
+
       if (_selectedCategory != null && _needsCategory) {
         CategorizationService.recordUserChoice(
           rawMerchant: merchant,
@@ -358,9 +447,11 @@ class _AddEditTransactionSheetState
           categoryColor: _selectedCategory!.colorTokenIdentifier,
         );
       }
+
       await ref
           .read(transactionsControllerProvider.notifier)
           .saveTransaction(tx);
+
       if (mounted) {
         Navigator.of(context).pop();
         FfSnackbar.show(
@@ -379,9 +470,28 @@ class _AddEditTransactionSheetState
     }
   }
 
+  Color _typeColor(BuildContext context, TransactionType type) {
+    final finColors = context.theme.extension<FfFinColors>();
+    return switch (type) {
+      TransactionType.expense =>
+        finColors?.expense ?? StillwaterColors.lightExpense,
+      TransactionType.income =>
+        finColors?.income ?? StillwaterColors.lightIncome,
+      TransactionType.transfer =>
+        finColors?.transfer ?? StillwaterColors.lightTransfer,
+      TransactionType.investment =>
+        finColors?.investment ?? StillwaterColors.lightInvestment,
+      TransactionType.loanEmi => finColors?.debt ?? StillwaterColors.lightDebt,
+      TransactionType.cash =>
+        finColors?.savings ?? StillwaterColors.lightSavings,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
+    final isDark = theme.brightness == Brightness.dark;
+
     final categories = ref.watch(categoriesStreamProvider).value ?? [];
     final accounts =
         ref
@@ -391,7 +501,9 @@ class _AddEditTransactionSheetState
             .toList() ??
         [];
     final history = ref.watch(allTransactionsStreamProvider).value ?? [];
+
     _applyDefaults(categories, accounts, history);
+
     if (widget.initialTransaction != null) {
       _selectedAccount ??=
           accounts
@@ -406,424 +518,105 @@ class _AddEditTransactionSheetState
               .where((c) => c.id == widget.initialTransaction!.categoryId)
               .firstOrNull;
     }
+
     final categoriesForType = _prioritizedCategories(categories, history);
     final recentPayees =
         history
+            .where((t) => t.type == _selectedType)
             .map((t) => t.merchant)
             .where((m) => m.isNotEmpty)
             .toSet()
             .take(4)
             .toList();
+
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final surfaceColor =
+        isDark
+            ? StillwaterColors.darkSurfaceDefault
+            : StillwaterColors.lightSurfaceDefault;
+    final activeTypeColor = _typeColor(context, _selectedType);
+
+    final saveButtonText =
+        widget.initialTransaction == null
+            ? 'Save ${_selectedType.displayName}'
+            : 'Update ${_selectedType.displayName}';
+
     return DraggableScrollableSheet(
-      initialChildSize: .9,
-      minChildSize: .55,
-      maxChildSize: .96,
+      initialChildSize: 0.92,
+      minChildSize: 0.50,
+      maxChildSize: 0.98,
       expand: false,
       builder:
           (context, scrollController) => Material(
-            color: theme.colorScheme.surface,
+            color: surfaceColor,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(StillwaterTokens.radius2Xl),
             ),
+            clipBehavior: Clip.antiAlias,
             child: SafeArea(
               top: false,
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      StillwaterTokens.spaceLg,
-                      StillwaterTokens.spaceSm,
-                      StillwaterTokens.spaceXs,
-                      StillwaterTokens.spaceSm,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.initialTransaction == null
-                                ? 'Add transaction'
-                                : 'Edit transaction',
-                            style: theme.textTheme.titleLarge,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Close',
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
+                  // 1. Drag handle & Header
+                  _buildHeader(context),
+                  const Divider(height: 1, thickness: 1),
+
+                  // 2. Scrollable Body Form
                   Expanded(
                     child: ListView(
                       controller: scrollController,
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+                      padding: const EdgeInsets.fromLTRB(
+                        StillwaterTokens.spaceLg,
+                        StillwaterTokens.spaceSm,
+                        StillwaterTokens.spaceLg,
+                        StillwaterTokens.spaceXl,
+                      ),
                       children: [
-                        Wrap(
-                          spacing: StillwaterTokens.spaceXs,
-                          runSpacing: StillwaterTokens.spaceXs,
-                          children:
-                              TransactionType.values
-                                  .map(
-                                    (type) => ChoiceChip(
-                                      avatar: Icon(_typeIcon(type), size: 18),
-                                      label: Text(
-                                        type == TransactionType.loanEmi
-                                            ? 'EMI'
-                                            : type.displayName,
-                                      ),
-                                      selected: _selectedType == type,
-                                      onSelected:
-                                          (_) => _changeType(
-                                            type,
-                                            categories,
-                                            accounts,
-                                            history,
-                                          ),
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        const SizedBox(height: StillwaterTokens.spaceXl),
-                        FfAmountField(
-                          controller: _amountController,
-                          autoFocus: true,
-                          labelText: 'Amount',
-                          errorText: _amountError,
-                          onChanged: (_) {
-                            if (_amountError != null) {
-                              setState(() => _amountError = null);
-                            }
-                          },
+                        // Transaction Type Selector Bar
+                        _buildTypeSelector(
+                          categories: categories,
+                          accounts: accounts,
+                          history: history,
                         ),
                         const SizedBox(height: StillwaterTokens.spaceLg),
-                        TextField(
-                          controller: _merchantController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: InputDecoration(
-                            labelText:
-                                _selectedType == TransactionType.income
-                                    ? 'Payer / source'
-                                    : _selectedType == TransactionType.transfer
-                                    ? 'Transfer note / recipient'
-                                    : 'Payee / merchant',
-                            hintText:
-                                _selectedType == TransactionType.transfer
-                                    ? 'e.g. Move to savings'
-                                    : 'Start typing a name',
-                            errorText: _merchantError,
-                            prefixIcon: Icon(
-                              _selectedType == TransactionType.income
-                                  ? Icons.account_circle_outlined
-                                  : Icons.storefront_outlined,
-                            ),
-                            suffixIcon:
-                                _merchantController.text.isEmpty
-                                    ? null
-                                    : IconButton(
-                                      tooltip: 'Clear payee',
-                                      icon: const Icon(Icons.clear_rounded),
-                                      onPressed: _merchantController.clear,
-                                    ),
-                          ),
-                          onChanged: (_) {
-                            if (_merchantError != null) {
-                              setState(() => _merchantError = null);
-                            }
-                          },
-                        ),
-                        if (recentPayees.isNotEmpty &&
-                            _merchantController.text.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: StillwaterTokens.spaceXs,
-                            ),
-                            child: Wrap(
-                              spacing: StillwaterTokens.spaceXs,
-                              children:
-                                  recentPayees
-                                      .map(
-                                        (payee) => ActionChip(
-                                          label: Text(
-                                            payee,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          onPressed:
-                                              () =>
-                                                  _merchantController.text =
-                                                      payee,
-                                        ),
-                                      )
-                                      .toList(),
-                            ),
-                          ),
-                        if (_suggestedCategory != null && _needsCategory)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: StillwaterTokens.spaceXs,
-                            ),
-                            child: TextButton.icon(
-                              onPressed: () {
-                                final match =
-                                    categories
-                                        .where(
-                                          (c) =>
-                                              c.id ==
-                                              _suggestedCategory!.categoryId,
-                                        )
-                                        .firstOrNull;
-                                if (match != null) {
-                                  setState(() {
-                                    _selectedCategory = match;
-                                    _categoryError = null;
-                                  });
-                                }
-                              },
-                              icon: const Icon(
-                                Icons.auto_awesome_rounded,
-                                size: 16,
-                              ),
-                              label: Text(
-                                'Use suggested ${_suggestedCategory!.categoryName}',
-                              ),
-                            ),
-                          ),
+
+                        // Hero Amount Input Card
+                        _buildHeroAmountField(activeTypeColor),
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Merchant / Payee Field
+                        _buildMerchantField(recentPayees),
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // Category Section (if applicable)
                         if (_needsCategory) ...[
+                          _buildCategorySection(categoriesForType),
                           const SizedBox(height: StillwaterTokens.spaceLg),
-                          _FieldButton(
-                            label: 'Category',
-                            error: _categoryError,
-                            value:
-                                _selectedCategory == null
-                                    ? 'Choose category'
-                                    : _selectedCategory!.name,
-                            icon:
-                                _selectedCategory == null
-                                    ? Icons.category_outlined
-                                    : null,
-                            leading:
-                                _selectedCategory == null
-                                    ? null
-                                    : FfCategoryTile(
-                                      iconIdentifier:
-                                          _selectedCategory!.iconIdentifier,
-                                      colorTokenIdentifier:
-                                          _selectedCategory!
-                                              .colorTokenIdentifier,
-                                    ),
-                            onTap: () => _showCategoryPicker(categoriesForType),
-                          ),
-                          if (categoriesForType.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: StillwaterTokens.spaceXs,
-                              ),
-                              child: SizedBox(
-                                height: 42,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: categoriesForType.take(6).length,
-                                  separatorBuilder:
-                                      (_, _) => const SizedBox(
-                                        width: StillwaterTokens.spaceXs,
-                                      ),
-                                  itemBuilder: (_, index) {
-                                    final category = categoriesForType[index];
-                                    return ChoiceChip(
-                                      avatar: FfCategoryTile(
-                                        iconIdentifier: category.iconIdentifier,
-                                        colorTokenIdentifier:
-                                            category.colorTokenIdentifier,
-                                        size: 24,
-                                      ),
-                                      label: Text(category.name),
-                                      selected:
-                                          category.id == _selectedCategory?.id,
-                                      onSelected:
-                                          (_) => setState(() {
-                                            _selectedCategory = category;
-                                            _categoryError = null;
-                                          }),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
                         ],
+
+                        // Account Section (Single or Directional Transfer)
+                        _buildAccountSection(accounts),
                         const SizedBox(height: StillwaterTokens.spaceLg),
-                        _FieldButton(
-                          label:
-                              _selectedType == TransactionType.transfer
-                                  ? 'From account'
-                                  : 'Account',
-                          error: _accountError,
-                          value:
-                              _selectedAccount == null
-                                  ? 'Choose account'
-                                  : _accountTitle(_selectedAccount!),
-                          icon: Icons.account_balance_wallet_outlined,
-                          onTap:
-                              () => _showAccountPicker(
-                                accounts: accounts,
-                                destination: false,
-                              ),
-                        ),
-                        if (_selectedType == TransactionType.transfer) ...[
-                          const SizedBox(height: StillwaterTokens.spaceSm),
-                          _FieldButton(
-                            label: 'To account',
-                            error: _accountError,
-                            value:
-                                _selectedToAccount == null
-                                    ? 'Choose destination'
-                                    : _accountTitle(_selectedToAccount!),
-                            icon: Icons.south_east_rounded,
-                            onTap:
-                                () => _showAccountPicker(
-                                  accounts: accounts,
-                                  destination: true,
-                                ),
-                          ),
-                        ],
+
+                        // Quick Date Selector
+                        _buildDateSection(),
                         const SizedBox(height: StillwaterTokens.spaceLg),
-                        Text('Date', style: theme.textTheme.labelLarge),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        Wrap(
-                          spacing: StillwaterTokens.spaceXs,
-                          runSpacing: StillwaterTokens.spaceXs,
-                          children: [
-                            _DateChip(
-                              label: 'Today',
-                              date: DateTime.now(),
-                              selected: _sameDay(_selectedDate, DateTime.now()),
-                              onTap: _setDate,
-                            ),
-                            _DateChip(
-                              label: 'Yesterday',
-                              date: DateTime.now().subtract(
-                                const Duration(days: 1),
-                              ),
-                              selected: _sameDay(
-                                _selectedDate,
-                                DateTime.now().subtract(
-                                  const Duration(days: 1),
-                                ),
-                              ),
-                              onTap: _setDate,
-                            ),
-                            ActionChip(
-                              avatar: const Icon(
-                                Icons.calendar_month_outlined,
-                                size: 18,
-                              ),
-                              label: Text(
-                                DateFormat('d MMM yyyy').format(_selectedDate),
-                              ),
-                              onPressed: _pickDate,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-                        ExpansionTile(
-                          leading: const Icon(Icons.tune_rounded),
-                          title: const Text('More details'),
-                          subtitle: const Text('Payment method, note and tags'),
-                          initiallyExpanded: _moreDetailsOpen,
-                          onExpansionChanged:
-                              (open) => setState(() => _moreDetailsOpen = open),
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: StillwaterTokens.spaceMd,
-                              ),
-                              child: DropdownButtonFormField<String>(
-                                value:
-                                    _paymentMethods.contains(
-                                          _selectedPaymentMethod,
-                                        )
-                                        ? _selectedPaymentMethod
-                                        : _defaultPaymentFor(_selectedType),
-                                decoration: const InputDecoration(
-                                  labelText: 'Payment method',
-                                  prefixIcon: Icon(Icons.payment_outlined),
-                                ),
-                                items:
-                                    _paymentMethods
-                                        .map(
-                                          (method) => DropdownMenuItem(
-                                            value: method,
-                                            child: Text(method),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setState(
-                                      () => _selectedPaymentMethod = value,
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                            TextField(
-                              controller: _notesController,
-                              maxLines: 2,
-                              decoration: const InputDecoration(
-                                labelText: 'Note',
-                                hintText: 'Invoice number or context',
-                                prefixIcon: Icon(Icons.notes_rounded),
-                              ),
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceMd),
-                            TextField(
-                              controller: _tagsController,
-                              decoration: const InputDecoration(
-                                labelText: 'Tags',
-                                hintText: 'trip, work, reimbursement',
-                                prefixIcon: Icon(Icons.tag_rounded),
-                              ),
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceSm),
-                            Text(
-                              'Split, recurring, attachments and location need model support before they can be saved safely.',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
+
+                        // Progressive Disclosure: Expandable More Details
+                        _buildMoreDetailsSection(),
+
+                        // Bottom spacing for keyboard / safe area
                         SizedBox(
-                          height: StillwaterTokens.spaceLg + bottomInset,
+                          height: StillwaterTokens.spaceMd + bottomInset,
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: EdgeInsets.fromLTRB(
-                      StillwaterTokens.spaceLg,
-                      StillwaterTokens.spaceSm,
-                      StillwaterTokens.spaceLg,
-                      StillwaterTokens.spaceSm + bottomInset,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      border: Border(
-                        top: BorderSide(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                      ),
-                    ),
-                    child: FfButton(
-                      width: double.infinity,
-                      size: FfButtonSize.lg,
-                      isLoading: _isSubmitting,
-                      label:
-                          '${widget.initialTransaction == null ? 'Save' : 'Update'} ${_selectedType.displayName}',
-                      onPressed: _isSubmitting ? null : _submit,
-                    ),
-                  ),
+
+                  // 3. Sticky Action Bar
+                  _buildStickyActionBar(saveButtonText, bottomInset),
                 ],
               ),
             ),
@@ -831,10 +624,713 @@ class _AddEditTransactionSheetState
     );
   }
 
-  String _accountTitle(Account account) =>
-      '${account.name} · ${account.displaySubtitle}';
+  Widget _buildHeader(BuildContext context) {
+    return FfSheetHeader(
+      title:
+          widget.initialTransaction == null
+              ? 'Add Transaction'
+              : 'Edit Transaction',
+      padding: const EdgeInsets.fromLTRB(
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceSm,
+        StillwaterTokens.spaceSm,
+        StillwaterTokens.spaceXs,
+      ),
+      onClose: () => Navigator.of(context).pop(),
+    );
+  }
+
+  Widget _buildTypeSelector({
+    required List<Category> categories,
+    required List<Account> accounts,
+    required List<Transaction> history,
+  }) {
+    final theme = context.theme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children:
+            TransactionType.values.map((type) {
+              final isSelected = _selectedType == type;
+              final typeColor = _typeColor(context, type);
+
+              final label = switch (type) {
+                TransactionType.loanEmi => 'Loan EMI',
+                _ => type.displayName,
+              };
+
+              return Padding(
+                padding: const EdgeInsets.only(
+                  right: StillwaterTokens.space2Xs + 2,
+                ),
+                child: InkWell(
+                  onTap: () => _changeType(type, categories, accounts, history),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusFull,
+                  ),
+                  child: AnimatedContainer(
+                    duration: StillwaterTokens.durationFast,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: StillwaterTokens.spaceSm,
+                      vertical: StillwaterTokens.spaceXs,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected
+                              ? (isDark
+                                  ? typeColor.withValues(alpha: 0.22)
+                                  : typeColor.withValues(alpha: 0.12))
+                              : (isDark
+                                  ? StillwaterColors.darkSurfaceContainerLow
+                                  : StillwaterColors.lightSurfaceContainerLow),
+                      borderRadius: BorderRadius.circular(
+                        StillwaterTokens.radiusFull,
+                      ),
+                      border: Border.all(
+                        color:
+                            isSelected
+                                ? typeColor
+                                : (isDark
+                                    ? StillwaterColors.darkBorderHairline
+                                    : StillwaterColors.lightBorderHairline),
+                        width:
+                            isSelected
+                                ? StillwaterTokens.borderWidthStrong
+                                : StillwaterTokens.borderWidthHairline,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _typeIcon(type),
+                          size: 16,
+                          color:
+                              isSelected
+                                  ? typeColor
+                                  : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: StillwaterTokens.space2Xs),
+                        Text(
+                          label,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color:
+                                isSelected
+                                    ? typeColor
+                                    : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildHeroAmountField(Color activeTypeColor) {
+    final theme = context.theme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Amount', style: theme.textTheme.labelLarge),
+            if (_amountController.text.isNotEmpty)
+              InkWell(
+                onTap: () => setState(() => _amountController.clear()),
+                child: Text(
+                  'Clear',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: StillwaterTokens.space2Xs),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: StillwaterTokens.spaceMd,
+            vertical: StillwaterTokens.spaceSm,
+          ),
+          decoration: BoxDecoration(
+            color:
+                isDark
+                    ? StillwaterColors.darkSurfaceContainerLow
+                    : StillwaterColors.lightSurfaceContainerLow,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            border: Border.all(
+              color:
+                  _amountError != null
+                      ? theme.colorScheme.error
+                      : (isDark
+                          ? StillwaterColors.darkBorderDefault
+                          : StillwaterColors.lightBorderDefault),
+              width:
+                  _amountError != null
+                      ? StillwaterTokens.borderWidthFocus
+                      : StillwaterTokens.borderWidthDefault,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '₹ ',
+                style: StillwaterTypography.numHero(
+                  color: activeTypeColor,
+                ).copyWith(fontSize: 32),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _amountController,
+                  autofocus: widget.initialTransaction == null,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d{0,2}'),
+                    ),
+                  ],
+                  style: StillwaterTypography.numHero(
+                    color: theme.colorScheme.onSurface,
+                  ).copyWith(fontSize: 32),
+                  decoration: const InputDecoration(
+                    hintText: '0',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                  ),
+                  onChanged: (val) {
+                    if (_amountError != null) {
+                      setState(() => _amountError = null);
+                    }
+                  },
+                ),
+              ),
+              if (_amountController.text.isNotEmpty)
+                IconButton(
+                  tooltip: 'Clear amount',
+                  icon: const Icon(Icons.backspace_outlined, size: 20),
+                  onPressed: () {
+                    final text = _amountController.text;
+                    if (text.isNotEmpty) {
+                      setState(() {
+                        _amountController.text = text.substring(
+                          0,
+                          text.length - 1,
+                        );
+                        _amountController
+                            .selection = TextSelection.fromPosition(
+                          TextPosition(offset: _amountController.text.length),
+                        );
+                      });
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+        if (_amountError != null) ...[
+          const SizedBox(height: StillwaterTokens.space2Xs),
+          Text(
+            _amountError!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMerchantField(List<String> recentPayees) {
+    final theme = context.theme;
+
+    final label = switch (_selectedType) {
+      TransactionType.income => 'Payer / Source',
+      TransactionType.transfer => 'Transfer Reference / Recipient',
+      TransactionType.investment => 'Asset / Platform',
+      TransactionType.loanEmi => 'Lender / Loan Name',
+      _ => 'Payee / Merchant',
+    };
+
+    final hint = switch (_selectedType) {
+      TransactionType.income => 'e.g. Employer, Client, Refund',
+      TransactionType.transfer => 'e.g. Move to savings, Shared bill',
+      TransactionType.investment => 'e.g. Zerodha, Parag Parikh Flexi Cap',
+      TransactionType.loanEmi => 'e.g. HDFC Home Loan, Car EMI',
+      _ => 'e.g. Swiggy, Amazon, Groceries',
+    };
+
+    final prefixIcon = switch (_selectedType) {
+      TransactionType.income => Icons.account_circle_outlined,
+      TransactionType.transfer => Icons.swap_horiz_rounded,
+      TransactionType.investment => Icons.trending_up_rounded,
+      TransactionType.loanEmi => Icons.receipt_long_rounded,
+      _ => Icons.storefront_outlined,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _merchantController,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            errorText: _merchantError,
+            prefixIcon: Icon(prefixIcon),
+            suffixIcon:
+                _merchantController.text.isEmpty
+                    ? null
+                    : IconButton(
+                      tooltip: 'Clear payee',
+                      icon: const Icon(Icons.clear_rounded, size: 20),
+                      onPressed: () {
+                        _merchantController.clear();
+                        setState(() => _merchantError = null);
+                      },
+                    ),
+          ),
+          onChanged: (text) {
+            if (_merchantError != null) {
+              setState(() => _merchantError = null);
+            }
+          },
+        ),
+
+        // Recent Payees fast chips (when field is empty)
+        if (recentPayees.isNotEmpty && _merchantController.text.isEmpty) ...[
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Wrap(
+            spacing: StillwaterTokens.spaceXs,
+            runSpacing: StillwaterTokens.space2Xs,
+            children:
+                recentPayees
+                    .map(
+                      (payee) => ActionChip(
+                        avatar: const Icon(Icons.history_rounded, size: 14),
+                        label: Text(
+                          payee,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onPressed: () {
+                          _merchantController.text = payee;
+                          _merchantController
+                              .selection = TextSelection.fromPosition(
+                            TextPosition(offset: payee.length),
+                          );
+                        },
+                      ),
+                    )
+                    .toList(),
+          ),
+        ],
+
+        // Offline Categorization Suggestion Banner / Pill
+        if (_suggestedCategory != null && _needsCategory) ...[
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          InkWell(
+            onTap: () {
+              final categories = ref.read(categoriesStreamProvider).value ?? [];
+              final match =
+                  categories
+                      .where((c) => c.id == _suggestedCategory!.categoryId)
+                      .firstOrNull;
+              if (match != null) {
+                setState(() {
+                  _selectedCategory = match;
+                  _categoryError = null;
+                });
+              }
+            },
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceSm,
+                vertical: StillwaterTokens.spaceXs,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.45,
+                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  width: StillwaterTokens.borderWidthDefault,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  Expanded(
+                    child: Text(
+                      'Suggested: ${_suggestedCategory!.categoryName} • ${_suggestedCategory!.reason}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  Text(
+                    'Apply',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCategorySection(List<Category> categoriesForType) {
+    final theme = context.theme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Category', style: theme.textTheme.labelLarge),
+            TextButton.icon(
+              onPressed: () => _showCategoryPicker(categoriesForType),
+              icon: const Icon(Icons.search_rounded, size: 16),
+              label: const Text('All Categories'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: StillwaterTokens.space2Xs),
+
+        // Horizontal Category Chip Bar
+        if (categoriesForType.isNotEmpty)
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: categoriesForType.take(7).length,
+              separatorBuilder:
+                  (_, _) => const SizedBox(width: StillwaterTokens.spaceXs),
+              itemBuilder: (context, index) {
+                final cat = categoriesForType[index];
+                final isSelected = cat.id == _selectedCategory?.id;
+
+                return ChoiceChip(
+                  avatar: FfCategoryTile(
+                    iconIdentifier: cat.iconIdentifier,
+                    colorTokenIdentifier: cat.colorTokenIdentifier,
+                    size: 24,
+                  ),
+                  label: Text(cat.name),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedCategory = cat;
+                      _categoryError = null;
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+
+        if (_categoryError != null) ...[
+          const SizedBox(height: StillwaterTokens.space2Xs),
+          Text(
+            _categoryError!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAccountSection(List<Account> accounts) {
+    final theme = context.theme;
+
+    if (_selectedType == TransactionType.transfer) {
+      // Transfer Mode: Source -> Destination Account Selectors
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Accounts', style: theme.textTheme.labelLarge),
+              IconButton(
+                tooltip: 'Swap accounts',
+                icon: const Icon(Icons.swap_vert_rounded, size: 20),
+                onPressed: _swapTransferAccounts,
+              ),
+            ],
+          ),
+          const SizedBox(height: StillwaterTokens.space2Xs),
+          Text('From Account', style: theme.textTheme.labelSmall),
+          const SizedBox(height: StillwaterTokens.space2Xs),
+          _AccountTileButton(
+            label: 'From Account',
+            account: _selectedAccount,
+            error: _accountError,
+            icon: Icons.upload_rounded,
+            onTap:
+                () => _showAccountPicker(
+                  accounts: accounts,
+                  isDestination: false,
+                ),
+          ),
+          const SizedBox(height: StillwaterTokens.spaceSm),
+          Text('To Account', style: theme.textTheme.labelSmall),
+          const SizedBox(height: StillwaterTokens.space2Xs),
+          _AccountTileButton(
+            label: 'To Account',
+            account: _selectedToAccount,
+            error: _toAccountError,
+            icon: Icons.download_rounded,
+            onTap:
+                () =>
+                    _showAccountPicker(accounts: accounts, isDestination: true),
+          ),
+        ],
+      );
+    }
+
+    // Normal Mode: Single Account Selector
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Account', style: theme.textTheme.labelLarge),
+        const SizedBox(height: StillwaterTokens.space2Xs),
+        _AccountTileButton(
+          label: 'Account',
+          account: _selectedAccount,
+          error: _accountError,
+          icon: Icons.account_balance_wallet_outlined,
+          onTap:
+              () =>
+                  _showAccountPicker(accounts: accounts, isDestination: false),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateSection() {
+    final theme = context.theme;
+    final now = DateTime.now();
+    final isToday = _sameDay(_selectedDate, now);
+    final isYesterday = _sameDay(
+      _selectedDate,
+      now.subtract(const Duration(days: 1)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Date', style: theme.textTheme.labelLarge),
+        const SizedBox(height: StillwaterTokens.space2Xs),
+        Row(
+          children: [
+            ChoiceChip(
+              label: const Text('Today'),
+              selected: isToday,
+              onSelected: (_) => _setDate(now),
+            ),
+            const SizedBox(width: StillwaterTokens.spaceXs),
+            ChoiceChip(
+              label: const Text('Yesterday'),
+              selected: isYesterday,
+              onSelected:
+                  (_) => _setDate(now.subtract(const Duration(days: 1))),
+            ),
+            const SizedBox(width: StillwaterTokens.spaceXs),
+            Expanded(
+              child: ActionChip(
+                avatar: const Icon(Icons.calendar_today_outlined, size: 16),
+                label: Text(
+                  DateFormat('d MMM yyyy').format(_selectedDate),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onPressed: _pickCustomDate,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMoreDetailsSection() {
+    final theme = context.theme;
+    final hasActiveDetails =
+        _notesController.text.isNotEmpty || _tagsController.text.isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+          width: StillwaterTokens.borderWidthHairline,
+        ),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _moreDetailsOpen,
+          onExpansionChanged: (open) => setState(() => _moreDetailsOpen = open),
+          leading: Icon(
+            Icons.tune_rounded,
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
+          title: Text(
+            'More details',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            hasActiveDetails
+                ? 'Payment method, notes & tags (Active)'
+                : 'Payment method, note, tags',
+            style: theme.textTheme.bodySmall,
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(
+            StillwaterTokens.spaceMd,
+            0,
+            StillwaterTokens.spaceMd,
+            StillwaterTokens.spaceMd,
+          ),
+          children: [
+            const Divider(height: 1),
+            const SizedBox(height: StillwaterTokens.spaceMd),
+
+            // Payment Method Selector
+            DropdownButtonFormField<String>(
+              value:
+                  _paymentMethods.contains(_selectedPaymentMethod)
+                      ? _selectedPaymentMethod
+                      : _defaultPaymentFor(_selectedType),
+              decoration: const InputDecoration(
+                labelText: 'Payment method',
+                prefixIcon: Icon(Icons.payment_outlined),
+              ),
+              items:
+                  _paymentMethods
+                      .map(
+                        (method) => DropdownMenuItem(
+                          value: method,
+                          child: Text(method),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedPaymentMethod = val);
+                }
+              },
+            ),
+            const SizedBox(height: StillwaterTokens.spaceMd),
+
+            // Notes Input
+            TextField(
+              controller: _notesController,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Notes',
+                hintText: 'Invoice number, reimbursement notes, or context',
+                prefixIcon: Icon(Icons.notes_rounded),
+              ),
+            ),
+            const SizedBox(height: StillwaterTokens.spaceMd),
+
+            // Tags Input
+            TextField(
+              controller: _tagsController,
+              decoration: const InputDecoration(
+                labelText: 'Tags',
+                hintText: 'e.g. trip, office, reimbursement (comma-separated)',
+                prefixIcon: Icon(Icons.tag_rounded),
+              ),
+            ),
+            const SizedBox(height: StillwaterTokens.spaceSm),
+
+            // Future capabilities disclosure
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: StillwaterTokens.space2Xs),
+                Expanded(
+                  child: Text(
+                    'Recurring schedules and split transactions will be saved when fully configured.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStickyActionBar(String label, double bottomInset) {
+    return FfSheetFooter(
+      primaryLabel: label,
+      isPrimaryLoading: _isSubmitting,
+      onPrimaryPressed: _isSubmitting ? null : _submit,
+    );
+  }
+
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
   static IconData _typeIcon(TransactionType type) => switch (type) {
     TransactionType.expense => Icons.arrow_upward_rounded,
     TransactionType.income => Icons.arrow_downward_rounded,
@@ -845,163 +1341,339 @@ class _AddEditTransactionSheetState
   };
 }
 
-class _DateChip extends StatelessWidget {
+/// A compact, rich tile button for selecting an Account.
+class _AccountTileButton extends StatelessWidget {
   final String label;
-  final DateTime date;
-  final bool selected;
-  final ValueChanged<DateTime> onTap;
-  const _DateChip({
-    required this.label,
-    required this.date,
-    required this.selected,
-    required this.onTap,
-  });
-  @override
-  Widget build(BuildContext context) => ChoiceChip(
-    label: Text(label),
-    selected: selected,
-    onSelected: (_) => onTap(date),
-  );
-}
-
-class _FieldButton extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData? icon;
-  final Widget? leading;
+  final Account? account;
   final String? error;
+  final IconData icon;
   final VoidCallback onTap;
-  const _FieldButton({
+
+  const _AccountTileButton({
     required this.label,
-    required this.value,
+    required this.account,
+    required this.icon,
     required this.onTap,
-    this.icon,
-    this.leading,
     this.error,
   });
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '$label: $value',
-    child: InkWell(
-      borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-      onTap: onTap,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          errorText: error,
-          prefixIcon:
-              leading == null
-                  ? (icon == null ? null : Icon(icon))
-                  : Padding(padding: const EdgeInsets.all(10), child: leading),
-          suffixIcon: const Icon(Icons.expand_more_rounded),
-        ),
-        child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
-      ),
-    ),
-  );
-}
 
-class _CategoryPicker extends StatefulWidget {
-  final List<Category> categories;
-  final Category? selected;
-  const _CategoryPicker({required this.categories, required this.selected});
-  @override
-  State<_CategoryPicker> createState() => _CategoryPickerState();
-}
-
-class _CategoryPickerState extends State<_CategoryPicker> {
-  String query = '';
   @override
   Widget build(BuildContext context) {
-    final shown =
-        widget.categories
-            .where((c) => c.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Choose category',
-              style: Theme.of(context).textTheme.titleLarge,
+    final theme = context.theme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: StillwaterTokens.spaceMd,
+              vertical: StillwaterTokens.spaceSm,
             ),
-            const SizedBox(height: StillwaterTokens.spaceMd),
-            TextField(
-              autofocus: true,
-              onChanged: (value) => setState(() => query = value),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded),
-                hintText: 'Search categories',
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+              border: Border.all(
+                color:
+                    error != null
+                        ? theme.colorScheme.error
+                        : (isDark
+                            ? StillwaterColors.darkBorderDefault
+                            : StillwaterColors.lightBorderDefault),
+                width:
+                    error != null
+                        ? StillwaterTokens.borderWidthFocus
+                        : StillwaterTokens.borderWidthDefault,
               ),
             ),
-            const SizedBox(height: StillwaterTokens.spaceSm),
-            SizedBox(
-              height: MediaQuery.sizeOf(context).height * .48,
-              child: ListView.builder(
-                itemCount: shown.length,
-                itemBuilder: (_, index) {
-                  final category = shown[index];
-                  return ListTile(
-                    leading: FfCategoryTile(
-                      iconIdentifier: category.iconIdentifier,
-                      colorTokenIdentifier: category.colorTokenIdentifier,
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.4,
                     ),
-                    title: Text(category.name),
-                    trailing:
-                        category.id == widget.selected?.id
-                            ? const Icon(Icons.check_rounded)
-                            : null,
-                    onTap: () => Navigator.pop(context, category),
-                  );
-                },
-              ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    account == null ? icon : _accountIcon(account!.type),
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: StillwaterTokens.spaceMd),
+                Expanded(
+                  child:
+                      account == null
+                          ? Text(
+                            'Select $label',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          )
+                          : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                account!.name,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${account!.displaySubtitle} • ${CurrencyFormatter.formatINR(account!.currentBalance)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                ),
+                const Icon(Icons.expand_more_rounded, size: 20),
+              ],
             ),
-          ],
+          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: StillwaterTokens.space2Xs),
+          Text(
+            error!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  IconData _accountIcon(AccountType type) => switch (type) {
+    AccountType.cash => Icons.payments_outlined,
+    AccountType.creditCard => Icons.credit_card_outlined,
+    AccountType.upi => Icons.account_balance_wallet_outlined,
+    AccountType.investment => Icons.trending_up_rounded,
+    _ => Icons.account_balance_outlined,
+  };
+}
+
+/// Refined category selection bottom sheet with instant search.
+class _CategoryPickerSheet extends StatefulWidget {
+  final List<Category> categories;
+  final Category? selected;
+
+  const _CategoryPickerSheet({
+    required this.categories,
+    required this.selected,
+  });
+
+  @override
+  State<_CategoryPickerSheet> createState() => _CategoryPickerSheetState();
+}
+
+class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final filtered =
+        widget.categories
+            .where((c) => c.name.toLowerCase().contains(_query.toLowerCase()))
+            .toList();
+
+    return Material(
+      color:
+          isDark
+              ? StillwaterColors.darkSurfaceDefault
+              : StillwaterColors.lightSurfaceDefault,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(StillwaterTokens.radius2Xl),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FfSheetHeader(
+                title: 'Choose Category',
+                padding: EdgeInsets.zero,
+                onClose: () => Navigator.pop(context),
+              ),
+              const SizedBox(height: StillwaterTokens.spaceSm),
+              TextField(
+                autofocus: true,
+                onChanged: (val) => setState(() => _query = val),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search_rounded),
+                  hintText: 'Search categories...',
+                ),
+              ),
+              const SizedBox(height: StillwaterTokens.spaceMd),
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.45,
+                child:
+                    filtered.isEmpty
+                        ? Center(
+                          child: Text(
+                            'No matching category found',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                        : ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, _) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final category = filtered[index];
+                            final isSelected =
+                                category.id == widget.selected?.id;
+
+                            return ListTile(
+                              leading: FfCategoryTile(
+                                iconIdentifier: category.iconIdentifier,
+                                colorTokenIdentifier:
+                                    category.colorTokenIdentifier,
+                              ),
+                              title: Text(
+                                category.name,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight:
+                                      isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                ),
+                              ),
+                              trailing:
+                                  isSelected
+                                      ? Icon(
+                                        Icons.check_circle_rounded,
+                                        color: theme.colorScheme.primary,
+                                      )
+                                      : null,
+                              onTap: () => Navigator.pop(context, category),
+                            );
+                          },
+                        ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _AccountPicker extends StatelessWidget {
+/// Refined account selection bottom sheet with balance display.
+class _AccountPickerSheet extends StatelessWidget {
+  final String title;
   final List<Account> accounts;
   final Account? selected;
-  const _AccountPicker({required this.accounts, required this.selected});
+
+  const _AccountPickerSheet({
+    required this.title,
+    required this.accounts,
+    required this.selected,
+  });
+
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Choose account', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          if (accounts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(StillwaterTokens.spaceLg),
-              child: Text('No eligible account available.'),
-            ),
-          ...accounts.map(
-            (account) => ListTile(
-              leading: Icon(_icon(account.type)),
-              title: Text(account.name),
-              subtitle: Text(
-                '${account.displaySubtitle} · ${CurrencyFormatter.formatINR(account.currentBalance)}',
-              ),
-              trailing:
-                  account.id == selected?.id
-                      ? const Icon(Icons.check_rounded)
-                      : null,
-              onTap: () => Navigator.pop(context, account),
-            ),
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Material(
+      color:
+          isDark
+              ? StillwaterColors.darkSurfaceDefault
+              : StillwaterColors.lightSurfaceDefault,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(StillwaterTokens.radius2Xl),
       ),
-    ),
-  );
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FfSheetHeader(
+                title: title,
+                padding: EdgeInsets.zero,
+                onClose: () => Navigator.pop(context),
+              ),
+              const SizedBox(height: StillwaterTokens.spaceSm),
+              if (accounts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(StillwaterTokens.spaceXl),
+                  child: Text('No eligible account available.'),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: accounts.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final account = accounts[index];
+                      final isSelected = account.id == selected?.id;
+
+                      return ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.4),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _icon(account.type),
+                            size: 20,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        title: Text(
+                          account.name,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${account.displaySubtitle} • ${CurrencyFormatter.formatINR(account.currentBalance)}',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        trailing:
+                            isSelected
+                                ? Icon(
+                                  Icons.check_circle_rounded,
+                                  color: theme.colorScheme.primary,
+                                )
+                                : null,
+                        onTap: () => Navigator.pop(context, account),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   IconData _icon(AccountType type) => switch (type) {
     AccountType.cash => Icons.payments_outlined,
     AccountType.creditCard => Icons.credit_card_outlined,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,6 +27,32 @@ class IsarService {
   late final Isar isar;
 
   IsarService._(this.isar);
+
+  static List<CollectionSchema<dynamic>> get _schemas => [
+    AccountEntitySchema,
+    TransactionEntitySchema,
+    PendingTransactionEntitySchema,
+    CategoryEntitySchema,
+    AppSettingsEntitySchema,
+    BudgetEntitySchema,
+    SavingsGoalEntitySchema,
+    GoalContributionEntitySchema,
+    SubscriptionEntitySchema,
+    LoanEntitySchema,
+    EmiPaymentEntitySchema,
+    InvestmentEntitySchema,
+    AlertEntitySchema,
+    AiActivityLogEntitySchema,
+  ];
+
+  static Future<Isar> _openIsar(String dir) {
+    return Isar.open(
+      _schemas,
+      directory: dir,
+      name: 'financeflow_local_db',
+      inspector: kDebugMode,
+    );
+  }
 
   static IsarService get instance {
     if (_instance == null) {
@@ -56,27 +84,31 @@ class IsarService {
         dir = appDocDir.path;
       }
 
-      final isarInstance = await Isar.open(
-        [
-          AccountEntitySchema,
-          TransactionEntitySchema,
-          PendingTransactionEntitySchema,
-          CategoryEntitySchema,
-          AppSettingsEntitySchema,
-          BudgetEntitySchema,
-          SavingsGoalEntitySchema,
-          GoalContributionEntitySchema,
-          SubscriptionEntitySchema,
-          LoanEntitySchema,
-          EmiPaymentEntitySchema,
-          InvestmentEntitySchema,
-          AlertEntitySchema,
-          AiActivityLogEntitySchema,
-        ],
-        directory: dir,
-        name: 'financeflow_local_db',
-        inspector: kDebugMode,
-      );
+      Isar isarInstance;
+      try {
+        isarInstance = await _openIsar(dir);
+      } catch (e) {
+        // If an outdated development/corrupted database file throws RangeError or schema mismatch,
+        // safely delete the stale .isar file and re-open cleanly.
+        debugPrint(
+          'Warning: Isar database open failed with ($e). Attempting recovery by recreating local database...',
+        );
+        if (dir.isNotEmpty) {
+          try {
+            final isarFile = File('$dir/financeflow_local_db.isar');
+            if (await isarFile.exists()) {
+              await isarFile.delete();
+            }
+            final lockFile = File('$dir/financeflow_local_db.isar.lock');
+            if (await lockFile.exists()) {
+              await lockFile.delete();
+            }
+          } catch (delError) {
+            debugPrint('Failed to delete corrupted isar file: $delError');
+          }
+        }
+        isarInstance = await _openIsar(dir);
+      }
 
       final service = IsarService._(isarInstance);
       await service._seedInitialDataIfNeeded();

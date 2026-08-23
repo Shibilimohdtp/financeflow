@@ -6,8 +6,8 @@ import '../../core/formatting/date_formatter.dart';
 import '../../models/backup_payload.dart';
 import '../../services/backup_service.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../transactions/transactions_controller.dart';
@@ -144,35 +144,52 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
+    final filename = widget.backupFile.path.split(Platform.pathSeparator).last;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Restore Encrypted Backup')),
+      appBar: AppBar(
+        title: const Text('Restore Encrypted Backup'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            child: Center(child: FfPrivacyBadge(label: 'AES Decryption')),
+          ),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          FfCard(
-            variant: FfCardVariant.tinted,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // File Name Pill
+          Container(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.lock_clock_outlined,
-                      color: context.secColors.verified,
-                      size: 20,
-                    ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
-                    Text(
-                      'Encrypted Backup File',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ],
+                Icon(
+                  Icons.description_outlined,
+                  size: 20,
+                  color: theme.colorScheme.primary,
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                Text(
-                  widget.backupFile.path.split(Platform.pathSeparator).last,
-                  style: theme.textTheme.bodySmall,
+                const SizedBox(width: StillwaterTokens.spaceMd),
+                Expanded(
+                  child: Text(
+                    filename,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -180,221 +197,251 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
+          // Passphrase Input Card
           if (_decryptedPayload == null) ...[
-            // Enter passphrase step
-            Text('Enter Backup Passphrase', style: theme.textTheme.titleMedium),
-            const SizedBox(height: StillwaterTokens.spaceSm),
-            FfCard(
+            _SectionLabel(label: 'Enter Passphrase to Unlock'),
+            const SizedBox(height: StillwaterTokens.spaceXs),
+            Container(
+              padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                border: Border.all(
+                  color: theme.dividerColor,
+                  width: StillwaterTokens.borderWidthHairline,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(
                     controller: _passphraseController,
                     obscureText: true,
-                    decoration: const InputDecoration(
+                    autofocus: true,
+                    decoration: InputDecoration(
                       labelText: 'Passphrase',
-                      prefixIcon: Icon(Icons.password_rounded),
+                      prefixIcon: const Icon(Icons.key_outlined, size: 20),
+                      errorText: _errorMessage,
                     ),
                     onSubmitted: (_) => _decrypt(),
                   ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: StillwaterTokens.spaceSm),
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: theme.colorScheme.error,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: StillwaterTokens.spaceLg),
                   FfButton(
-                    label:
-                        _isDecrypting
-                            ? 'Decrypting...'
-                            : 'Decrypt & Preview Backup',
+                    label: 'Decrypt & Inspect Contents',
                     isLoading: _isDecrypting,
+                    leadingIcon: const Icon(Icons.lock_open_rounded, size: 18),
                     onPressed: _isDecrypting ? null : _decrypt,
                   ),
                 ],
               ),
             ),
           ] else ...[
-            // Decrypted Preview
-            Text('Backup Contents Preview', style: theme.textTheme.titleMedium),
-            const SizedBox(height: StillwaterTokens.spaceSm),
-            FfCard(
+            // Decrypted Contents Overview
+            _SectionLabel(label: 'Decrypted Backup Contents'),
+            const SizedBox(height: StillwaterTokens.spaceXs),
+            Container(
+              padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                border: Border.all(
+                  color: theme.dividerColor,
+                  width: StillwaterTokens.borderWidthHairline,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Created: ${DateFormatter.formatFullDate(_decryptedPayload!.metadata.createdAt)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'PAYLOAD METRICS',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          letterSpacing: 0.8,
+                          color: theme.colorScheme.secondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: StillwaterTokens.spaceSm,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.secColors.verified.withValues(
+                            alpha: 0.15,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusFull,
+                          ),
+                        ),
+                        child: Text(
+                          'Verified AES',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: context.secColors.verified,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: StillwaterTokens.spaceMd),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _previewTile(
-                          context,
-                          'Transactions',
-                          '${_decryptedPayload!.transactions.length}',
-                          Icons.receipt_long_outlined,
-                        ),
-                      ),
-                      Expanded(
-                        child: _previewTile(
-                          context,
-                          'Accounts',
-                          '${_decryptedPayload!.accounts.length}',
-                          Icons.account_balance_wallet_outlined,
-                        ),
-                      ),
-                    ],
+                  _MetricRow(
+                    label: 'Transactions',
+                    count: _decryptedPayload!.transactions.length,
+                  ),
+                  _MetricRow(
+                    label: 'Accounts',
+                    count: _decryptedPayload!.accounts.length,
+                  ),
+                  _MetricRow(
+                    label: 'Categories',
+                    count: _decryptedPayload!.categories.length,
+                  ),
+                  _MetricRow(
+                    label: 'Budgets',
+                    count: _decryptedPayload!.budgets.length,
+                  ),
+                  _MetricRow(
+                    label: 'Subscriptions',
+                    count: _decryptedPayload!.subscriptions.length,
+                  ),
+                  _MetricRow(
+                    label: 'Loans & EMIs',
+                    count: _decryptedPayload!.loans.length,
+                  ),
+                  _MetricRow(
+                    label: 'Investments',
+                    count: _decryptedPayload!.investments.length,
                   ),
                   const SizedBox(height: StillwaterTokens.spaceSm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _previewTile(
-                          context,
-                          'Budgets',
-                          '${_decryptedPayload!.budgets.length}',
-                          Icons.pie_chart_outline_rounded,
-                        ),
-                      ),
-                      Expanded(
-                        child: _previewTile(
-                          context,
-                          'Savings Goals',
-                          '${_decryptedPayload!.savingsGoals.length}',
-                          Icons.flag_outlined,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _previewTile(
-                          context,
-                          'Subscriptions',
-                          '${_decryptedPayload!.subscriptions.length}',
-                          Icons.repeat_rounded,
-                        ),
-                      ),
-                      Expanded(
-                        child: _previewTile(
-                          context,
-                          'Loans',
-                          '${_decryptedPayload!.loans.length}',
-                          Icons.account_balance_outlined,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Exported on ${DateFormatter.formatTransactionDate(_decryptedPayload!.metadata.createdAt)} · App v${_decryptedPayload!.metadata.appVersion}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.spaceLg),
+            const SizedBox(height: StillwaterTokens.space2Xl),
 
-            // Mode Selector
-            Text('Restore Strategy', style: theme.textTheme.titleMedium),
-            const SizedBox(height: StillwaterTokens.spaceSm),
-            FfCard(
-              padding: EdgeInsets.zero,
+            // Restore Mode Selector
+            _SectionLabel(label: 'Choose Restore Method'),
+            const SizedBox(height: StillwaterTokens.spaceXs),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                border: Border.all(
+                  color: theme.dividerColor,
+                  width: StillwaterTokens.borderWidthHairline,
+                ),
+              ),
               child: Column(
                 children: [
                   RadioListTile<RestoreMode>(
-                    title: const Text('Merge with current records'),
-                    subtitle: const Text(
-                      'Deduplicates transactions and merges new items safely',
-                    ),
                     value: RestoreMode.merge,
                     groupValue: _selectedMode,
-                    activeColor: theme.colorScheme.primary,
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedMode = val);
-                    },
-                  ),
-                  const Divider(),
-                  RadioListTile<RestoreMode>(
-                    title: const Text('Replace all current data'),
+                    title: const Text('Merge with Existing Data'),
                     subtitle: const Text(
-                      'Overwrites local database with this backup',
+                      'Safely skip duplicate records and add missing entries.',
                     ),
+                    activeColor: theme.colorScheme.primary,
+                    onChanged: (val) => setState(() => _selectedMode = val!),
+                  ),
+                  Divider(
+                    height: 1,
+                    thickness: StillwaterTokens.borderWidthHairline,
+                  ),
+                  RadioListTile<RestoreMode>(
                     value: RestoreMode.replace,
                     groupValue: _selectedMode,
-                    activeColor: theme.colorScheme.error,
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedMode = val);
-                    },
+                    title: const Text('Clean Replace (Overwrite)'),
+                    subtitle: const Text(
+                      'Clear current database and restore state from this backup.',
+                    ),
+                    activeColor: context.secColors.error,
+                    onChanged: (val) => setState(() => _selectedMode = val!),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.spaceXl),
+            const SizedBox(height: StillwaterTokens.space2Xl),
 
             FfButton(
-              label: _isRestoring ? 'Restoring...' : 'Restore Backup',
+              label:
+                  _selectedMode == RestoreMode.merge
+                      ? 'Merge Backup Into Device'
+                      : 'Replace Everything & Restore',
               isLoading: _isRestoring,
               variant:
                   _selectedMode == RestoreMode.replace
                       ? FfButtonVariant.destructive
                       : FfButtonVariant.filled,
+              leadingIcon: const Icon(
+                Icons.settings_backup_restore_rounded,
+                size: 18,
+              ),
               onPressed: _isRestoring ? null : _confirmAndRestore,
             ),
           ],
+
+          const SizedBox(height: StillwaterTokens.space4Xl),
         ],
       ),
     );
   }
+}
 
-  Widget _previewTile(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon,
-  ) {
+class _MetricRow extends StatelessWidget {
+  final String label;
+  final int count;
+
+  const _MetricRow({required this.label, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
     final theme = context.theme;
-    return Container(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, size: 18, color: theme.colorScheme.primary),
-          const SizedBox(width: StillwaterTokens.spaceXs),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-              ],
+          Text(label, style: theme.textTheme.bodyMedium),
+          Text(
+            count.toString(),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      child: Text(
+        label.toUpperCase(),
+        style: context.textTheme.labelSmall?.copyWith(
+          letterSpacing: 0.8,
+          color: context.theme.colorScheme.secondary,
+          fontSize: 10,
+        ),
       ),
     );
   }

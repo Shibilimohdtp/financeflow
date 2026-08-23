@@ -48,6 +48,10 @@ class AppSettingsEntity {
 
   int autoLockTimeoutMinutes = 0; // 0 = disabled / immediate
 
+  /// Insight IDs explicitly dismissed by the user. Kept in app settings so
+  /// generated insights stay dismissed after a process/device restart.
+  List<String> dismissedInsightIds = [];
+
   late DateTime createdAt;
 
   late DateTime updatedAt;

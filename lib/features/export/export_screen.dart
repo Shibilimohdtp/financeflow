@@ -5,7 +5,10 @@ import '../../core/formatting/date_formatter.dart';
 import '../../services/export_service.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../transactions/transactions_controller.dart';
@@ -22,8 +25,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   ExportFormat _selectedFormat = ExportFormat.csv;
   ExportScope _selectedScope = ExportScope.allTransactions;
   DateTimeRange? _dateRange;
-  bool _includeSensitive = false;
+  final bool _includeSensitive = false;
   String? _exportedPath;
+  bool _isExporting = false;
 
   Future<void> _selectDateRange() async {
     final picked = await showDateRangePicker(
@@ -46,6 +50,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 
   Future<void> _runExport() async {
+    setState(() => _isExporting = true);
     try {
       final req = ExportRequest(
         format: _selectedFormat,
@@ -61,11 +66,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       setState(() => _exportedPath = path);
 
       if (mounted) {
-        FfSnackbar.show(context, message: 'Export generated locally at: $path');
+        FfSnackbar.show(context, message: 'Export saved locally to: $path');
       }
     } catch (e) {
       if (mounted) {
         FfSnackbar.show(context, message: 'Export failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
       }
     }
   }
@@ -74,7 +83,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final transactions = ref.watch(filteredTransactionsProvider).value ?? [];
-    final state = ref.watch(exportControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -87,34 +95,53 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // Local Only Promise Card
+          // ── 1. Local Processing Guarantee ─────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'On-Device Processing',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: context.secColors.verified,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: context.secColors.verified.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusMd,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.shield_outlined,
+                    color: context.secColors.verified,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: StillwaterTokens.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'On-Device Export Architecture',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.secColors.verified,
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.shield_outlined,
-                      color: context.secColors.verified,
-                      size: 20,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                Text(
-                  'Exports are generated completely on this device. FinanceFlow never uploads or syncs your data to any remote server.',
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Exports are created strictly on this device without uploading to any remote server or third-party cloud.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -122,110 +149,96 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Format Selection
-          Text('Choose Export Format', style: theme.textTheme.titleMedium),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          FfCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children:
-                  ExportFormat.values.map((f) {
-                    return RadioListTile<ExportFormat>(
-                      title: Text(f.displayName),
-                      subtitle: Text('.${f.fileExtension} format'),
-                      value: f,
-                      groupValue: _selectedFormat,
-                      activeColor: theme.colorScheme.primary,
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedFormat = val);
-                      },
-                    );
-                  }).toList(),
-            ),
+          // ── 2. Format Selection ───────────────────────────────────────
+          const FfSectionHeader(title: 'Export Format'),
+          FfSegmentedPill<ExportFormat>(
+            options: const [
+              FfSegmentOption(
+                value: ExportFormat.csv,
+                label: 'CSV (Excel / Sheets)',
+              ),
+              FfSegmentOption(
+                value: ExportFormat.json,
+                label: 'JSON (Raw Data)',
+              ),
+            ],
+            selectedValue: _selectedFormat,
+            onSelected: (format) {
+              setState(() => _selectedFormat = format);
+            },
           ),
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Scope Selection
-          Text('Data Scope', style: theme.textTheme.titleMedium),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          FfCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<ExportScope>(
-                  value: _selectedScope,
-                  decoration: const InputDecoration(labelText: 'Scope'),
-                  items:
-                      ExportScope.values.map((s) {
-                        return DropdownMenuItem(
-                          value: s,
-                          child: Text(s.displayName),
-                        );
-                      }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedScope = val);
-                  },
-                ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.date_range_outlined),
-                  title: const Text('Filter by Date Range (Optional)'),
-                  subtitle: Text(
-                    _dateRange != null
-                        ? '${DateFormatter.formatFullDate(_dateRange!.start)} to ${DateFormatter.formatFullDate(_dateRange!.end)}'
-                        : 'All dates included',
-                  ),
-                  trailing: TextButton(
-                    onPressed: _selectDateRange,
-                    child: Text(_dateRange == null ? 'Set Dates' : 'Change'),
+          // ── 3. Export Scope ───────────────────────────────────────────
+          const FfSectionHeader(title: 'Data Scope'),
+          FfGroupedContainer(
+            children: [
+              RadioListTile<ExportScope>(
+                title: const Text('All Recorded Transactions'),
+                subtitle: Text(
+                  '${transactions.length} transactions across all accounts and categories',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.secondary,
                   ),
                 ),
-                const Divider(),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Include Sensitive Account Identifiers'),
-                  subtitle: const Text(
-                    'When unchecked, account numbers are masked',
+                value: ExportScope.allTransactions,
+                groupValue: _selectedScope,
+                activeColor: theme.colorScheme.primary,
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedScope = val);
+                },
+              ),
+              Divider(
+                height: 1,
+                thickness: StillwaterTokens.borderWidthHairline,
+                color: theme.dividerColor,
+              ),
+              RadioListTile<ExportScope>(
+                title: const Text('Specific Date Range'),
+                subtitle: Text(
+                  _dateRange != null
+                      ? '${DateFormatter.formatShortDate(_dateRange!.start)} – ${DateFormatter.formatShortDate(_dateRange!.end)}'
+                      : 'Tap to pick date boundaries',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color:
+                        _dateRange != null
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.secondary,
+                    fontWeight:
+                        _dateRange != null
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                   ),
-                  value: _includeSensitive,
-                  activeColor: theme.colorScheme.primary,
-                  onChanged: (val) => setState(() => _includeSensitive = val),
                 ),
-              ],
-            ),
+                value: ExportScope.dateRangeTransactions,
+                groupValue: _selectedScope,
+                activeColor: theme.colorScheme.primary,
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedScope = val);
+                    _selectDateRange();
+                  }
+                },
+              ),
+            ],
           ),
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Summary Preview Card
-          FfCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Export Summary', style: theme.textTheme.titleSmall),
-                const SizedBox(height: StillwaterTokens.spaceSm),
-                Text(
-                  '• Total transactions on device: ${transactions.length}',
-                  style: theme.textTheme.bodySmall,
-                ),
-                Text(
-                  '• Format: ${_selectedFormat.displayName}',
-                  style: theme.textTheme.bodySmall,
-                ),
-                Text(
-                  '• Destination: Local documents folder',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
+          // ── 4. Export Action Button ───────────────────────────────────
+          FfButton(
+            label: 'Generate & Save Export',
+            isLoading: _isExporting,
+            leadingIcon: const Icon(Icons.file_download_outlined, size: 18),
+            onPressed: _isExporting ? null : _runExport,
           ),
 
           if (_exportedPath != null) ...[
             const SizedBox(height: StillwaterTokens.spaceLg),
             FfCard(
-              variant: FfCardVariant.tinted,
+              variant: FfCardVariant.elevated,
+              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -233,14 +246,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     children: [
                       Icon(
                         Icons.check_circle_outline_rounded,
-                        color: context.secColors.verified,
+                        color: context.finColors.income,
                         size: 20,
                       ),
                       const SizedBox(width: StillwaterTokens.spaceSm),
                       Text(
-                        'File Saved Locally',
+                        'Export Ready',
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: context.secColors.verified,
+                          fontWeight: FontWeight.w600,
+                          color: context.finColors.income,
                         ),
                       ),
                     ],
@@ -248,23 +262,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                   const SizedBox(height: StillwaterTokens.spaceXs),
                   Text(
                     _exportedPath!,
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
-
-          const SizedBox(height: StillwaterTokens.space2Xl),
-
-          FfButton(
-            label:
-                state.isLoading
-                    ? 'Generating Export...'
-                    : 'Generate Local Export',
-            isLoading: state.isLoading,
-            onPressed: state.isLoading ? null : _runExport,
-          ),
 
           const SizedBox(height: StillwaterTokens.space4Xl),
         ],

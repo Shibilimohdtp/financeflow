@@ -198,10 +198,7 @@ class IsarLoanRepository implements LoanRepository {
   @override
   Future<List<EmiPayment>> getAllPayments() async {
     final entities =
-        await isar.emiPaymentEntitys
-            .where()
-            .sortByPaymentDateDesc()
-            .findAll();
+        await isar.emiPaymentEntitys.where().sortByPaymentDateDesc().findAll();
     return entities.map(_toPaymentDomain).toList();
   }
 

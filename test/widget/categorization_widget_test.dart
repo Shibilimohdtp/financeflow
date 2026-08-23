@@ -19,6 +19,10 @@ void main() {
   testWidgets(
     'AddEditTransactionSheet shows category suggestion when typing merchant',
     (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final now = DateTime.now();
 
       final diningCat = Category(
@@ -58,6 +62,9 @@ void main() {
             ),
             rawAccountsStreamProvider.overrideWith(
               (ref) => Stream.value([testAccount]),
+            ),
+            allTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([]),
             ),
           ],
           child: MaterialApp(

@@ -91,6 +91,19 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  /// Update an item in the pending queue
+  Future<void> updateItem(ParsedTransaction item) async {
+    state = const AsyncValue.loading();
+    try {
+      final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
+      await pendingRepo.savePendingTransaction(item);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
   /// Wipe all pending staged items
   Future<void> clearAll() async {
     state = const AsyncValue.loading();

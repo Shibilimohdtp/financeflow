@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_colors.dart';
@@ -16,13 +15,32 @@ class BrandingPreviewScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Stillwater Branding Showcase')),
+      appBar: AppBar(
+        title: const Text('Stillwater Branding Showcase'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            child: Center(child: FfPrivacyBadge(label: 'Design Showcase')),
+          ),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // 1. Hero Brand Presentation
-          FfCard(
-            variant: FfCardVariant.tinted,
+          // ── 1. Hero Brand Presentation ──────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceXl),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -36,7 +54,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                 const SizedBox(height: StillwaterTokens.spaceMd),
                 Text(
                   'The Stillwater Mark · Calm Financial Control',
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.secondary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -47,9 +65,9 @@ class BrandingPreviewScreen extends StatelessWidget {
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          // 2. Multi-Theme Variants
-          Text('Theme Variants', style: theme.textTheme.titleMedium),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          // ── 2. Multi-Theme Variants ──────────────────────────────────
+          _SectionLabel(label: 'Theme Variants'),
+          const SizedBox(height: StillwaterTokens.spaceXs),
           Row(
             children: [
               // Daylight Variant
@@ -67,7 +85,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                   ),
                   child: const Column(
                     children: [
-                      FinanceFlowMark(size: 48, variant: MarkVariant.daylight),
+                      FinanceFlowMark(size: 44, variant: MarkVariant.daylight),
                       SizedBox(height: StillwaterTokens.spaceSm),
                       Text(
                         'Daylight',
@@ -98,7 +116,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                   ),
                   child: const Column(
                     children: [
-                      FinanceFlowMark(size: 48, variant: MarkVariant.deepWater),
+                      FinanceFlowMark(size: 44, variant: MarkVariant.deepWater),
                       SizedBox(height: StillwaterTokens.spaceSm),
                       Text(
                         'Deep Water',
@@ -114,7 +132,7 @@ class BrandingPreviewScreen extends StatelessWidget {
               ),
               const SizedBox(width: StillwaterTokens.spaceMd),
 
-              // Security Variant
+              // Monochrome Variant
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
@@ -127,7 +145,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                   child: const Column(
                     children: [
                       FinanceFlowMark(
-                        size: 48,
+                        size: 44,
                         variant: MarkVariant.monochrome,
                       ),
                       SizedBox(height: StillwaterTokens.spaceSm),
@@ -148,85 +166,96 @@ class BrandingPreviewScreen extends StatelessWidget {
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          // 3. Sizing Ladder (Legibility at all scales)
-          Text(
-            'Sizing & Legibility Ladder',
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          FfCard(
+          // ── 3. Sizing Ladder ─────────────────────────────────────────
+          _SectionLabel(label: 'Sizing & Legibility Ladder'),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Container(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
             child: Column(
               children: [
-                _buildSizeRow(18, '18dp — Status Bar / Tiny Glyphs'),
-                const Divider(),
-                _buildSizeRow(24, '24dp — Standard Action / Tab Icon'),
-                const Divider(),
-                _buildSizeRow(32, '32dp — Inset Badge / Tile Icon'),
-                const Divider(),
-                _buildSizeRow(48, '48dp — Card Header / Dialog Icon'),
-                const Divider(),
-                _buildSizeRow(72, '72dp — Onboarding / Lock Screen'),
-                const Divider(),
-                _buildSizeRow(96, '96dp — Splash & Master Preview'),
+                _buildSizeRow(18, '18dp — Status Bar & Compact Indicators'),
+                _Divider(),
+                _buildSizeRow(24, '24dp — Standard Navigation & Tab Icons'),
+                _Divider(),
+                _buildSizeRow(32, '32dp — Inset Tile & Badge Icons'),
+                _Divider(),
+                _buildSizeRow(48, '48dp — Dialog Headers & Cards'),
+                _Divider(),
+                _buildSizeRow(72, '72dp — Lock Screen & Keypad Header'),
+                _Divider(),
+                _buildSizeRow(96, '96dp — Splash & Feature Hero Displays'),
               ],
             ),
           ),
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          // 4. Launcher & Notification Previews
-          Text(
-            'Platform Icons & Safe Zones',
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          FfCard(
+          // ── 4. Platform Safe Zones ───────────────────────────────────
+          _SectionLabel(label: 'Platform Icons & Safe Zones'),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
             child: Column(
               children: [
                 ListTile(
                   leading: Container(
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       color: StillwaterColors.lightPrimary,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
-                        size: 32,
+                        size: 28,
                         variant: MarkVariant.monochrome,
                       ),
                     ),
                   ),
                   title: const Text('Squircle Launcher Icon'),
-                  subtitle: const Text('Android / iOS standard mask'),
-                  trailing: const FfPrivacyBadge(label: 'Safe Zone Pass'),
+                  subtitle: const Text('Android & iOS adaptive mask'),
+                  trailing: const FfPrivacyBadge(label: 'Verified'),
                 ),
-                const Divider(),
+                _Divider(),
                 ListTile(
                   leading: Container(
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     decoration: const BoxDecoration(
                       color: StillwaterColors.lightPrimary,
                       shape: BoxShape.circle,
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
-                        size: 32,
+                        size: 28,
                         variant: MarkVariant.monochrome,
                       ),
                     ),
                   ),
                   title: const Text('Circular Launcher Icon'),
                   subtitle: const Text('Pixel & Android round mask'),
-                  trailing: const FfPrivacyBadge(label: 'Safe Zone Pass'),
+                  trailing: const FfPrivacyBadge(label: 'Verified'),
                 ),
-                const Divider(),
+                _Divider(),
                 ListTile(
                   leading: Container(
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       color:
                           isDark
@@ -236,7 +265,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
-                        size: 24,
+                        size: 22,
                         variant: MarkVariant.monochrome,
                       ),
                     ),
@@ -271,6 +300,31 @@ class BrandingPreviewScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(height: 1, thickness: StillwaterTokens.borderWidthHairline);
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      child: Text(
+        label,
+        style: context.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

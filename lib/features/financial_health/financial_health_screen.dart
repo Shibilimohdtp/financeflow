@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../models/financial_health.dart';
 import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'financial_health_controller.dart';
 
 class FinancialHealthScreen extends ConsumerWidget {
@@ -46,9 +49,14 @@ class FinancialHealthScreen extends ConsumerWidget {
           }
 
           return ListView(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.fromLTRB(
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceMd,
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.space4Xl,
+            ),
             children: [
-              // 1. Overall Health Score Hero Card
+              // ── 1. Overall Health Score Hero ────────────────────────────
               FfCard(
                 variant: FfCardVariant.elevated,
                 child: Column(
@@ -59,14 +67,14 @@ class FinancialHealthScreen extends ConsumerWidget {
                       alignment: Alignment.center,
                       children: [
                         SizedBox(
-                          width: 130,
-                          height: 130,
+                          width: 120,
+                          height: 120,
                           child: CircularProgressIndicator(
                             value:
                                 report.hasOverallSufficientData
                                     ? (report.totalScore / 100.0)
                                     : 0.0,
-                            strokeWidth: 10,
+                            strokeWidth: 8,
                             backgroundColor:
                                 theme.colorScheme.surfaceContainerHighest,
                             color: scoreColor,
@@ -79,8 +87,7 @@ class FinancialHealthScreen extends ConsumerWidget {
                               report.hasOverallSufficientData
                                   ? report.totalScore.toStringAsFixed(0)
                                   : '—',
-                              style: theme.textTheme.displaySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+                              style: StillwaterTypography.numHero(
                                 color: scoreColor,
                               ),
                             ),
@@ -121,14 +128,12 @@ class FinancialHealthScreen extends ConsumerWidget {
 
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
+                        horizontal: StillwaterTokens.spaceSm,
                       ),
                       child: Text(
                         report.grade.description,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.8,
-                          ),
+                          color: theme.colorScheme.secondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -139,137 +144,126 @@ class FinancialHealthScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceXl),
+              const SizedBox(height: StillwaterTokens.space2Xl),
 
-              // 2. Component Explanations Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Score Breakdown', style: theme.textTheme.titleMedium),
-                  Text(
-                    '4 Key Indicators',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                    ),
-                  ),
-                ],
+              // ── 2. Component Explanations Header ────────────────────────
+              const FfSectionHeader(
+                title: 'Score Breakdown · 4 Key Indicators',
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceSm),
+              // ── 3. Components List ──────────────────────────────────────
+              FfGroupedContainer(
+                children:
+                    report.components.map((comp) {
+                      final double scorePct =
+                          comp.hasSufficientData
+                              ? (comp.score / comp.maxScore)
+                              : 0.0;
+                      final Color barColor =
+                          comp.hasSufficientData
+                              ? (scorePct >= 0.75
+                                  ? finColors.income
+                                  : scorePct >= 0.5
+                                  ? theme.colorScheme.primary
+                                  : finColors.expense)
+                              : theme.colorScheme.secondary;
 
-              // 3. Components List
-              ...report.components.map((comp) {
-                final double scorePct =
-                    comp.hasSufficientData ? (comp.score / comp.maxScore) : 0.0;
-                final Color barColor =
-                    comp.hasSufficientData
-                        ? (scorePct >= 0.75
-                            ? finColors.income
-                            : scorePct >= 0.5
-                            ? theme.colorScheme.primary
-                            : finColors.expense)
-                        : theme.colorScheme.secondary;
-
-                return Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: StillwaterTokens.spaceMd,
-                  ),
-                  child: FfCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      return Padding(
+                        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    comp.title,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: StillwaterTokens.spaceSm),
+                                if (!comp.hasSufficientData)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: StillwaterTokens.spaceSm,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          theme
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(
+                                        StillwaterTokens.radiusFull,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Not enough data',
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.secondary,
+                                          ),
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    '${comp.score.toStringAsFixed(0)} / ${comp.maxScore.toStringAsFixed(0)} pts',
+                                    style: StillwaterTypography.numSm(
+                                      color: barColor,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: StillwaterTokens.spaceSm),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusFull,
+                              ),
+                              child: LinearProgressIndicator(
+                                value: scorePct,
+                                backgroundColor:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                color: barColor,
+                                minHeight: 5,
+                              ),
+                            ),
+                            const SizedBox(height: StillwaterTokens.spaceSm),
                             Text(
-                              comp.title,
-                              style: theme.textTheme.titleSmall?.copyWith(
+                              comp.summary,
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            if (!comp.hasSufficientData)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: StillwaterTokens.spaceSm,
-                                  vertical: StillwaterTokens.space3Xs,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      theme.colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusFull,
-                                  ),
-                                ),
-                                child: Text(
-                                  'Not enough data',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.secondary,
-                                  ),
-                                ),
-                              )
-                            else
-                              Text(
-                                '${comp.score.toStringAsFixed(0)} / ${comp.maxScore.toStringAsFixed(0)} pts',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: barColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            const SizedBox(height: 2),
+                            Text(
+                              comp.detail,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.secondary,
                               ),
+                            ),
                           ],
                         ),
+                      );
+                    }).toList(),
+              ),
 
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+              const SizedBox(height: StillwaterTokens.space2Xl),
 
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusFull,
-                          ),
-                          child: LinearProgressIndicator(
-                            value: scorePct,
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                            color: barColor,
-                            minHeight: 6,
-                          ),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceSm),
-
-                        Text(
-                          comp.summary,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: StillwaterTokens.space3Xs),
-                        Text(
-                          comp.detail,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.7,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: StillwaterTokens.spaceLg),
-
-              // 4. Privacy & Non-judgmental Footer
+              // ── 4. Privacy Guarantee Footer ─────────────────────────────
               FfCard(
                 variant: FfCardVariant.tinted,
+                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.lock_outline_rounded,
+                      Icons.shield_outlined,
+                      size: 24,
                       color: context.secColors.verified,
-                      size: 20,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
+                    const SizedBox(width: StillwaterTokens.spaceMd),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,15 +271,14 @@ class FinancialHealthScreen extends ConsumerWidget {
                           Text(
                             'On-Device Analysis',
                             style: theme.textTheme.titleSmall?.copyWith(
-                              color: context.secColors.verified,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: StillwaterTokens.space3Xs),
+                          const SizedBox(height: 2),
                           Text(
-                            'Your financial health score is calculated entirely on this device from your local transactions and budget targets. It is for your personal guidance and never transmitted anywhere.',
+                            'Your wellness score is computed strictly on your device using local transactions, budgets, and savings goals.',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              height: 1.4,
+                              color: theme.colorScheme.secondary,
                             ),
                           ),
                         ],
@@ -294,8 +287,6 @@ class FinancialHealthScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-
-              const SizedBox(height: StillwaterTokens.space4Xl),
             ],
           );
         },
@@ -306,7 +297,7 @@ class FinancialHealthScreen extends ConsumerWidget {
                 child: CircularProgressIndicator(),
               ),
             ),
-        error: (e, _) => Center(child: Text('Could not load health score: $e')),
+        error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
   }

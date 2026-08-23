@@ -129,9 +129,7 @@ class LoanCalculator {
     final today = asOfDate ?? DateTime.now();
     final todayDateOnly = DateTime(today.year, today.month, today.day);
 
-    final paymentMap = {
-      for (final p in payments) p.installmentNumber: p,
-    };
+    final paymentMap = {for (final p in payments) p.installmentNumber: p};
 
     for (int month = 1; month <= loan.tenureMonths; month++) {
       if (currentBalance <= 0) break;
@@ -258,7 +256,8 @@ class LoanCalculator {
     } else {
       nextDueDate = unpaid.first.dueDate;
       status =
-          (loan.status == LoanStatus.archived || loan.status == LoanStatus.paused)
+          (loan.status == LoanStatus.archived ||
+                  loan.status == LoanStatus.paused)
               ? loan.status
               : LoanStatus.active;
     }
@@ -283,21 +282,22 @@ class LoanCalculator {
     final item = schedule.firstWhere(
       (it) => it.monthNumber == installmentNumber,
       orElse:
-          () => schedule.isNotEmpty
-              ? schedule.last
-              : AmortizationScheduleItem(
-                monthNumber: installmentNumber,
-                dueDate: DateTime(
-                  loan.startDate.year,
-                  loan.startDate.month + installmentNumber,
-                  loan.paymentDay.clamp(1, 28),
-                ),
-                openingBalance: loan.outstandingPrincipal,
-                emiAmount: loan.emiAmount,
-                principalPaid: loan.emiAmount,
-                interestPaid: 0.0,
-                closingBalance: 0.0,
-              ),
+          () =>
+              schedule.isNotEmpty
+                  ? schedule.last
+                  : AmortizationScheduleItem(
+                    monthNumber: installmentNumber,
+                    dueDate: DateTime(
+                      loan.startDate.year,
+                      loan.startDate.month + installmentNumber,
+                      loan.paymentDay.clamp(1, 28),
+                    ),
+                    openingBalance: loan.outstandingPrincipal,
+                    emiAmount: loan.emiAmount,
+                    principalPaid: loan.emiAmount,
+                    interestPaid: 0.0,
+                    closingBalance: 0.0,
+                  ),
     );
 
     return (

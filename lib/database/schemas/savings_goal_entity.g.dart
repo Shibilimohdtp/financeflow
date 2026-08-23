@@ -32,8 +32,16 @@ const SavingsGoalEntitySchema = CollectionSchema(
       name: r'linkedAccountId',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(id: 3, name: r'name', type: IsarType.string),
-    r'notes': PropertySchema(id: 4, name: r'notes', type: IsarType.string),
+    r'name': PropertySchema(
+      id: 3,
+      name: r'name',
+      type: IsarType.string,
+    ),
+    r'notes': PropertySchema(
+      id: 4,
+      name: r'notes',
+      type: IsarType.string,
+    ),
     r'targetAmount': PropertySchema(
       id: 5,
       name: r'targetAmount',
@@ -49,7 +57,11 @@ const SavingsGoalEntitySchema = CollectionSchema(
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
-    r'uuid': PropertySchema(id: 8, name: r'uuid', type: IsarType.string),
+    r'uuid': PropertySchema(
+      id: 8,
+      name: r'uuid',
+      type: IsarType.string,
+    )
   },
   estimateSize: _savingsGoalEntityEstimateSize,
   serialize: _savingsGoalEntitySerialize,
@@ -67,7 +79,7 @@ const SavingsGoalEntitySchema = CollectionSchema(
           name: r'uuid',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
     ),
     r'targetDate': IndexSchema(
@@ -80,7 +92,7 @@ const SavingsGoalEntitySchema = CollectionSchema(
           name: r'targetDate',
           type: IndexType.value,
           caseSensitive: false,
-        ),
+        )
       ],
     ),
     r'isCompleted': IndexSchema(
@@ -93,9 +105,9 @@ const SavingsGoalEntitySchema = CollectionSchema(
           name: r'isCompleted',
           type: IndexType.value,
           caseSensitive: false,
-        ),
+        )
       ],
-    ),
+    )
   },
   links: {},
   embeddedSchemas: {},
@@ -200,16 +212,12 @@ Id _savingsGoalEntityGetId(SavingsGoalEntity object) {
 }
 
 List<IsarLinkBase<dynamic>> _savingsGoalEntityGetLinks(
-  SavingsGoalEntity object,
-) {
+    SavingsGoalEntity object) {
   return [];
 }
 
 void _savingsGoalEntityAttach(
-  IsarCollection<dynamic> col,
-  Id id,
-  SavingsGoalEntity object,
-) {
+    IsarCollection<dynamic> col, Id id, SavingsGoalEntity object) {
   object.id = id;
 }
 
@@ -262,10 +270,8 @@ extension SavingsGoalEntityByIndex on IsarCollection<SavingsGoalEntity> {
     return putAllByIndex(r'uuid', objects);
   }
 
-  List<Id> putAllByUuidSync(
-    List<SavingsGoalEntity> objects, {
-    bool saveLinks = true,
-  }) {
+  List<Id> putAllByUuidSync(List<SavingsGoalEntity> objects,
+      {bool saveLinks = true}) {
     return putAllByIndexSync(r'uuid', objects, saveLinks: saveLinks);
   }
 }
@@ -279,7 +285,7 @@ extension SavingsGoalEntityQueryWhereSort
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhere>
-  anyTargetDate() {
+      anyTargetDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'targetDate'),
@@ -288,7 +294,7 @@ extension SavingsGoalEntityQueryWhereSort
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhere>
-  anyIsCompleted() {
+      anyIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'isCompleted'),
@@ -300,14 +306,17 @@ extension SavingsGoalEntityQueryWhereSort
 extension SavingsGoalEntityQueryWhere
     on QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QWhereClause> {
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  idEqualTo(Id id) {
+      idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
+      return query.addWhereClause(IdWhereClause.between(
+        lower: id,
+        upper: id,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  idNotEqualTo(Id id) {
+      idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -330,7 +339,7 @@ extension SavingsGoalEntityQueryWhere
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  idGreaterThan(Id id, {bool include = false}) {
+      idGreaterThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -339,7 +348,7 @@ extension SavingsGoalEntityQueryWhere
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  idLessThan(Id id, {bool include = false}) {
+      idLessThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -348,227 +357,201 @@ extension SavingsGoalEntityQueryWhere
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  idBetween(
+      idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.between(
-          lower: lowerId,
-          includeLower: includeLower,
-          upper: upperId,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  uuidEqualTo(String uuid) {
+      uuidEqualTo(String uuid) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'uuid', value: [uuid]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'uuid',
+        value: [uuid],
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  uuidNotEqualTo(String uuid) {
+      uuidNotEqualTo(String uuid) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [],
-                upper: [uuid],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [uuid],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [],
+              upper: [uuid],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [uuid],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [uuid],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [],
-                upper: [uuid],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [uuid],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [],
+              upper: [uuid],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  targetDateEqualTo(DateTime targetDate) {
+      targetDateEqualTo(DateTime targetDate) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'targetDate', value: [targetDate]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'targetDate',
+        value: [targetDate],
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  targetDateNotEqualTo(DateTime targetDate) {
+      targetDateNotEqualTo(DateTime targetDate) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'targetDate',
-                lower: [],
-                upper: [targetDate],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'targetDate',
-                lower: [targetDate],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'targetDate',
+              lower: [],
+              upper: [targetDate],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'targetDate',
+              lower: [targetDate],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'targetDate',
-                lower: [targetDate],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'targetDate',
-                lower: [],
-                upper: [targetDate],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'targetDate',
+              lower: [targetDate],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'targetDate',
+              lower: [],
+              upper: [targetDate],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  targetDateGreaterThan(DateTime targetDate, {bool include = false}) {
+      targetDateGreaterThan(
+    DateTime targetDate, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'targetDate',
-          lower: [targetDate],
-          includeLower: include,
-          upper: [],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'targetDate',
+        lower: [targetDate],
+        includeLower: include,
+        upper: [],
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  targetDateLessThan(DateTime targetDate, {bool include = false}) {
+      targetDateLessThan(
+    DateTime targetDate, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'targetDate',
-          lower: [],
-          upper: [targetDate],
-          includeUpper: include,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'targetDate',
+        lower: [],
+        upper: [targetDate],
+        includeUpper: include,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  targetDateBetween(
+      targetDateBetween(
     DateTime lowerTargetDate,
     DateTime upperTargetDate, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'targetDate',
-          lower: [lowerTargetDate],
-          includeLower: includeLower,
-          upper: [upperTargetDate],
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'targetDate',
+        lower: [lowerTargetDate],
+        includeLower: includeLower,
+        upper: [upperTargetDate],
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  isCompletedEqualTo(bool isCompleted) {
+      isCompletedEqualTo(bool isCompleted) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(
-          indexName: r'isCompleted',
-          value: [isCompleted],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'isCompleted',
+        value: [isCompleted],
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterWhereClause>
-  isCompletedNotEqualTo(bool isCompleted) {
+      isCompletedNotEqualTo(bool isCompleted) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'isCompleted',
-                lower: [],
-                upper: [isCompleted],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'isCompleted',
-                lower: [isCompleted],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCompleted',
+              lower: [],
+              upper: [isCompleted],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCompleted',
+              lower: [isCompleted],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'isCompleted',
-                lower: [isCompleted],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'isCompleted',
-                lower: [],
-                upper: [isCompleted],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCompleted',
+              lower: [isCompleted],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCompleted',
+              lower: [],
+              upper: [isCompleted],
+              includeUpper: false,
+            ));
       }
     });
   }
@@ -577,193 +560,193 @@ extension SavingsGoalEntityQueryWhere
 extension SavingsGoalEntityQueryFilter
     on QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QFilterCondition> {
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  createdAtEqualTo(DateTime value) {
+      createdAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'createdAt', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'createdAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  createdAtGreaterThan(DateTime value, {bool include = false}) {
+      createdAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'createdAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'createdAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  createdAtLessThan(DateTime value, {bool include = false}) {
+      createdAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'createdAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'createdAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  createdAtBetween(
+      createdAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'createdAt',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'createdAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  idEqualTo(Id value) {
+      idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'id', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  idGreaterThan(Id value, {bool include = false}) {
+      idGreaterThan(
+    Id value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'id',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  idLessThan(Id value, {bool include = false}) {
+      idLessThan(
+    Id value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'id',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  idBetween(
+      idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'id',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  isCompletedEqualTo(bool value) {
+      isCompletedEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'isCompleted', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isCompleted',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdIsNull() {
+      linkedAccountIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'linkedAccountId'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'linkedAccountId',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdIsNotNull() {
+      linkedAccountIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'linkedAccountId'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'linkedAccountId',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdEqualTo(String? value, {bool caseSensitive = true}) {
+      linkedAccountIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'linkedAccountId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'linkedAccountId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdGreaterThan(
+      linkedAccountIdGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'linkedAccountId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'linkedAccountId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdLessThan(
+      linkedAccountIdLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'linkedAccountId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'linkedAccountId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdBetween(
+      linkedAccountIdBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -771,140 +754,135 @@ extension SavingsGoalEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'linkedAccountId',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'linkedAccountId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdStartsWith(String value, {bool caseSensitive = true}) {
+      linkedAccountIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'linkedAccountId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'linkedAccountId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdEndsWith(String value, {bool caseSensitive = true}) {
+      linkedAccountIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'linkedAccountId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'linkedAccountId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdContains(String value, {bool caseSensitive = true}) {
+      linkedAccountIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'linkedAccountId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'linkedAccountId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdMatches(String pattern, {bool caseSensitive = true}) {
+      linkedAccountIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'linkedAccountId',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'linkedAccountId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdIsEmpty() {
+      linkedAccountIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'linkedAccountId', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'linkedAccountId',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  linkedAccountIdIsNotEmpty() {
+      linkedAccountIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'linkedAccountId', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'linkedAccountId',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameEqualTo(String value, {bool caseSensitive = true}) {
+      nameEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'name',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameGreaterThan(
+      nameGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'name',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameLessThan(
+      nameLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'name',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameBetween(
+      nameBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -912,158 +890,153 @@ extension SavingsGoalEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'name',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'name',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameStartsWith(String value, {bool caseSensitive = true}) {
+      nameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'name',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameEndsWith(String value, {bool caseSensitive = true}) {
+      nameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'name',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameContains(String value, {bool caseSensitive = true}) {
+      nameContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'name',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameMatches(String pattern, {bool caseSensitive = true}) {
+      nameMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'name',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'name',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameIsEmpty() {
+      nameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'name', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'name',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  nameIsNotEmpty() {
+      nameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'name', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'name',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesIsNull() {
+      notesIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'notes'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'notes',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesIsNotNull() {
+      notesIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'notes'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'notes',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesEqualTo(String? value, {bool caseSensitive = true}) {
+      notesEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesGreaterThan(
+      notesGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesLessThan(
+      notesLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesBetween(
+      notesBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1071,140 +1044,135 @@ extension SavingsGoalEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'notes',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'notes',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesStartsWith(String value, {bool caseSensitive = true}) {
+      notesStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesEndsWith(String value, {bool caseSensitive = true}) {
+      notesEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesContains(String value, {bool caseSensitive = true}) {
+      notesContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesMatches(String pattern, {bool caseSensitive = true}) {
+      notesMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'notes',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'notes',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesIsEmpty() {
+      notesIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'notes', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notes',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  notesIsNotEmpty() {
+      notesIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'notes', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'notes',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetAmountEqualTo(double value, {double epsilon = Query.epsilon}) {
+      targetAmountEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'targetAmount',
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'targetAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetAmountGreaterThan(
+      targetAmountGreaterThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'targetAmount',
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'targetAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetAmountLessThan(
+      targetAmountLessThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'targetAmount',
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'targetAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetAmountBetween(
+      targetAmountBetween(
     double lower,
     double upper, {
     bool includeLower = true,
@@ -1212,180 +1180,177 @@ extension SavingsGoalEntityQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'targetAmount',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'targetAmount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetDateEqualTo(DateTime value) {
+      targetDateEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'targetDate', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'targetDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetDateGreaterThan(DateTime value, {bool include = false}) {
+      targetDateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'targetDate',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'targetDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetDateLessThan(DateTime value, {bool include = false}) {
+      targetDateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'targetDate',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'targetDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  targetDateBetween(
+      targetDateBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'targetDate',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'targetDate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  updatedAtEqualTo(DateTime value) {
+      updatedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'updatedAt', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  updatedAtGreaterThan(DateTime value, {bool include = false}) {
+      updatedAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'updatedAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  updatedAtLessThan(DateTime value, {bool include = false}) {
+      updatedAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'updatedAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  updatedAtBetween(
+      updatedAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'updatedAt',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidEqualTo(String value, {bool caseSensitive = true}) {
+      uuidEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidGreaterThan(
+      uuidGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidLessThan(
+      uuidLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidBetween(
+      uuidBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1393,86 +1358,84 @@ extension SavingsGoalEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'uuid',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'uuid',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidStartsWith(String value, {bool caseSensitive = true}) {
+      uuidStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidEndsWith(String value, {bool caseSensitive = true}) {
+      uuidEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidContains(String value, {bool caseSensitive = true}) {
+      uuidContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidMatches(String pattern, {bool caseSensitive = true}) {
+      uuidMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'uuid',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'uuid',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidIsEmpty() {
+      uuidIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'uuid', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterFilterCondition>
-  uuidIsNotEmpty() {
+      uuidIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'uuid', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'uuid',
+        value: '',
+      ));
     });
   }
 }
@@ -1486,126 +1449,126 @@ extension SavingsGoalEntityQueryLinks
 extension SavingsGoalEntityQuerySortBy
     on QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QSortBy> {
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByCreatedAt() {
+      sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByCreatedAtDesc() {
+      sortByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByIsCompleted() {
+      sortByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByIsCompletedDesc() {
+      sortByIsCompletedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByLinkedAccountId() {
+      sortByLinkedAccountId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedAccountId', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByLinkedAccountIdDesc() {
+      sortByLinkedAccountIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedAccountId', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByName() {
+      sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByNameDesc() {
+      sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByNotes() {
+      sortByNotes() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByNotesDesc() {
+      sortByNotesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByTargetAmount() {
+      sortByTargetAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetAmount', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByTargetAmountDesc() {
+      sortByTargetAmountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetAmount', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByTargetDate() {
+      sortByTargetDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetDate', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByTargetDateDesc() {
+      sortByTargetDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetDate', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByUpdatedAt() {
+      sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByUpdatedAtDesc() {
+      sortByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByUuid() {
+      sortByUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  sortByUuidDesc() {
+      sortByUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.desc);
     });
@@ -1615,14 +1578,14 @@ extension SavingsGoalEntityQuerySortBy
 extension SavingsGoalEntityQuerySortThenBy
     on QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QSortThenBy> {
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByCreatedAt() {
+      thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByCreatedAtDesc() {
+      thenByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
     });
@@ -1635,119 +1598,119 @@ extension SavingsGoalEntityQuerySortThenBy
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByIdDesc() {
+      thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByIsCompleted() {
+      thenByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByIsCompletedDesc() {
+      thenByIsCompletedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByLinkedAccountId() {
+      thenByLinkedAccountId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedAccountId', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByLinkedAccountIdDesc() {
+      thenByLinkedAccountIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedAccountId', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByName() {
+      thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByNameDesc() {
+      thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByNotes() {
+      thenByNotes() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByNotesDesc() {
+      thenByNotesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByTargetAmount() {
+      thenByTargetAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetAmount', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByTargetAmountDesc() {
+      thenByTargetAmountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetAmount', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByTargetDate() {
+      thenByTargetDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetDate', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByTargetDateDesc() {
+      thenByTargetDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetDate', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByUpdatedAt() {
+      thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByUpdatedAtDesc() {
+      thenByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByUuid() {
+      thenByUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.asc);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QAfterSortBy>
-  thenByUuidDesc() {
+      thenByUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.desc);
     });
@@ -1757,68 +1720,64 @@ extension SavingsGoalEntityQuerySortThenBy
 extension SavingsGoalEntityQueryWhereDistinct
     on QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct> {
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByCreatedAt() {
+      distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByIsCompleted() {
+      distinctByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isCompleted');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByLinkedAccountId({bool caseSensitive = true}) {
+      distinctByLinkedAccountId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(
-        r'linkedAccountId',
-        caseSensitive: caseSensitive,
-      );
+      return query.addDistinctBy(r'linkedAccountId',
+          caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct> distinctByName({
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct> distinctByName(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByNotes({bool caseSensitive = true}) {
+  QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct> distinctByNotes(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'notes', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByTargetAmount() {
+      distinctByTargetAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'targetAmount');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByTargetDate() {
+      distinctByTargetDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'targetDate');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct>
-  distinctByUpdatedAt() {
+      distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
     });
   }
 
-  QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct> distinctByUuid({
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<SavingsGoalEntity, SavingsGoalEntity, QDistinct> distinctByUuid(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'uuid', caseSensitive: caseSensitive);
     });
@@ -1834,21 +1793,21 @@ extension SavingsGoalEntityQueryProperty
   }
 
   QueryBuilder<SavingsGoalEntity, DateTime, QQueryOperations>
-  createdAtProperty() {
+      createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, bool, QQueryOperations>
-  isCompletedProperty() {
+      isCompletedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isCompleted');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, String?, QQueryOperations>
-  linkedAccountIdProperty() {
+      linkedAccountIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'linkedAccountId');
     });
@@ -1867,21 +1826,21 @@ extension SavingsGoalEntityQueryProperty
   }
 
   QueryBuilder<SavingsGoalEntity, double, QQueryOperations>
-  targetAmountProperty() {
+      targetAmountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'targetAmount');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, DateTime, QQueryOperations>
-  targetDateProperty() {
+      targetDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'targetDate');
     });
   }
 
   QueryBuilder<SavingsGoalEntity, DateTime, QQueryOperations>
-  updatedAtProperty() {
+      updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
     });

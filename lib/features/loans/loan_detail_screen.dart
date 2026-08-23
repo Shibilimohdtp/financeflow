@@ -28,7 +28,11 @@ class LoanDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref, Loan currentLoan) async {
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    Loan currentLoan,
+  ) async {
     final confirmed = await FfConfirmDialog.show(
       context,
       title: 'Delete Loan?',
@@ -39,7 +43,9 @@ class LoanDetailScreen extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await ref.read(loansControllerProvider.notifier).deleteLoan(currentLoan.id);
+      await ref
+          .read(loansControllerProvider.notifier)
+          .deleteLoan(currentLoan.id);
       if (context.mounted) {
         Navigator.of(context).pop();
         FfSnackbar.show(context, message: 'Loan deleted.');
@@ -67,10 +73,9 @@ class LoanDetailScreen extends ConsumerWidget {
 
     if (confirmed == true && context.mounted) {
       try {
-        await ref.read(loansControllerProvider.notifier).markInstallmentPaid(
-              loan: currentLoan,
-              installmentNumber: instNum,
-            );
+        await ref
+            .read(loansControllerProvider.notifier)
+            .markInstallmentPaid(loan: currentLoan, installmentNumber: instNum);
         if (context.mounted) {
           FfSnackbar.show(
             context,
@@ -79,10 +84,7 @@ class LoanDetailScreen extends ConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(
-            context,
-            message: 'Failed to record payment: $e',
-          );
+          FfSnackbar.show(context, message: 'Failed to record payment: $e');
         }
       }
     }
@@ -129,10 +131,14 @@ class LoanDetailScreen extends ConsumerWidget {
     }
   }
 
+  void _openSchedule(BuildContext context, Loan currentLoan) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => EmiScheduleView(loan: currentLoan)),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-
     // Watch live loan updates from repository stream
     final loans = ref.watch(allLoansStreamProvider).value ?? const [];
     final currentLoan = loans.firstWhere(
@@ -147,380 +153,145 @@ class LoanDetailScreen extends ConsumerWidget {
     final nextInstallment = unpaidItems.isNotEmpty ? unpaidItems.first : null;
 
     final totalRepayment = LoanCalculator.calculateTotalRepayment(currentLoan);
-    final totalInterest = LoanCalculator.calculateTotalEstimatedInterest(currentLoan);
+    final totalInterest = LoanCalculator.calculateTotalEstimatedInterest(
+      currentLoan,
+    );
     final daysUntilDue = currentLoan.daysUntilDue();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(currentLoan.name),
+        // Two-line title: loan name + lender as a subdued subtitle
+        title: _LoanAppBarTitle(loan: currentLoan),
+        titleSpacing: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.table_chart_outlined),
-            tooltip: 'Amortization Schedule',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => EmiScheduleView(loan: currentLoan),
-                ),
-              );
-            },
+          Semantics(
+            label: 'View amortization schedule',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.table_chart_outlined),
+              tooltip: 'Amortization Schedule',
+              onPressed: () => _openSchedule(context, currentLoan),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit',
-            onPressed: () => _edit(context, currentLoan),
+          Semantics(
+            label: 'Edit loan',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit',
+              onPressed: () => _edit(context, currentLoan),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Delete',
-            onPressed: () => _delete(context, ref, currentLoan),
+          Semantics(
+            label: 'Delete loan',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.delete_outline_rounded),
+              tooltip: 'Delete',
+              onPressed: () => _delete(context, ref, currentLoan),
+            ),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // Overdue Alert Card (if any overdue EMIs)
-          if (overdueItems.isNotEmpty && currentLoan.status == LoanStatus.active) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: StillwaterTokens.spaceLg),
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
-              decoration: BoxDecoration(
-                color: context.secColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-                border: Border.all(
-                  color: context.secColors.error.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: context.secColors.error,
-                        size: 24,
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceSm),
-                      Expanded(
-                        child: Text(
-                          '${overdueItems.length} Overdue EMI${overdueItems.length > 1 ? "s" : ""}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: context.secColors.error,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        CurrencyFormatter.formatINR(
-                          overdueItems.fold<double>(0.0, (s, it) => s + it.emiAmount),
-                        ),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: context.secColors.error,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  Text(
-                    'Installment #${overdueItems.first.monthNumber} (${DateFormatter.formatFullDate(overdueItems.first.dueDate)}) was due ${overdueItems.first.daysOverdue()} days ago.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: context.secColors.error,
-                    ),
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceMd),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FfButton(
-                          label: 'Pay #${overdueItems.first.monthNumber}',
-                          size: FfButtonSize.sm,
-                          onPressed: () => _markNextPaid(
-                            context,
-                            ref,
-                            currentLoan,
-                            overdueItems.first,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceSm),
-                      if (overdueItems.length > 1)
-                        Expanded(
-                          child: FfButton(
-                            label: 'Pay All (${overdueItems.length}) Overdue',
-                            size: FfButtonSize.sm,
-                            variant: FfButtonVariant.outlined,
-                            onPressed: () => _markAllOverduePaid(
-                              context,
-                              ref,
-                              currentLoan,
-                              overdueItems,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // Outstanding Balance Hero Card
-          FfCard(
-            variant: FfCardVariant.elevated,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Outstanding Principal',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: currentLoan.status == LoanStatus.active
-                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                            : context.secColors.verified.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        currentLoan.status.displayName,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: currentLoan.status == LoanStatus.active
-                              ? theme.colorScheme.primary
-                              : context.secColors.verified,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                Text(
-                  CurrencyFormatter.formatINR(currentLoan.outstandingPrincipal),
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
-                LinearProgressIndicator(
-                  value: currentLoan.progressPercentage,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  color: context.secColors.verified,
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Paid: ${CurrencyFormatter.formatINR(currentLoan.totalPrincipalPaid)} (${(currentLoan.progressPercentage * 100).toStringAsFixed(1)}%)',
-                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
-                    ),
-                    Text(
-                      'Total: ${CurrencyFormatter.formatINR(currentLoan.principalAmount)}',
-                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          // ── 1. Balance Hero ──────────────────────────────────────────────
+          _BalanceHeroSection(loan: currentLoan),
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Next EMI & Due Date Card
-          if (currentLoan.status == LoanStatus.active && nextInstallment != null) ...[
-            FfCard(
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: nextInstallment.isOverdue
-                          ? context.secColors.error.withValues(alpha: 0.1)
-                          : theme.colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      nextInstallment.isOverdue
-                          ? Icons.warning_amber_rounded
-                          : Icons.event_available_rounded,
-                      color: nextInstallment.isOverdue
-                          ? context.secColors.error
-                          : theme.colorScheme.primary,
-                    ),
+          // ── 2. Overdue Banner (calm, factual) ────────────────────────────
+          if (overdueItems.isNotEmpty &&
+              currentLoan.status == LoanStatus.active) ...[
+            _OverdueBanner(
+              overdueItems: overdueItems,
+              onPayFirst:
+                  () => _markNextPaid(
+                    context,
+                    ref,
+                    currentLoan,
+                    overdueItems.first,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceMd),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Next EMI #${nextInstallment.monthNumber}: ${CurrencyFormatter.formatINR(nextInstallment.emiAmount)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        if (nextInstallment.isOverdue)
-                          Text(
-                            'OVERDUE by ${nextInstallment.daysOverdue()} days (Due ${DateFormatter.formatFullDate(nextInstallment.dueDate)})',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: context.secColors.error,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        else
-                          Text(
-                            'Due ${DateFormatter.formatFullDate(nextInstallment.dueDate)} (${daysUntilDue == 0 ? "Today" : (daysUntilDue == 1 ? "Tomorrow" : "in $daysUntilDue days")})',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: daysUntilDue <= 3
-                                  ? context.secColors.error
-                                  : theme.colorScheme.secondary,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  FfButton(
-                    label: 'Mark Paid',
-                    size: FfButtonSize.sm,
-                    onPressed: () => _markNextPaid(
-                      context,
-                      ref,
-                      currentLoan,
-                      nextInstallment,
-                    ),
-                  ),
-                ],
-              ),
+              onPayAll:
+                  overdueItems.length > 1
+                      ? () => _markAllOverduePaid(
+                        context,
+                        ref,
+                        currentLoan,
+                        overdueItems,
+                      )
+                      : null,
+            ),
+            const SizedBox(height: StillwaterTokens.spaceMd),
+          ],
+
+          // ── 3. Next EMI ──────────────────────────────────────────────────
+          if (currentLoan.status == LoanStatus.active &&
+              nextInstallment != null) ...[
+            _NextEmiSection(
+              nextInstallment: nextInstallment,
+              daysUntilDue: daysUntilDue,
+              onMarkPaid:
+                  () =>
+                      _markNextPaid(context, ref, currentLoan, nextInstallment),
             ),
             const SizedBox(height: StillwaterTokens.spaceLg),
           ],
 
-          // Installment Progress Summary Card
-          FfCard(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildProgressColumn(
-                  context,
-                  label: 'Paid EMIs',
-                  count: '${paidItems.length} / ${currentLoan.tenureMonths}',
-                  color: context.secColors.verified,
-                ),
-                _buildProgressColumn(
-                  context,
-                  label: 'Overdue',
-                  count: '${overdueItems.length}',
-                  color: overdueItems.isNotEmpty
-                      ? context.secColors.error
-                      : theme.colorScheme.secondary,
-                ),
-                _buildProgressColumn(
-                  context,
-                  label: 'Remaining',
-                  count: '${unpaidItems.length}',
-                  color: theme.colorScheme.primary,
-                ),
-              ],
-            ),
+          // ── 4. Repayment Summary ─────────────────────────────────────────
+          _RepaymentSummary(
+            paidCount: paidItems.length,
+            overdueCount: overdueItems.length,
+            remainingCount: unpaidItems.length,
+            totalMonths: currentLoan.tenureMonths,
           ),
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Loan Parameters Grid
-          FfCard(
-            child: Column(
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Lender'),
-                  trailing: Text(
-                    currentLoan.lender,
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Loan Type'),
-                  trailing: Text(
-                    currentLoan.loanType.displayName,
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Interest Rate'),
-                  trailing: Text(
-                    '${currentLoan.interestRate}% (${currentLoan.interestType.displayName})',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Total Tenure'),
-                  trailing: Text(
-                    '${currentLoan.tenureMonths} months',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Total Estimated Repayment'),
-                  trailing: Text(
-                    CurrencyFormatter.formatINR(totalRepayment),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Total Estimated Interest'),
-                  trailing: Text(
-                    CurrencyFormatter.formatINR(totalInterest),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-              ],
-            ),
+          // ── 5. Loan Information ──────────────────────────────────────────
+          _LoanInfoSection(
+            loan: currentLoan,
+            totalRepayment: totalRepayment,
+            totalInterest: totalInterest,
           ),
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Trust statement
+          // ── 6. Amortization Schedule Access ─────────────────────────────
+          FfButton(
+            label: 'View Complete Amortization Schedule',
+            variant: FfButtonVariant.outlined,
+            onPressed: () => _openSchedule(context, currentLoan),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
+          // ── 7. Trust Statement ───────────────────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
+            padding: const EdgeInsets.symmetric(
+              horizontal: StillwaterTokens.spaceMd,
+              vertical: StillwaterTokens.spaceSm,
+            ),
             child: Row(
               children: [
                 Icon(
                   Icons.privacy_tip_outlined,
-                  size: 18,
+                  size: 16,
                   color: context.secColors.verified,
                 ),
-                const SizedBox(width: StillwaterTokens.spaceSm),
+                const SizedBox(width: StillwaterTokens.spaceXs),
                 Expanded(
                   child: Text(
                     'Values entered by you. Amortization and repayment calculated locally on this device.',
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                    style: context.textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      color: context.theme.colorScheme.secondary,
+                    ),
                   ),
                 ),
               ],
@@ -528,45 +299,724 @@ class LoanDetailScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: StillwaterTokens.space2Xl),
+        ],
+      ),
+    );
+  }
+}
 
-          FfButton(
-            label: 'View Complete Amortization Schedule',
-            variant: FfButtonVariant.outlined,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => EmiScheduleView(loan: currentLoan),
+// ──────────────────────────────────────────────────────────────────────────────
+// Private helper widgets
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// Two-line AppBar title: loan name + lender subtitle.
+class _LoanAppBarTitle extends StatelessWidget {
+  final Loan loan;
+
+  const _LoanAppBarTitle({required this.loan});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          loan.name,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        if (loan.lender.isNotEmpty)
+          Text(
+            loan.lender,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.secondary,
+              fontSize: 11,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+      ],
+    );
+  }
+}
+
+/// Outstanding balance hero with progress bar and paid/original breakdown.
+class _BalanceHeroSection extends StatelessWidget {
+  final Loan loan;
+
+  const _BalanceHeroSection({required this.loan});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final secColors = context.secColors;
+    final paidPct = loan.progressPercentage;
+    final isActive = loan.status == LoanStatus.active;
+
+    // Status chip colors
+    final chipColor = isActive ? theme.colorScheme.primary : secColors.verified;
+    final chipBg =
+        isActive
+            ? theme.colorScheme.primary.withValues(alpha: 0.10)
+            : secColors.verified.withValues(alpha: 0.12);
+
+    return Container(
+      padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusXl),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Label + Status chip
+          Row(
+            children: [
+              Text(
+                'Outstanding Principal',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.secondary,
+                  letterSpacing: 0.2,
                 ),
-              );
-            },
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StillwaterTokens.spaceXs,
+                  vertical: StillwaterTokens.space2Xs,
+                ),
+                decoration: BoxDecoration(
+                  color: chipBg,
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusFull,
+                  ),
+                ),
+                child: Text(
+                  loan.status.displayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: chipColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceXs),
+
+          // Outstanding amount — primary visual anchor
+          Text(
+            CurrencyFormatter.formatINR(loan.outstandingPrincipal),
+            style: theme.textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+            child: LinearProgressIndicator(
+              value: paidPct,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: secColors.verified,
+              minHeight: 8,
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceSm),
+
+          // Paid / Original / Percentage row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Paid',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      CurrencyFormatter.formatINR(loan.totalPrincipalPaid),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: secColors.verified,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '${(paidPct * 100).toStringAsFixed(1)}%',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'complete',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Original',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      CurrencyFormatter.formatINR(loan.principalAmount),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildProgressColumn(
-    BuildContext context, {
-    required String label,
-    required String count,
-    required Color color,
-  }) {
+/// Next EMI card — vertical layout, never overlaps due-date text.
+class _NextEmiSection extends StatelessWidget {
+  final AmortizationScheduleItem nextInstallment;
+  final int daysUntilDue;
+  final VoidCallback onMarkPaid;
+
+  const _NextEmiSection({
+    required this.nextInstallment,
+    required this.daysUntilDue,
+    required this.onMarkPaid,
+  });
+
+  String _dueLabel() {
+    if (nextInstallment.isOverdue) {
+      final days = nextInstallment.daysOverdue();
+      return 'Overdue by $days day${days == 1 ? '' : 's'}';
+    }
+    if (daysUntilDue == 0) return 'Today';
+    if (daysUntilDue == 1) return 'Tomorrow';
+    return 'In $daysUntilDue days';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = context.theme;
-    return Column(
-      children: [
-        Text(
-          count,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
+    final secColors = context.secColors;
+    final isOverdue = nextInstallment.isOverdue;
+    final dueLabelColor =
+        isOverdue ? secColors.error : theme.colorScheme.secondary;
+
+    return FfCard(
+      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row: EMI amount + due-status badge
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'EMI #${nextInstallment.monthNumber}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.formatINR(nextInstallment.emiAmount),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: StillwaterTokens.spaceSm),
+              // Due-status pill
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StillwaterTokens.spaceXs,
+                  vertical: StillwaterTokens.space2Xs,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      isOverdue
+                          ? secColors.error.withValues(alpha: 0.10)
+                          : daysUntilDue <= 3
+                          ? secColors.error.withValues(alpha: 0.08)
+                          : theme.colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusFull,
+                  ),
+                ),
+                child: Text(
+                  _dueLabel(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        isOverdue
+                            ? secColors.error
+                            : daysUntilDue <= 3
+                            ? secColors.error
+                            : theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
+
+          const SizedBox(height: StillwaterTokens.spaceXs),
+
+          // Due date line
+          Text(
+            isOverdue
+                ? 'Was due ${DateFormatter.formatFullDate(nextInstallment.dueDate)}'
+                : 'Due ${DateFormatter.formatFullDate(nextInstallment.dueDate)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: dueLabelColor,
+              fontWeight: isOverdue ? FontWeight.w500 : FontWeight.normal,
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
+          // Full-width Mark Paid button — never overlaps text above
+          SizedBox(
+            width: double.infinity,
+            child: Semantics(
+              label: 'Mark installment ${nextInstallment.monthNumber} as paid',
+              button: true,
+              child: FfButton(
+                label: 'Mark Paid',
+                size: FfButtonSize.md,
+                onPressed: onMarkPaid,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Calm, factual overdue notice. Uses warning card variant, info icon.
+class _OverdueBanner extends StatelessWidget {
+  final List<AmortizationScheduleItem> overdueItems;
+  final VoidCallback onPayFirst;
+  final VoidCallback? onPayAll;
+
+  const _OverdueBanner({
+    required this.overdueItems,
+    required this.onPayFirst,
+    this.onPayAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final secColors = context.secColors;
+    final first = overdueItems.first;
+    final totalOverdue = overdueItems.fold<double>(
+      0.0,
+      (s, it) => s + it.emiAmount,
+    );
+
+    return FfCard(
+      variant: FfCardVariant.warning,
+      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 18,
+                color: secColors.error,
+              ),
+              const SizedBox(width: StillwaterTokens.spaceXs),
+              Expanded(
+                child: Text(
+                  '${overdueItems.length} Overdue EMI${overdueItems.length > 1 ? "s" : ""}',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: secColors.error,
+                  ),
+                ),
+              ),
+              Text(
+                CurrencyFormatter.formatINR(totalOverdue),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: secColors.error,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceXs),
+
+          // Detail line
+          Text(
+            'Installment #${first.monthNumber} (${DateFormatter.formatFullDate(first.dueDate)}) was due ${first.daysOverdue()} days ago.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.secondary,
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: FfButton(
+                  label: 'Pay #${first.monthNumber}',
+                  size: FfButtonSize.sm,
+                  onPressed: onPayFirst,
+                ),
+              ),
+              if (onPayAll != null) ...[
+                const SizedBox(width: StillwaterTokens.spaceSm),
+                Expanded(
+                  child: FfButton(
+                    label: 'Pay All (${overdueItems.length}) Overdue',
+                    size: FfButtonSize.sm,
+                    variant: FfButtonVariant.outlined,
+                    onPressed: onPayAll,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact paid / overdue / remaining summary with vertical dividers.
+class _RepaymentSummary extends StatelessWidget {
+  final int paidCount;
+  final int overdueCount;
+  final int remainingCount;
+  final int totalMonths;
+
+  const _RepaymentSummary({
+    required this.paidCount,
+    required this.overdueCount,
+    required this.remainingCount,
+    required this.totalMonths,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final secColors = context.secColors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: StillwaterTokens.spaceMd,
+        horizontal: StillwaterTokens.spaceXs,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.40,
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: _SummaryColumn(
+                label: 'Paid EMIs',
+                value: '$paidCount / $totalMonths',
+                color: secColors.verified,
+              ),
+            ),
+            const VerticalDivider(
+              width: 1,
+              thickness: 0.75,
+              indent: 8,
+              endIndent: 8,
+            ),
+            Expanded(
+              child: _SummaryColumn(
+                label: 'Overdue',
+                value: '$overdueCount',
+                color:
+                    overdueCount > 0
+                        ? secColors.error
+                        : theme.colorScheme.secondary,
+              ),
+            ),
+            const VerticalDivider(
+              width: 1,
+              thickness: 0.75,
+              indent: 8,
+              endIndent: 8,
+            ),
+            Expanded(
+              child: _SummaryColumn(
+                label: 'Remaining',
+                value: '$remainingCount',
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Single stat column used inside _RepaymentSummary.
+class _SummaryColumn extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _SummaryColumn({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceXs),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.secondary,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Grouped loan information — Loan / Repayment / Interest sections.
+class _LoanInfoSection extends StatelessWidget {
+  final Loan loan;
+  final double totalRepayment;
+  final double totalInterest;
+
+  const _LoanInfoSection({
+    required this.loan,
+    required this.totalRepayment,
+    required this.totalInterest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ─ Loan Details ─────────────────────────────────────────────────
+        _InfoSectionBlock(
+          label: 'Loan Details',
+          rows: [
+            _InfoRowData('Lender', loan.lender),
+            _InfoRowData('Loan Type', loan.loanType.displayName),
+          ],
+        ),
+
+        const SizedBox(height: StillwaterTokens.spaceMd),
+
+        // ─ Repayment Details ─────────────────────────────────────────────
+        _InfoSectionBlock(
+          label: 'Repayment',
+          rows: [
+            _InfoRowData(
+              'Interest Rate',
+              '${loan.interestRate}% (${loan.interestType.displayName})',
+            ),
+            _InfoRowData('Tenure', '${loan.tenureMonths} months'),
+            _InfoRowData(
+              'Est. Total Repayment',
+              CurrencyFormatter.formatINR(totalRepayment),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: StillwaterTokens.spaceMd),
+
+        // ─ Interest Details ──────────────────────────────────────────────
+        _InfoSectionBlock(
+          label: 'Interest',
+          rows: [
+            _InfoRowData(
+              'Est. Total Interest',
+              CurrencyFormatter.formatINR(totalInterest),
+            ),
+          ],
         ),
       ],
+    );
+  }
+}
+
+/// A labeled block of info rows with a section heading.
+class _InfoSectionBlock extends StatelessWidget {
+  final String label;
+  final List<_InfoRowData> rows;
+
+  const _InfoSectionBlock({required this.label, required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            left: StillwaterTokens.space2Xs,
+            bottom: StillwaterTokens.spaceXs,
+          ),
+          child: Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              letterSpacing: 0.8,
+              color: theme.colorScheme.secondary,
+              fontSize: 10,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            border: Border.all(
+              color: theme.dividerColor,
+              width: StillwaterTokens.borderWidthHairline,
+            ),
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < rows.length; i++) ...[
+                _InfoRow(data: rows[i]),
+                if (i < rows.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: StillwaterTokens.borderWidthHairline,
+                    indent: StillwaterTokens.spaceMd,
+                    endIndent: StillwaterTokens.spaceMd,
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Data holder for a label/value info row.
+class _InfoRowData {
+  final String label;
+  final String value;
+  const _InfoRowData(this.label, this.value);
+}
+
+/// A single label + value row inside an info section block.
+class _InfoRow extends StatelessWidget {
+  final _InfoRowData data;
+
+  const _InfoRow({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceMd,
+        vertical: StillwaterTokens.spaceSm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              data.label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.secondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceSm),
+          Flexible(
+            flex: 5,
+            child: Text(
+              data.value,
+              textAlign: TextAlign.end,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

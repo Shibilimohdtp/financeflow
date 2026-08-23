@@ -14,10 +14,7 @@ void main() {
           theme: StillwaterTheme.daylight,
           home: Scaffold(
             body: Center(
-              child: FfButton(
-                label: 'Save Transaction',
-                onPressed: () {},
-              ),
+              child: FfButton(label: 'Save Transaction', onPressed: () {}),
             ),
           ),
         ),
@@ -30,7 +27,9 @@ void main() {
       expect(size.height, greaterThanOrEqualTo(48.0));
     });
 
-    testWidgets('FfChip maintains accessible touch target and tap callback', (tester) async {
+    testWidgets('FfChip maintains accessible touch target and tap callback', (
+      tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -58,7 +57,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('FfBarChart includes accessible semantics label', (tester) async {
+    testWidgets('FfBarChart includes accessible semantics label', (
+      tester,
+    ) async {
       final items = [
         const BarChartItem(label: 'Mon', value: 450.0),
         const BarChartItem(label: 'Tue', value: 1200.0),
@@ -82,7 +83,9 @@ void main() {
       );
     });
 
-    testWidgets('FfDonutChart includes accessible semantics label', (tester) async {
+    testWidgets('FfDonutChart includes accessible semantics label', (
+      tester,
+    ) async {
       final slices = [
         const DonutSlice(label: 'Dining', value: 1500.0, colorToken: 'clay'),
         const DonutSlice(label: 'Groceries', value: 3000.0, colorToken: 'sand'),
@@ -106,25 +109,25 @@ void main() {
       );
     });
 
-    testWidgets('Renders with large text scale factor (2.0x) without crashing', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: StillwaterTheme.daylight,
-          home: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
-            child: Scaffold(
-              body: Center(
-                child: FfButton(
-                  label: 'Submit',
-                  onPressed: () {},
+    testWidgets(
+      'Renders with large text scale factor (2.0x) without crashing',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+              child: Scaffold(
+                body: Center(
+                  child: FfButton(label: 'Submit', onPressed: () {}),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Submit'), findsOneWidget);
-    });
+        expect(find.text('Submit'), findsOneWidget);
+      },
+    );
   });
 }

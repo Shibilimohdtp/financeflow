@@ -77,6 +77,7 @@ class IsarSettingsRepository implements SettingsRepository {
       lastBackupDate: entity.lastBackupDate,
       lastAlertScan: entity.lastAlertScan,
       autoLockTimeoutMinutes: entity.autoLockTimeoutMinutes,
+      dismissedInsightIds: List<String>.from(entity.dismissedInsightIds),
     );
   }
 
@@ -139,6 +140,7 @@ class IsarSettingsRepository implements SettingsRepository {
       entity.lastBackupDate = settings.lastBackupDate;
       entity.lastAlertScan = settings.lastAlertScan;
       entity.autoLockTimeoutMinutes = settings.autoLockTimeoutMinutes;
+      entity.dismissedInsightIds = List<String>.from(settings.dismissedInsightIds);
 
       entity.updatedAt = DateTime.now();
 

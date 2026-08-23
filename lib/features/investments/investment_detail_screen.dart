@@ -4,10 +4,13 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/investment.dart';
-import '../../shared/widgets/ff_amount_field.dart';
+import '../../repositories/account_repository.dart';
+import '../../repositories/investment_repository.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'add_edit_investment_sheet.dart';
@@ -18,70 +21,106 @@ class InvestmentDetailScreen extends ConsumerWidget {
 
   const InvestmentDetailScreen({super.key, required this.investment});
 
-  void _edit(BuildContext context) {
+  void _edit(BuildContext context, Investment currentInv) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => AddEditInvestmentSheet(initialInvestment: investment),
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddEditInvestmentSheet(initialInvestment: currentInv),
     );
   }
 
-  Future<void> _updateValue(BuildContext context, WidgetRef ref) async {
+  Future<void> _updateValuation(
+    BuildContext context,
+    WidgetRef ref,
+    Investment currentInv,
+  ) async {
     final controller = TextEditingController(
-      text: investment.currentValue.toStringAsFixed(2),
+      text:
+          currentInv.currentValue.truncateToDouble() == currentInv.currentValue
+              ? currentInv.currentValue.toInt().toString()
+              : currentInv.currentValue.toString(),
     );
-    final confirmed = await showDialog<bool>(
+
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Update Current Valuation'),
-            content: Column(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final theme = ctx.theme;
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(StillwaterTokens.radius2Xl),
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Enter the latest valuation for "${investment.name}".',
-                  style: Theme.of(ctx).textTheme.bodySmall,
+                FfSheetHeader(
+                  title: 'Update Valuation',
+                  subtitle:
+                      'Enter current market valuation for "${currentInv.name}"',
                 ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
-                FfAmountField(
-                  controller: controller,
-                  labelText: 'Current Value (₹)',
+                const Divider(height: 1, thickness: 1),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: StillwaterTokens.spaceLg,
+                    right: StillwaterTokens.spaceLg,
+                    top: StillwaterTokens.spaceMd,
+                    bottom:
+                        MediaQuery.of(ctx).viewInsets.bottom +
+                        StillwaterTokens.spaceMd,
+                  ),
+                  child: TextFormField(
+                    controller: controller,
+                    autofocus: true,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Current Value (₹)',
+                      prefixText: '₹ ',
+                    ),
+                  ),
+                ),
+                FfSheetFooter(
+                  secondaryLabel: 'Cancel',
+                  primaryLabel: 'Update Value',
+                  onSecondaryPressed: () => Navigator.of(ctx).pop(false),
+                  onPrimaryPressed: () => Navigator.of(ctx).pop(true),
                 ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Update'),
-              ),
-            ],
           ),
+        );
+      },
     );
 
     if (confirmed == true && context.mounted) {
       final newVal =
-          double.tryParse(controller.text.trim()) ?? investment.currentValue;
+          CurrencyFormatter.parse(controller.text) ?? currentInv.currentValue;
       await ref
           .read(investmentsControllerProvider.notifier)
-          .updateValuation(investment.id, newVal);
+          .updateValuation(currentInv.id, newVal);
       if (context.mounted) {
-        Navigator.of(context).pop();
-        FfSnackbar.show(context, message: 'Valuation updated.');
+        FfSnackbar.show(context, message: 'Valuation updated on this device.');
       }
     }
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    Investment currentInv,
+  ) async {
     final confirmed = await FfConfirmDialog.show(
       context,
       title: 'Delete Investment?',
       message:
-          'Are you sure you want to remove "${investment.name}" from your portfolio?',
+          'Are you sure you want to remove "${currentInv.name}" from your local portfolio?',
       confirmLabel: 'Delete',
       isDestructive: true,
     );
@@ -89,10 +128,10 @@ class InvestmentDetailScreen extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       await ref
           .read(investmentsControllerProvider.notifier)
-          .deleteInvestment(investment.id);
+          .deleteInvestment(currentInv.id);
       if (context.mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(context, message: 'Investment deleted.');
+        FfSnackbar.show(context, message: 'Investment removed.');
       }
     }
   }
@@ -101,28 +140,53 @@ class InvestmentDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
 
+    // Watch live stream
+    final allInvsAsync = ref.watch(allInvestmentsStreamProvider);
+    final currentInv =
+        allInvsAsync.value?.firstWhere(
+          (i) => i.id == investment.id,
+          orElse: () => investment,
+        ) ??
+        investment;
+
+    final accountsAsync = ref.watch(allAccountsStreamProvider);
+    final linkedAccount = accountsAsync.value?.firstWhere(
+      (a) => a.id == currentInv.accountId,
+      orElse: () => null as dynamic,
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(investment.name),
+        title: Text(currentInv.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit',
-            onPressed: () => _edit(context),
+            tooltip: 'Edit Investment',
+            onPressed: () => _edit(context, currentInv),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Delete',
-            onPressed: () => _delete(context, ref),
+          const Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            child: Center(child: FfPrivacyBadge(label: '100% Local')),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // Current Value Hero Card
-          FfCard(
-            variant: FfCardVariant.elevated,
+          // ── 1. Valuation Hero Card ──────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -130,34 +194,38 @@ class InvestmentDetailScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Current Valuation (User Entered)',
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      'CURRENT VALUATION',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        letterSpacing: 0.8,
                         color: theme.colorScheme.secondary,
+                        fontSize: 10,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: StillwaterTokens.spaceSm,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color:
-                            investment.isProfitable
+                            currentInv.isProfitable
                                 ? context.secColors.verified.withValues(
                                   alpha: 0.15,
                                 )
                                 : context.secColors.error.withValues(
                                   alpha: 0.15,
                                 ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusFull,
+                        ),
                       ),
                       child: Text(
-                        '${investment.isProfitable ? "+" : ""}${investment.percentageReturn.toStringAsFixed(1)}%',
+                        '${currentInv.isProfitable ? "+" : ""}${CurrencyFormatter.formatINR(currentInv.absoluteReturn)} (${currentInv.percentageReturn.toStringAsFixed(1)}%)',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color:
-                              investment.isProfitable
+                              currentInv.isProfitable
                                   ? context.secColors.verified
                                   : context.secColors.error,
                         ),
@@ -167,20 +235,17 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 Text(
-                  CurrencyFormatter.formatINR(investment.currentValue),
-                  style: theme.textTheme.displaySmall?.copyWith(
+                  CurrencyFormatter.formatINR(currentInv.currentValue),
+                  style: theme.textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: 2),
                 Text(
-                  'Returns: ${investment.isProfitable ? "+" : ""}${CurrencyFormatter.formatINR(investment.absoluteReturn)} · Invested: ${CurrencyFormatter.formatINR(investment.investedAmount)}',
+                  'Cost basis: ${CurrencyFormatter.formatINR(currentInv.investedAmount)} · Manual Entry',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color:
-                        investment.isProfitable
-                            ? context.secColors.verified
-                            : context.secColors.error,
-                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.secondary,
                   ),
                 ),
               ],
@@ -189,93 +254,186 @@ class InvestmentDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Details List
-          FfCard(
+          // Quick Action to update value
+          FfButton(
+            label: 'Update Current Valuation',
+            leadingIcon: const Icon(Icons.refresh_rounded, size: 18),
+            onPressed: () => _updateValuation(context, ref, currentInv),
+          ),
+
+          const SizedBox(height: StillwaterTokens.space2Xl),
+
+          // ── 2. Holding Details Group ────────────────────────────────────
+          _SectionLabel(label: 'Holding Details'),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
             child: Column(
               children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Asset Class'),
-                  trailing: Text(
-                    investment.assetType.displayName,
-                    style: theme.textTheme.titleSmall,
-                  ),
+                _DetailRow(
+                  icon: Icons.category_outlined,
+                  label: 'Asset Class',
+                  value: currentInv.assetType.displayName,
                 ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Units / Quantity'),
-                  trailing: Text(
-                    '${investment.quantityOrUnits}',
-                    style: theme.textTheme.titleSmall,
-                  ),
+                _DetailDivider(),
+                _DetailRow(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'Invested Cost',
+                  value: CurrencyFormatter.formatINR(currentInv.investedAmount),
                 ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Purchase Price per Unit'),
-                  trailing: Text(
-                    CurrencyFormatter.formatINR(investment.purchasePrice),
-                    style: theme.textTheme.titleSmall,
-                  ),
+                _DetailDivider(),
+                _DetailRow(
+                  icon: Icons.numbers_rounded,
+                  label: 'Units / Quantity',
+                  value:
+                      currentInv.quantityOrUnits.truncateToDouble() ==
+                              currentInv.quantityOrUnits
+                          ? currentInv.quantityOrUnits.toInt().toString()
+                          : currentInv.quantityOrUnits.toString(),
                 ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Purchase Date'),
-                  trailing: Text(
-                    DateFormatter.formatFullDate(investment.purchaseDate),
-                    style: theme.textTheme.titleSmall,
-                  ),
+                _DetailDivider(),
+                _DetailRow(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Purchase Date',
+                  value: DateFormatter.formatFullDate(currentInv.purchaseDate),
                 ),
-                if (investment.lastValuationDate != null) ...[
-                  const Divider(),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Last Valuation Updated'),
-                    trailing: Text(
-                      DateFormatter.formatTransactionDate(
-                        investment.lastValuationDate!,
-                      ),
-                      style: theme.textTheme.titleSmall,
-                    ),
+                _DetailDivider(),
+                _DetailRow(
+                  icon: Icons.account_balance_outlined,
+                  label: 'Source Account',
+                  value: linkedAccount?.name ?? 'Not specified',
+                  isLast: (currentInv.notes?.isEmpty ?? true),
+                ),
+                if (currentInv.notes?.isNotEmpty ?? false) ...[
+                  _DetailDivider(),
+                  _DetailRow(
+                    icon: Icons.notes_rounded,
+                    label: 'Notes',
+                    value: currentInv.notes!,
+                    isLast: true,
                   ),
                 ],
               ],
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
-
-          // Honest Pricing Notice
-          FfCard(
-            variant: FfCardVariant.tinted,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.lock_outline_rounded,
-                  size: 18,
-                  color: context.secColors.verified,
-                ),
-                const SizedBox(width: StillwaterTokens.spaceSm),
-                Expanded(
-                  child: Text(
-                    'Values stay as entered by you. FinanceFlow does not fetch market prices.',
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          FfButton(
-            label: 'Update Current Valuation',
-            variant: FfButtonVariant.filled,
-            onPressed: () => _updateValue(context, ref),
+          // ── 3. Actions ──────────────────────────────────────────────────
+          _SectionLabel(label: 'Manage Holding'),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Row(
+            children: [
+              Expanded(
+                child: FfButton(
+                  label: 'Edit Details',
+                  variant: FfButtonVariant.outlined,
+                  leadingIcon: const Icon(Icons.edit_outlined, size: 16),
+                  onPressed: () => _edit(context, currentInv),
+                ),
+              ),
+              const SizedBox(width: StillwaterTokens.spaceMd),
+              Expanded(
+                child: FfButton(
+                  label: 'Delete Holding',
+                  variant: FfButtonVariant.destructive,
+                  leadingIcon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 16,
+                  ),
+                  onPressed: () => _delete(context, ref, currentInv),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: StillwaterTokens.space4Xl),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isLast;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceMd,
+        vertical: StillwaterTokens.spaceSm,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.secondary),
+          const SizedBox(width: StillwaterTokens.spaceMd),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.secondary,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DetailDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: StillwaterTokens.borderWidthHairline,
+      indent: StillwaterTokens.spaceMd + 20 + StillwaterTokens.spaceMd,
+      endIndent: 0,
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      child: Text(
+        label.toUpperCase(),
+        style: context.textTheme.labelSmall?.copyWith(
+          letterSpacing: 0.8,
+          color: context.theme.colorScheme.secondary,
+          fontSize: 10,
+        ),
       ),
     );
   }

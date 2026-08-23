@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
+import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/subscription.dart';
 import '../../repositories/account_repository.dart';
-import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
+import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
@@ -32,6 +37,9 @@ class _AddEditSubscriptionSheetState
   String? _selectedAccountId;
   late int _reminderDays;
   late bool _isReminderEnabled;
+  bool _isSaving = false;
+
+  bool get isEditing => widget.initialSubscription != null;
 
   @override
   void initState() {
@@ -39,7 +47,12 @@ class _AddEditSubscriptionSheetState
     final init = widget.initialSubscription;
     _merchantController = TextEditingController(text: init?.merchant ?? '');
     _amountController = TextEditingController(
-      text: init != null ? init.amount.toStringAsFixed(2) : '',
+      text:
+          init != null
+              ? (init.amount.truncateToDouble() == init.amount
+                  ? init.amount.toInt().toString()
+                  : init.amount.toString())
+              : '',
     );
     _notesController = TextEditingController(text: init?.notes ?? '');
 
@@ -74,7 +87,8 @@ class _AddEditSubscriptionSheetState
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
+    final amount =
+        CurrencyFormatter.parse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
       FfSnackbar.show(context, message: 'Please enter a valid amount.');
       return;
@@ -89,206 +103,365 @@ class _AddEditSubscriptionSheetState
       return;
     }
 
+    setState(() => _isSaving = true);
     final controller = ref.read(subscriptionsControllerProvider.notifier);
 
-    if (widget.initialSubscription != null) {
-      final updated = widget.initialSubscription!.copyWith(
-        merchant: merchant,
-        amount: amount,
-        billingFrequency: _frequency,
-        nextRenewalDate: _nextRenewalDate,
-        accountId: _selectedAccountId,
-        reminderDaysBefore: _reminderDays,
-        isReminderEnabled: _isReminderEnabled,
-        notes:
-            _notesController.text.trim().isEmpty
-                ? null
-                : _notesController.text.trim(),
-      );
-      await controller.updateSubscription(updated);
-    } else {
-      await controller.addSubscription(
-        merchant: merchant,
-        amount: amount,
-        billingFrequency: _frequency,
-        nextRenewalDate: _nextRenewalDate,
-        accountId: _selectedAccountId,
-        reminderDaysBefore: _reminderDays,
-        isReminderEnabled: _isReminderEnabled,
-        notes:
-            _notesController.text.trim().isEmpty
-                ? null
-                : _notesController.text.trim(),
-      );
-    }
+    try {
+      if (isEditing) {
+        final updated = widget.initialSubscription!.copyWith(
+          merchant: merchant,
+          amount: amount,
+          billingFrequency: _frequency,
+          nextRenewalDate: _nextRenewalDate,
+          accountId: _selectedAccountId,
+          category: widget.initialSubscription?.category ?? 'Subscriptions',
+          reminderDaysBefore: _reminderDays,
+          isReminderEnabled: _isReminderEnabled,
+          notes:
+              _notesController.text.trim().isNotEmpty
+                  ? _notesController.text.trim()
+                  : null,
+        );
+        await controller.updateSubscription(updated);
+      } else {
+        await controller.addSubscription(
+          merchant: merchant,
+          amount: amount,
+          billingFrequency: _frequency,
+          nextRenewalDate: _nextRenewalDate,
+          accountId: _selectedAccountId,
+          category: 'Subscriptions',
+          reminderDaysBefore: _reminderDays,
+          isReminderEnabled: _isReminderEnabled,
+          notes:
+              _notesController.text.trim().isNotEmpty
+                  ? _notesController.text.trim()
+                  : null,
+        );
+      }
 
-    if (mounted) {
-      Navigator.of(context).pop();
-      FfSnackbar.show(
-        context,
-        message:
-            widget.initialSubscription != null
-                ? 'Subscription updated.'
-                : 'Subscription added.',
-      );
+      if (mounted) {
+        Navigator.of(context).pop();
+        FfSnackbar.show(
+          context,
+          message:
+              isEditing
+                  ? 'Subscription updated.'
+                  : 'Subscription plan created.',
+        );
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        FfSnackbar.show(context, message: 'Could not save subscription: $e');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final accounts = ref.watch(allAccountsStreamProvider).value ?? [];
+    final accountsAsync = ref.watch(allAccountsStreamProvider);
+    final accounts = accountsAsync.value ?? [];
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: StillwaterTokens.spaceLg,
-        right: StillwaterTokens.spaceLg,
-        top: StillwaterTokens.spaceLg,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
       ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.initialSubscription != null
-                        ? 'Edit Subscription'
-                        : 'Add Subscription',
-                    style: theme.textTheme.headlineSmall,
+              FfSheetHeader(
+                title: isEditing ? 'Edit Subscription' : 'New Subscription',
+                subtitle: 'Track recurring renewals locally on device',
+              ),
+              const Divider(height: 1, thickness: 1),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.of(context).pop(),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── 1. Amount Hero Field ──────────────────────────
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StillwaterTokens.spaceMd,
+                            vertical: StillwaterTokens.spaceSm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusLg,
+                            ),
+                            border: Border.all(
+                              color: theme.dividerColor,
+                              width: StillwaterTokens.borderWidthHairline,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'RECURRING AMOUNT',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                  letterSpacing: 1.0,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: StillwaterTokens.spaceXs),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '₹',
+                                    style: StillwaterTypography.numLg(
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    width: StillwaterTokens.spaceXs,
+                                  ),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _amountController,
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d+\.?\d{0,2}'),
+                                        ),
+                                      ],
+                                      style: StillwaterTypography.numHero(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: '0',
+                                        hintStyle: StillwaterTypography.numHero(
+                                          color: theme.colorScheme.outline,
+                                        ),
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        filled: false,
+                                        contentPadding: EdgeInsets.zero,
+                                        isDense: true,
+                                      ),
+                                      validator: (val) {
+                                        if (val == null || val.trim().isEmpty) {
+                                          return 'Please enter amount.';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceMd),
+
+                        // ── 2. Service / Merchant Name ────────────────────
+                        TextFormField(
+                          controller: _merchantController,
+                          decoration: const InputDecoration(
+                            labelText: 'Service or Merchant',
+                            hintText: 'e.g. Netflix, Spotify, iCloud, Gym',
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please enter service name.';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // ── 3. Billing Frequency Selector ─────────────────
+                        Text(
+                          'BILLING FREQUENCY',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            letterSpacing: 1.0,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        FfSegmentedPill<SubscriptionFrequency>(
+                          options: const [
+                            FfSegmentOption(
+                              value: SubscriptionFrequency.monthly,
+                              label: 'Monthly',
+                            ),
+                            FfSegmentOption(
+                              value: SubscriptionFrequency.yearly,
+                              label: 'Yearly',
+                            ),
+                            FfSegmentOption(
+                              value: SubscriptionFrequency.quarterly,
+                              label: 'Quarterly',
+                            ),
+                            FfSegmentOption(
+                              value: SubscriptionFrequency.weekly,
+                              label: 'Weekly',
+                            ),
+                          ],
+                          selectedValue: _frequency,
+                          onSelected: (val) {
+                            setState(() => _frequency = val);
+                          },
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // ── 4. Next Renewal Date ──────────────────────────
+                        InkWell(
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusMd,
+                          ),
+                          onTap: _selectDate,
+                          child: Container(
+                            padding: const EdgeInsets.all(
+                              StillwaterTokens.spaceMd,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusMd,
+                              ),
+                              border: Border.all(
+                                color: theme.dividerColor,
+                                width: StillwaterTokens.borderWidthHairline,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Next Renewal Date',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.secondary,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormatter.formatShortDate(
+                                        _nextRenewalDate,
+                                      ),
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 20,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        // ── 5. Linked Payment Account ─────────────────────
+                        if (accounts.isNotEmpty) ...[
+                          Text(
+                            'LINKED PAYMENT ACCOUNT (OPTIONAL)',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              letterSpacing: 1.0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceXs),
+                          DropdownButtonFormField<String?>(
+                            value: _selectedAccountId,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: StillwaterTokens.spaceMd,
+                                vertical: StillwaterTokens.spaceSm,
+                              ),
+                            ),
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('None / Not linked'),
+                              ),
+                              ...accounts.map((a) {
+                                return DropdownMenuItem(
+                                  value: a.id,
+                                  child: Text('${a.name} (${a.currency})'),
+                                );
+                              }),
+                            ],
+                            onChanged: (val) {
+                              setState(() => _selectedAccountId = val);
+                            },
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceLg),
+                        ],
+
+                        // ── 6. Reminder Settings ──────────────────────────
+                        FfSwitchRow(
+                          title: 'Renewal Reminder',
+                          subtitle: 'Notify before renewal charge happens',
+                          value: _isReminderEnabled,
+                          onChanged: (val) {
+                            setState(() => _isReminderEnabled = val);
+                          },
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceMd),
+
+                        // ── 7. Optional Notes ─────────────────────────────
+                        TextFormField(
+                          controller: _notesController,
+                          decoration: const InputDecoration(
+                            labelText: 'Notes (Optional)',
+                            hintText: 'Plan type, family tier, renewal terms',
+                          ),
+                        ),
+
+                        const SizedBox(height: StillwaterTokens.spaceMd),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: StillwaterTokens.spaceMd),
-
-              // Service / Merchant Name
-              TextFormField(
-                controller: _merchantController,
-                decoration: const InputDecoration(
-                  labelText: 'Service / Merchant Name',
-                  hintText: 'e.g. Netflix, Spotify, iCloud',
-                  prefixIcon: Icon(Icons.subscriptions_outlined),
                 ),
-                textCapitalization: TextCapitalization.words,
-                validator:
-                    (v) => v == null || v.trim().isEmpty ? 'Required' : null,
               ),
-
-              const SizedBox(height: StillwaterTokens.spaceMd),
-
-              // Amount Field
-              FfAmountField(
-                controller: _amountController,
-                labelText: 'Amount (₹)',
+              FfSheetFooter(
+                primaryLabel:
+                    isEditing ? 'Save Changes' : 'Create Subscription',
+                isPrimaryLoading: _isSaving,
+                onPrimaryPressed: _save,
               ),
-
-              const SizedBox(height: StillwaterTokens.spaceMd),
-
-              // Billing Frequency Dropdown
-              DropdownButtonFormField<SubscriptionFrequency>(
-                value: _frequency,
-                decoration: const InputDecoration(
-                  labelText: 'Billing Frequency',
-                  prefixIcon: Icon(Icons.repeat_rounded),
-                ),
-                items:
-                    SubscriptionFrequency.values.map((f) {
-                      return DropdownMenuItem(
-                        value: f,
-                        child: Text(f.displayName),
-                      );
-                    }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _frequency = val);
-                },
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceMd),
-
-              // Next Renewal Date Picker Tile
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  Icons.event_outlined,
-                  color: theme.colorScheme.primary,
-                ),
-                title: const Text('Next Renewal Date'),
-                subtitle: Text(DateFormatter.formatFullDate(_nextRenewalDate)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: _selectDate,
-              ),
-
-              const Divider(),
-
-              // Account Selector
-              DropdownButtonFormField<String?>(
-                value: _selectedAccountId,
-                decoration: const InputDecoration(
-                  labelText: 'Payment Account (Optional)',
-                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                ),
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('None / Any Account'),
-                  ),
-                  ...accounts.map(
-                    (a) => DropdownMenuItem(value: a.id, child: Text(a.name)),
-                  ),
-                ],
-                onChanged: (val) => setState(() => _selectedAccountId = val),
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceSm),
-
-              // Reminder Switch
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Renewal Reminder'),
-                subtitle: Text(
-                  _isReminderEnabled
-                      ? 'Remind $_reminderDays day(s) before renewal'
-                      : 'Disabled',
-                ),
-                value: _isReminderEnabled,
-                activeColor: theme.colorScheme.primary,
-                onChanged: (val) => setState(() => _isReminderEnabled = val),
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceSm),
-
-              // Notes Field
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (Optional)',
-                  hintText: 'e.g. Shared family plan',
-                  prefixIcon: Icon(Icons.notes_outlined),
-                ),
-                maxLines: 2,
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceXl),
-
-              // Save Button
-              FfButton(
-                label:
-                    widget.initialSubscription != null
-                        ? 'Save Changes'
-                        : 'Add Subscription',
-                onPressed: _save,
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceLg),
             ],
           ),
         ),

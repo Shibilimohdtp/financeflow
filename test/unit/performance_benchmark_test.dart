@@ -13,14 +13,38 @@ void main() {
     List<Transaction> generateSyntheticDataset(int count) {
       final Random rnd = Random(42);
       final DateTime baseDate = DateTime(2026, 8, 22);
-      final List<String> categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Investments'];
-      final List<String> merchants = ['Swiggy', 'Uber', 'Amazon', 'Airtel', 'Netflix', 'Acme Corp', 'DMart', 'Petrol Pump'];
+      final List<String> categories = [
+        'Food',
+        'Transport',
+        'Shopping',
+        'Bills',
+        'Entertainment',
+        'Salary',
+        'Investments',
+      ];
+      final List<String> merchants = [
+        'Swiggy',
+        'Uber',
+        'Amazon',
+        'Airtel',
+        'Netflix',
+        'Acme Corp',
+        'DMart',
+        'Petrol Pump',
+      ];
 
       return List.generate(count, (index) {
         final isIncome = rnd.nextDouble() < 0.15;
-        final cat = isIncome ? 'Salary' : categories[rnd.nextInt(categories.length - 1)];
-        final merchant = isIncome ? 'Acme Corp' : merchants[rnd.nextInt(merchants.length)];
-        final amount = isIncome ? 50000.0 + rnd.nextInt(50000) : (50.0 + rnd.nextInt(4950)).toDouble();
+        final cat =
+            isIncome
+                ? 'Salary'
+                : categories[rnd.nextInt(categories.length - 1)];
+        final merchant =
+            isIncome ? 'Acme Corp' : merchants[rnd.nextInt(merchants.length)];
+        final amount =
+            isIncome
+                ? 50000.0 + rnd.nextInt(50000)
+                : (50.0 + rnd.nextInt(4950)).toDouble();
 
         return Transaction(
           id: 'perf_tx_$index',

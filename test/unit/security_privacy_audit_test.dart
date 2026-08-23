@@ -109,7 +109,9 @@ class MockLocalAuthentication implements LocalAuthentication {
   Future<bool> isDeviceSupported() async => supported;
 
   @override
-  Future<List<BiometricType>> getAvailableBiometrics() async => [BiometricType.fingerprint];
+  Future<List<BiometricType>> getAvailableBiometrics() async => [
+    BiometricType.fingerprint,
+  ];
 
   @override
   Future<bool> authenticate({
@@ -160,22 +162,25 @@ void main() {
       expect(wrongVerified, isFalse);
     });
 
-    test('Legacy PIN automatically upgrades to salted SHA-256 on successful login', () async {
-      const legacyPin = '9912';
-      await mockStorage.write(key: AppConstants.keyAppPin, value: legacyPin);
+    test(
+      'Legacy PIN automatically upgrades to salted SHA-256 on successful login',
+      () async {
+        const legacyPin = '9912';
+        await mockStorage.write(key: AppConstants.keyAppPin, value: legacyPin);
 
-      expect(await securityService.hasPin(), isTrue);
+        expect(await securityService.hasPin(), isTrue);
 
-      // Verify legacy PIN
-      final isValid = await securityService.verifyPin(legacyPin);
-      expect(isValid, isTrue);
+        // Verify legacy PIN
+        final isValid = await securityService.verifyPin(legacyPin);
+        expect(isValid, isTrue);
 
-      // Verify upgrade happened
-      final newHash = await mockStorage.read(key: 'ff_pin_hash_v2');
-      final legacyAfter = await mockStorage.read(key: AppConstants.keyAppPin);
-      expect(newHash, isNotNull);
-      expect(legacyAfter, isNull);
-    });
+        // Verify upgrade happened
+        final newHash = await mockStorage.read(key: 'ff_pin_hash_v2');
+        final legacyAfter = await mockStorage.read(key: AppConstants.keyAppPin);
+        expect(newHash, isNotNull);
+        expect(legacyAfter, isNull);
+      },
+    );
 
     test('PIN removal completely clears secure storage keys', () async {
       await securityService.setPin('123456');
@@ -187,57 +192,70 @@ void main() {
       expect(await mockStorage.read(key: 'ff_pin_salt_v2'), isNull);
     });
 
-    test('Biometric authentication respects hardware availability and device support', () async {
-      mockAuth.supported = true;
-      mockAuth.canCheck = true;
-      expect(await securityService.isBiometricsAvailable(), isTrue);
+    test(
+      'Biometric authentication respects hardware availability and device support',
+      () async {
+        mockAuth.supported = true;
+        mockAuth.canCheck = true;
+        expect(await securityService.isBiometricsAvailable(), isTrue);
 
-      mockAuth.supported = false;
-      expect(await securityService.isBiometricsAvailable(), isFalse);
+        mockAuth.supported = false;
+        expect(await securityService.isBiometricsAvailable(), isFalse);
 
-      mockAuth.supported = true;
-      mockAuth.authResult = true;
-      expect(await securityService.authenticateWithBiometrics(), isTrue);
+        mockAuth.supported = true;
+        mockAuth.authResult = true;
+        expect(await securityService.authenticateWithBiometrics(), isTrue);
 
-      mockAuth.authResult = false;
-      expect(await securityService.authenticateWithBiometrics(), isFalse);
-    });
+        mockAuth.authResult = false;
+        expect(await securityService.authenticateWithBiometrics(), isFalse);
+      },
+    );
 
-    test('GeminiDataSanitizer redacts account numbers and phone numbers from user queries', () {
-      const queryWithAccount = 'How much did I send to account 987654321098 last month?';
-      final sanitized = GeminiDataSanitizer.sanitizeForQuery(
-        query: queryWithAccount,
-        contextSummary: 'Context with 2 transactions',
-      );
+    test(
+      'GeminiDataSanitizer redacts account numbers and phone numbers from user queries',
+      () {
+        const queryWithAccount =
+            'How much did I send to account 987654321098 last month?';
+        final sanitized = GeminiDataSanitizer.sanitizeForQuery(
+          query: queryWithAccount,
+          contextSummary: 'Context with 2 transactions',
+        );
 
-      expect(sanitized['query'].contains('987654321098'), isFalse);
-      expect(sanitized['query'].contains('[REDACTED_NUMBER]'), isTrue);
-    });
+        expect(sanitized['query'].contains('987654321098'), isFalse);
+        expect(sanitized['query'].contains('[REDACTED_NUMBER]'), isTrue);
+      },
+    );
 
-    test('GeminiDataSanitizer normalizes merchant before sending categorization request', () {
-      final sanitized = GeminiDataSanitizer.sanitizeForCategorization(
-        rawMerchant: 'UPI-SWIGGY-swiggy@icici-42352345',
-        amount: 450.0,
-        availableCategoryNames: ['Dining', 'Groceries', 'Transport'],
-      );
+    test(
+      'GeminiDataSanitizer normalizes merchant before sending categorization request',
+      () {
+        final sanitized = GeminiDataSanitizer.sanitizeForCategorization(
+          rawMerchant: 'UPI-SWIGGY-swiggy@icici-42352345',
+          amount: 450.0,
+          availableCategoryNames: ['Dining', 'Groceries', 'Transport'],
+        );
 
-      expect(sanitized['merchant'], 'Swiggy');
-      expect(sanitized['amount'], 450.0);
-      expect(sanitized['availableCategories'], contains('Dining'));
-    });
+        expect(sanitized['merchant'], 'Swiggy');
+        expect(sanitized['amount'], 450.0);
+        expect(sanitized['availableCategories'], contains('Dining'));
+      },
+    );
 
-    test('Privacy settings toggle privacy blur and dense mode safely', () async {
-      final settingsRepo = FakeSettingsRepository();
-      var settings = await settingsRepo.getSettings();
-      expect(settings.isPrivacyBlurEnabled, isFalse);
+    test(
+      'Privacy settings toggle privacy blur and dense mode safely',
+      () async {
+        final settingsRepo = FakeSettingsRepository();
+        var settings = await settingsRepo.getSettings();
+        expect(settings.isPrivacyBlurEnabled, isFalse);
 
-      await settingsRepo.setPrivacyBlurEnabled(true);
-      settings = await settingsRepo.getSettings();
-      expect(settings.isPrivacyBlurEnabled, isTrue);
+        await settingsRepo.setPrivacyBlurEnabled(true);
+        settings = await settingsRepo.getSettings();
+        expect(settings.isPrivacyBlurEnabled, isTrue);
 
-      await settingsRepo.setDenseMode(true);
-      settings = await settingsRepo.getSettings();
-      expect(settings.isDenseMode, isTrue);
-    });
+        await settingsRepo.setDenseMode(true);
+        settings = await settingsRepo.getSettings();
+        expect(settings.isDenseMode, isTrue);
+      },
+    );
   });
 }

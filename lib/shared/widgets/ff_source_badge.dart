@@ -73,30 +73,36 @@ class FfSourceBadge extends StatelessWidget {
           width: StillwaterTokens.borderWidthHairline,
         ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _getIcon(),
-            size: 11,
-            color:
-                isMerged
-                    ? accentColor
-                    : context.theme.textTheme.bodySmall?.color,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            _displayLabel,
-            style: context.textTheme.labelSmall?.copyWith(
-              fontSize: 10,
+      child: ClipRect(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _getIcon(),
+              size: 11,
               color:
                   isMerged
                       ? accentColor
                       : context.theme.textTheme.bodySmall?.color,
-              fontWeight: isMerged ? FontWeight.w600 : FontWeight.normal,
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                _displayLabel,
+                style: context.textTheme.labelSmall?.copyWith(
+                  fontSize: 10,
+                  color:
+                      isMerged
+                          ? accentColor
+                          : context.theme.textTheme.bodySmall?.color,
+                  fontWeight: isMerged ? FontWeight.w600 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

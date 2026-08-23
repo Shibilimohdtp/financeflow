@@ -6,7 +6,10 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'backup_controller.dart';
@@ -24,6 +27,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   final _confirmPassphraseController = TextEditingController();
   List<File> _existingBackups = [];
   bool _isLoadingBackups = true;
+  bool _isCreatingBackup = false;
 
   @override
   void initState() {
@@ -84,6 +88,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       return;
     }
 
+    setState(() => _isCreatingBackup = true);
+
     try {
       final path = await ref
           .read(backupControllerProvider.notifier)
@@ -96,12 +102,16 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         FfSnackbar.show(
           context,
           message:
-              'Encrypted backup created on device: ${path.split(Platform.pathSeparator).last}',
+              'Encrypted backup created: ${path.split(Platform.pathSeparator).last}',
         );
       }
     } catch (e) {
       if (mounted) {
         FfSnackbar.show(context, message: 'Backup failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreatingBackup = false);
       }
     }
   }
@@ -119,7 +129,6 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final state = ref.watch(backupControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -127,39 +136,58 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'AES-256 Encrypted')),
+            child: Center(child: FfPrivacyBadge(label: 'AES-256 GCM')),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // Trust Promise Card
+          // ── 1. AES Encryption Guarantee ───────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.shield_outlined,
-                      color: context.secColors.verified,
-                      size: 20,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: context.secColors.verified.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusMd,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
-                    Text(
-                      'Zero-Knowledge Local Encryption',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: context.secColors.verified,
-                      ),
-                    ),
-                  ],
+                  ),
+                  child: Icon(
+                    Icons.lock_outline_rounded,
+                    color: context.secColors.verified,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                Text(
-                  'Your backup is encrypted on this device using standard PBKDF2 and AES-256 before saving. Keep your passphrase safe — it cannot be recovered if lost.',
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                const SizedBox(width: StillwaterTokens.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Zero-Knowledge Encrypted Backups',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.secColors.verified,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Your data is encrypted with AES-256-GCM using your private passphrase. It cannot be unlocked without your passphrase.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -167,10 +195,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Create Backup Section
-          Text('Create Encrypted Backup', style: theme.textTheme.titleMedium),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          // ── 2. Create Encrypted Backup Form ──────────────────────────
+          const FfSectionHeader(title: 'Create New Backup'),
           FfCard(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -178,9 +206,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   controller: _passphraseController,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Backup Passphrase',
-                    hintText: 'Minimum 6 characters',
-                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                    labelText: 'Encryption Passphrase',
+                    hintText: 'Enter at least 6 characters',
+                    prefixIcon: Icon(Icons.key_outlined, size: 20),
                   ),
                 ),
                 const SizedBox(height: StillwaterTokens.spaceMd),
@@ -189,100 +217,124 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Confirm Passphrase',
-                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                    hintText: 'Re-enter passphrase',
+                    prefixIcon: Icon(Icons.key_outlined, size: 20),
                   ),
                 ),
                 const SizedBox(height: StillwaterTokens.spaceLg),
                 FfButton(
-                  label:
-                      state.isLoading
-                          ? 'Encrypting & Saving...'
-                          : 'Create Encrypted Backup',
-                  isLoading: state.isLoading,
-                  onPressed: state.isLoading ? null : _createBackup,
+                  label: 'Generate Encrypted Backup',
+                  isLoading: _isCreatingBackup,
+                  leadingIcon: const Icon(Icons.download_rounded, size: 18),
+                  onPressed: _isCreatingBackup ? null : _createBackup,
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Existing Local Backups List
-          Text(
-            'Available Backups on Device',
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          // ── 3. Existing Local Backups ─────────────────────────────────
+          FfSectionHeader(title: 'Local Backups (${_existingBackups.length})'),
+
           if (_isLoadingBackups)
             const Center(child: CircularProgressIndicator())
           else if (_existingBackups.isEmpty)
-            FfCard(
-              child: Padding(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
-                child: Center(
-                  child: Text(
-                    'No backups created yet.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                    ),
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: StillwaterTokens.spaceXl,
+              ),
+              child: FfEmptyState(
+                icon: Icons.history_toggle_off_rounded,
+                title: 'No backup files found',
+                description:
+                    'Generate your first encrypted backup above to keep an offline safeguard of your finances.',
               ),
             )
           else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _existingBackups.length,
-              separatorBuilder:
-                  (_, __) => const SizedBox(height: StillwaterTokens.spaceSm),
-              itemBuilder: (context, index) {
-                final file = _existingBackups[index];
-                final stats = file.statSync();
-                final name = file.path.split(Platform.pathSeparator).last;
-                final sizeKb = (stats.size / 1024).toStringAsFixed(1);
-
-                return FfCard(
-                  onTap: () => _openRestore(file),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.inventory_2_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: theme.textTheme.titleSmall,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${DateFormatter.formatFullDate(stats.modified)} · $sizeKb KB',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => _openRestore(file),
-                        child: const Text('Restore'),
-                      ),
-                    ],
+            FfGroupedContainer(
+              children: [
+                for (int i = 0; i < _existingBackups.length; i++)
+                  _BackupFileRow(
+                    file: _existingBackups[i],
+                    onRestore: () => _openRestore(_existingBackups[i]),
                   ),
-                );
-              },
+              ],
             ),
 
           const SizedBox(height: StillwaterTokens.space4Xl),
+        ],
+      ),
+    );
+  }
+}
+
+class _BackupFileRow extends StatelessWidget {
+  final File file;
+  final VoidCallback onRestore;
+
+  const _BackupFileRow({required this.file, required this.onRestore});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final stat = file.statSync();
+    final sizeKb = (stat.size / 1024).toStringAsFixed(1);
+    final filename = file.path.split(Platform.pathSeparator).last;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceMd,
+        vertical: StillwaterTokens.spaceSm,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: StillwaterTokens.iconTileSize,
+            height: StillwaterTokens.iconTileSize,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+            ),
+            child: Icon(
+              Icons.archive_outlined,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  filename,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '${DateFormatter.formatTransactionDate(stat.modified)} · $sizeKb KB',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FfButton(
+            label: 'Restore',
+            size: FfButtonSize.sm,
+            variant: FfButtonVariant.secondary,
+            leadingIcon: const Icon(
+              Icons.settings_backup_restore_rounded,
+              size: 16,
+            ),
+            onPressed: onRestore,
+          ),
         ],
       ),
     );

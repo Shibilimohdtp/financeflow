@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
-import '../../../core/formatting/currency_formatter.dart';
-import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
@@ -9,6 +8,7 @@ class BudgetOverviewCard extends StatelessWidget {
   final double totalSpent;
   final double totalRemaining;
   final int overBudgetCount;
+  final bool isPrivacyBlur;
   final VoidCallback onViewBudgets;
 
   const BudgetOverviewCard({
@@ -17,6 +17,7 @@ class BudgetOverviewCard extends StatelessWidget {
     required this.totalSpent,
     required this.totalRemaining,
     required this.overBudgetCount,
+    this.isPrivacyBlur = false,
     required this.onViewBudgets,
   });
 
@@ -39,93 +40,165 @@ class BudgetOverviewCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Monthly Budgets', style: theme.textTheme.titleMedium),
-              TextButton(onPressed: onViewBudgets, child: const Text('Manage')),
+              Expanded(
+                child: Text(
+                  'Budgets & Spending',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: onViewBudgets,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: const Text('Manage'),
+              ),
             ],
           ),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          InkWell(
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-            onTap: onViewBudgets,
-            child: FfCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Semantics(
+            container: true,
+            label:
+                isPrivacyBlur
+                    ? 'Monthly budgets status hidden'
+                    : isExceeded
+                    ? 'Budget exceeded by ${totalSpent - totalBudgeted}'
+                    : 'Budget remaining: $totalRemaining out of $totalBudgeted',
+            child: Material(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                onTap: onViewBudgets,
+                child: Container(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusLg,
+                    ),
+                    border: Border.all(
+                      color: theme.dividerColor,
+                      width: StillwaterTokens.borderWidthHairline,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            Icons.pie_chart_outline_rounded,
-                            color:
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(
+                                  StillwaterTokens.space2Xs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: (isExceeded
+                                          ? finColors.expense
+                                          : theme.colorScheme.primary)
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(
+                                    StillwaterTokens.radiusSm,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.pie_chart_outline_rounded,
+                                  color:
+                                      isExceeded
+                                          ? finColors.expense
+                                          : theme.colorScheme.primary,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: StillwaterTokens.spaceSm),
+                              Text(
                                 isExceeded
-                                    ? finColors.expense
-                                    : theme.colorScheme.primary,
-                            size: 20,
+                                    ? 'Over planned budget'
+                                    : 'Remaining budget',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      isExceeded
+                                          ? finColors.expense
+                                          : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceXs),
                           Text(
-                            isExceeded
-                                ? '${CurrencyFormatter.format(totalSpent - totalBudgeted)} over planned budget'
-                                : '${CurrencyFormatter.format(totalRemaining)} remaining',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color:
-                                  isExceeded
-                                      ? finColors.expense
-                                      : finColors.income,
-                              fontWeight: FontWeight.bold,
+                            '${(percentage * 100).toStringAsFixed(0)}% used',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      Text(
-                        '${(percentage * 100).toStringAsFixed(0)}% used',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusFull,
                         ),
+                        child: LinearProgressIndicator(
+                          value: percentage,
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHighest,
+                          color:
+                              isExceeded
+                                  ? finColors.expense
+                                  : theme.colorScheme.primary,
+                          minHeight: 6,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Spent: ',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                              FfAmountText(
+                                amount: totalSpent,
+                                size: FfAmountSize.sm,
+                                isBlurred: isPrivacyBlur,
+                                showSign: false,
+                                colorOverride: theme.colorScheme.onSurface,
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'Limit: ',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                              FfAmountText(
+                                amount: totalBudgeted,
+                                size: FfAmountSize.sm,
+                                isBlurred: isPrivacyBlur,
+                                showSign: false,
+                                colorOverride: theme.colorScheme.onSurface,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    child: LinearProgressIndicator(
-                      value: percentage,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      color:
-                          isExceeded
-                              ? finColors.expense
-                              : theme.colorScheme.primary,
-                      minHeight: 6,
-                    ),
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Spent: ${CurrencyFormatter.format(totalSpent)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'Limit: ${CurrencyFormatter.format(totalBudgeted)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),

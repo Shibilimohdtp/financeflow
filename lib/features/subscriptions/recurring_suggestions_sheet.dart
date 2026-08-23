@@ -4,10 +4,14 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 
 class RecurringSuggestionsSheet extends ConsumerWidget {
@@ -18,93 +22,146 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
     final theme = context.theme;
     final suggestionsAsync = ref.watch(recurringSuggestionsProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Recurring Suggestions')),
-      body: suggestionsAsync.when(
-        data: (suggestions) {
-          if (suggestions.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.spaceLg),
-                child: FfEmptyState(
-                  icon: Icons.check_circle_outline_rounded,
-                  title: 'No new recurring patterns',
-                  description:
-                      'FinanceFlow scans your local transaction history for repeated charges. No unconfirmed subscriptions found.',
-                ),
-              ),
-            );
-          }
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FfSheetHeader(
+              title: 'Recurring Patterns',
+              subtitle: 'Detected on-device from transaction history',
+              trailing: FfPrivacyBadge(label: 'On-Device AI'),
+            ),
+            const Divider(height: 1, thickness: 1),
+            Flexible(
+              child: suggestionsAsync.when(
+                data: (suggestions) {
+                  if (suggestions.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(StillwaterTokens.space2Xl),
+                        child: FfEmptyState(
+                          icon: Icons.check_circle_outline_rounded,
+                          title: 'No unconfirmed recurring patterns',
+                          description:
+                              'FinanceFlow scans local transactions for recurring charges. All patterns are already tracked.',
+                        ),
+                      ),
+                    );
+                  }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-            itemCount: suggestions.length,
-            separatorBuilder:
-                (_, __) => const SizedBox(height: StillwaterTokens.spaceMd),
-            itemBuilder: (context, index) {
-              final sug = suggestions[index];
-              return FfCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            sug.merchant,
-                            style: theme.textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          '${CurrencyFormatter.formatINR(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: StillwaterTokens.spaceLg,
+                      vertical: StillwaterTokens.spaceMd,
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
-                    Text(
-                      'Detected from ${sug.matchingTransactions.length} past payments (Last: ${DateFormatter.formatTransactionDate(sug.lastPaymentDate)})',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                    children: [
+                      FfSectionHeader(
+                        title: 'Detected Patterns (${suggestions.length})',
+                      ),
+                      FfGroupedContainer(
+                        children:
+                            suggestions.map((sug) {
+                              return Padding(
+                                padding: const EdgeInsets.all(
+                                  StillwaterTokens.spaceMd,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            sug.merchant,
+                                            style: theme.textTheme.titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${CurrencyFormatter.formatINR(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
+                                          style: StillwaterTypography.numMd(
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(
+                                      height: StillwaterTokens.space2Xs,
+                                    ),
+                                    Text(
+                                      'Matched ${sug.matchingTransactions.length} past payments · Last: ${DateFormatter.formatShortDate(sug.lastPaymentDate)}',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.secondary,
+                                          ),
+                                    ),
+                                    const SizedBox(
+                                      height: StillwaterTokens.spaceMd,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        FfButton(
+                                          label: 'Track Subscription',
+                                          size: FfButtonSize.sm,
+                                          leadingIcon: const Icon(
+                                            Icons.add_rounded,
+                                            size: 16,
+                                          ),
+                                          onPressed: () async {
+                                            await ref
+                                                .read(
+                                                  subscriptionsControllerProvider
+                                                      .notifier,
+                                                )
+                                                .addFromSuggestion(sug);
+                                            ref.invalidate(
+                                              recurringSuggestionsProvider,
+                                            );
+                                            if (context.mounted) {
+                                              FfSnackbar.show(
+                                                context,
+                                                message:
+                                                    'Subscription tracked for ${sug.merchant}.',
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ],
+                  );
+                },
+                loading:
+                    () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                        child: CircularProgressIndicator(),
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        FfButton(
-                          label: 'Track Subscription',
-                          size: FfButtonSize.sm,
-                          onPressed: () async {
-                            await ref
-                                .read(subscriptionsControllerProvider.notifier)
-                                .addFromSuggestion(sug);
-                            ref.invalidate(recurringSuggestionsProvider);
-                            if (context.mounted) {
-                              FfSnackbar.show(
-                                context,
-                                message:
-                                    'Subscription created for ${sug.merchant}.',
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+                error: (e, _) => Center(child: Text('Error: $e')),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

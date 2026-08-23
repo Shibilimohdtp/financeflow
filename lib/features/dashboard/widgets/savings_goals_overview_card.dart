@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
-import '../../../core/formatting/currency_formatter.dart';
-import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
 
 class SavingsGoalsOverviewCard extends StatelessWidget {
@@ -10,6 +9,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
   final double totalRemaining;
   final int completedCount;
   final int totalGoals;
+  final bool isPrivacyBlur;
   final VoidCallback onViewGoals;
 
   const SavingsGoalsOverviewCard({
@@ -19,6 +19,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
     required this.totalRemaining,
     required this.completedCount,
     required this.totalGoals,
+    this.isPrivacyBlur = false,
     required this.onViewGoals,
   });
 
@@ -40,82 +41,153 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Savings Goals', style: theme.textTheme.titleMedium),
-              TextButton(onPressed: onViewGoals, child: const Text('View all')),
+              Expanded(
+                child: Text(
+                  'Savings Goals',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: onViewGoals,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: const Text('View all'),
+              ),
             ],
           ),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          InkWell(
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-            onTap: onViewGoals,
-            child: FfCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Semantics(
+            container: true,
+            label:
+                isPrivacyBlur
+                    ? 'Savings goals hidden'
+                    : 'Savings Goals: $totalSaved saved towards $totalTarget, $completedCount of $totalGoals reached',
+            child: Material(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                onTap: onViewGoals,
+                child: Container(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusLg,
+                    ),
+                    border: Border.all(
+                      color: theme.dividerColor,
+                      width: StillwaterTokens.borderWidthHairline,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            Icons.flag_rounded,
-                            color: finColors.income,
-                            size: 20,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(
+                                  StillwaterTokens.space2Xs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: finColors.income.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    StillwaterTokens.radiusSm,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.flag_rounded,
+                                  color: finColors.income,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: StillwaterTokens.spaceSm),
+                              Row(
+                                children: [
+                                  FfAmountText(
+                                    amount: totalSaved,
+                                    size: FfAmountSize.sm,
+                                    isBlurred: isPrivacyBlur,
+                                    showSign: false,
+                                    colorOverride: finColors.income,
+                                  ),
+                                  const SizedBox(
+                                    width: StillwaterTokens.space3Xs,
+                                  ),
+                                  Text(
+                                    'Saved',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: finColors.income,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceXs),
                           Text(
-                            '${CurrencyFormatter.format(totalSaved)} Saved',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: finColors.income,
-                              fontWeight: FontWeight.bold,
+                            '$completedCount of $totalGoals reached',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.secondary,
                             ),
                           ),
                         ],
                       ),
-                      Text(
-                        '$completedCount of $totalGoals reached',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusFull,
                         ),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHighest,
+                          color: finColors.income,
+                          minHeight: 6,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${(progress * 100).toStringAsFixed(0)}% of target',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'Goal: ',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                              FfAmountText(
+                                amount: totalTarget,
+                                size: FfAmountSize.sm,
+                                isBlurred: isPrivacyBlur,
+                                showSign: false,
+                                colorOverride: theme.colorScheme.onSurface,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      color: finColors.income,
-                      minHeight: 6,
-                    ),
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${(progress * 100).toStringAsFixed(0)}% of target',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'Goal: ${CurrencyFormatter.format(totalTarget)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),

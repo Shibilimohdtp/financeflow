@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../models/insight.dart';
-import '../../../shared/widgets/ff_card.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../insights_controller.dart';
 
@@ -29,15 +28,15 @@ class LocalInsightsCard extends ConsumerWidget {
                 children: [
                   Icon(
                     Icons.auto_awesome_rounded,
-                    size: 16,
+                    size: 14,
                     color: context.aiColors.accent,
                   ),
                   const SizedBox(width: StillwaterTokens.spaceXs),
                   Text(
                     'On-Device Analysis',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: theme.textTheme.labelSmall?.copyWith(
                       color: context.aiColors.accent,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -74,18 +73,28 @@ class LocalInsightsCard extends ConsumerWidget {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: StillwaterTokens.spaceSm),
-              child: FfCard(
-                variant: FfCardVariant.tinted,
+              child: Container(
+                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusMd,
+                  ),
+                  border: Border.all(
+                    color: theme.dividerColor,
+                    width: StillwaterTokens.borderWidthHairline,
+                  ),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(StillwaterTokens.space2Xs),
                       decoration: BoxDecoration(
-                        color: iconColor.withValues(alpha: 0.15),
+                        color: iconColor.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(iconData, color: iconColor, size: 18),
+                      child: Icon(iconData, color: iconColor, size: 16),
                     ),
                     const SizedBox(width: StillwaterTokens.spaceSm),
                     Expanded(
@@ -94,15 +103,16 @@ class LocalInsightsCard extends ConsumerWidget {
                         children: [
                           Text(
                             insight.title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: StillwaterTokens.space3Xs),
                           Text(
                             insight.description,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              height: 1.4,
+                              height: 1.35,
+                              color: theme.colorScheme.secondary,
                             ),
                           ),
                         ],
@@ -110,15 +120,16 @@ class LocalInsightsCard extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 16),
-                      tooltip: 'Dismiss',
+                      tooltip: 'Dismiss insight',
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
                       onPressed: () {
-                        ref.read(dismissedInsightIdsProvider.notifier).update((
-                          set,
-                        ) {
-                          return {...set, insight.id};
-                        });
+                        ref
+                            .read(dismissedInsightIdsProvider.notifier)
+                            .dismiss(insight.id);
                       },
                     ),
                   ],

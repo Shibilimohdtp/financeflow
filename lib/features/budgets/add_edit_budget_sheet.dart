@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/budget.dart';
 import '../../models/category.dart';
-import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import '../categories/categories_controller.dart';
 import 'budgets_controller.dart';
 
@@ -128,8 +130,8 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
           context,
           message:
               widget.initialBudget != null
-                  ? 'Budget updated on this device.'
-                  : 'Budget created on this device.',
+                  ? 'Budget updated.'
+                  : 'Budget created.',
         );
       }
     } catch (e) {
@@ -145,265 +147,364 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final categories = ref.watch(categoriesStreamProvider).value ?? [];
+    final isEditing = widget.initialBudget != null;
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final categories = categoriesAsync.value ?? [];
 
-    // Pre-populate category
-    if (_selectedCategory == null && categories.isNotEmpty) {
-      if (widget.initialBudget != null) {
-        _selectedCategory =
-            categories
-                .where((c) => c.id == widget.initialBudget!.categoryId)
-                .firstOrNull;
-      }
-      _selectedCategory ??= categories.first;
+    if (_selectedCategory == null &&
+        widget.initialBudget != null &&
+        categories.isNotEmpty) {
+      _selectedCategory = categories.firstWhere(
+        (c) => c.id == widget.initialBudget!.categoryId,
+        orElse: () => categories.first,
+      );
     }
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                  vertical: StillwaterTokens.spaceSm,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.initialBudget != null
-                          ? 'Edit Budget'
-                          : 'New Budget',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
+              FfSheetHeader(
+                title: isEditing ? 'Edit Budget' : 'New Budget Plan',
+                subtitle: 'Set a conscious spending limit on this device',
               ),
-              const Divider(height: 1),
-
-              // Form fields
-              Expanded(
+              const Divider(height: 1, thickness: 1),
+              Flexible(
                 child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+                  padding: const EdgeInsets.fromLTRB(
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
+                  ),
+                  shrinkWrap: true,
                   children: [
-                    // Amount Field
-                    FfAmountField(
-                      controller: _amountController,
-                      errorText: _amountError,
-                      autoFocus: widget.initialBudget == null,
+                    // ── 1. Amount Hero Field ──────────────────────────
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceMd,
+                        vertical: StillwaterTokens.spaceSm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusLg,
+                        ),
+                        border: Border.all(
+                          color:
+                              _amountError != null
+                                  ? theme.colorScheme.error
+                                  : theme.dividerColor,
+                          width: StillwaterTokens.borderWidthHairline,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PLANNED SPENDING LIMIT',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              letterSpacing: 1.0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceXs),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                '₹',
+                                style: StillwaterTypography.numLg(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: StillwaterTokens.spaceXs),
+                              Expanded(
+                                child: TextField(
+                                  controller: _amountController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d+\.?\d{0,2}'),
+                                    ),
+                                  ],
+                                  style: StillwaterTypography.numHero(
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: '0',
+                                    hintStyle: StillwaterTypography.numHero(
+                                      color: theme.colorScheme.outline,
+                                    ),
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    filled: false,
+                                    contentPadding: EdgeInsets.zero,
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
+                    if (_amountError != null) ...[
+                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      Text(
+                        _amountError!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ],
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.spaceMd),
 
-                    // Budget Name
+                    // ── 2. Budget Name ────────────────────────────────
                     TextField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Budget Name *',
-                        hintText: 'e.g. Monthly Dining, Grocery Limit',
+                        labelText: 'Budget Name',
+                        hintText: 'e.g. Monthly Dining, Grocery Cap',
                         errorText: _nameError,
-                        prefixIcon: const Icon(Icons.label_outline_rounded),
                       ),
-                      textCapitalization: TextCapitalization.sentences,
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.spaceLg),
 
-                    // Category Selector
-                    Text('Category *', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    // ── 3. Period Selector ────────────────────────────
+                    FfSegmentedPill<BudgetPeriod>(
+                      options: const [
+                        FfSegmentOption(
+                          value: BudgetPeriod.monthly,
+                          label: 'Monthly',
+                        ),
+                        FfSegmentOption(
+                          value: BudgetPeriod.weekly,
+                          label: 'Weekly',
+                        ),
+                        FfSegmentOption(
+                          value: BudgetPeriod.yearly,
+                          label: 'Yearly',
+                        ),
+                      ],
+                      selectedValue: _selectedPeriod,
+                      onSelected: (period) {
+                        setState(() {
+                          _selectedPeriod = period;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: StillwaterTokens.spaceLg),
+
+                    // ── 4. Category Selector ──────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'SELECT CATEGORY',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            letterSpacing: 1.0,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_selectedCategory != null)
+                          Text(
+                            _selectedCategory!.name,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    SizedBox(
+                      height: 80,
+                      child:
+                          categories.isEmpty
+                              ? const Center(child: CircularProgressIndicator())
+                              : ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: categories.length,
+                                separatorBuilder:
+                                    (_, __) => const SizedBox(
+                                      width: StillwaterTokens.spaceSm,
+                                    ),
+                                itemBuilder: (context, index) {
+                                  final cat = categories[index];
+                                  final isSelected =
+                                      _selectedCategory?.id == cat.id;
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedCategory = cat;
+                                        _categoryError = null;
+                                        if (_nameController.text.isEmpty) {
+                                          _nameController.text =
+                                              '${cat.name} Budget';
+                                        }
+                                      });
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: StillwaterTokens.durationFast,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: StillwaterTokens.spaceSm,
+                                        vertical: StillwaterTokens.spaceXs,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isSelected
+                                                ? theme
+                                                    .colorScheme
+                                                    .primaryContainer
+                                                    .withValues(alpha: 0.5)
+                                                : theme.cardColor,
+                                        borderRadius: BorderRadius.circular(
+                                          StillwaterTokens.radiusMd,
+                                        ),
+                                        border: Border.all(
+                                          color:
+                                              isSelected
+                                                  ? theme.colorScheme.primary
+                                                  : theme.dividerColor,
+                                          width:
+                                              isSelected
+                                                  ? StillwaterTokens
+                                                      .borderWidthStrong
+                                                  : StillwaterTokens
+                                                      .borderWidthHairline,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          FfCategoryTile(
+                                            iconIdentifier: cat.iconIdentifier,
+                                            colorTokenIdentifier:
+                                                cat.colorTokenIdentifier,
+                                            size: 32,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            cat.name,
+                                            style: theme.textTheme.labelSmall
+                                                ?.copyWith(
+                                                  fontWeight:
+                                                      isSelected
+                                                          ? FontWeight.w700
+                                                          : FontWeight.w500,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
                     if (_categoryError != null) ...[
+                      const SizedBox(height: StillwaterTokens.spaceXs),
                       Text(
                         _categoryError!,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.error,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceXs),
                     ],
+
+                    const SizedBox(height: StillwaterTokens.spaceLg),
+
+                    // ── 5. Notification Threshold ─────────────────────
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.space2Xs,
-                      ),
+                      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
+                          StillwaterTokens.radiusLg,
                         ),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<Category>(
-                          isExpanded: true,
-                          value: _selectedCategory,
-                          items:
-                              categories.map((cat) {
-                                return DropdownMenuItem<Category>(
-                                  value: cat,
-                                  child: Row(
-                                    children: [
-                                      FfCategoryTile(
-                                        iconIdentifier: cat.iconIdentifier,
-                                        colorTokenIdentifier:
-                                            cat.colorTokenIdentifier,
-                                        size: 32,
-                                      ),
-                                      const SizedBox(
-                                        width: StillwaterTokens.spaceSm,
-                                      ),
-                                      Text(cat.name),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                          onChanged: (cat) {
-                            if (cat != null) {
-                              setState(() {
-                                _selectedCategory = cat;
-                                if (_nameController.text.isEmpty) {
-                                  _nameController.text = '${cat.name} Budget';
-                                }
-                              });
-                            }
-                          },
+                        border: Border.all(
+                          color: theme.dividerColor,
+                          width: StillwaterTokens.borderWidthHairline,
                         ),
                       ),
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Budget Period
-                    Text('Period', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
-                    SegmentedButton<BudgetPeriod>(
-                      segments: const [
-                        ButtonSegment(
-                          value: BudgetPeriod.monthly,
-                          label: Text('Monthly'),
-                        ),
-                        ButtonSegment(
-                          value: BudgetPeriod.weekly,
-                          label: Text('Weekly'),
-                        ),
-                        ButtonSegment(
-                          value: BudgetPeriod.yearly,
-                          label: Text('Yearly'),
-                        ),
-                        ButtonSegment(
-                          value: BudgetPeriod.custom,
-                          label: Text('Custom'),
-                        ),
-                      ],
-                      selected: {_selectedPeriod},
-                      onSelectionChanged: (set) {
-                        setState(() {
-                          _selectedPeriod = set.first;
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // Start Date Selector
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today_outlined),
-                      title: const Text('Start Date'),
-                      subtitle: Text(
-                        DateFormat('dd MMMM yyyy').format(_startDate),
-                      ),
-                      trailing: const Icon(Icons.edit_calendar_rounded),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _startDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2035),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _startDate = picked;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-
-                    // Alert Threshold Slider
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Alert Threshold',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        Text(
-                          '${(_alertThreshold * 100).toInt()}%',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Alert Notification Threshold',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '${(_alertThreshold * 100).toInt()}%',
+                                style: StillwaterTypography.numSm(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: StillwaterTokens.space3Xs),
-                    Text(
-                      'Quietly notify when spending reaches this percentage of the budget.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Receive a local reminder when spending reaches this level.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                            ),
+                          ),
+                          Slider(
+                            value: _alertThreshold,
+                            min: 0.5,
+                            max: 1.0,
+                            divisions: 10,
+                            activeColor: theme.colorScheme.primary,
+                            onChanged: (val) {
+                              setState(() {
+                                _alertThreshold = val;
+                              });
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                    Slider(
-                      value: _alertThreshold,
-                      min: 0.5,
-                      max: 1.0,
-                      divisions: 10,
-                      label: '${(_alertThreshold * 100).toInt()}%',
-                      onChanged: (val) {
-                        setState(() {
-                          _alertThreshold = val;
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.space2Xl),
-
-                    // Save Button
-                    FfButton(
-                      label:
-                          widget.initialBudget != null
-                              ? 'Save Changes'
-                              : 'Create Budget',
-                      isLoading: _isSubmitting,
-                      onPressed: _submit,
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.spaceMd),
                   ],
                 ),
               ),
+              // ── Sticky Submit Footer ──────────────────────────────
+              FfSheetFooter(
+                primaryLabel: isEditing ? 'Save Changes' : 'Create Budget',
+                isPrimaryLoading: _isSubmitting,
+                onPrimaryPressed: _submit,
+              ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

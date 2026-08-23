@@ -10,6 +10,7 @@ import '../features/transactions/add_edit_transaction_sheet.dart';
 import '../features/transactions/transaction_detail_screen.dart';
 import '../features/transactions/transactions_screen.dart';
 import '../models/transaction.dart';
+import '../shared/widgets/stillwater_bottom_navigation_bar.dart';
 
 final currentNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -76,44 +77,11 @@ class AppShell extends ConsumerWidget {
 
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: screens),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'shell_add_transaction_fab',
-        onPressed: () => _openAddTransactionSheet(context),
-        tooltip: 'Add Transaction',
-        child: const Icon(Icons.add_rounded, size: 28),
-      ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: StillwaterBottomNavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
           ref.read(currentNavIndexProvider.notifier).state = index;
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'Money',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline_rounded),
-            selectedIcon: Icon(Icons.pie_chart_rounded),
-            label: 'Plan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights_rounded),
-            label: 'Insights',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.more_horiz_rounded),
-            selectedIcon: Icon(Icons.more_horiz_rounded),
-            label: 'More',
-          ),
-        ],
       ),
     );
   }

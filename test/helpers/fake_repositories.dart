@@ -104,8 +104,8 @@ class FakeTransactionRepository implements TransactionRepository {
   }
 
   void _emit() {
-    final list = _transactions.values.toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final list =
+        _transactions.values.toList()..sort((a, b) => b.date.compareTo(a.date));
     _controller.add(list);
   }
 
@@ -136,14 +136,21 @@ class FakeTransactionRepository implements TransactionRepository {
   @override
   Future<List<Transaction>> getTransactionsByMonth(DateTime month) async {
     final all = await getAllTransactions();
-    return all.where((t) => t.date.year == month.year && t.date.month == month.month).toList();
+    return all
+        .where((t) => t.date.year == month.year && t.date.month == month.month)
+        .toList();
   }
 
   @override
   Stream<List<Transaction>> watchTransactionsByMonth(DateTime month) async* {
     yield await getTransactionsByMonth(month);
     yield* _controller.stream.map(
-      (list) => list.where((t) => t.date.year == month.year && t.date.month == month.month).toList(),
+      (list) =>
+          list
+              .where(
+                (t) => t.date.year == month.year && t.date.month == month.month,
+              )
+              .toList(),
     );
   }
 
@@ -159,12 +166,16 @@ class FakeTransactionRepository implements TransactionRepository {
     var list = await getAllTransactions();
     if (query != null && query.trim().isNotEmpty) {
       final q = query.toLowerCase().trim();
-      list = list.where((t) =>
-        t.merchant.toLowerCase().contains(q) ||
-        t.categoryName.toLowerCase().contains(q) ||
-        (t.notes?.toLowerCase().contains(q) ?? false) ||
-        t.tags.any((tag) => tag.toLowerCase().contains(q))
-      ).toList();
+      list =
+          list
+              .where(
+                (t) =>
+                    t.merchant.toLowerCase().contains(q) ||
+                    t.categoryName.toLowerCase().contains(q) ||
+                    (t.notes?.toLowerCase().contains(q) ?? false) ||
+                    t.tags.any((tag) => tag.toLowerCase().contains(q)),
+              )
+              .toList();
     }
     if (type != null) {
       list = list.where((t) => t.type == type).toList();
@@ -173,7 +184,12 @@ class FakeTransactionRepository implements TransactionRepository {
       list = list.where((t) => t.categoryId == categoryId).toList();
     }
     if (accountId != null) {
-      list = list.where((t) => t.accountId == accountId || t.toAccountId == accountId).toList();
+      list =
+          list
+              .where(
+                (t) => t.accountId == accountId || t.toAccountId == accountId,
+              )
+              .toList();
     }
     if (startDate != null) {
       list = list.where((t) => !t.date.isBefore(startDate)).toList();
@@ -201,16 +217,18 @@ class FakeTransactionRepository implements TransactionRepository {
       startDate: startDate,
       endDate: endDate,
     );
-    yield* _controller.stream.map((_) {
-      return searchAndFilterTransactions(
-        query: query,
-        type: type,
-        categoryId: categoryId,
-        accountId: accountId,
-        startDate: startDate,
-        endDate: endDate,
-      );
-    }).asyncMap((f) async => await f);
+    yield* _controller.stream
+        .map((_) {
+          return searchAndFilterTransactions(
+            query: query,
+            type: type,
+            categoryId: categoryId,
+            accountId: accountId,
+            startDate: startDate,
+            endDate: endDate,
+          );
+        })
+        .asyncMap((f) async => await f);
   }
 
   @override
@@ -276,7 +294,9 @@ class FakeAccountRepository implements AccountRepository {
   }
 
   @override
-  Stream<List<Account>> watchAllAccounts({bool includeArchived = false}) async* {
+  Stream<List<Account>> watchAllAccounts({
+    bool includeArchived = false,
+  }) async* {
     yield await getAllAccounts(includeArchived: includeArchived);
     yield* _controller.stream.map((list) {
       if (!includeArchived) {
@@ -338,7 +358,9 @@ class FakeCategoryRepository implements CategoryRepository {
   }
 
   @override
-  Future<List<Category>> getAllCategories({bool includeArchived = false}) async {
+  Future<List<Category>> getAllCategories({
+    bool includeArchived = false,
+  }) async {
     final list = _categories.values.toList();
     if (!includeArchived) {
       return list.where((c) => !c.isArchived).toList();
@@ -347,7 +369,9 @@ class FakeCategoryRepository implements CategoryRepository {
   }
 
   @override
-  Stream<List<Category>> watchAllCategories({bool includeArchived = false}) async* {
+  Stream<List<Category>> watchAllCategories({
+    bool includeArchived = false,
+  }) async* {
     yield await getAllCategories(includeArchived: includeArchived);
     yield* _controller.stream.map((list) {
       if (!includeArchived) {
@@ -359,7 +383,9 @@ class FakeCategoryRepository implements CategoryRepository {
 
   @override
   Future<List<Category>> getCategoriesByType(String type) async {
-    return _categories.values.where((c) => c.typeCompatibility.contains(type)).toList();
+    return _categories.values
+        .where((c) => c.typeCompatibility.contains(type))
+        .toList();
   }
 
   @override
@@ -422,7 +448,9 @@ class FakeBudgetRepository implements BudgetRepository {
   @override
   Stream<List<Budget>> watchActiveBudgets() async* {
     yield await getActiveBudgets();
-    yield* _controller.stream.map((list) => list.where((b) => !b.isArchived).toList());
+    yield* _controller.stream.map(
+      (list) => list.where((b) => !b.isArchived).toList(),
+    );
   }
 
   @override
@@ -462,7 +490,10 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
   final StreamController<List<GoalContribution>> _contribsController =
       StreamController<List<GoalContribution>>.broadcast();
 
-  FakeSavingsGoalRepository([List<SavingsGoal>? goals, List<GoalContribution>? contribs]) {
+  FakeSavingsGoalRepository([
+    List<SavingsGoal>? goals,
+    List<GoalContribution>? contribs,
+  ]) {
     if (goals != null) {
       for (final g in goals) {
         _goals[g.id] = g;
@@ -500,7 +531,8 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
   }
 
   @override
-  Future<List<GoalContribution>> getAllContributions() async => List.from(_contributions);
+  Future<List<GoalContribution>> getAllContributions() async =>
+      List.from(_contributions);
 
   @override
   Future<List<GoalContribution>> getContributionsForGoal(String goalId) async {
@@ -508,7 +540,9 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
   }
 
   @override
-  Stream<List<GoalContribution>> watchContributionsForGoal(String goalId) async* {
+  Stream<List<GoalContribution>> watchContributionsForGoal(
+    String goalId,
+  ) async* {
     yield await getContributionsForGoal(goalId);
     yield* _contribsController.stream.map(
       (list) => list.where((c) => c.goalId == goalId).toList(),
@@ -553,7 +587,8 @@ class FakeSubscriptionRepository implements SubscriptionRepository {
   }
 
   @override
-  Future<List<Subscription>> getAllSubscriptions() async => _subs.values.toList();
+  Future<List<Subscription>> getAllSubscriptions() async =>
+      _subs.values.toList();
 
   @override
   Stream<List<Subscription>> watchAllSubscriptions() async* {
@@ -598,7 +633,10 @@ class FakeLoanRepository implements LoanRepository {
   final StreamController<List<EmiPayment>> _paymentsController =
       StreamController<List<EmiPayment>>.broadcast();
 
-  FakeLoanRepository([List<Loan>? initialLoans, List<EmiPayment>? initialPayments]) {
+  FakeLoanRepository([
+    List<Loan>? initialLoans,
+    List<EmiPayment>? initialPayments,
+  ]) {
     if (initialLoans != null) {
       for (final l in initialLoans) {
         _loans[l.id] = l;
@@ -654,8 +692,10 @@ class FakeLoanRepository implements LoanRepository {
   Stream<List<EmiPayment>> watchPaymentsForLoan(String loanId) async* {
     yield await getPaymentsForLoan(loanId);
     yield* _paymentsController.stream.map(
-      (list) => list.where((p) => p.loanId == loanId).toList()
-        ..sort((a, b) => a.installmentNumber.compareTo(b.installmentNumber)),
+      (list) =>
+          list.where((p) => p.loanId == loanId).toList()..sort(
+            (a, b) => a.installmentNumber.compareTo(b.installmentNumber),
+          ),
     );
   }
 
@@ -667,12 +707,16 @@ class FakeLoanRepository implements LoanRepository {
     payment.validate();
 
     final duplicate = _payments.any(
-      (p) => p.loanId == payment.loanId && p.installmentNumber == payment.installmentNumber && p.id != payment.id,
+      (p) =>
+          p.loanId == payment.loanId &&
+          p.installmentNumber == payment.installmentNumber &&
+          p.id != payment.id,
     );
 
     if (duplicate) {
       throw ValidationError(
-        message: 'EMI installment #${payment.installmentNumber} has already been marked as paid.',
+        message:
+            'EMI installment #${payment.installmentNumber} has already been marked as paid.',
       );
     }
 
@@ -685,8 +729,12 @@ class FakeLoanRepository implements LoanRepository {
 
     final loan = _loans[payment.loanId];
     if (loan != null) {
-      final loanPayments = _payments.where((p) => p.loanId == payment.loanId).toList();
-      final updated = LoanCalculator.recalculateLoanState(loan: loan, payments: loanPayments);
+      final loanPayments =
+          _payments.where((p) => p.loanId == payment.loanId).toList();
+      final updated = LoanCalculator.recalculateLoanState(
+        loan: loan,
+        payments: loanPayments,
+      );
       _loans[payment.loanId] = updated;
       _controller.add(_loans.values.toList());
     }
@@ -701,7 +749,9 @@ class FakeLoanRepository implements LoanRepository {
     for (final p in payments) {
       p.validate();
       final duplicate = _payments.any(
-        (existing) => existing.loanId == p.loanId && existing.installmentNumber == p.installmentNumber,
+        (existing) =>
+            existing.loanId == p.loanId &&
+            existing.installmentNumber == p.installmentNumber,
       );
       if (!duplicate) {
         _payments.add(p);
@@ -712,7 +762,10 @@ class FakeLoanRepository implements LoanRepository {
     final loan = _loans[loanId];
     if (loan != null) {
       final loanPayments = _payments.where((p) => p.loanId == loanId).toList();
-      final updated = LoanCalculator.recalculateLoanState(loan: loan, payments: loanPayments);
+      final updated = LoanCalculator.recalculateLoanState(
+        loan: loan,
+        payments: loanPayments,
+      );
       _loans[loanId] = updated;
       _controller.add(_loans.values.toList());
     }
@@ -731,7 +784,10 @@ class FakeLoanRepository implements LoanRepository {
     final loan = _loans[loanId];
     if (loan != null) {
       final loanPayments = _payments.where((p) => p.loanId == loanId).toList();
-      final updated = LoanCalculator.recalculateLoanState(loan: loan, payments: loanPayments);
+      final updated = LoanCalculator.recalculateLoanState(
+        loan: loan,
+        payments: loanPayments,
+      );
       _loans[loanId] = updated;
       _controller.add(_loans.values.toList());
     }
@@ -759,7 +815,8 @@ class FakeInvestmentRepository implements InvestmentRepository {
   }
 
   @override
-  Future<List<Investment>> getAllInvestments() async => _investments.values.toList();
+  Future<List<Investment>> getAllInvestments() async =>
+      _investments.values.toList();
 
   @override
   Stream<List<Investment>> watchAllInvestments() async* {
@@ -814,7 +871,8 @@ class FakeAlertRepository implements AlertRepository {
 
   @override
   Future<List<AlertItem>> getAllAlerts() async {
-    return _alerts.values.toList()..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
+    return _alerts.values.toList()
+      ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
   }
 
   @override
@@ -827,7 +885,9 @@ class FakeAlertRepository implements AlertRepository {
   Stream<List<AlertItem>> watchActiveAlerts() async* {
     yield await getActiveAlerts();
     yield* _controller.stream.map(
-      (list) => list.where((a) => !a.isDismissed).toList()..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt)),
+      (list) =>
+          list.where((a) => !a.isDismissed).toList()
+            ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt)),
     );
   }
 
@@ -875,10 +935,11 @@ class FakeAlertRepository implements AlertRepository {
     required String relatedEntityId,
     required DateTime sinceDate,
   }) async {
-    return _alerts.values.any((a) =>
-      a.type == type &&
-      a.relatedEntityId == relatedEntityId &&
-      !a.createdAt.isBefore(sinceDate),
+    return _alerts.values.any(
+      (a) =>
+          a.type == type &&
+          a.relatedEntityId == relatedEntityId &&
+          !a.createdAt.isBefore(sinceDate),
     );
   }
 

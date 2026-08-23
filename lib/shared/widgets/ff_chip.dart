@@ -40,8 +40,7 @@ class FfChip extends StatelessWidget {
       child: InkWell(
         onTap: onSelected,
         borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
-        child: AnimatedContainer(
-          duration: StillwaterTokens.durationFast,
+        child: Container(
           height: StillwaterTokens.chipHeight,
           padding: const EdgeInsets.symmetric(
             horizontal: StillwaterTokens.spaceMd,

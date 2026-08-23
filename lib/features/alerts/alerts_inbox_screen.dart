@@ -4,8 +4,10 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/alert_item.dart';
 import '../../repositories/alert_repository.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'alert_settings_sheet.dart';
 import 'alerts_controller.dart';
@@ -62,13 +64,19 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final alertsAsync = ref.watch(activeAlertsStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alerts & Reminders'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.done_all_rounded),
+            tooltip: 'Mark All Read',
+            onPressed:
+                () =>
+                    ref.read(alertsControllerProvider.notifier).markAllAsRead(),
+          ),
           IconButton(
             icon: const Icon(Icons.tune_rounded),
             tooltip: 'Alert Settings',
@@ -78,12 +86,9 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.done_all_rounded),
-            tooltip: 'Mark All Read',
-            onPressed:
-                () =>
-                    ref.read(alertsControllerProvider.notifier).markAllAsRead(),
+          const Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            child: Center(child: FfPrivacyBadge(label: 'Local Rules')),
           ),
         ],
       ),
@@ -103,118 +108,151 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-            itemCount: alerts.length,
-            separatorBuilder:
-                (_, __) => const SizedBox(height: StillwaterTokens.spaceSm),
-            itemBuilder: (context, index) {
-              final alert = alerts[index];
-              final iconColor = _getSeverityColor(context, alert.severity);
+          return ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: StillwaterTokens.spaceLg,
+              vertical: StillwaterTokens.spaceMd,
+            ),
+            children: [
+              FfSectionHeader(title: 'Active Notifications (${alerts.length})'),
+              FfGroupedContainer(
+                children:
+                    alerts.map((alert) {
+                      final iconColor = _getSeverityColor(
+                        context,
+                        alert.severity,
+                      );
+                      final iconData = _getAlertIcon(alert.type);
 
-              return Dismissible(
-                key: Key(alert.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(
-                    right: StillwaterTokens.spaceLg,
-                  ),
-                  color: theme.colorScheme.errorContainer,
-                  child: Icon(
-                    Icons.archive_outlined,
-                    color: theme.colorScheme.onErrorContainer,
-                  ),
-                ),
-                onDismissed: (_) {
-                  ref
-                      .read(alertsControllerProvider.notifier)
-                      .dismissAlert(alert.id);
-                },
-                child: FfCard(
-                  onTap: () {
-                    ref
-                        .read(alertsControllerProvider.notifier)
-                        .markAsRead(alert.id);
-                  },
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: iconColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
+                      return Dismissible(
+                        key: Key(alert.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(
+                            right: StillwaterTokens.spaceLg,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.secColors.error.withValues(
+                              alpha: 0.15,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.archive_outlined,
+                            color: context.secColors.error,
+                          ),
                         ),
-                        child: Icon(
-                          _getAlertIcon(alert.type),
-                          color: iconColor,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        onDismissed: (_) {
+                          ref
+                              .read(alertsControllerProvider.notifier)
+                              .dismissAlert(alert.id);
+                        },
+                        child: InkWell(
+                          onTap: () {
+                            ref
+                                .read(alertsControllerProvider.notifier)
+                                .markAsRead(alert.id);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(
+                              StillwaterTokens.spaceMd,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    alert.title,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          fontWeight:
-                                              alert.isRead
-                                                  ? FontWeight.normal
-                                                  : FontWeight.bold,
-                                        ),
-                                  ),
-                                ),
-                                if (!alert.isRead)
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: iconColor,
-                                      shape: BoxShape.circle,
+                                Container(
+                                  width: StillwaterTokens.iconTileSize,
+                                  height: StillwaterTokens.iconTileSize,
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusSm,
                                     ),
                                   ),
+                                  child: Icon(
+                                    iconData,
+                                    color: iconColor,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: StillwaterTokens.spaceMd),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              alert.title,
+                                              style: context
+                                                  .textTheme
+                                                  .titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight:
+                                                        alert.isRead
+                                                            ? FontWeight.w500
+                                                            : FontWeight.w700,
+                                                  ),
+                                            ),
+                                          ),
+                                          if (!alert.isRead)
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              margin: const EdgeInsets.only(
+                                                left: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: iconColor,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        alert.message,
+                                        style: context.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color:
+                                                  context.colorScheme.secondary,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        DateFormatter.formatTransactionDate(
+                                          alert.createdAt,
+                                        ),
+                                        style: context.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color:
+                                                  context.colorScheme.outline,
+                                              fontSize: 10,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: StillwaterTokens.space2Xs),
-                            Text(
-                              alert.message,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color:
-                                    alert.isRead
-                                        ? theme.colorScheme.secondary
-                                        : theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceXs),
-                            Text(
-                              DateFormatter.formatTransactionDate(
-                                alert.createdAt,
-                              ),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 11,
-                                color: theme.colorScheme.secondary,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+                      );
+                    }).toList(),
+              ),
+              const SizedBox(height: StillwaterTokens.space4Xl),
+            ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading:
+            () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                child: CircularProgressIndicator(),
+              ),
+            ),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );

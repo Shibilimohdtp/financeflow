@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
-import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/category_colors.dart';
-import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../theme/stillwater_tokens.dart';
 
@@ -18,11 +17,13 @@ class TopCategoriesCard extends StatelessWidget {
     })
   >
   categories;
+  final bool isPrivacyBlur;
   final VoidCallback onExploreMore;
 
   const TopCategoriesCard({
     super.key,
     required this.categories,
+    this.isPrivacyBlur = false,
     required this.onExploreMore,
   });
 
@@ -40,18 +41,37 @@ class TopCategoriesCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Top Spending Categories',
-                style: theme.textTheme.titleMedium,
+              Expanded(
+                child: Text(
+                  'Top Spending',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               TextButton(
                 onPressed: onExploreMore,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
                 child: const Text('All analytics'),
               ),
             ],
           ),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          FfCard(
+          Container(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
             child: Column(
               children:
                   categories.map((cat) {
@@ -69,7 +89,7 @@ class TopCategoriesCard extends StatelessWidget {
                           FfCategoryTile(
                             iconIdentifier: cat.icon,
                             colorTokenIdentifier: cat.color,
-                            size: 36,
+                            size: 32,
                           ),
                           const SizedBox(width: StillwaterTokens.spaceSm),
                           Expanded(
@@ -87,12 +107,13 @@ class TopCategoriesCard extends StatelessWidget {
                                             fontWeight: FontWeight.w600,
                                           ),
                                     ),
-                                    Text(
-                                      CurrencyFormatter.format(cat.amount),
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                    FfAmountText(
+                                      amount: cat.amount,
+                                      size: FfAmountSize.sm,
+                                      isBlurred: isPrivacyBlur,
+                                      showSign: false,
+                                      colorOverride:
+                                          theme.colorScheme.onSurface,
                                     ),
                                   ],
                                 ),
@@ -113,7 +134,7 @@ class TopCategoriesCard extends StatelessWidget {
                                                   .colorScheme
                                                   .surfaceContainerHighest,
                                           color: catColor,
-                                          minHeight: 5,
+                                          minHeight: 4,
                                         ),
                                       ),
                                     ),
@@ -125,6 +146,7 @@ class TopCategoriesCard extends StatelessWidget {
                                       style: theme.textTheme.labelSmall
                                           ?.copyWith(
                                             color: theme.colorScheme.secondary,
+                                            fontSize: 11,
                                           ),
                                     ),
                                   ],

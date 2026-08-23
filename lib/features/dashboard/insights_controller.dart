@@ -8,7 +8,52 @@ import '../savings_goals/savings_goals_controller.dart';
 import '../settings/settings_controller.dart';
 import 'dashboard_controller.dart';
 
-final dismissedInsightIdsProvider = StateProvider<Set<String>>((ref) => {});
+/// Persisted dismissal state for generated dashboard insights.
+///
+/// The previous implementation used an in-memory StateProvider, which meant
+/// every app restart recreated every insight. The settings repository is the
+/// existing singleton local store, so it is also safe across device restarts.
+final dismissedInsightIdsProvider = StateNotifierProvider<
+  DismissedInsightIdsController,
+  Set<String>
+>((ref) => DismissedInsightIdsController(ref));
+
+class DismissedInsightIdsController extends StateNotifier<Set<String>> {
+  DismissedInsightIdsController(this._ref) : super(const {}) {
+    _load();
+  }
+
+  final Ref _ref;
+  final Set<String> _pendingDismissals = {};
+  Future<void> _persistQueue = Future<void>.value();
+
+  Future<void> _load() async {
+    final settings = await _ref.read(settingsRepositoryProvider).getSettings();
+    if (!mounted) return;
+    state = {...settings.dismissedInsightIds, ..._pendingDismissals};
+  }
+
+  Future<void> dismiss(String insightId) async {
+    if (state.contains(insightId)) return;
+    _pendingDismissals.add(insightId);
+    state = {...state, insightId};
+
+    _persistQueue = _persistQueue.then((_) async {
+      final repository = _ref.read(settingsRepositoryProvider);
+      final settings = await repository.getSettings();
+      final pending = Set<String>.from(_pendingDismissals);
+      final ids = {
+        ...settings.dismissedInsightIds,
+        ...pending,
+      }.toList()..sort();
+      await repository.updateSettings(
+        settings.copyWith(dismissedInsightIds: ids),
+      );
+      _pendingDismissals.removeAll(pending);
+    });
+    await _persistQueue;
+  }
+}
 
 /// Transactions for the month preceding the selected dashboard month
 final previousMonthTransactionsProvider = StreamProvider<List<Transaction>>((

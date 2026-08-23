@@ -4,10 +4,15 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/investment.dart';
 import '../../repositories/investment_repository.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'add_edit_investment_sheet.dart';
 import 'investment_detail_screen.dart';
 import 'investments_controller.dart';
@@ -19,6 +24,7 @@ class InvestmentsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => const AddEditInvestmentSheet(),
     );
   }
@@ -39,7 +45,7 @@ class InvestmentsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Investments'),
+        title: const Text('Investment Portfolio'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -47,29 +53,73 @@ class InvestmentsScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'investments_fab',
+        tooltip: 'Add investment',
+        onPressed: () => _openAddSheet(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Investment'),
+      ),
       body: invsAsync.when(
         data: (investments) {
           return ListView(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.fromLTRB(
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceMd,
+              StillwaterTokens.spaceLg,
+              104,
+            ),
             children: [
-              // Portfolio Hero Card
+              // ── 1. Portfolio Value Hero ─────────────────────────────────
               FfCard(
                 variant: FfCardVariant.elevated,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Total Portfolio Value',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'TOTAL PORTFOLIO VALUE',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            letterSpacing: 1.1,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (summary.totalInvested > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: StillwaterTokens.spaceSm,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  summary.isProfitable
+                                      ? context.finColors.incomeContainer
+                                      : context.finColors.expenseContainer,
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusFull,
+                              ),
+                            ),
+                            child: Text(
+                              '${summary.isProfitable ? '+' : ''}${summary.percentageReturn.toStringAsFixed(1)}%',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color:
+                                    summary.isProfitable
+                                        ? context.finColors.income
+                                        : context.finColors.expense,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: StillwaterTokens.space2Xs),
+                    const SizedBox(height: StillwaterTokens.spaceXs),
                     Text(
                       CurrencyFormatter.formatINR(summary.totalCurrentValue),
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                      style: StillwaterTypography.numHero(
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: StillwaterTokens.spaceSm),
@@ -82,63 +132,17 @@ class InvestmentsScreen extends ConsumerWidget {
                             color: theme.colorScheme.secondary,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
+                        Text(
+                          '${summary.isProfitable ? '+' : ''}${CurrencyFormatter.formatINR(summary.absoluteReturn)} returns',
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color:
                                 summary.isProfitable
-                                    ? context.secColors.verified.withValues(
-                                      alpha: 0.15,
-                                    )
-                                    : context.secColors.error.withValues(
-                                      alpha: 0.15,
-                                    ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${summary.isProfitable ? "+" : ""}${CurrencyFormatter.formatINR(summary.absoluteReturn)} (${summary.percentageReturn.toStringAsFixed(1)}%)',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  summary.isProfitable
-                                      ? context.secColors.verified
-                                      : context.secColors.error,
-                            ),
+                                    ? context.finColors.income
+                                    : context.finColors.expense,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceSm),
-
-              // Disclaimer Badge
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.space2Xs,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 14,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    const SizedBox(width: StillwaterTokens.space2Xs),
-                    Expanded(
-                      child: Text(
-                        'Values stay as entered by you. FinanceFlow does not fetch market prices.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          color: theme.colorScheme.secondary,
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -147,31 +151,33 @@ class InvestmentsScreen extends ConsumerWidget {
               const SizedBox(height: StillwaterTokens.spaceLg),
 
               if (investments.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.space2Xl,
-                    ),
-                    child: FfEmptyState(
-                      icon: Icons.show_chart_rounded,
-                      title: 'No investments recorded',
-                      description:
-                          'Track stocks, mutual funds, gold, fixed deposits, and PPF with manual on-device valuations.',
-                      actionLabel: 'Add Investment',
-                      onAction: () => _openAddSheet(context),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: StillwaterTokens.space2Xl,
+                  ),
+                  child: FfEmptyState(
+                    icon: Icons.show_chart_rounded,
+                    title: 'No investments recorded',
+                    description:
+                        'Track stocks, mutual funds, gold, fixed deposits, and PPF with manual on-device valuations.',
+                    actionLabel: 'Add Investment',
+                    onAction: () => _openAddSheet(context),
                   ),
                 )
               else ...[
-                // Asset Allocation Breakdown
+                // ── 2. Asset Allocation Breakdown ───────────────────────────
                 if (summary.allocationSlices.isNotEmpty) ...[
-                  Text('Asset Allocation', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
+                  const FfSectionHeader(title: 'Asset Allocation'),
                   FfCard(
+                    padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                     child: Column(
                       children: [
-                        ...summary.allocationSlices.map((slice) {
-                          return Padding(
+                        for (
+                          int i = 0;
+                          i < summary.allocationSlices.length;
+                          i++
+                        ) ...[
+                          Padding(
                             padding: const EdgeInsets.symmetric(
                               vertical: StillwaterTokens.space2Xs,
                             ),
@@ -180,131 +186,149 @@ class InvestmentsScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 3,
                                   child: Text(
-                                    slice.label,
-                                    style: theme.textTheme.titleSmall,
+                                    summary.allocationSlices[i].label,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                                 Expanded(
                                   flex: 3,
                                   child: Text(
                                     CurrencyFormatter.formatINR(
-                                      slice.totalValue,
+                                      summary.allocationSlices[i].totalValue,
                                     ),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
-                                Text(
-                                  '${slice.percentage}%',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.secondary,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: StillwaterTokens.spaceSm,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusSm,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${summary.allocationSlices[i].percentage}%',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        }),
+                          ),
+                          if (i < summary.allocationSlices.length - 1)
+                            Divider(
+                              height: 1,
+                              thickness: StillwaterTokens.borderWidthHairline,
+                              color: theme.dividerColor,
+                            ),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceLg),
                 ],
 
-                // Holdings List
-                Text(
-                  'Holdings (${investments.length})',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: investments.length,
-                  separatorBuilder:
-                      (_, __) =>
-                          const SizedBox(height: StillwaterTokens.spaceSm),
-                  itemBuilder: (context, index) {
-                    final inv = investments[index];
-                    return FfCard(
-                      onTap: () => _openDetail(context, inv),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
+                // ── 3. Holdings List ────────────────────────────────────────
+                FfSectionHeader(title: 'Holdings (${investments.length})'),
+                FfGroupedContainer(
+                  children:
+                      investments.map((inv) {
+                        final profit = inv.currentValue - inv.investedAmount;
+                        final isProfit = profit >= 0;
+
+                        return FfListRow(
+                          leading: Container(
+                            width: StillwaterTokens.iconTileSize,
+                            height: StillwaterTokens.iconTileSize,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.1,
+                              color: theme.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusSm,
                               ),
-                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              Icons.trending_up_rounded,
+                              _getInvestmentTypeIcon(inv.assetType),
+                              size: 20,
                               color: theme.colorScheme.primary,
                             ),
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceMd),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  inv.name,
-                                  style: theme.textTheme.titleMedium,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${inv.assetType.displayName} · ${inv.quantityOrUnits} units',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.secondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
+                          title: inv.name,
+                          subtitle: inv.assetType.displayName,
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                CurrencyFormatter.formatINR(inv.currentValue),
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              FfAmountText(
+                                amount: inv.currentValue,
+                                size: FfAmountSize.sm,
+                                showSign: false,
                               ),
                               Text(
-                                '${inv.isProfitable ? "+" : ""}${inv.percentageReturn.toStringAsFixed(1)}%',
+                                '${isProfit ? '+' : ''}${CurrencyFormatter.formatINR(profit)}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color:
-                                      inv.isProfitable
-                                          ? context.secColors.verified
-                                          : context.secColors.error,
+                                      isProfit
+                                          ? context.finColors.income
+                                          : context.finColors.expense,
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
+                          onTap: () => _openDetail(context, inv),
+                        );
+                      }).toList(),
                 ),
               ],
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading:
+            () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                child: CircularProgressIndicator(),
+              ),
+            ),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'investments_add_fab',
-        onPressed: () => _openAddSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Investment'),
-      ),
     );
+  }
+
+  static IconData _getInvestmentTypeIcon(AssetType type) {
+    switch (type) {
+      case AssetType.stocks:
+        return Icons.candlestick_chart_outlined;
+      case AssetType.mutualFunds:
+        return Icons.pie_chart_outline_rounded;
+      case AssetType.fixedDeposits:
+      case AssetType.recurringDeposits:
+        return Icons.lock_clock_outlined;
+      case AssetType.gold:
+        return Icons.monetization_on_outlined;
+      case AssetType.ppf:
+      case AssetType.nps:
+        return Icons.savings_outlined;
+      case AssetType.crypto:
+        return Icons.currency_bitcoin_rounded;
+      case AssetType.realEstate:
+        return Icons.home_work_outlined;
+      case AssetType.other:
+        return Icons.show_chart_rounded;
+    }
   }
 }

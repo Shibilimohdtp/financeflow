@@ -10,8 +10,13 @@ import '../../shared/widgets/charts/ff_trend_line_chart.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import '../transactions/transactions_controller.dart';
 import 'analytics_controller.dart';
 
@@ -42,34 +47,29 @@ class AnalyticsScreen extends ConsumerWidget {
           ref.invalidate(analyticsReportProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceLg,
-            vertical: StillwaterTokens.spaceMd,
+          padding: const EdgeInsets.fromLTRB(
+            StillwaterTokens.spaceLg,
+            StillwaterTokens.spaceMd,
+            StillwaterTokens.spaceLg,
+            StillwaterTokens.space4Xl,
           ),
           children: [
-            // 1. Time-Range Selector Chips
-            SegmentedButton<AnalyticsTimeRange>(
-              segments: const [
-                ButtonSegment(
-                  value: AnalyticsTimeRange.week,
-                  label: Text('Week'),
-                ),
-                ButtonSegment(
+            // ── 1. Time-Range Selector Pills ──────────────────────────
+            FfSegmentedPill<AnalyticsTimeRange>(
+              options: const [
+                FfSegmentOption(value: AnalyticsTimeRange.week, label: 'Week'),
+                FfSegmentOption(
                   value: AnalyticsTimeRange.month,
-                  label: Text('Month'),
+                  label: 'Month',
                 ),
-                ButtonSegment(
-                  value: AnalyticsTimeRange.year,
-                  label: Text('Year'),
-                ),
-                ButtonSegment(
+                FfSegmentOption(value: AnalyticsTimeRange.year, label: 'Year'),
+                FfSegmentOption(
                   value: AnalyticsTimeRange.custom,
-                  label: Text('Custom'),
+                  label: 'Custom',
                 ),
               ],
-              selected: {selectedRange},
-              onSelectionChanged: (set) async {
-                final chosen = set.first;
+              selectedValue: selectedRange,
+              onSelected: (chosen) async {
                 if (chosen == AnalyticsTimeRange.custom) {
                   final now = DateTime.now();
                   final picked = await showDateRangePicker(
@@ -108,7 +108,7 @@ class AnalyticsScreen extends ConsumerWidget {
                     child: FfCard(
                       child: FfEmptyState(
                         icon: Icons.insights_rounded,
-                        title: 'No transaction data for this period',
+                        title: 'No transactions in this period',
                         description:
                             'Add expenses or switch time ranges to see category breakdowns and spending trends.',
                       ),
@@ -151,65 +151,116 @@ class AnalyticsScreen extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Summary Metrics Card
+                    // ── 1. Summary Metrics Hero Card ─────────────────────────
                     FfCard(
                       variant: FfCardVariant.elevated,
                       child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _MetricItem(
-                                label: 'Total Inflow',
-                                value: CurrencyFormatter.format(
-                                  report.totalIncome,
+                              Expanded(
+                                child: _MetricBlock(
+                                  label: 'Total Inflow',
+                                  value: CurrencyFormatter.formatINR(
+                                    report.totalIncome,
+                                  ),
+                                  color: finColors.income,
                                 ),
-                                color: finColors.income,
                               ),
-                              _MetricItem(
-                                label: 'Total Outflow',
-                                value: CurrencyFormatter.format(
-                                  report.totalExpense,
+                              Container(
+                                width: 1,
+                                height: 40,
+                                color: theme.dividerColor,
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: StillwaterTokens.spaceMd,
+                                  ),
+                                  child: _MetricBlock(
+                                    label: 'Total Outflow',
+                                    value: CurrencyFormatter.formatINR(
+                                      report.totalExpense,
+                                    ),
+                                    color: finColors.expense,
+                                  ),
                                 ),
-                                color: finColors.expense,
                               ),
                             ],
                           ),
-                          const Divider(height: StillwaterTokens.spaceXl),
+                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          Divider(
+                            height: 1,
+                            thickness: StillwaterTokens.borderWidthHairline,
+                            color: theme.dividerColor,
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceMd),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _MetricItem(
-                                label: 'Net Savings',
-                                value: CurrencyFormatter.format(
-                                  report.netSavings,
+                              Expanded(
+                                child: _MetricBlock(
+                                  label: 'Net Savings',
+                                  value: CurrencyFormatter.formatINR(
+                                    report.netSavings,
+                                  ),
+                                  color:
+                                      report.netSavings >= 0
+                                          ? finColors.income
+                                          : finColors.expense,
                                 ),
-                                color:
-                                    report.netSavings >= 0
-                                        ? finColors.income
-                                        : finColors.expense,
                               ),
-                              _MetricItem(
-                                label: 'Savings Rate',
-                                value:
-                                    '${(report.savingsRate * 100).toStringAsFixed(0)}%',
-                                color: theme.colorScheme.primary,
+                              Container(
+                                width: 1,
+                                height: 40,
+                                color: theme.dividerColor,
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: StillwaterTokens.spaceMd,
+                                  ),
+                                  child: _MetricBlock(
+                                    label: 'Savings Rate',
+                                    value:
+                                        '${(report.savingsRate * 100).toStringAsFixed(0)}%',
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          const Divider(height: StillwaterTokens.spaceXl),
+                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          Divider(
+                            height: 1,
+                            thickness: StillwaterTokens.borderWidthHairline,
+                            color: theme.dividerColor,
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceMd),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _MetricItem(
-                                label: 'Avg Transaction',
-                                value: CurrencyFormatter.format(
-                                  report.averageTransactionAmount,
+                              Expanded(
+                                child: _MetricBlock(
+                                  label: 'Avg Transaction',
+                                  value: CurrencyFormatter.formatINR(
+                                    report.averageTransactionAmount,
+                                  ),
                                 ),
                               ),
-                              _MetricItem(
-                                label: 'Total Transactions',
-                                value: '${report.transactionCount}',
+                              Container(
+                                width: 1,
+                                height: 40,
+                                color: theme.dividerColor,
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: StillwaterTokens.spaceMd,
+                                  ),
+                                  child: _MetricBlock(
+                                    label: 'Transaction Count',
+                                    value: '${report.transactionCount}',
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -217,41 +268,25 @@ class AnalyticsScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.space2Xl),
 
-                    // 1. Spending & Income Trend Bar Chart
-                    Text(
-                      'Cash Flow Activity',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    // ── 2. Cash Flow Activity Bar Chart ───────────────────────
+                    const FfSectionHeader(title: 'Cash Flow Activity'),
                     FfCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: finColors.expense,
-                                  shape: BoxShape.circle,
-                                ),
+                              _LegendPill(
+                                label: 'Expense',
+                                color: finColors.expense,
                               ),
-                              const SizedBox(width: StillwaterTokens.space2Xs),
-                              Text('Expense', style: theme.textTheme.bodySmall),
                               const SizedBox(width: StillwaterTokens.spaceMd),
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: finColors.income,
-                                  shape: BoxShape.circle,
-                                ),
+                              _LegendPill(
+                                label: 'Income',
+                                color: finColors.income,
                               ),
-                              const SizedBox(width: StillwaterTokens.space2Xs),
-                              Text('Income', style: theme.textTheme.bodySmall),
                             ],
                           ),
                           const SizedBox(height: StillwaterTokens.spaceMd),
@@ -265,14 +300,10 @@ class AnalyticsScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.space2Xl),
 
-                    // 2. Category Breakdown Donut Chart & List
-                    Text(
-                      'Category Breakdown',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    // ── 3. Category Breakdown ─────────────────────────────────
+                    const FfSectionHeader(title: 'Category Breakdown'),
                     FfCard(
                       child: Column(
                         children: [
@@ -282,59 +313,35 @@ class AnalyticsScreen extends ConsumerWidget {
                             size: 190,
                           ),
                           const SizedBox(height: StillwaterTokens.spaceLg),
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: report.categoryBreakdown.length,
-                            separatorBuilder: (ctx, i) => const Divider(),
-                            itemBuilder: (ctx, i) {
-                              final cat = report.categoryBreakdown[i];
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: FfCategoryTile(
-                                  iconIdentifier: cat.categoryIcon,
-                                  colorTokenIdentifier: cat.categoryColor,
-                                ),
-                                title: Text(
-                                  cat.categoryName,
-                                  style: theme.textTheme.titleSmall,
-                                ),
-                                subtitle: Text(
-                                  '${cat.transactionCount} payments',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                                trailing: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      CurrencyFormatter.format(cat.amount),
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                          FfGroupedContainer(
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerLow,
+                            children:
+                                report.categoryBreakdown.map((cat) {
+                                  return FfListRow(
+                                    leading: FfCategoryTile(
+                                      iconIdentifier: cat.categoryIcon,
+                                      colorTokenIdentifier: cat.categoryColor,
+                                      size: 36,
                                     ),
-                                    Text(
-                                      '${(cat.percentage * 100).toStringAsFixed(1)}%',
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                          ),
+                                    title: cat.categoryName,
+                                    subtitle:
+                                        '${cat.transactionCount} payments · ${(cat.percentage * 100).toStringAsFixed(1)}%',
+                                    trailingText: CurrencyFormatter.formatINR(
+                                      cat.amount,
                                     ),
-                                  ],
-                                ),
-                              );
-                            },
+                                    showChevron: false,
+                                  );
+                                }).toList(),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.space2Xl),
 
-                    // 3. Spending Pace Trend Line Chart
-                    Text('Spending Pace', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    // ── 4. Spending Pace Trend Line Chart ─────────────────────
+                    const FfSectionHeader(title: 'Spending Pace Over Time'),
                     FfCard(
                       child: FfTrendLineChart(
                         points: trendPoints,
@@ -344,14 +351,12 @@ class AnalyticsScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
+                    const SizedBox(height: StillwaterTokens.space2Xl),
 
-                    // 4. Day-of-Week Spending Heatmap
-                    Text(
-                      'Weekday Spending Distribution',
-                      style: theme.textTheme.titleMedium,
+                    // ── 5. Day-of-Week Spending Heatmap ───────────────────────
+                    const FfSectionHeader(
+                      title: 'Weekday Spending Distribution',
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
                     FfCard(
                       child: FfSpendingHeatmap(
                         days: report.dayOfWeekBreakdown,
@@ -360,59 +365,43 @@ class AnalyticsScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceXl),
-
-                    // 5. Top Merchants List
+                    // ── 6. Top Merchants List ─────────────────────────────────
                     if (report.topMerchants.isNotEmpty) ...[
-                      Text(
-                        'Top Payees & Merchants',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
-                      FfCard(
-                        padding: EdgeInsets.zero,
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: report.topMerchants.length,
-                          separatorBuilder: (ctx, i) => const Divider(),
-                          itemBuilder: (ctx, i) {
-                            final merch = report.topMerchants[i];
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceMd,
-                                vertical: StillwaterTokens.space2Xs,
-                              ),
-                              leading: CircleAvatar(
-                                radius: 18,
-                                backgroundColor:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                child: Text(
-                                  '${i + 1}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
+                      const SizedBox(height: StillwaterTokens.space2Xl),
+                      const FfSectionHeader(title: 'Top Payees & Merchants'),
+                      FfGroupedContainer(
+                        children:
+                            report.topMerchants.map((merch) {
+                              return FfListRow(
+                                leading: Container(
+                                  width: StillwaterTokens.iconTileSize,
+                                  height: StillwaterTokens.iconTileSize,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusSm,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.storefront_outlined,
+                                      size: 18,
+                                      color: theme.colorScheme.primary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              title: Text(
-                                merch.normalizedMerchant,
-                                style: theme.textTheme.titleSmall,
-                              ),
-                              subtitle: Text(
-                                '${merch.transactionCount} transactions',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                              trailing: Text(
-                                CurrencyFormatter.format(merch.totalAmount),
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                title: merch.normalizedMerchant,
+                                subtitle:
+                                    '${merch.transactionCount} transactions',
+                                trailingText: CurrencyFormatter.formatINR(
+                                  merch.totalAmount,
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                                showChevron: false,
+                              );
+                            }).toList(),
                       ),
                     ],
 
@@ -438,31 +427,62 @@ class AnalyticsScreen extends ConsumerWidget {
   }
 }
 
-class _MetricItem extends StatelessWidget {
+class _MetricBlock extends StatelessWidget {
   final String label;
   final String value;
   final Color? color;
 
-  const _MetricItem({required this.label, required this.value, this.color});
+  const _MetricBlock({required this.label, required this.value, this.color});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.secondary,
+            letterSpacing: 1.0,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: StillwaterTokens.space3Xs),
+        const SizedBox(height: StillwaterTokens.space2Xs),
         Text(
           value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
+          style: StillwaterTypography.numMd(
+            color: color ?? theme.colorScheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendPill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: StillwaterTokens.spaceXs),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.secondary,
           ),
         ),
       ],

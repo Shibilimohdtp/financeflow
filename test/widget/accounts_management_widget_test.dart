@@ -58,26 +58,31 @@ void main() {
       );
     }
 
-    testWidgets('AccountsScreen renders active accounts and allows tab switching to archived', (tester) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'AccountsScreen renders active accounts and allows tab switching to archived',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Verify Active tab by default shows HDFC Bank
-      expect(find.text('Active (1)'), findsOneWidget);
-      expect(find.text('Archived (1)'), findsOneWidget);
-      expect(find.text('HDFC Bank'), findsOneWidget);
-      expect(find.text('Old Cash Wallet'), findsNothing);
+        // Verify Active tab by default shows HDFC Bank
+        expect(find.text('Active (1)'), findsOneWidget);
+        expect(find.text('Archived (1)'), findsOneWidget);
+        expect(find.text('HDFC Bank'), findsOneWidget);
+        expect(find.text('Old Cash Wallet'), findsNothing);
 
-      // Tap Archived Tab
-      await tester.tap(find.text('Archived (1)'));
-      await tester.pumpAndSettle();
+        // Tap Archived Tab
+        await tester.tap(find.text('Archived (1)'));
+        await tester.pumpAndSettle();
 
-      // Now Old Cash Wallet is shown
-      expect(find.text('Old Cash Wallet'), findsOneWidget);
-      expect(find.text('Archived'), findsOneWidget);
-    });
+        // Now Old Cash Wallet is shown
+        expect(find.text('Old Cash Wallet'), findsOneWidget);
+        expect(find.text('Archived'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Opening Add Account sheet displays input fields', (tester) async {
+    testWidgets('Opening Add Account sheet displays input fields', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 

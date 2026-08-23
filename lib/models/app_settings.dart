@@ -70,6 +70,7 @@ class AppSettings {
   final DateTime? lastBackupDate;
   final DateTime? lastAlertScan;
   final int autoLockTimeoutMinutes;
+  final List<String> dismissedInsightIds;
 
   const AppSettings({
     this.hasCompletedOnboarding = false,
@@ -111,6 +112,7 @@ class AppSettings {
     this.lastBackupDate,
     this.lastAlertScan,
     this.autoLockTimeoutMinutes = 0,
+    this.dismissedInsightIds = const [],
   });
 
   AppSettings copyWith({
@@ -139,6 +141,7 @@ class AppSettings {
     DateTime? lastBackupDate,
     DateTime? lastAlertScan,
     int? autoLockTimeoutMinutes,
+    List<String>? dismissedInsightIds,
   }) {
     return AppSettings(
       hasCompletedOnboarding:
@@ -176,6 +179,7 @@ class AppSettings {
       lastAlertScan: lastAlertScan ?? this.lastAlertScan,
       autoLockTimeoutMinutes:
           autoLockTimeoutMinutes ?? this.autoLockTimeoutMinutes,
+      dismissedInsightIds: dismissedInsightIds ?? this.dismissedInsightIds,
     );
   }
 }

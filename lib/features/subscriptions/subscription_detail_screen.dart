@@ -4,11 +4,18 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/subscription.dart';
+import '../../repositories/account_repository.dart';
+import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_list_row.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'add_edit_subscription_sheet.dart';
 import 'subscriptions_controller.dart';
 
@@ -17,21 +24,25 @@ class SubscriptionDetailScreen extends ConsumerWidget {
 
   const SubscriptionDetailScreen({super.key, required this.subscription});
 
-  void _edit(BuildContext context) {
+  void _edit(BuildContext context, Subscription currentSub) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder:
-          (_) => AddEditSubscriptionSheet(initialSubscription: subscription),
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddEditSubscriptionSheet(initialSubscription: currentSub),
     );
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    Subscription currentSub,
+  ) async {
     final confirmed = await FfConfirmDialog.show(
       context,
       title: 'Delete Subscription?',
       message:
-          'Are you sure you want to stop tracking "${subscription.merchant}"?',
+          'Are you sure you want to stop tracking "${currentSub.merchant}" on this device?',
       confirmLabel: 'Delete',
       isDestructive: true,
     );
@@ -39,25 +50,28 @@ class SubscriptionDetailScreen extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       await ref
           .read(subscriptionsControllerProvider.notifier)
-          .deleteSubscription(subscription.id);
+          .deleteSubscription(currentSub.id);
       if (context.mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(context, message: 'Subscription deleted.');
+        FfSnackbar.show(context, message: 'Subscription removed.');
       }
     }
   }
 
-  Future<void> _toggleStatus(BuildContext context, WidgetRef ref) async {
+  Future<void> _toggleStatus(
+    BuildContext context,
+    WidgetRef ref,
+    Subscription currentSub,
+  ) async {
     final newStatus =
-        subscription.status == SubscriptionStatus.active
+        currentSub.status == SubscriptionStatus.active
             ? SubscriptionStatus.paused
             : SubscriptionStatus.active;
 
     await ref
         .read(subscriptionsControllerProvider.notifier)
-        .updateStatus(subscription.id, newStatus);
+        .updateStatus(currentSub.id, newStatus);
     if (context.mounted) {
-      Navigator.of(context).pop();
       FfSnackbar.show(
         context,
         message:
@@ -71,28 +85,47 @@ class SubscriptionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
-    final days = subscription.daysUntilRenewal();
+
+    // Watch live subscription stream
+    final subsAsync = ref.watch(allSubscriptionsStreamProvider);
+    final currentSub =
+        subsAsync.value?.firstWhere(
+          (s) => s.id == subscription.id,
+          orElse: () => subscription,
+        ) ??
+        subscription;
+
+    final accountsAsync = ref.watch(allAccountsStreamProvider);
+    final linkedAccount = accountsAsync.value?.firstWhere(
+      (a) => a.id == currentSub.accountId,
+      orElse: () => null as dynamic,
+    );
+
+    final days = currentSub.daysUntilRenewal();
+    final isActive = currentSub.status == SubscriptionStatus.active;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(subscription.merchant),
+        title: Text(currentSub.merchant),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit',
-            onPressed: () => _edit(context),
+            tooltip: 'Edit Subscription',
+            onPressed: () => _edit(context, currentSub),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Delete',
-            onPressed: () => _delete(context, ref),
+          const Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            child: Center(child: FfPrivacyBadge(label: '100% Local')),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
         children: [
-          // Amount Hero Card
+          // ── 1. Top Amount & Status Hero Card ────────────────────────
           FfCard(
             variant: FfCardVariant.elevated,
             child: Column(
@@ -102,36 +135,35 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Recurring Amount',
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      'RECURRING COMMITMENT',
+                      style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.secondary,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: StillwaterTokens.spaceSm,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color:
-                            subscription.status == SubscriptionStatus.active
-                                ? context.secColors.verified.withValues(
-                                  alpha: 0.15,
-                                )
-                                : theme.colorScheme.secondary.withValues(
-                                  alpha: 0.15,
-                                ),
-                        borderRadius: BorderRadius.circular(12),
+                            isActive
+                                ? context.finColors.incomeContainer
+                                : theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusFull,
+                        ),
                       ),
                       child: Text(
-                        subscription.status.displayName,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                        currentSub.status.displayName,
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color:
-                              subscription.status == SubscriptionStatus.active
-                                  ? context.secColors.verified
+                              isActive
+                                  ? context.finColors.income
                                   : theme.colorScheme.secondary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -139,15 +171,15 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 Text(
-                  CurrencyFormatter.formatINR(subscription.amount),
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  CurrencyFormatter.formatINR(currentSub.amount),
+                  style: StillwaterTypography.numHero(
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: 2),
                 Text(
-                  'Billed ${subscription.billingFrequency.displayName} · Next: ${DateFormatter.formatFullDate(subscription.nextRenewalDate)} ($days days)',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  'Billed ${currentSub.billingFrequency.displayName.toLowerCase()}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.secondary,
                   ),
                 ),
@@ -157,71 +189,155 @@ class SubscriptionDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
-          // Normalized Cost Summary
-          FfCard(
-            child: Column(
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Monthly Equivalent Cost'),
-                  trailing: Text(
-                    CurrencyFormatter.formatINR(
-                      subscription.monthlyEquivalentAmount,
-                    ),
-                    style: theme.textTheme.titleMedium,
+          // ── 2. Schedule & Financial Metrics ─────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: FfCard(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NEXT RENEWAL',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      Text(
+                        DateFormatter.formatShortDate(
+                          currentSub.nextRenewalDate,
+                        ),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isActive
+                            ? (days == 0
+                                ? 'Renews today'
+                                : (days > 0
+                                    ? 'In $days days'
+                                    : '${days.abs()}d ago'))
+                            : 'Plan inactive',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color:
+                              isActive && days <= 3
+                                  ? theme.colorScheme.tertiary
+                                  : theme.colorScheme.secondary,
+                          fontWeight:
+                              isActive && days <= 3
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Annual Equivalent Cost'),
-                  trailing: Text(
-                    CurrencyFormatter.formatINR(
-                      subscription.yearlyEquivalentAmount,
-                    ),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Renewal Reminder'),
-                  trailing: Text(
-                    subscription.isReminderEnabled
-                        ? '${subscription.reminderDaysBefore} day(s) before'
-                        : 'Off',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          if (subscription.notes != null && subscription.notes!.isNotEmpty) ...[
-            const SizedBox(height: StillwaterTokens.spaceLg),
-            FfCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Notes', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
-                  Text(subscription.notes!, style: theme.textTheme.bodyMedium),
-                ],
               ),
-            ),
-          ],
-
-          const SizedBox(height: StillwaterTokens.space2Xl),
-
-          // Pause / Resume Button
-          FfButton(
-            label:
-                subscription.status == SubscriptionStatus.active
-                    ? 'Pause Subscription'
-                    : 'Resume Subscription',
-            variant: FfButtonVariant.outlined,
-            onPressed: () => _toggleStatus(context, ref),
+              const SizedBox(width: StillwaterTokens.spaceSm),
+              Expanded(
+                child: FfCard(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ANNUAL COST',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      Text(
+                        CurrencyFormatter.formatINR(
+                          currentSub.yearlyEquivalentAmount,
+                        ),
+                        style: StillwaterTypography.numMd(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Projected pace',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
+
+          const SizedBox(height: StillwaterTokens.spaceLg),
+
+          // ── 3. Plan Configuration Details ───────────────────────────
+          const FfSectionHeader(title: 'Plan Details'),
+          FfGroupedContainer(
+            children: [
+              FfListRow(
+                icon: Icons.repeat_rounded,
+                title: 'Billing Frequency',
+                subtitle: currentSub.billingFrequency.displayName,
+                showChevron: false,
+              ),
+              FfListRow(
+                icon: Icons.account_balance_outlined,
+                title: 'Linked Payment Account',
+                subtitle: linkedAccount?.name ?? 'No account linked',
+                showChevron: false,
+              ),
+              FfListRow(
+                icon: Icons.notifications_active_outlined,
+                title: 'Renewal Reminder',
+                subtitle:
+                    currentSub.isReminderEnabled
+                        ? '${currentSub.reminderDaysBefore} day before renewal'
+                        : 'Disabled',
+                showChevron: false,
+              ),
+              if (currentSub.notes != null && currentSub.notes!.isNotEmpty)
+                FfListRow(
+                  icon: Icons.notes_rounded,
+                  title: 'Notes',
+                  subtitle: currentSub.notes!,
+                  showChevron: false,
+                ),
+            ],
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceXl),
+
+          // ── 4. Action Buttons ───────────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: FfButton(
+                  label: isActive ? 'Pause Plan' : 'Resume Plan',
+                  variant: FfButtonVariant.secondary,
+                  onPressed: () => _toggleStatus(context, ref, currentSub),
+                ),
+              ),
+              const SizedBox(width: StillwaterTokens.spaceSm),
+              Expanded(
+                child: FfButton(
+                  label: 'Delete Plan',
+                  variant: FfButtonVariant.destructive,
+                  onPressed: () => _delete(context, ref, currentSub),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: StillwaterTokens.space3Xl),
         ],
       ),
     );

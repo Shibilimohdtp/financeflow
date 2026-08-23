@@ -5,10 +5,16 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/subscription.dart';
 import '../../repositories/subscription_repository.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import 'add_edit_subscription_sheet.dart';
 import 'recurring_suggestions_sheet.dart';
 import 'subscription_detail_screen.dart';
@@ -22,26 +28,14 @@ class SubscriptionsScreen extends ConsumerStatefulWidget {
       _SubscriptionsScreenState();
 }
 
-class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
+  bool _showInactive = false;
 
   void _openAddSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => const AddEditSubscriptionSheet(),
     );
   }
@@ -72,329 +66,314 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen>
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'subscriptions_fab',
+        tooltip: 'Add subscription',
+        onPressed: () => _openAddSheet(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Subscription'),
+      ),
       body: subsAsync.when(
         data: (allSubs) {
           final activeSubs =
               allSubs
                   .where((s) => s.status == SubscriptionStatus.active)
                   .toList();
-          final otherSubs =
+          final inactiveSubs =
               allSubs
                   .where((s) => s.status != SubscriptionStatus.active)
                   .toList();
+          final displaySubs = _showInactive ? inactiveSubs : activeSubs;
 
-          return Column(
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceMd,
+              StillwaterTokens.spaceLg,
+              104,
+            ),
             children: [
-              // Monthly & Yearly Burn Rate Hero Card
-              Padding(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                child: FfCard(
-                  variant: FfCardVariant.elevated,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Monthly Subscriptions',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                        ),
+              // ── 1. Burn Rate Hero Card ──────────────────────────────────
+              FfCard(
+                variant: FfCardVariant.elevated,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MONTHLY RECURRING COMMITMENT',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: StillwaterTokens.space2Xs),
-                      Text(
-                        CurrencyFormatter.formatINR(summary.monthlyTotal),
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    Text(
+                      CurrencyFormatter.formatINR(summary.monthlyTotal),
+                      style: StillwaterTypography.numHero(
+                        color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Yearly: ${CurrencyFormatter.formatINR(summary.yearlyTotal)}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.secondary,
-                            ),
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Annual pace: ${CurrencyFormatter.formatINR(summary.yearlyTotal)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.secondary,
                           ),
-                          Text(
-                            '${summary.activeCount} active plans',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        ),
+                        Text(
+                          '${summary.activeCount} active ${summary.activeCount == 1 ? 'plan' : 'plans'}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
 
-              // Recurring Suggestions Banner
-              if (suggestionCount > 0)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceLg,
-                  ),
-                  child: Material(
-                    color: context.aiColors.accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusSm,
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusSm,
+              const SizedBox(height: StillwaterTokens.spaceLg),
+
+              // ── 2. Recurring Suggestions Alert Banner ───────────────────
+              if (suggestionCount > 0) ...[
+                FfCard(
+                  variant: FfCardVariant.tinted,
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const RecurringSuggestionsSheet(),
                       ),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const RecurringSuggestionsSheet(),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.15,
                           ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-                        child: Row(
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusSm,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.auto_awesome,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.auto_awesome,
-                              color: context.aiColors.accent,
-                              size: 18,
-                            ),
-                            const SizedBox(width: StillwaterTokens.spaceSm),
-                            Expanded(
-                              child: Text(
-                                '$suggestionCount recurring payment patterns detected',
-                                style: TextStyle(
-                                  color: context.aiColors.accent,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
+                            Text(
+                              '$suggestionCount recurring $suggestionCount == 1 ? "pattern" : "patterns" detected',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            Icon(
-                              Icons.chevron_right_rounded,
-                              color: context.aiColors.accent,
-                              size: 18,
+                            const SizedBox(height: 2),
+                            Text(
+                              'Tap to review and add to subscription tracker',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.secondary,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: StillwaterTokens.spaceLg),
+              ],
 
-              const SizedBox(height: StillwaterTokens.spaceSm),
-
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(text: 'Active (${activeSubs.length})'),
-                  Tab(text: 'Paused & Cancelled (${otherSubs.length})'),
+              // ── 3. Segmented Pill Tab Bar ────────────────────────────────
+              FfSegmentedPill<bool>(
+                options: [
+                  FfSegmentOption(
+                    value: false,
+                    label: 'Active (${activeSubs.length})',
+                  ),
+                  FfSegmentOption(
+                    value: true,
+                    label: 'Paused & Cancelled (${inactiveSubs.length})',
+                  ),
                 ],
+                selectedValue: _showInactive,
+                onSelected: (val) {
+                  setState(() {
+                    _showInactive = val;
+                  });
+                },
               ),
 
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Active Tab
-                    activeSubs.isEmpty
-                        ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(
-                              StillwaterTokens.spaceXl,
-                            ),
-                            child: FfEmptyState(
-                              icon: Icons.subscriptions_outlined,
-                              title: 'No active subscriptions',
-                              description:
-                                  'Add Netflix, Spotify, gym memberships, or cloud storage to forecast renewals accurately.',
-                              actionLabel: 'Add Subscription',
-                              onAction: () => _openAddSheet(context),
-                            ),
-                          ),
-                        )
-                        : ListView.separated(
-                          padding: const EdgeInsets.all(
-                            StillwaterTokens.spaceLg,
-                          ),
-                          itemCount: activeSubs.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(
-                                height: StillwaterTokens.spaceSm,
-                              ),
-                          itemBuilder: (context, index) {
-                            final sub = activeSubs[index];
-                            final days = sub.daysUntilRenewal();
-                            return FfCard(
-                              onTap: () => _openDetail(context, sub),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary
-                                          .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.repeat_rounded,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceMd,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          sub.merchant,
-                                          style: theme.textTheme.titleMedium,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Renews ${DateFormatter.formatFullDate(sub.nextRenewalDate)} (${days == 0 ? "Today" : (days == 1 ? "Tomorrow" : "in $days days")})',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color:
-                                                    days <= 3
-                                                        ? context
-                                                            .secColors
-                                                            .error
-                                                        : theme
-                                                            .colorScheme
-                                                            .secondary,
-                                                fontWeight:
-                                                    days <= 3
-                                                        ? FontWeight.w600
-                                                        : FontWeight.normal,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        CurrencyFormatter.formatINR(sub.amount),
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      Text(
-                                        '/${sub.billingFrequency.name}',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  theme.colorScheme.secondary,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+              const SizedBox(height: StillwaterTokens.spaceLg),
 
-                    // Paused & Cancelled Tab
-                    otherSubs.isEmpty
-                        ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(StillwaterTokens.spaceXl),
-                            child: FfEmptyState(
-                              icon: Icons.pause_circle_outline_rounded,
-                              title: 'No paused subscriptions',
-                              description:
-                                  'Paused or cancelled services will appear here for your reference.',
+              // ── 4. Subscriptions List ────────────────────────────────────
+              FfSectionHeader(
+                title:
+                    _showInactive ? 'Inactive Plans' : 'Active Subscriptions',
+              ),
+
+              if (displaySubs.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: StillwaterTokens.space2Xl,
+                  ),
+                  child: FfEmptyState(
+                    icon:
+                        _showInactive
+                            ? Icons.pause_circle_outline_rounded
+                            : Icons.repeat_rounded,
+                    title:
+                        _showInactive
+                            ? 'No inactive subscriptions'
+                            : 'No active subscriptions',
+                    description:
+                        _showInactive
+                            ? 'Subscriptions you pause or cancel will remain stored here safely.'
+                            : 'Track recurring services like Netflix, Spotify, iCloud, gym, and broadband.',
+                    actionLabel: _showInactive ? null : 'Add Subscription',
+                    onAction:
+                        _showInactive ? null : () => _openAddSheet(context),
+                  ),
+                )
+              else
+                FfGroupedContainer(
+                  children:
+                      displaySubs.map((sub) {
+                        final days = sub.daysUntilRenewal();
+                        final isDueSoon = sub.isDueSoon(daysThreshold: 3);
+
+                        String renewalText;
+                        if (sub.status != SubscriptionStatus.active) {
+                          renewalText = sub.status.displayName;
+                        } else if (days == 0) {
+                          renewalText = 'Renews today';
+                        } else if (days == 1) {
+                          renewalText = 'Renews tomorrow';
+                        } else if (days < 0) {
+                          renewalText = 'Renewed ${days.abs()}d ago';
+                        } else {
+                          renewalText =
+                              'Renews in ${days}d (${DateFormatter.formatShortDate(sub.nextRenewalDate)})';
+                        }
+
+                        return FfListRow(
+                          leading: Container(
+                            width: StillwaterTokens.iconTileSize,
+                            height: StillwaterTokens.iconTileSize,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusSm,
+                              ),
+                            ),
+                            child: Icon(
+                              _getSubscriptionIcon(sub.merchant),
+                              size: 20,
+                              color: theme.colorScheme.primary,
                             ),
                           ),
-                        )
-                        : ListView.separated(
-                          padding: const EdgeInsets.all(
-                            StillwaterTokens.spaceLg,
+                          title: sub.merchant,
+                          subtitle:
+                              '${sub.billingFrequency.displayName} · $renewalText',
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              FfAmountText(
+                                amount: sub.amount,
+                                size: FfAmountSize.sm,
+                                showSign: false,
+                              ),
+                              if (isDueSoon &&
+                                  sub.status == SubscriptionStatus.active)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.tertiaryContainer,
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusXs,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Due Soon',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.tertiary,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                          itemCount: otherSubs.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(
-                                height: StillwaterTokens.spaceSm,
-                              ),
-                          itemBuilder: (context, index) {
-                            final sub = otherSubs[index];
-                            return FfCard(
-                              onTap: () => _openDetail(context, sub),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.secondary
-                                          .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.pause_rounded,
-                                      color: theme.colorScheme.secondary,
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceMd,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          sub.merchant,
-                                          style: theme.textTheme.titleMedium,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          sub.status.displayName,
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.secondary,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    CurrencyFormatter.formatINR(sub.amount),
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                  ],
+                          onTap: () => _openDetail(context, sub),
+                        );
+                      }).toList(),
                 ),
-              ),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading:
+            () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                child: CircularProgressIndicator(),
+              ),
+            ),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'subscriptions_add_fab',
-        onPressed: () => _openAddSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Plan'),
-      ),
     );
+  }
+
+  static IconData _getSubscriptionIcon(String merchant) {
+    final lower = merchant.toLowerCase();
+    if (lower.contains('netflix') ||
+        lower.contains('prime') ||
+        lower.contains('hotstar') ||
+        lower.contains('youtube') ||
+        lower.contains('disney')) {
+      return Icons.movie_outlined;
+    } else if (lower.contains('spotify') ||
+        lower.contains('apple music') ||
+        lower.contains('gaana') ||
+        lower.contains('wynk')) {
+      return Icons.music_note_outlined;
+    } else if (lower.contains('cloud') ||
+        lower.contains('google') ||
+        lower.contains('drive') ||
+        lower.contains('dropbox')) {
+      return Icons.cloud_outlined;
+    } else if (lower.contains('gym') ||
+        lower.contains('fitness') ||
+        lower.contains('cult')) {
+      return Icons.fitness_center_rounded;
+    } else if (lower.contains('wifi') ||
+        lower.contains('broadband') ||
+        lower.contains('airtel') ||
+        lower.contains('jio')) {
+      return Icons.wifi_rounded;
+    }
+    return Icons.repeat_rounded;
   }
 }

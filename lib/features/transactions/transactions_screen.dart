@@ -3,18 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../../models/account.dart';
+import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_source_badge.dart';
+import '../../shared/widgets/ff_sheet_footer.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
+import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import '../ingestion/needs_review_controller.dart';
 import '../ingestion/needs_review_screen.dart';
 import '../settings/settings_controller.dart';
+import 'add_edit_transaction_sheet.dart';
+import 'transaction_list_utils.dart';
 import 'transactions_controller.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -32,396 +39,270 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
-  final TextEditingController _searchController = TextEditingController();
+  final _searchController = TextEditingController();
+  late final FocusNode _searchFocusNode;
+  bool _isSearchOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode = FocusNode();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() {
+      _isSearchOpen = true;
+    });
+    _searchFocusNode.requestFocus();
+  }
+
+  void _closeSearch() {
+    _searchController.clear();
+    ref.read(transactionFilterProvider.notifier).state = ref
+        .read(transactionFilterProvider)
+        .copyWith(searchQuery: '');
+    setState(() {
+      _isSearchOpen = false;
+    });
+    _searchFocusNode.unfocus();
+  }
+
+  void _clearFilters() {
+    _searchController.clear();
+    ref.read(transactionFilterProvider.notifier).state =
+        const TransactionFilterState();
+    if (_isSearchOpen) {
+      setState(() {
+        _isSearchOpen = false;
+      });
+      _searchFocusNode.unfocus();
+    }
+  }
+
+  Future<void> _edit(Transaction transaction) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => AddEditTransactionSheet(initialTransaction: transaction),
+  );
+
+  Future<void> _delete(Transaction transaction) async {
+    await ref
+        .read(transactionsControllerProvider.notifier)
+        .deleteTransaction(transaction);
+    if (!mounted) return;
+    FfSnackbar.show(
+      context,
+      message: 'Transaction deleted.',
+      actionLabel: 'Undo',
+      onAction:
+          () => ref.read(transactionsControllerProvider.notifier).undoDelete(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final filter = ref.watch(transactionFilterProvider);
-    final filterNotifier = ref.read(transactionFilterProvider.notifier);
-    final transactionsAsync = ref.watch(filteredTransactionsProvider);
-    final categories = ref.watch(categoriesStreamProvider).value ?? [];
-    final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
-    final settings = ref.watch(settingsStreamProvider).value;
-    final isPrivacyBlur = settings?.isPrivacyBlurEnabled ?? false;
+    final notifier = ref.read(transactionFilterProvider.notifier);
+    final transactions = ref.watch(filteredTransactionsProvider);
+    final availableTransactions = transactions.value ?? const <Transaction>[];
+    final categories =
+        ref.watch(categoriesStreamProvider).value ?? const <Category>[];
+    final accounts =
+        ref.watch(rawAccountsStreamProvider).value ?? const <Account>[];
+    final privacyBlur =
+        ref.watch(settingsStreamProvider).value?.isPrivacyBlurEnabled ?? false;
     final pendingCount = ref.watch(pendingReviewCountProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transactions')),
+      appBar: AppBar(
+        leading:
+            _isSearchOpen
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: 'Close search',
+                  onPressed: _closeSearch,
+                )
+                : null,
+        title:
+            _isSearchOpen
+                ? TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  textInputAction: TextInputAction.search,
+                  keyboardType: TextInputType.text,
+                  style: context.textTheme.titleMedium?.copyWith(
+                    color: context.theme.colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search transactions...',
+                    hintStyle: context.textTheme.bodyMedium?.copyWith(
+                      color: context.theme.colorScheme.onSurface.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (query) {
+                    setState(() {});
+                    notifier.state = filter.copyWith(searchQuery: query);
+                  },
+                )
+                : const Text('Transactions'),
+        actions:
+            _isSearchOpen
+                ? [
+                  if (_searchController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      tooltip: 'Clear search text',
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {});
+                        notifier.state = filter.copyWith(searchQuery: '');
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Dismiss search',
+                    onPressed: _closeSearch,
+                  ),
+                  const SizedBox(width: StillwaterTokens.spaceXs),
+                ]
+                : [
+                  IconButton(
+                    icon: const Icon(Icons.search_rounded),
+                    tooltip: 'Search transactions',
+                    onPressed: _openSearch,
+                  ),
+                  IconButton(
+                    icon:
+                        filter.hasActiveFilters
+                            ? Badge(
+                              smallSize: 8,
+                              backgroundColor:
+                                  context.theme.colorScheme.primary,
+                              child: const Icon(Icons.tune_rounded),
+                            )
+                            : const Icon(Icons.tune_rounded),
+                    tooltip: 'Filter & sort',
+                    onPressed:
+                        () => _showFilterSheet(
+                          context,
+                          filter: filter,
+                          categories: categories,
+                          accounts: accounts,
+                          transactions: availableTransactions,
+                        ),
+                  ),
+                  const SizedBox(width: StillwaterTokens.spaceXs),
+                ],
+      ),
+      floatingActionButton: Semantics(
+        button: true,
+        label: 'Add transaction',
+        child: FloatingActionButton.extended(
+          heroTag: 'transactions_add_transaction_fab',
+          tooltip: 'Add transaction',
+          onPressed: widget.onAddTransaction,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Add'),
+        ),
+      ),
       body: Column(
         children: [
-          // 1. Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceXs,
+          if (filter.hasActiveFilters)
+            _ActiveFilters(
+              filter: filter,
+              categories: categories,
+              accounts: accounts,
+              onClear: _clearFilters,
             ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search merchant, notes, amount...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                suffixIcon:
-                    _searchController.text.isNotEmpty
-                        ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            filterNotifier.state = filter.copyWith(
-                              searchQuery: '',
-                            );
-                          },
-                        )
-                        : null,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceMd,
-                  vertical: StillwaterTokens.spaceSm,
-                ),
-              ),
-              onChanged: (val) {
-                filterNotifier.state = filter.copyWith(searchQuery: val);
-              },
-            ),
-          ),
-
-          // 2. Filter Chips Horizontal Scroll
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-              ),
-              children: [
-                // Type Filter: All
-                FfChip(
-                  label: 'All',
-                  isSelected: filter.selectedType == null,
-                  onSelected: () {
-                    filterNotifier.state = filter.copyWith(clearType: true);
-                  },
-                ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
-
-                // Type Filter: Expense
-                FfChip(
-                  label: 'Expenses',
-                  isSelected: filter.selectedType == TransactionType.expense,
-                  onSelected: () {
-                    filterNotifier.state = filter.copyWith(
-                      selectedType: TransactionType.expense,
-                    );
-                  },
-                ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
-
-                // Type Filter: Income
-                FfChip(
-                  label: 'Income',
-                  isSelected: filter.selectedType == TransactionType.income,
-                  onSelected: () {
-                    filterNotifier.state = filter.copyWith(
-                      selectedType: TransactionType.income,
-                    );
-                  },
-                ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
-
-                // Type Filter: Transfer
-                FfChip(
-                  label: 'Transfers',
-                  isSelected: filter.selectedType == TransactionType.transfer,
-                  onSelected: () {
-                    filterNotifier.state = filter.copyWith(
-                      selectedType: TransactionType.transfer,
-                    );
-                  },
-                ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
-
-                // Category Filter Dropdown Chip
-                PopupMenuButton<String?>(
-                  initialValue: filter.selectedCategoryId,
-                  onSelected: (catId) {
-                    filterNotifier.state = filter.copyWith(
-                      selectedCategoryId: catId,
-                      clearCategory: catId == null,
-                    );
-                  },
-                  itemBuilder:
-                      (context) => [
-                        const PopupMenuItem(
-                          value: null,
-                          child: Text('All Categories'),
-                        ),
-                        ...categories.map(
-                          (cat) => PopupMenuItem(
-                            value: cat.id,
-                            child: Text(cat.name),
-                          ),
-                        ),
-                      ],
-                  child: FfChip(
-                    label:
-                        filter.selectedCategoryId != null
-                            ? (categories
-                                    .where(
-                                      (c) => c.id == filter.selectedCategoryId,
-                                    )
-                                    .firstOrNull
-                                    ?.name ??
-                                'Category')
-                            : 'Category',
-                    isSelected: filter.selectedCategoryId != null,
-                    trailing: const Icon(
-                      Icons.arrow_drop_down_rounded,
-                      size: 18,
-                    ),
-                    onSelected: () {},
-                  ),
-                ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
-
-                // Account Filter Dropdown Chip
-                PopupMenuButton<String?>(
-                  initialValue: filter.selectedAccountId,
-                  onSelected: (accId) {
-                    filterNotifier.state = filter.copyWith(
-                      selectedAccountId: accId,
-                      clearAccount: accId == null,
-                    );
-                  },
-                  itemBuilder:
-                      (context) => [
-                        const PopupMenuItem(
-                          value: null,
-                          child: Text('All Accounts'),
-                        ),
-                        ...accounts.map(
-                          (acc) => PopupMenuItem(
-                            value: acc.id,
-                            child: Text(acc.name),
-                          ),
-                        ),
-                      ],
-                  child: FfChip(
-                    label:
-                        filter.selectedAccountId != null
-                            ? (accounts
-                                    .where(
-                                      (a) => a.id == filter.selectedAccountId,
-                                    )
-                                    .firstOrNull
-                                    ?.name ??
-                                'Account')
-                            : 'Account',
-                    isSelected: filter.selectedAccountId != null,
-                    trailing: const Icon(
-                      Icons.arrow_drop_down_rounded,
-                      size: 18,
-                    ),
-                    onSelected: () {},
-                  ),
-                ),
-
-                if (filter.hasActiveFilters) ...[
-                  const SizedBox(width: StillwaterTokens.spaceXs),
-                  TextButton.icon(
-                    onPressed: () {
-                      _searchController.clear();
-                      filterNotifier.state = const TransactionFilterState();
-                    },
-                    icon: const Icon(Icons.close_rounded, size: 16),
-                    label: const Text('Clear Filters'),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          const Divider(height: 1),
-
-          // Pending Review Banner
-          if (pendingCount > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-                vertical: StillwaterTokens.spaceXs,
-              ),
-              child: Material(
-                color: context.aiColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const NeedsReviewScreen(),
-                      ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.rate_review_outlined,
-                          color: context.aiColors.accent,
-                          size: 18,
-                        ),
-                        const SizedBox(width: StillwaterTokens.spaceSm),
-                        Expanded(
-                          child: Text(
-                            '$pendingCount imported transactions need review',
-                            style: TextStyle(
-                              color: context.aiColors.accent,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: context.aiColors.accent,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // 3. Transactions List grouped by Day
+          if (pendingCount > 0) _PendingReviewBanner(count: pendingCount),
           Expanded(
-            child: transactionsAsync.when(
-              data: (transactions) {
-                if (transactions.isEmpty) {
+            child: transactions.when(
+              loading: () => const _TransactionsLoading(),
+              error:
+                  (_, __) => FfEmptyState(
+                    icon: Icons.error_outline_rounded,
+                    title: 'Transactions are unavailable',
+                    description:
+                        'Your data remains on this device. Try loading it again.',
+                    actionLabel: 'Try again',
+                    onAction:
+                        () => ref.invalidate(filteredTransactionsProvider),
+                  ),
+              data: (items) {
+                if (items.isEmpty) {
+                  final isSearching = filter.searchQuery.trim().isNotEmpty;
                   return FfEmptyState(
-                    icon: Icons.search_off_rounded,
+                    icon:
+                        isSearching
+                            ? Icons.search_off_rounded
+                            : Icons.receipt_long_outlined,
                     title:
                         filter.hasActiveFilters
                             ? 'No matching transactions'
-                            : 'No transactions found',
+                            : 'No transactions yet',
                     description:
                         filter.hasActiveFilters
-                            ? 'Try clearing some filters or searching for another term.'
-                            : 'Add your first transaction to see it listed here.',
+                            ? 'Try another search or remove a filter.'
+                            : 'Add your first transaction to start a private, local record.',
                     actionLabel:
                         filter.hasActiveFilters
-                            ? 'Clear Filters'
-                            : 'Add Transaction',
+                            ? 'Clear filters'
+                            : 'Add transaction',
                     onAction:
                         filter.hasActiveFilters
-                            ? () {
-                              _searchController.clear();
-                              filterNotifier.state =
-                                  const TransactionFilterState();
-                            }
+                            ? _clearFilters
                             : widget.onAddTransaction,
                   );
                 }
-
-                // Group by Day
-                final grouped = _groupByDay(transactions);
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.spaceSm,
-                  ),
-                  itemCount: grouped.length,
-                  itemBuilder: (context, index) {
-                    final group = grouped[index];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Day Header with Day Net Total
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: StillwaterTokens.spaceLg,
-                            vertical: StillwaterTokens.spaceSm,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                DateFormatter.formatDayGroup(group.date),
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
-                                ),
-                              ),
-                              Text(
-                                CurrencyFormatter.format(
-                                  group.dayNetTotal,
-                                  showSign: true,
-                                  isExpense: group.dayNetTotal < 0,
-                                  isIncome: group.dayNetTotal > 0,
-                                ),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Day Transactions List
-                        ...group.transactions.map((tx) {
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceLg,
-                              vertical: StillwaterTokens.space2Xs,
+                final summary = calculateTransactionListSummary(items);
+                final groups = groupTransactionsForList(items);
+                return CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _CashFlowSummary(summary: summary),
+                    ),
+                    for (final group in groups) ...[
+                      SliverToBoxAdapter(child: _GroupHeader(group: group)),
+                      SliverList.separated(
+                        itemCount: group.transactions.length,
+                        separatorBuilder:
+                            (_, __) => const Divider(indent: 72, height: 1),
+                        itemBuilder:
+                            (context, index) => _TransactionRow(
+                              transaction: group.transactions[index],
+                              accounts: accounts,
+                              showDate: group.showDateInRows,
+                              isPrivacyBlur: privacyBlur,
+                              onOpen:
+                                  () => widget.onOpenDetail(
+                                    group.transactions[index],
+                                  ),
+                              onEdit: () => _edit(group.transactions[index]),
+                              onDelete:
+                                  () => _delete(group.transactions[index]),
                             ),
-                            leading: FfCategoryTile(
-                              iconIdentifier: tx.categoryIcon,
-                              colorTokenIdentifier: tx.categoryColor,
-                            ),
-                            title: Text(
-                              tx.merchant,
-                              style: theme.textTheme.titleMedium,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Row(
-                              children: [
-                                Text(
-                                  DateFormatter.formatTransactionDate(tx.date),
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                                const SizedBox(width: StillwaterTokens.spaceXs),
-                                FfSourceBadge(
-                                  source: tx.source,
-                                  sourceName: tx.sourceName,
-                                  isMerged: tx.mergedSources.length > 1,
-                                ),
-                              ],
-                            ),
-                            trailing: FfAmountText(
-                              amount: tx.amount,
-                              type: tx.type,
-                              size: FfAmountSize.md,
-                              isBlurred: isPrivacyBlur,
-                              showSign: true,
-                            ),
-                            onTap: () => widget.onOpenDetail(tx),
-                          );
-                        }),
-                        const Divider(height: 16),
-                      ],
-                    );
-                  },
+                      ),
+                    ],
+                    const SliverToBoxAdapter(child: SizedBox(height: 104)),
+                  ],
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
             ),
           ),
         ],
@@ -429,37 +310,722 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
   }
 
-  List<_DayGroup> _groupByDay(List<Transaction> transactions) {
-    final Map<String, List<Transaction>> map = {};
-    for (final tx in transactions) {
-      final key = '${tx.date.year}-${tx.date.month}-${tx.date.day}';
-      map.putIfAbsent(key, () => []).add(tx);
-    }
-
-    return map.entries.map((entry) {
-      final txList = entry.value;
-      final date = txList.first.date;
-      double net = 0.0;
-      for (final tx in txList) {
-        if (tx.type == TransactionType.income) {
-          net += tx.amount;
-        } else if (tx.type != TransactionType.transfer) {
-          net -= tx.amount;
-        }
-      }
-      return _DayGroup(date: date, transactions: txList, dayNetTotal: net);
-    }).toList();
+  void _showFilterSheet(
+    BuildContext context, {
+    required TransactionFilterState filter,
+    required List<Category> categories,
+    required List<Account> accounts,
+    required List<Transaction> transactions,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (ctx) => _TransactionFilterSheet(
+            initialFilter: filter,
+            categories: categories,
+            accounts: accounts,
+            transactions: transactions,
+            onApply: (applied) {
+              ref.read(transactionFilterProvider.notifier).state = applied;
+            },
+          ),
+    );
   }
 }
 
-class _DayGroup {
-  final DateTime date;
+class _TransactionFilterSheet extends StatefulWidget {
+  final TransactionFilterState initialFilter;
+  final List<Category> categories;
+  final List<Account> accounts;
   final List<Transaction> transactions;
-  final double dayNetTotal;
+  final ValueChanged<TransactionFilterState> onApply;
 
-  _DayGroup({
-    required this.date,
+  const _TransactionFilterSheet({
+    required this.initialFilter,
+    required this.categories,
+    required this.accounts,
     required this.transactions,
-    required this.dayNetTotal,
+    required this.onApply,
   });
+
+  @override
+  State<_TransactionFilterSheet> createState() =>
+      _TransactionFilterSheetState();
+}
+
+class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
+  late TransactionFilterState _draft;
+  late final List<String> _methods;
+  late final List<String> _tags;
+
+  @override
+  void initState() {
+    super.initState();
+    _draft = widget.initialFilter;
+    _methods =
+        widget.transactions
+            .map((t) => t.paymentMethod)
+            .whereType<String>()
+            .where((m) => m.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    _tags = widget.transactions.expand((t) => t.tags).toSet().toList()..sort();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FfSheetHeader(
+                title: 'Filter & sort',
+                subtitle: 'Refine transactions on device',
+              ),
+              const Divider(height: 1, thickness: 1),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Transaction Type',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      Wrap(
+                        spacing: StillwaterTokens.spaceXs,
+                        runSpacing: StillwaterTokens.spaceXs,
+                        children: [
+                          FfChip(
+                            label: 'All',
+                            isSelected: _draft.selectedType == null,
+                            onSelected:
+                                () => setState(
+                                  () =>
+                                      _draft = _draft.copyWith(clearType: true),
+                                ),
+                          ),
+                          FfChip(
+                            label: 'Expenses',
+                            isSelected:
+                                _draft.selectedType == TransactionType.expense,
+                            onSelected:
+                                () => setState(
+                                  () =>
+                                      _draft = _draft.copyWith(
+                                        selectedType: TransactionType.expense,
+                                      ),
+                                ),
+                          ),
+                          FfChip(
+                            label: 'Income',
+                            isSelected:
+                                _draft.selectedType == TransactionType.income,
+                            onSelected:
+                                () => setState(
+                                  () =>
+                                      _draft = _draft.copyWith(
+                                        selectedType: TransactionType.income,
+                                      ),
+                                ),
+                          ),
+                          FfChip(
+                            label: 'Transfers',
+                            isSelected:
+                                _draft.selectedType == TransactionType.transfer,
+                            onSelected:
+                                () => setState(
+                                  () =>
+                                      _draft = _draft.copyWith(
+                                        selectedType: TransactionType.transfer,
+                                      ),
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      _FilterDropdown<String>(
+                        label: 'Category',
+                        value: _draft.selectedCategoryId,
+                        noneLabel: 'All categories',
+                        entries: {
+                          for (final category in widget.categories)
+                            category.id: category.name,
+                        },
+                        onChanged:
+                            (value) => setState(
+                              () =>
+                                  _draft = _draft.copyWith(
+                                    selectedCategoryId: value,
+                                    clearCategory: value == null,
+                                  ),
+                            ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      _FilterDropdown<String>(
+                        label: 'Account',
+                        value: _draft.selectedAccountId,
+                        noneLabel: 'All accounts',
+                        entries: {
+                          for (final account in widget.accounts)
+                            account.id: account.name,
+                        },
+                        onChanged:
+                            (value) => setState(
+                              () =>
+                                  _draft = _draft.copyWith(
+                                    selectedAccountId: value,
+                                    clearAccount: value == null,
+                                  ),
+                            ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      _FilterDropdown<String>(
+                        label: 'Payment method',
+                        value: _draft.paymentMethod,
+                        noneLabel: 'Any payment method',
+                        entries: {
+                          for (final method in _methods) method: method,
+                        },
+                        onChanged:
+                            (value) => setState(
+                              () =>
+                                  _draft = _draft.copyWith(
+                                    paymentMethod: value,
+                                    clearPaymentMethod: value == null,
+                                  ),
+                            ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      _FilterDropdown<String>(
+                        label: 'Tag',
+                        value: _draft.tag,
+                        noneLabel: 'Any tag',
+                        entries: {for (final tag in _tags) tag: tag},
+                        onChanged:
+                            (value) => setState(
+                              () =>
+                                  _draft = _draft.copyWith(
+                                    tag: value,
+                                    clearTag: value == null,
+                                  ),
+                            ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      _FilterDropdown<TransactionSort>(
+                        label: 'Sort by',
+                        value: _draft.sort,
+                        entries: {
+                          for (final sort in TransactionSort.values)
+                            sort: sort.label,
+                        },
+                        onChanged:
+                            (value) => setState(
+                              () => _draft = _draft.copyWith(sort: value),
+                            ),
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      FfButton(
+                        label:
+                            _draft.startDate == null
+                                ? 'Choose date range'
+                                : '${DateFormatter.formatShortDate(_draft.startDate!)} – ${DateFormatter.formatShortDate(_draft.endDate!)}',
+                        variant: FfButtonVariant.outlined,
+                        leadingIcon: const Icon(
+                          Icons.date_range_outlined,
+                          size: 18,
+                        ),
+                        onPressed: () async {
+                          final range = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 1),
+                            ),
+                            initialDateRange:
+                                _draft.startDate == null ||
+                                        _draft.endDate == null
+                                    ? null
+                                    : DateTimeRange(
+                                      start: _draft.startDate!,
+                                      end: _draft.endDate!,
+                                    ),
+                          );
+                          if (range != null) {
+                            setState(
+                              () =>
+                                  _draft = _draft.copyWith(
+                                    startDate: range.start,
+                                    endDate: range.end,
+                                  ),
+                            );
+                          }
+                        },
+                      ),
+                      if (_draft.startDate != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed:
+                                () => setState(
+                                  () =>
+                                      _draft = _draft.copyWith(
+                                        clearDates: true,
+                                      ),
+                                ),
+                            child: const Text('Clear date range'),
+                          ),
+                        ),
+                      const SizedBox(height: StillwaterTokens.spaceMd),
+                    ],
+                  ),
+                ),
+              ),
+              FfSheetFooter(
+                child: Row(
+                  children: [
+                    FfButton(
+                      label: 'Reset',
+                      variant: FfButtonVariant.text,
+                      onPressed:
+                          () => setState(
+                            () => _draft = const TransactionFilterState(),
+                          ),
+                    ),
+                    const Spacer(),
+                    FfButton(
+                      label: 'Show transactions',
+                      variant: FfButtonVariant.primary,
+                      onPressed: () {
+                        widget.onApply(_draft);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterDropdown<T> extends StatelessWidget {
+  const _FilterDropdown({
+    required this.label,
+    required this.entries,
+    required this.onChanged,
+    this.value,
+    this.noneLabel,
+  });
+  final String label;
+  final T? value;
+  final String? noneLabel;
+  final Map<T, String> entries;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => DropdownButtonFormField<T>(
+    value: entries.containsKey(value) ? value : null,
+    isExpanded: true,
+    decoration: InputDecoration(labelText: label),
+    hint: noneLabel != null ? Text(noneLabel!) : null,
+    items: [
+      ...entries.entries.map(
+        (entry) => DropdownMenuItem<T>(
+          value: entry.key,
+          child: Text(entry.value, overflow: TextOverflow.ellipsis),
+        ),
+      ),
+    ],
+    onChanged: onChanged,
+  );
+}
+
+class _CashFlowSummary extends StatelessWidget {
+  const _CashFlowSummary({required this.summary});
+  final TransactionListSummary summary;
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceXs,
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceMd,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        ),
+        child: Row(
+          children: [
+            _SummaryValue(
+              label: 'Income',
+              value: summary.income,
+              positive: true,
+            ),
+            _SummaryValue(
+              label: 'Expenses',
+              value: summary.expenses,
+              positive: false,
+            ),
+            _SummaryValue(
+              label: 'Net',
+              value: summary.net,
+              positive: summary.net >= 0,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryValue extends StatelessWidget {
+  const _SummaryValue({
+    required this.label,
+    required this.value,
+    required this.positive,
+  });
+  final String label;
+  final double value;
+  final bool positive;
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: context.textTheme.labelSmall),
+        const SizedBox(height: StillwaterTokens.space2Xs),
+        Text(
+          CurrencyFormatter.format(
+            value,
+            showSign: label == 'Net',
+            isIncome: positive,
+            isExpense: !positive,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: context.textTheme.labelLarge?.copyWith(
+            color:
+                positive ? context.finColors.income : context.finColors.expense,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({required this.group});
+  final TransactionDateGroup group;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      StillwaterTokens.spaceLg,
+      StillwaterTokens.spaceMd,
+      StillwaterTokens.spaceLg,
+      StillwaterTokens.spaceXs,
+    ),
+    child: Row(
+      children: [
+        Text(group.label, style: context.textTheme.titleSmall),
+        const Spacer(),
+        Text(
+          CurrencyFormatter.format(
+            group.net,
+            showSign: true,
+            isIncome: group.net >= 0,
+            isExpense: group.net < 0,
+          ),
+          style: context.textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _TransactionRow extends StatelessWidget {
+  const _TransactionRow({
+    required this.transaction,
+    required this.accounts,
+    required this.showDate,
+    required this.isPrivacyBlur,
+    required this.onOpen,
+    required this.onEdit,
+    required this.onDelete,
+  });
+  final Transaction transaction;
+  final List<Account> accounts;
+  final bool showDate;
+  final bool isPrivacyBlur;
+  final VoidCallback onOpen;
+  final VoidCallback onEdit;
+  final Future<void> Function() onDelete;
+  @override
+  Widget build(BuildContext context) {
+    final account =
+        accounts.where((item) => item.id == transaction.accountId).firstOrNull;
+    final metadata = [
+      if (showDate) DateFormatter.formatShortDate(transaction.date),
+      if (!showDate)
+        DateFormatter.formatTransactionDate(transaction.date).split(', ').last,
+      if (account != null) account.name,
+      if (transaction.paymentMethod?.isNotEmpty ?? false)
+        transaction.paymentMethod!,
+      if (transaction.tags.isNotEmpty) transaction.tags.first,
+    ].join(' · ');
+    return Dismissible(
+      key: ValueKey('transaction-${transaction.id}'),
+      direction: DismissDirection.horizontal,
+      background: _SwipeBackground(
+        icon: Icons.edit_outlined,
+        label: 'Edit',
+        alignment: Alignment.centerLeft,
+        color: context.theme.colorScheme.primary,
+      ),
+      secondaryBackground: _SwipeBackground(
+        icon: Icons.delete_outline_rounded,
+        label: 'Delete',
+        alignment: Alignment.centerRight,
+        color: context.theme.colorScheme.error,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onEdit();
+          return false;
+        }
+        await onDelete();
+        return true;
+      },
+      child: Semantics(
+        button: true,
+        label:
+            '${transaction.merchant}, ${transaction.type.displayName}, ${CurrencyFormatter.format(transaction.amount)}',
+        child: ListTile(
+          minVerticalPadding: StillwaterTokens.spaceXs,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: StillwaterTokens.spaceLg,
+          ),
+          leading: FfCategoryTile(
+            iconIdentifier: transaction.categoryIcon,
+            colorTokenIdentifier: transaction.categoryColor,
+          ),
+          title: Text(
+            transaction.merchant,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.textTheme.titleMedium,
+          ),
+          subtitle: Text(
+            metadata,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FfAmountText(
+                amount: transaction.amount,
+                type: transaction.type,
+                size: FfAmountSize.md,
+                isBlurred: isPrivacyBlur,
+                showSign: true,
+              ),
+              PopupMenuButton<String>(
+                tooltip: 'Transaction actions',
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    onEdit();
+                  } else {
+                    onDelete();
+                  }
+                },
+                itemBuilder:
+                    (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    ],
+              ),
+            ],
+          ),
+          onTap: onOpen,
+        ),
+      ),
+    );
+  }
+}
+
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground({
+    required this.icon,
+    required this.label,
+    required this.alignment,
+    required this.color,
+  });
+  final IconData icon;
+  final String label;
+  final Alignment alignment;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(
+    alignment: alignment,
+    color: color,
+    padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: context.theme.colorScheme.onPrimary),
+        const SizedBox(width: StillwaterTokens.spaceXs),
+        Text(
+          label,
+          style: TextStyle(color: context.theme.colorScheme.onPrimary),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ActiveFilters extends StatelessWidget {
+  const _ActiveFilters({
+    required this.filter,
+    required this.categories,
+    required this.accounts,
+    required this.onClear,
+  });
+  final TransactionFilterState filter;
+  final List<Category> categories;
+  final List<Account> accounts;
+  final VoidCallback onClear;
+  @override
+  Widget build(BuildContext context) {
+    final labels = <String>[
+      if (filter.selectedType != null) filter.selectedType!.displayName,
+      if (filter.selectedCategoryId != null)
+        categories
+                .where((category) => category.id == filter.selectedCategoryId)
+                .firstOrNull
+                ?.name ??
+            'Category',
+      if (filter.selectedAccountId != null)
+        accounts
+                .where((account) => account.id == filter.selectedAccountId)
+                .firstOrNull
+                ?.name ??
+            'Account',
+      if (filter.paymentMethod != null) filter.paymentMethod!,
+      if (filter.tag != null) '#${filter.tag}',
+      if (filter.startDate != null) 'Date range',
+      if (filter.sort != TransactionSort.newest) filter.sort.label,
+    ];
+    if (labels.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: StillwaterTokens.spaceXs),
+      child: SizedBox(
+        height: 34,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(left: StillwaterTokens.spaceLg),
+          children: [
+            for (final label in labels)
+              Padding(
+                padding: const EdgeInsets.only(right: StillwaterTokens.spaceXs),
+                child: Chip(
+                  label: Text(label),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            TextButton(onPressed: onClear, child: const Text('Clear all')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingReviewBanner extends StatelessWidget {
+  const _PendingReviewBanner({required this.count});
+  final int count;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      StillwaterTokens.spaceLg,
+      StillwaterTokens.spaceXs,
+      StillwaterTokens.spaceLg,
+      0,
+    ),
+    child: Material(
+      color: context.aiColors.accent.withValues(
+        alpha: StillwaterTokens.opacityTint,
+      ),
+      borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+      child: InkWell(
+        onTap:
+            () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NeedsReviewScreen()),
+            ),
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+          child: Row(
+            children: [
+              Icon(Icons.rate_review_outlined, color: context.aiColors.accent),
+              const SizedBox(width: StillwaterTokens.spaceSm),
+              Expanded(child: Text('$count imported transactions need review')),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _TransactionsLoading extends StatelessWidget {
+  const _TransactionsLoading();
+  @override
+  Widget build(BuildContext context) => ListView.builder(
+    padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+    itemCount: 6,
+    itemBuilder:
+        (_, __) => const Padding(
+          padding: EdgeInsets.only(bottom: StillwaterTokens.spaceMd),
+          child: LinearProgressIndicator(minHeight: 2),
+        ),
+  );
 }
