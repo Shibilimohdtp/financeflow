@@ -502,31 +502,47 @@ class _AddEditMoneyRecordSheetState
 
                       if (_isReminderEnabled) ...[
                         const SizedBox(height: StillwaterTokens.spaceSm),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            left: StillwaterTokens.spaceMd,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StillwaterTokens.spaceSm,
+                            vertical: StillwaterTokens.space2Xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusMd,
+                            ),
                           ),
                           child: Row(
                             children: [
-                              Text(
-                                'Remind before:',
-                                style: theme.textTheme.bodySmall,
+                              Icon(
+                                Icons.notifications_none_rounded,
+                                size: 18,
+                                color: theme.colorScheme.primary,
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceMd),
-                              Wrap(
-                                spacing: StillwaterTokens.spaceSm,
-                                children: [1, 3, 7].map((days) {
-                                  final isSelected = _reminderDays == days;
-                                  return ChoiceChip(
-                                    label: Text('$days ${days == 1 ? 'day' : 'days'}'),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      if (selected) {
-                                        setState(() => _reminderDays = days);
-                                      }
-                                    },
-                                  );
-                                }).toList(),
+                              const SizedBox(width: StillwaterTokens.spaceXs),
+                              Expanded(
+                                child: Text(
+                                  'Remind me in',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 156,
+                                child: FfSegmentedPill<int>(
+                                  options: const [
+                                    FfSegmentOption(value: 1, label: '1d'),
+                                    FfSegmentOption(value: 3, label: '3d'),
+                                    FfSegmentOption(value: 7, label: '7d'),
+                                  ],
+                                  selectedValue: _reminderDays,
+                                  onSelected: (days) {
+                                    setState(() => _reminderDays = days);
+                                  },
+                                ),
                               ),
                             ],
                           ),

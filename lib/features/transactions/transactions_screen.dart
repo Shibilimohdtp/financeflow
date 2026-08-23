@@ -8,13 +8,17 @@ import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
+import '../../shared/widgets/ff_skeleton_loader.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import '../ingestion/needs_review_controller.dart';
@@ -89,6 +93,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   Future<void> _edit(Transaction transaction) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (_) => AddEditTransactionSheet(initialTransaction: transaction),
   );
 
@@ -205,7 +210,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           transactions: availableTransactions,
                         ),
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const Padding(
+                    padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+                    child: Center(child: FfPrivacyBadge(label: 'On-device')),
+                  ),
                 ],
       ),
       floatingActionButton: Semantics(
@@ -233,11 +241,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             child: transactions.when(
               loading: () => const _TransactionsLoading(),
               error:
-                  (_, __) => FfEmptyState(
+                  (err, _) => FfEmptyState(
                     icon: Icons.error_outline_rounded,
                     title: 'Transactions are unavailable',
                     description:
-                        'Your data remains on this device. Try loading it again.',
+                        'Your data remains on this device. Try loading it again: $err',
                     actionLabel: 'Try again',
                     onAction:
                         () => ref.invalidate(filteredTransactionsProvider),
@@ -275,7 +283,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
                     SliverToBoxAdapter(
-                      child: _CashFlowSummary(summary: summary),
+                      child: _CashFlowSummary(
+                        summary: summary,
+                        isPrivacyBlur: privacyBlur,
+                      ),
                     ),
                     for (final group in groups) ...[
                       SliverToBoxAdapter(child: _GroupHeader(group: group)),
@@ -413,8 +424,8 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                       Text(
                         'Transaction Type',
                         style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.secondary,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: StillwaterTokens.spaceXs),
@@ -607,6 +618,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                   ),
                 ),
               ),
+              const Divider(height: 1, thickness: 1),
               FfSheetFooter(
                 child: Row(
                   children: [
@@ -659,6 +671,11 @@ class _FilterDropdown<T> extends StatelessWidget {
     decoration: InputDecoration(labelText: label),
     hint: noneLabel != null ? Text(noneLabel!) : null,
     items: [
+      if (noneLabel != null)
+        DropdownMenuItem<T>(
+          value: null,
+          child: Text(noneLabel!, overflow: TextOverflow.ellipsis),
+        ),
       ...entries.entries.map(
         (entry) => DropdownMenuItem<T>(
           value: entry.key,
@@ -671,11 +688,16 @@ class _FilterDropdown<T> extends StatelessWidget {
 }
 
 class _CashFlowSummary extends StatelessWidget {
-  const _CashFlowSummary({required this.summary});
   final TransactionListSummary summary;
+  final bool isPrivacyBlur;
+
+  const _CashFlowSummary({
+    required this.summary,
+    this.isPrivacyBlur = false,
+  });
+
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         StillwaterTokens.spaceLg,
@@ -683,11 +705,11 @@ class _CashFlowSummary extends StatelessWidget {
         StillwaterTokens.spaceLg,
         StillwaterTokens.spaceMd,
       ),
-      child: Container(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+      child: FfCard(
+        variant: FfCardVariant.elevated,
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
         ),
         child: Row(
           children: [
@@ -695,16 +717,29 @@ class _CashFlowSummary extends StatelessWidget {
               label: 'Income',
               value: summary.income,
               positive: true,
+              isPrivacyBlur: isPrivacyBlur,
+            ),
+            Container(
+              width: 1,
+              height: 36,
+              color: context.theme.dividerColor,
             ),
             _SummaryValue(
               label: 'Expenses',
               value: summary.expenses,
               positive: false,
+              isPrivacyBlur: isPrivacyBlur,
+            ),
+            Container(
+              width: 1,
+              height: 36,
+              color: context.theme.dividerColor,
             ),
             _SummaryValue(
               label: 'Net',
               value: summary.net,
               positive: summary.net >= 0,
+              isPrivacyBlur: isPrivacyBlur,
             ),
           ],
         ),
@@ -714,73 +749,118 @@ class _CashFlowSummary extends StatelessWidget {
 }
 
 class _SummaryValue extends StatelessWidget {
+  final String label;
+  final double value;
+  final bool positive;
+  final bool isPrivacyBlur;
+
   const _SummaryValue({
     required this.label,
     required this.value,
     required this.positive,
+    this.isPrivacyBlur = false,
   });
-  final String label;
-  final double value;
-  final bool positive;
+
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: context.textTheme.labelSmall),
-        const SizedBox(height: StillwaterTokens.space2Xs),
-        Text(
-          CurrencyFormatter.format(
-            value,
-            showSign: label == 'Net',
-            isIncome: positive,
-            isExpense: !positive,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.textTheme.labelLarge?.copyWith(
-            color:
-                positive ? context.finColors.income : context.finColors.expense,
-            fontWeight: FontWeight.w700,
-          ),
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final finColors = context.finColors;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceXs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.secondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: StillwaterTokens.space2Xs),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: isPrivacyBlur
+                  ? Text('₹ ••••••', style: StillwaterTypography.numMd())
+                  : Text(
+                    CurrencyFormatter.format(
+                      value,
+                      showSign: label == 'Net',
+                      isIncome: positive,
+                      isExpense: !positive,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: StillwaterTypography.numMd(
+                      color:
+                          positive ? finColors.income : finColors.expense,
+                    ),
+                  ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 class _GroupHeader extends StatelessWidget {
-  const _GroupHeader({required this.group});
   final TransactionDateGroup group;
+
+  const _GroupHeader({required this.group});
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      StillwaterTokens.spaceLg,
-      StillwaterTokens.spaceMd,
-      StillwaterTokens.spaceLg,
-      StillwaterTokens.spaceXs,
-    ),
-    child: Row(
-      children: [
-        Text(group.label, style: context.textTheme.titleSmall),
-        const Spacer(),
-        Text(
-          CurrencyFormatter.format(
-            group.net,
-            showSign: true,
-            isIncome: group.net >= 0,
-            isExpense: group.net < 0,
+  Widget build(BuildContext context) {
+    final finColors = context.finColors;
+    final theme = context.theme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceMd,
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceXs,
+      ),
+      child: Row(
+        children: [
+          Text(
+            group.label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          style: context.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+          const Spacer(),
+          Text(
+            CurrencyFormatter.format(
+              group.net,
+              showSign: true,
+              isIncome: group.net >= 0,
+              isExpense: group.net < 0,
+            ),
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: group.net >= 0 ? finColors.income : finColors.expense,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _TransactionRow extends StatelessWidget {
+  final Transaction transaction;
+  final List<Account> accounts;
+  final bool showDate;
+  final bool isPrivacyBlur;
+  final VoidCallback onOpen;
+  final VoidCallback onEdit;
+  final Future<void> Function() onDelete;
+
   const _TransactionRow({
     required this.transaction,
     required this.accounts,
@@ -790,13 +870,7 @@ class _TransactionRow extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
   });
-  final Transaction transaction;
-  final List<Account> accounts;
-  final bool showDate;
-  final bool isPrivacyBlur;
-  final VoidCallback onOpen;
-  final VoidCallback onEdit;
-  final Future<void> Function() onDelete;
+
   @override
   Widget build(BuildContext context) {
     final account =
@@ -808,8 +882,9 @@ class _TransactionRow extends StatelessWidget {
       if (account != null) account.name,
       if (transaction.paymentMethod?.isNotEmpty ?? false)
         transaction.paymentMethod!,
-      if (transaction.tags.isNotEmpty) transaction.tags.first,
+      if (transaction.tags.isNotEmpty) '#${transaction.tags.first}',
     ].join(' · ');
+
     return Dismissible(
       key: ValueKey('transaction-${transaction.id}'),
       direction: DismissDirection.horizontal,
@@ -845,17 +920,23 @@ class _TransactionRow extends StatelessWidget {
           leading: FfCategoryTile(
             iconIdentifier: transaction.categoryIcon,
             colorTokenIdentifier: transaction.categoryColor,
+            size: 40,
           ),
           title: Text(
             transaction.merchant,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: context.textTheme.titleMedium,
+            style: context.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           subtitle: Text(
             metadata,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.theme.colorScheme.secondary,
+            ),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -869,6 +950,11 @@ class _TransactionRow extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 tooltip: 'Transaction actions',
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  size: 18,
+                  color: context.theme.colorScheme.secondary,
+                ),
                 onSelected: (value) {
                   if (value == 'edit') {
                     onEdit();
@@ -877,9 +963,36 @@ class _TransactionRow extends StatelessWidget {
                   }
                 },
                 itemBuilder:
-                    (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    (_) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 18),
+                            SizedBox(width: StillwaterTokens.spaceSm),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: context.theme.colorScheme.error,
+                            ),
+                            const SizedBox(width: StillwaterTokens.spaceSm),
+                            Text(
+                              'Delete',
+                              style: TextStyle(
+                                color: context.theme.colorScheme.error,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
               ),
             ],
@@ -892,16 +1005,18 @@ class _TransactionRow extends StatelessWidget {
 }
 
 class _SwipeBackground extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Alignment alignment;
+  final Color color;
+
   const _SwipeBackground({
     required this.icon,
     required this.label,
     required this.alignment,
     required this.color,
   });
-  final IconData icon;
-  final String label;
-  final Alignment alignment;
-  final Color color;
+
   @override
   Widget build(BuildContext context) => Container(
     alignment: alignment,
@@ -922,16 +1037,18 @@ class _SwipeBackground extends StatelessWidget {
 }
 
 class _ActiveFilters extends StatelessWidget {
+  final TransactionFilterState filter;
+  final List<Category> categories;
+  final List<Account> accounts;
+  final VoidCallback onClear;
+
   const _ActiveFilters({
     required this.filter,
     required this.categories,
     required this.accounts,
     required this.onClear,
   });
-  final TransactionFilterState filter;
-  final List<Category> categories;
-  final List<Account> accounts;
-  final VoidCallback onClear;
+
   @override
   Widget build(BuildContext context) {
     final labels = <String>[
@@ -979,8 +1096,10 @@ class _ActiveFilters extends StatelessWidget {
 }
 
 class _PendingReviewBanner extends StatelessWidget {
-  const _PendingReviewBanner({required this.count});
   final int count;
+
+  const _PendingReviewBanner({required this.count});
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(
@@ -1006,7 +1125,11 @@ class _PendingReviewBanner extends StatelessWidget {
             children: [
               Icon(Icons.rate_review_outlined, color: context.aiColors.accent),
               const SizedBox(width: StillwaterTokens.spaceSm),
-              Expanded(child: Text('$count imported transactions need review')),
+              Expanded(
+                child: Text(
+                  '$count imported ${count == 1 ? 'transaction needs' : 'transactions need'} review',
+                ),
+              ),
               const Icon(Icons.chevron_right_rounded),
             ],
           ),
@@ -1018,14 +1141,22 @@ class _PendingReviewBanner extends StatelessWidget {
 
 class _TransactionsLoading extends StatelessWidget {
   const _TransactionsLoading();
+
   @override
-  Widget build(BuildContext context) => ListView.builder(
+  Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-    itemCount: 6,
-    itemBuilder:
-        (_, __) => const Padding(
-          padding: EdgeInsets.only(bottom: StillwaterTokens.spaceMd),
-          child: LinearProgressIndicator(minHeight: 2),
-        ),
+    child: const FfSkeletonLoader(
+      child: Column(
+        children: [
+          FfSkeletonBlock(height: 72, borderRadius: StillwaterTokens.radiusMd),
+          SizedBox(height: StillwaterTokens.spaceSm),
+          FfSkeletonBlock(height: 72, borderRadius: StillwaterTokens.radiusMd),
+          SizedBox(height: StillwaterTokens.spaceSm),
+          FfSkeletonBlock(height: 72, borderRadius: StillwaterTokens.radiusMd),
+          SizedBox(height: StillwaterTokens.spaceSm),
+          FfSkeletonBlock(height: 72, borderRadius: StillwaterTokens.radiusMd),
+        ],
+      ),
+    ),
   );
 }

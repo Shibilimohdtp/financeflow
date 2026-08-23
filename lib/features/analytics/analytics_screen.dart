@@ -18,11 +18,15 @@ import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_skeleton_loader.dart';
 import '../../theme/stillwater_tokens.dart';
-import '../../theme/stillwater_typography.dart';
+
 import '../accounts/accounts_controller.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'analytics_controller.dart';
+import 'widgets/analytics_insights_card.dart';
+import 'widgets/analytics_metrics_hero.dart';
+import 'widgets/analytics_period_comparison_card.dart';
 import 'widgets/category_transactions_sheet.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
@@ -67,7 +71,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics & Intelligence'),
+        title: const Text('Analytics & Trends'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -240,125 +244,7 @@ class AnalyticsScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── 1. Summary Metrics Hero Card ─────────────────────────
-                    FfCard(
-                      variant: FfCardVariant.elevated,
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _MetricBlock(
-                                  label: 'Total Inflow',
-                                  value: CurrencyFormatter.formatINR(
-                                    report.totalIncome,
-                                  ),
-                                  color: finColors.income,
-                                  trendPct: report.incomeChangePercentage,
-                                  isIncome: true,
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 48,
-                                color: theme.dividerColor,
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: StillwaterTokens.spaceMd,
-                                  ),
-                                  child: _MetricBlock(
-                                    label: 'Total Outflow',
-                                    value: CurrencyFormatter.formatINR(
-                                      report.totalExpense,
-                                    ),
-                                    color: finColors.expense,
-                                    trendPct: report.expenseChangePercentage,
-                                    isIncome: false,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          Divider(
-                            height: 1,
-                            thickness: StillwaterTokens.borderWidthHairline,
-                            color: theme.dividerColor,
-                          ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _MetricBlock(
-                                  label: 'Net Savings',
-                                  value: CurrencyFormatter.formatINR(
-                                    report.netSavings,
-                                  ),
-                                  color:
-                                      report.netSavings >= 0
-                                          ? finColors.income
-                                          : finColors.expense,
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 48,
-                                color: theme.dividerColor,
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: StillwaterTokens.spaceMd,
-                                  ),
-                                  child: _MetricBlock(
-                                    label: 'Savings Rate',
-                                    value:
-                                        '${(report.savingsRate * 100).toStringAsFixed(0)}%',
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          Divider(
-                            height: 1,
-                            thickness: StillwaterTokens.borderWidthHairline,
-                            color: theme.dividerColor,
-                          ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _MetricBlock(
-                                  label: 'Avg Transaction',
-                                  value: CurrencyFormatter.formatINR(
-                                    report.averageTransactionAmount,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 48,
-                                color: theme.dividerColor,
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: StillwaterTokens.spaceMd,
-                                  ),
-                                  child: _MetricBlock(
-                                    label: 'Transaction Count',
-                                    value: '${report.transactionCount}',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    AnalyticsMetricsHero(report: report),
 
                     const SizedBox(height: StillwaterTokens.space2Xl),
 
@@ -625,20 +511,62 @@ class AnalyticsScreen extends ConsumerWidget {
                       ),
                     ],
 
+                    // ── 10. Period Comparison card ─────────────────────────────
+                    if (report.expenseChangePercentage != null ||
+                        report.incomeChangePercentage != null) ...[
+                      const SizedBox(height: StillwaterTokens.space2Xl),
+                      const FfSectionHeader(title: 'Period Comparison'),
+                      AnalyticsPeriodComparisonCard(report: report),
+                    ],
+
+                    // ── 11. Data-driven Insights ──────────────────────────────
+                    const SizedBox(height: StillwaterTokens.space2Xl),
+                    AnalyticsInsightsCard(report: report),
+
                     const SizedBox(height: StillwaterTokens.space4Xl),
                   ],
                 );
               },
               loading:
-                  () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                      child: CircularProgressIndicator(),
+                  () => Padding(
+                    padding: const EdgeInsets.only(
+                      top: StillwaterTokens.spaceLg,
+                    ),
+                    child: Column(
+                      children: const [
+                        FfMetricSkeletonCard(),
+                        SizedBox(height: StillwaterTokens.spaceLg),
+                        FfMetricSkeletonCard(),
+                      ],
                     ),
                   ),
               error:
-                  (e, _) =>
-                      Center(child: Text('Could not calculate analytics: $e')),
+                  (e, _) => FfCard(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 40,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        Text(
+                          'Could not calculate analytics',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        Text(
+                          'Pull down to refresh and try again.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.secondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
             ),
           ],
         ),
@@ -694,84 +622,7 @@ class AnalyticsScreen extends ConsumerWidget {
   }
 }
 
-class _MetricBlock extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? color;
-  final double? trendPct;
-  final bool isIncome;
 
-  const _MetricBlock({
-    required this.label,
-    required this.value,
-    this.color,
-    this.trendPct,
-    this.isIncome = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.secondary,
-                letterSpacing: 0.8,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (trendPct != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                      ? context.finColors.savings.withValues(alpha: 0.1)
-                      : context.finColors.expense.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      trendPct! >= 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-                      size: 9,
-                      color: (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                          ? context.finColors.savings
-                          : context.finColors.expense,
-                    ),
-                    Text(
-                      '${trendPct!.abs().toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                            ? context.finColors.savings
-                            : context.finColors.expense,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: StillwaterTokens.space2Xs),
-        Text(
-          value,
-          style: StillwaterTypography.numMd(
-            color: color ?? theme.colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _LegendPill extends StatelessWidget {
   final String label;

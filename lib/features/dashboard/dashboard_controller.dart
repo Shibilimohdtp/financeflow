@@ -190,6 +190,7 @@ final topSpendingCategoriesProvider = Provider<
         String color,
         double amount,
         double percentage,
+        int transactionCount,
       })
     >
   >
@@ -207,7 +208,7 @@ final topSpendingCategoriesProvider = Provider<
 
       final Map<
         String,
-        ({String name, String icon, String color, double amount})
+        ({String name, String icon, String color, double amount, int count})
       >
       map = {};
       for (final tx in expenses) {
@@ -218,12 +219,14 @@ final topSpendingCategoriesProvider = Provider<
               icon: tx.categoryIcon,
               color: tx.categoryColor,
               amount: 0.0,
+              count: 0,
             );
         map[tx.categoryId] = (
           name: tx.categoryName,
           icon: tx.categoryIcon,
           color: tx.categoryColor,
           amount: current.amount + tx.amount,
+          count: current.count + 1,
         );
       }
 
@@ -242,6 +245,7 @@ final topSpendingCategoriesProvider = Provider<
               color: e.value.color,
               amount: e.value.amount,
               percentage: pct,
+              transactionCount: e.value.count,
             );
           }).toList();
 

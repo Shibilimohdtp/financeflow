@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/transaction.dart';
+import '../../services/ingestion/transaction_merge_service.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
-import '../../services/ingestion/transaction_merge_service.dart';
 import '../accounts/accounts_controller.dart';
 import 'add_edit_transaction_sheet.dart';
 import 'transactions_controller.dart';
@@ -39,9 +40,10 @@ class TransactionDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Edit transaction',
             onPressed: () {
-              showModalBottomSheet(
+              showModalBottomSheet<void>(
                 context: context,
                 isScrollControlled: true,
+                backgroundColor: Colors.transparent,
                 builder:
                     (ctx) => AddEditTransactionSheet(
                       initialTransaction: transaction,
@@ -60,7 +62,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                 context,
                 title: 'Delete Transaction?',
                 message:
-                    'Are you sure you want to delete this transaction for ${transaction.merchant}? This action can be undone briefly.',
+                    'Are you sure you want to delete this transaction for "${transaction.merchant}"? This action can be undone briefly.',
                 confirmLabel: 'Delete',
                 isDestructive: true,
               );
@@ -86,51 +88,84 @@ class TransactionDetailScreen extends ConsumerWidget {
               }
             },
           ),
+          const Padding(
+            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            child: Center(child: FfPrivacyBadge(label: 'On-device')),
+          ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.fromLTRB(
+          StillwaterTokens.spaceLg,
+          StillwaterTokens.spaceMd,
+          StillwaterTokens.spaceLg,
+          StillwaterTokens.space4Xl,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Hero Amount & Merchant
-            Center(
-              child: Column(
-                children: [
-                  FfCategoryTile(
-                    iconIdentifier: transaction.categoryIcon,
-                    colorTokenIdentifier: transaction.categoryColor,
-                    size: 56,
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceMd),
-                  Text(
-                    transaction.merchant,
-                    style: theme.textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
-                  FfAmountText(
-                    amount: transaction.amount,
-                    type: transaction.type,
-                    size: FfAmountSize.hero,
-                    showSign: true,
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
-                  Text(
-                    transaction.type.displayName,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.secondary,
+            // ── 1. Hero Amount & Merchant ─────────────────────────────
+            FfCard(
+              variant: FfCardVariant.elevated,
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceLg,
+                vertical: StillwaterTokens.spaceXl,
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    FfCategoryTile(
+                      iconIdentifier: transaction.categoryIcon,
+                      colorTokenIdentifier: transaction.categoryColor,
+                      size: 56,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    Text(
+                      transaction.merchant,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    FfAmountText(
+                      amount: transaction.amount,
+                      type: transaction.type,
+                      size: FfAmountSize.hero,
+                      showSign: true,
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceSm,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusFull,
+                        ),
+                      ),
+                      child: Text(
+                        transaction.type.displayName,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.space2Xl),
+            const SizedBox(height: StillwaterTokens.spaceMd),
 
-            // 2. Provenance Card
+            // ── 2. Provenance Card ────────────────────────────────────
             FfCard(
               variant: FfCardVariant.tinted,
+              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
               child: Row(
                 children: [
                   Icon(
@@ -153,17 +188,19 @@ class TransactionDetailScreen extends ConsumerWidget {
                             transaction,
                           ),
                           style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color:
                                 transaction.mergedSources.length > 1
                                     ? context.aiColors.accent
                                     : context.secColors.verified,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           'Processed 100% locally on this device · 0 bytes sent off-device',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontSize: 10,
+                            color: theme.colorScheme.secondary,
                           ),
                         ),
                       ],
@@ -173,9 +210,9 @@ class TransactionDetailScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.spaceXl),
+            const SizedBox(height: StillwaterTokens.spaceLg),
 
-            // 3. Detail Fields Table
+            // ── 3. Detail Fields Table ────────────────────────────────
             FfCard(
               padding: EdgeInsets.zero,
               child: Column(
@@ -193,7 +230,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   if (transaction.originalMerchant != null &&
                       transaction.originalMerchant!.isNotEmpty &&
                       transaction.originalMerchant != transaction.merchant) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Raw Payee',
@@ -202,7 +239,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ],
                   if (transaction.sourceReference != null &&
                       transaction.sourceReference!.isNotEmpty) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Reference / UTR',
@@ -210,14 +247,14 @@ class TransactionDetailScreen extends ConsumerWidget {
                     ),
                   ],
                   if (transaction.mergedSources.isNotEmpty) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Merged Sources',
                       value: transaction.mergedSources.join(', '),
                     ),
                   ],
-                  const Divider(),
+                  const Divider(height: 1),
                   _buildDetailRow(
                     context,
                     label: 'Account',
@@ -228,7 +265,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ),
                   if (transaction.type == TransactionType.transfer &&
                       toAccount != null) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Destination Account',
@@ -236,7 +273,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                           '${toAccount.name} ${toAccount.maskedIdentifier ?? ''}',
                     ),
                   ],
-                  const Divider(),
+                  const Divider(height: 1),
                   _buildDetailRow(
                     context,
                     label: 'Date & Time',
@@ -244,7 +281,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ),
                   if (transaction.paymentMethod != null &&
                       transaction.paymentMethod!.isNotEmpty) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Payment Method',
@@ -253,7 +290,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ],
                   if (transaction.notes != null &&
                       transaction.notes!.isNotEmpty) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Notes',
@@ -261,7 +298,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                     ),
                   ],
                   if (transaction.tags.isNotEmpty) ...[
-                    const Divider(),
+                    const Divider(height: 1),
                     _buildDetailRow(
                       context,
                       label: 'Tags',
@@ -272,19 +309,21 @@ class TransactionDetailScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.space2Xl),
+            const SizedBox(height: StillwaterTokens.spaceXl),
 
-            // 4. Quick Actions
+            // ── 4. Quick Actions ──────────────────────────────────────
             Row(
               children: [
                 Expanded(
                   child: FfButton(
-                    label: 'Edit',
-                    variant: FfButtonVariant.outlined,
+                    label: 'Edit Transaction',
+                    variant: FfButtonVariant.primary,
+                    leadingIcon: const Icon(Icons.edit_outlined, size: 18),
                     onPressed: () {
-                      showModalBottomSheet(
+                      showModalBottomSheet<void>(
                         context: context,
                         isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
                         builder:
                             (ctx) => AddEditTransactionSheet(
                               initialTransaction: transaction,
@@ -319,7 +358,13 @@ class TransactionDetailScreen extends ConsumerWidget {
         children: [
           SizedBox(
             width: 120,
-            child: Text(label, style: theme.textTheme.bodySmall),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           if (leading != null) ...[
             leading,
@@ -329,7 +374,7 @@ class TransactionDetailScreen extends ConsumerWidget {
             child: Text(
               value,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.end,
             ),

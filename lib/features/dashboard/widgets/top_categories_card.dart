@@ -3,6 +3,7 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../models/category_colors.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
+import '../../../shared/widgets/ff_grouped_container.dart';
 import '../../../theme/stillwater_tokens.dart';
 
 class TopCategoriesCard extends StatelessWidget {
@@ -14,6 +15,7 @@ class TopCategoriesCard extends StatelessWidget {
       String color,
       double amount,
       double percentage,
+      int transactionCount,
     })
   >
   categories;
@@ -57,108 +59,114 @@ class TopCategoriesCard extends StatelessWidget {
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),
-                child: const Text('All analytics'),
+                child: const Text('All Analytics'),
               ),
             ],
           ),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-              border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
-              ),
-            ),
-            child: Column(
-              children:
-                  categories.map((cat) {
-                    final catColor = CategoryColors.getColor(
-                      cat.color,
-                      isDark: theme.brightness == Brightness.dark,
-                    );
+          FfGroupedContainer(
+            showDividers: true,
+            children:
+                categories.map((cat) {
+                  final catColor = CategoryColors.getColor(
+                    cat.color,
+                    isDark: theme.brightness == Brightness.dark,
+                  );
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: StillwaterTokens.space2Xs,
-                      ),
-                      child: Row(
-                        children: [
-                          FfCategoryTile(
-                            iconIdentifier: cat.icon,
-                            colorTokenIdentifier: cat.color,
-                            size: 32,
-                          ),
-                          const SizedBox(width: StillwaterTokens.spaceSm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: StillwaterTokens.spaceMd,
+                      vertical: StillwaterTokens.spaceSm,
+                    ),
+                    child: Row(
+                      children: [
+                        FfCategoryTile(
+                          iconIdentifier: cat.icon,
+                          colorTokenIdentifier: cat.color,
+                          size: 36,
+                        ),
+                        const SizedBox(width: StillwaterTokens.spaceSm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
                                       cat.name,
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    FfAmountText(
-                                      amount: cat.amount,
-                                      size: FfAmountSize.sm,
-                                      isBlurred: isPrivacyBlur,
-                                      showSign: false,
-                                      colorOverride:
-                                          theme.colorScheme.onSurface,
+                                  ),
+                                  FfAmountText(
+                                    amount: cat.amount,
+                                    size: FfAmountSize.sm,
+                                    isBlurred: isPrivacyBlur,
+                                    showSign: false,
+                                    colorOverride: theme.colorScheme.onSurface,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: StillwaterTokens.space3Xs),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        StillwaterTokens.radiusFull,
+                                      ),
+                                      child: LinearProgressIndicator(
+                                        value: cat.percentage.clamp(0.0, 1.0),
+                                        backgroundColor:
+                                            theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                        color: catColor,
+                                        minHeight: 4,
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(
+                                    width: StillwaterTokens.spaceSm,
+                                  ),
+                                  Text(
+                                    '${(cat.percentage * 100).toStringAsFixed(0)}%',
+                                    style: theme.textTheme.labelSmall
+                                        ?.copyWith(
+                                          color: theme.colorScheme.secondary,
+                                          fontSize: 11,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              if (cat.transactionCount > 0) ...[
                                 const SizedBox(
                                   height: StillwaterTokens.space3Xs,
                                 ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          StillwaterTokens.radiusFull,
-                                        ),
-                                        child: LinearProgressIndicator(
-                                          value: cat.percentage.clamp(0.0, 1.0),
-                                          backgroundColor:
-                                              theme
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                          color: catColor,
-                                          minHeight: 4,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(
-                                      width: StillwaterTokens.spaceSm,
-                                    ),
-                                    Text(
-                                      '${(cat.percentage * 100).toStringAsFixed(0)}%',
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                            fontSize: 11,
-                                          ),
-                                    ),
-                                  ],
+                                Text(
+                                  cat.transactionCount == 1
+                                      ? '1 transaction'
+                                      : '${cat.transactionCount} transactions',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.secondary,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-            ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
           ),
         ],
       ),

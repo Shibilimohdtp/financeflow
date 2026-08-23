@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
+import '../../core/formatting/date_formatter.dart';
 import '../../models/budget.dart';
 import '../../models/category.dart';
+import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
@@ -67,6 +69,18 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
     _nameController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  void _onCategorySelected(Category category) {
+    setState(() {
+      _selectedCategory = category;
+      _categoryError = null;
+      if (_nameController.text.trim().isEmpty ||
+          (widget.initialBudget == null &&
+              _nameController.text.endsWith(' Budget'))) {
+        _nameController.text = '${category.name} Budget';
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -149,7 +163,11 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
     final theme = context.theme;
     final isEditing = widget.initialBudget != null;
     final categoriesAsync = ref.watch(categoriesStreamProvider);
-    final categories = categoriesAsync.value ?? [];
+    final categories =
+        (categoriesAsync.value ?? [])
+            .where((c) => !c.isArchived && c.typeCompatibility.contains('expense'))
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     if (_selectedCategory == null &&
         widget.initialBudget != null &&
@@ -159,6 +177,9 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
         orElse: () => categories.first,
       );
     }
+
+    final parsedAmount = CurrencyFormatter.parse(_amountController.text) ?? 0.0;
+    final alertRupeeValue = parsedAmount * _alertThreshold;
 
     return Container(
       decoration: BoxDecoration(
@@ -206,7 +227,7 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                               _amountError != null
                                   ? theme.colorScheme.error
                                   : theme.dividerColor,
-                          width: StillwaterTokens.borderWidthHairline,
+                          width: StillwaterTokens.borderWidthDefault,
                         ),
                       ),
                       child: Column(
@@ -217,20 +238,21 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: theme.colorScheme.secondary,
                               letterSpacing: 1.0,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
                             ),
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceXs),
+                          const SizedBox(height: 4),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
                                 '₹',
-                                style: StillwaterTypography.numLg(
+                                style: StillwaterTypography.numHero(
                                   color: theme.colorScheme.primary,
                                 ),
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceXs),
+                              const SizedBox(width: StillwaterTokens.spaceSm),
                               Expanded(
                                 child: TextField(
                                   controller: _amountController,
@@ -249,15 +271,16 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                                   decoration: InputDecoration(
                                     hintText: '0',
                                     hintStyle: StillwaterTypography.numHero(
-                                      color: theme.colorScheme.outline,
+                                      color: theme.colorScheme.outline
+                                          .withValues(alpha: 0.4),
                                     ),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
-                                    filled: false,
-                                    contentPadding: EdgeInsets.zero,
                                     isDense: true,
+                                    contentPadding: EdgeInsets.zero,
                                   ),
+                                  onChanged: (_) => setState(() {}),
                                 ),
                               ),
                             ],
@@ -266,108 +289,48 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                       ),
                     ),
                     if (_amountError != null) ...[
-                      const SizedBox(height: StillwaterTokens.spaceXs),
-                      Text(
-                        _amountError!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          _amountError!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: StillwaterTokens.spaceLg),
 
-                    // ── 2. Budget Name ────────────────────────────────
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Budget Name',
-                        hintText: 'e.g. Monthly Dining, Grocery Cap',
-                        errorText: _nameError,
+                    // ── 2. Category Selector ──────────────────────────
+                    Text(
+                      'Category',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-
-                    const SizedBox(height: StillwaterTokens.spaceLg),
-
-                    // ── 3. Period Selector ────────────────────────────
-                    FfSegmentedPill<BudgetPeriod>(
-                      options: const [
-                        FfSegmentOption(
-                          value: BudgetPeriod.monthly,
-                          label: 'Monthly',
-                        ),
-                        FfSegmentOption(
-                          value: BudgetPeriod.weekly,
-                          label: 'Weekly',
-                        ),
-                        FfSegmentOption(
-                          value: BudgetPeriod.yearly,
-                          label: 'Yearly',
-                        ),
-                      ],
-                      selectedValue: _selectedPeriod,
-                      onSelected: (period) {
-                        setState(() {
-                          _selectedPeriod = period;
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceLg),
-
-                    // ── 4. Category Selector ──────────────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'SELECT CATEGORY',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            letterSpacing: 1.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (_selectedCategory != null)
-                          Text(
-                            _selectedCategory!.name,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
-                    SizedBox(
-                      height: 80,
-                      child:
-                          categories.isEmpty
-                              ? const Center(child: CircularProgressIndicator())
-                              : ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: categories.length,
-                                separatorBuilder:
-                                    (_, __) => const SizedBox(
-                                      width: StillwaterTokens.spaceSm,
+                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    if (categories.isEmpty)
+                      const Text('No categories found.')
+                    else
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children:
+                              categories.map((cat) {
+                                final isSelected =
+                                    _selectedCategory?.id == cat.id;
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    right: StillwaterTokens.spaceSm,
+                                  ),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(
+                                      StillwaterTokens.radiusMd,
                                     ),
-                                itemBuilder: (context, index) {
-                                  final cat = categories[index];
-                                  final isSelected =
-                                      _selectedCategory?.id == cat.id;
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedCategory = cat;
-                                        _categoryError = null;
-                                        if (_nameController.text.isEmpty) {
-                                          _nameController.text =
-                                              '${cat.name} Budget';
-                                        }
-                                      });
-                                    },
-                                    child: AnimatedContainer(
-                                      duration: StillwaterTokens.durationFast,
+                                    onTap: () => _onCategorySelected(cat),
+                                    child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: StillwaterTokens.spaceSm,
                                         vertical: StillwaterTokens.spaceXs,
@@ -375,10 +338,7 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                                       decoration: BoxDecoration(
                                         color:
                                             isSelected
-                                                ? theme
-                                                    .colorScheme
-                                                    .primaryContainer
-                                                    .withValues(alpha: 0.5)
+                                                ? theme.colorScheme.primaryContainer
                                                 : theme.cardColor,
                                         borderRadius: BorderRadius.circular(
                                           StillwaterTokens.radiusMd,
@@ -396,36 +356,46 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                                                       .borderWidthHairline,
                                         ),
                                       ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           FfCategoryTile(
                                             iconIdentifier: cat.iconIdentifier,
                                             colorTokenIdentifier:
                                                 cat.colorTokenIdentifier,
-                                            size: 32,
+                                            size: 28,
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(
+                                            width: StillwaterTokens.spaceSm,
+                                          ),
                                           Text(
                                             cat.name,
-                                            style: theme.textTheme.labelSmall
+                                            style: theme.textTheme.bodySmall
                                                 ?.copyWith(
                                                   fontWeight:
                                                       isSelected
                                                           ? FontWeight.w700
                                                           : FontWeight.w500,
+                                                  color:
+                                                      isSelected
+                                                          ? theme
+                                                              .colorScheme
+                                                              .onPrimaryContainer
+                                                          : theme
+                                                              .colorScheme
+                                                              .onSurface,
                                                 ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      ),
                     if (_categoryError != null) ...[
-                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      const SizedBox(height: 4),
                       Text(
                         _categoryError!,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -436,70 +406,146 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
 
                     const SizedBox(height: StillwaterTokens.spaceLg),
 
-                    // ── 5. Notification Threshold ─────────────────────
-                    Container(
-                      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusLg,
-                        ),
-                        border: Border.all(
-                          color: theme.dividerColor,
-                          width: StillwaterTokens.borderWidthHairline,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Alert Notification Threshold',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                '${(_alertThreshold * 100).toInt()}%',
-                                style: StillwaterTypography.numSm(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Receive a local reminder when spending reaches this level.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.secondary,
-                            ),
-                          ),
-                          Slider(
-                            value: _alertThreshold,
-                            min: 0.5,
-                            max: 1.0,
-                            divisions: 10,
-                            activeColor: theme.colorScheme.primary,
-                            onChanged: (val) {
-                              setState(() {
-                                _alertThreshold = val;
-                              });
-                            },
-                          ),
-                        ],
+                    // ── 3. Budget Name ────────────────────────────────
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Budget Name',
+                        hintText: 'e.g. Dining Out, Groceries',
+                        errorText: _nameError,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+
+                    const SizedBox(height: StillwaterTokens.spaceLg),
+
+                    // ── 4. Period Selector ────────────────────────────
+                    Text(
+                      'Period Cycle',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    FfSegmentedPill<BudgetPeriod>(
+                      options: const [
+                        FfSegmentOption(
+                          value: BudgetPeriod.monthly,
+                          label: 'Monthly',
+                        ),
+                        FfSegmentOption(
+                          value: BudgetPeriod.weekly,
+                          label: 'Weekly',
+                        ),
+                        FfSegmentOption(
+                          value: BudgetPeriod.yearly,
+                          label: 'Yearly',
+                        ),
+                        FfSegmentOption(
+                          value: BudgetPeriod.custom,
+                          label: 'Custom',
+                        ),
+                      ],
+                      selectedValue: _selectedPeriod,
+                      onSelected: (period) async {
+                        if (period == BudgetPeriod.custom) {
+                          final range = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2035),
+                            initialDateRange: DateTimeRange(
+                              start: _startDate,
+                              end:
+                                  _endDate ??
+                                  _startDate.add(const Duration(days: 30)),
+                            ),
+                          );
+                          if (range != null) {
+                            setState(() {
+                              _selectedPeriod = period;
+                              _startDate = range.start;
+                              _endDate = range.end;
+                            });
+                          }
+                        } else {
+                          setState(() {
+                            _selectedPeriod = period;
+                          });
+                        }
+                      },
+                    ),
+
+                    if (_selectedPeriod == BudgetPeriod.custom &&
+                        _endDate != null) ...[
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      Text(
+                        'Cycle: ${DateFormatter.formatShortDate(_startDate)} – ${DateFormatter.formatShortDate(_endDate!)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: StillwaterTokens.spaceLg),
+
+                    // ── 5. Alert Notification Threshold ───────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Alert Threshold',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          '${(_alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatINR(alertRupeeValue)})',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _alertThreshold,
+                      min: 0.5,
+                      max: 1.0,
+                      divisions: 10,
+                      label: '${(_alertThreshold * 100).toInt()}%',
+                      onChanged: (val) {
+                        setState(() {
+                          _alertThreshold = val;
+                        });
+                      },
+                    ),
+                    Text(
+                      'You will receive a gentle on-device alert when your spending crosses this threshold.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                        fontSize: 11,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              // ── Sticky Submit Footer ──────────────────────────────
+              const Divider(height: 1, thickness: 1),
               FfSheetFooter(
-                primaryLabel: isEditing ? 'Save Changes' : 'Create Budget',
-                isPrimaryLoading: _isSubmitting,
-                onPrimaryPressed: _submit,
+                child: Row(
+                  children: [
+                    FfButton(
+                      label: 'Cancel',
+                      variant: FfButtonVariant.text,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const Spacer(),
+                    FfButton(
+                      label: isEditing ? 'Update Budget' : 'Save Budget',
+                      variant: FfButtonVariant.primary,
+                      isLoading: _isSubmitting,
+                      onPressed: _submit,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

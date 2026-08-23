@@ -222,4 +222,124 @@ void main() {
     expect(find.text('Blue Tokai Coffee'), findsOneWidget);
     expect(find.widgetWithText(FfButton, 'Update Expense'), findsOneWidget);
   });
+
+  testWidgets('Category-aware Payee suggestions update dynamically on category change', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final testGroceriesCategory = Category(
+      id: 'cat_groceries',
+      name: 'Groceries',
+      iconIdentifier: 'shopping_cart',
+      colorTokenIdentifier: 'leaf',
+      typeCompatibility: const ['expense', 'cash'],
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    final history = [
+      Transaction(
+        id: 'tx_g1',
+        amount: 500,
+        type: TransactionType.expense,
+        categoryId: 'cat_groceries',
+        categoryName: 'Groceries',
+        categoryIcon: 'shopping_cart',
+        categoryColor: 'leaf',
+        merchant: 'Lulu Hypermarket',
+        date: now.subtract(const Duration(days: 1)),
+        accountId: 'acc_1',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      Transaction(
+        id: 'tx_f1',
+        amount: 300,
+        type: TransactionType.expense,
+        categoryId: 'cat_food',
+        categoryName: 'Food & Dining',
+        categoryIcon: 'restaurant',
+        categoryColor: 'clay',
+        merchant: 'Zomato',
+        date: now.subtract(const Duration(days: 2)),
+        accountId: 'acc_1',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      Transaction(
+        id: 'tx_i1',
+        amount: 50000,
+        type: TransactionType.income,
+        categoryId: 'cat_salary',
+        categoryName: 'Salary',
+        categoryIcon: 'payments',
+        categoryColor: 'grove',
+        merchant: 'Tech Corp Salary',
+        date: now.subtract(const Duration(days: 5)),
+        accountId: 'acc_1',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+
+    Widget buildWithHistory() {
+      return ProviderScope(
+        overrides: [
+          settingsStreamProvider.overrideWith(
+            (ref) => Stream.value(const AppSettings()),
+          ),
+          categoriesStreamProvider.overrideWith(
+            (ref) => Stream.value([testFoodCategory, testGroceriesCategory, testSalaryCategory]),
+          ),
+          rawAccountsStreamProvider.overrideWith(
+            (ref) => Stream.value([testAccount1, testAccount2]),
+          ),
+          allTransactionsStreamProvider.overrideWith((ref) => Stream.value(history)),
+        ],
+        child: MaterialApp(
+          theme: StillwaterTheme.daylight,
+          home: const Scaffold(
+            body: AddEditTransactionSheet(),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildWithHistory());
+    await tester.pumpAndSettle();
+
+    // Default category selected is Food & Dining -> Zomato is top suggestion
+    expect(find.text('Zomato'), findsOneWidget);
+
+    // Switch category to Groceries
+    await tester.tap(find.text('Groceries'));
+    await tester.pumpAndSettle();
+
+    // Groceries payees prioritized -> Lulu Hypermarket is visible
+    expect(find.text('Lulu Hypermarket'), findsOneWidget);
+
+    // Tap on suggestion chip 'Lulu Hypermarket' to fill payee field
+    await tester.tap(find.text('Lulu Hypermarket'));
+    await tester.pumpAndSettle();
+
+    // Payee field now contains Lulu Hypermarket
+    expect(find.widgetWithText(TextField, 'Lulu Hypermarket'), findsOneWidget);
+
+    // Changing category to Food & Dining after entering payee does NOT erase the entered payee
+    await tester.tap(find.text('Food & Dining'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Lulu Hypermarket'), findsOneWidget);
+
+    // Clear payee field
+    await tester.tap(find.byIcon(Icons.clear_rounded));
+    await tester.pumpAndSettle();
+
+    // Switch type to Income -> shows income payer Tech Corp Salary
+    await tester.tap(find.text('Income'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tech Corp Salary'), findsOneWidget);
+  });
 }

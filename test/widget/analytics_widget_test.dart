@@ -107,7 +107,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Analytics & Intelligence'), findsOneWidget);
+    expect(find.text('Analytics & Trends'), findsOneWidget);
     expect(find.text('Total Inflow'), findsOneWidget);
     expect(find.text('₹75,000'), findsOneWidget);
     expect(find.text('Total Outflow'), findsOneWidget);

@@ -30,7 +30,7 @@ class BudgetDetailScreen extends ConsumerWidget {
   const BudgetDetailScreen({super.key, required this.budget});
 
   void _editBudget(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -112,12 +112,25 @@ class BudgetDetailScreen extends ConsumerWidget {
 
     final isExceeded = summary.isExceeded;
     final isApproaching = summary.isApproachingThreshold;
-    final Color progressColor =
-        isExceeded
-            ? finColors.expense
-            : (isApproaching
-                ? theme.colorScheme.tertiary
-                : theme.colorScheme.primary);
+
+    final Color progressColor;
+    final IconData statusIcon;
+    final String statusLabel;
+
+    if (isExceeded) {
+      progressColor = finColors.expense;
+      statusIcon = Icons.error_outline_rounded;
+      statusLabel =
+          '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit';
+    } else if (isApproaching) {
+      progressColor = theme.colorScheme.tertiary;
+      statusIcon = Icons.warning_amber_rounded;
+      statusLabel = 'Approaching threshold (${(budget.alertThreshold * 100).toInt()}%)';
+    } else {
+      progressColor = theme.colorScheme.primary;
+      statusIcon = Icons.check_circle_outline_rounded;
+      statusLabel = 'Healthy & on pace';
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -145,11 +158,11 @@ class BudgetDetailScreen extends ConsumerWidget {
                       budget.isArchived ? 'Unarchive Budget' : 'Archive Budget',
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Text(
                       'Delete Budget',
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(color: theme.colorScheme.error),
                     ),
                   ),
                 ],
@@ -161,9 +174,11 @@ class BudgetDetailScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+        padding: const EdgeInsets.fromLTRB(
+          StillwaterTokens.spaceLg,
+          StillwaterTokens.spaceMd,
+          StillwaterTokens.spaceLg,
+          StillwaterTokens.space4Xl,
         ),
         children: [
           // ── 1. Spend Progress Hero Card ─────────────────────────────
@@ -200,6 +215,37 @@ class BudgetDetailScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    Tooltip(
+                      message: statusLabel,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: StillwaterTokens.spaceSm,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: progressColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusFull,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(statusIcon, size: 14, color: progressColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              isExceeded
+                                  ? 'Exceeded'
+                                  : (isApproaching ? 'Warning' : 'On Track'),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: progressColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: StillwaterTokens.spaceLg),
@@ -208,15 +254,22 @@ class BudgetDetailScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      CurrencyFormatter.formatINR(summary.amountSpent),
-                      style: StillwaterTypography.numHero(
-                        color:
-                            isExceeded
-                                ? finColors.expense
-                                : theme.colorScheme.onSurface,
+                    Expanded(
+                      child: FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          CurrencyFormatter.formatINR(summary.amountSpent),
+                          style: StillwaterTypography.numHero(
+                            color:
+                                isExceeded
+                                    ? finColors.expense
+                                    : theme.colorScheme.onSurface,
+                          ),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: StillwaterTokens.spaceSm),
                     Text(
                       'of ${CurrencyFormatter.formatINR(budget.amountLimit)}',
                       style: theme.textTheme.bodyLarge?.copyWith(
@@ -280,23 +333,29 @@ class BudgetDetailScreen extends ConsumerWidget {
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.secondary,
                           letterSpacing: 1.0,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 10,
                         ),
                       ),
                       const SizedBox(height: StillwaterTokens.spaceXs),
-                      Text(
-                        CurrencyFormatter.formatINR(
-                          summary.dailyAllowanceRemaining,
-                        ),
-                        style: StillwaterTypography.numMd(
-                          color: theme.colorScheme.primary,
+                      FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          CurrencyFormatter.formatINR(
+                            summary.dailyAllowanceRemaining,
+                          ),
+                          style: StillwaterTypography.numMd(
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'for ${summary.daysRemaining} remaining days',
+                        '${summary.daysRemaining} days remaining',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.secondary,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -311,27 +370,37 @@ class BudgetDetailScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SPENDING PACE',
+                        'PROJECTED SPEND',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.secondary,
                           letterSpacing: 1.0,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 10,
                         ),
                       ),
                       const SizedBox(height: StillwaterTokens.spaceXs),
-                      Text(
-                        summary.isExceeded
-                            ? 'Over Limit'
-                            : (summary.isApproachingThreshold
-                                ? 'Pacing High'
-                                : 'On Track'),
-                        style: StillwaterTypography.numMd(color: progressColor),
+                      FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          CurrencyFormatter.formatINR(
+                            summary.projectedPeriodEndSpending,
+                          ),
+                          style: StillwaterTypography.numMd(
+                            color:
+                                summary.projectedPeriodEndSpending >
+                                        budget.amountLimit
+                                    ? finColors.expense
+                                    : theme.colorScheme.onSurface,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${matchingTransactions.length} expenses recorded',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.secondary,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -344,12 +413,16 @@ class BudgetDetailScreen extends ConsumerWidget {
           const SizedBox(height: StillwaterTokens.spaceLg),
 
           // ── 3. Plan Configuration ───────────────────────────────────
-          const FfSectionHeader(title: 'Budget Settings'),
+          const FfSectionHeader(
+            title: 'Budget Settings',
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: StillwaterTokens.spaceSm),
           FfGroupedContainer(
             children: [
               FfListRow(
                 icon: Icons.date_range_outlined,
-                title: 'Period Bounds',
+                title: 'Period Cycle',
                 subtitle:
                     '${DateFormatter.formatShortDate(bounds.start)} – ${DateFormatter.formatShortDate(bounds.end)}',
                 showChevron: false,
@@ -358,7 +431,13 @@ class BudgetDetailScreen extends ConsumerWidget {
                 icon: Icons.notifications_active_outlined,
                 title: 'Alert Notification',
                 subtitle:
-                    'Notify at ${(budget.alertThreshold * 100).toInt()}% threshold (${CurrencyFormatter.formatINR(budget.amountLimit * budget.alertThreshold)})',
+                    'Trigger alert at ${(budget.alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatINR(budget.amountLimit * budget.alertThreshold)})',
+                showChevron: false,
+              ),
+              FfListRow(
+                icon: Icons.inventory_2_outlined,
+                title: 'Status',
+                subtitle: budget.isArchived ? 'Archived' : 'Active and tracking',
                 showChevron: false,
               ),
             ],
@@ -369,7 +448,9 @@ class BudgetDetailScreen extends ConsumerWidget {
           // ── 4. Transactions List for this Period ────────────────────
           FfSectionHeader(
             title: 'Transactions (${matchingTransactions.length})',
+            padding: EdgeInsets.zero,
           ),
+          const SizedBox(height: StillwaterTokens.spaceSm),
           if (matchingTransactions.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -410,8 +491,6 @@ class BudgetDetailScreen extends ConsumerWidget {
                     );
                   }).toList(),
             ),
-
-          const SizedBox(height: StillwaterTokens.space3Xl),
         ],
       ),
     );

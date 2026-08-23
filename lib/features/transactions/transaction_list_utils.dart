@@ -41,7 +41,7 @@ List<Transaction> applyTransactionFilter({
   final accountNames = {
     for (final account in accounts) account.id: account.name,
   };
-  final query = filter.searchQuery.trim().toLowerCase();
+  final query = filter.searchQuery.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   final results =
       transactions.where((transaction) {
         if (filter.selectedType != null &&
@@ -81,6 +81,7 @@ List<Transaction> applyTransactionFilter({
         final searchable =
             <String>[
               transaction.merchant,
+              transaction.normalizedMerchant ?? '',
               transaction.notes ?? '',
               transaction.amount.toString(),
               transaction.categoryName,
@@ -91,7 +92,7 @@ List<Transaction> applyTransactionFilter({
                   transaction.toAccountId ??
                   '',
               ...transaction.tags,
-            ].join(' ').toLowerCase();
+            ].join(' ').toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
         return searchable.contains(query);
       }).toList();
 

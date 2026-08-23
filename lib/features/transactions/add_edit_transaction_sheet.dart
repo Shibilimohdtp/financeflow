@@ -10,6 +10,8 @@ import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../services/categorization_service.dart';
+import '../../services/merchant_normalization_service.dart';
+import '../../services/payee_suggestion_service.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
@@ -418,6 +420,7 @@ class _AddEditTransactionSheetState
         categoryIcon: _selectedCategory?.iconIdentifier ?? 'sync',
         categoryColor: _selectedCategory?.colorTokenIdentifier ?? 'slate',
         merchant: merchant,
+        normalizedMerchant: MerchantNormalizationService.normalize(merchant),
         date: _selectedDate,
         notes:
             _notesController.text.trim().isEmpty
@@ -520,14 +523,13 @@ class _AddEditTransactionSheetState
     }
 
     final categoriesForType = _prioritizedCategories(categories, history);
-    final recentPayees =
-        history
-            .where((t) => t.type == _selectedType)
-            .map((t) => t.merchant)
-            .where((m) => m.isNotEmpty)
-            .toSet()
-            .take(4)
-            .toList();
+    final payeeSuggestions = PayeeSuggestionService.getSuggestions(
+      transactions: history,
+      type: _selectedType,
+      categoryId: _selectedCategory?.id,
+      query: _merchantController.text,
+      limit: 6,
+    );
 
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final surfaceColor =
@@ -587,7 +589,10 @@ class _AddEditTransactionSheetState
                         const SizedBox(height: StillwaterTokens.spaceLg),
 
                         // Merchant / Payee Field
-                        _buildMerchantField(recentPayees),
+                        _buildMerchantField(
+                          suggestions: payeeSuggestions,
+                          categories: categories,
+                        ),
                         const SizedBox(height: StillwaterTokens.spaceLg),
 
                         // Category Section (if applicable)
@@ -860,7 +865,10 @@ class _AddEditTransactionSheetState
     );
   }
 
-  Widget _buildMerchantField(List<String> recentPayees) {
+  Widget _buildMerchantField({
+    required List<PayeeSuggestion> suggestions,
+    required List<Category> categories,
+  }) {
     final theme = context.theme;
 
     final label = switch (_selectedType) {
@@ -886,6 +894,13 @@ class _AddEditTransactionSheetState
       TransactionType.loanEmi => Icons.receipt_long_rounded,
       _ => Icons.storefront_outlined,
     };
+
+    final typedText = _merchantController.text.trim().toLowerCase();
+    final visibleSuggestions = typedText.isEmpty
+        ? suggestions
+        : suggestions
+            .where((s) => s.displayName.toLowerCase() != typedText)
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -917,28 +932,49 @@ class _AddEditTransactionSheetState
           },
         ),
 
-        // Recent Payees fast chips (when field is empty)
-        if (recentPayees.isNotEmpty && _merchantController.text.isEmpty) ...[
+        // Context-aware Payee suggestions chips
+        if (visibleSuggestions.isNotEmpty) ...[
           const SizedBox(height: StillwaterTokens.spaceXs),
           Wrap(
             spacing: StillwaterTokens.spaceXs,
             runSpacing: StillwaterTokens.space2Xs,
             children:
-                recentPayees
+                visibleSuggestions
                     .map(
-                      (payee) => ActionChip(
+                      (suggestion) => ActionChip(
                         avatar: const Icon(Icons.history_rounded, size: 14),
                         label: Text(
-                          payee,
+                          suggestion.displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () {
-                          _merchantController.text = payee;
+                          _merchantController.text = suggestion.displayName;
                           _merchantController
                               .selection = TextSelection.fromPosition(
-                            TextPosition(offset: payee.length),
+                            TextPosition(
+                              offset: suggestion.displayName.length,
+                            ),
                           );
+                          if (_needsCategory &&
+                              _selectedCategory == null &&
+                              suggestion.primaryCategoryId != null) {
+                            final match = categories
+                                .where(
+                                  (c) =>
+                                      c.id == suggestion.primaryCategoryId,
+                                )
+                                .firstOrNull;
+                            if (match != null) {
+                              setState(() {
+                                _selectedCategory = match;
+                                _categoryError = null;
+                              });
+                            }
+                          }
+                          if (_merchantError != null) {
+                            setState(() => _merchantError = null);
+                          }
                         },
                       ),
                     )

@@ -13,6 +13,7 @@ import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_source_badge.dart';
+import '../../shared/widgets/ff_skeleton_loader.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../alerts/alerts_inbox_screen.dart';
@@ -412,23 +413,44 @@ class DashboardScreen extends ConsumerWidget {
                         onOpenAnalytics: onOpenAnalytics,
                       ),
                   loading:
-                      () => Container(
-                        height: 160,
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusLg,
+                      () => FfSkeletonLoader(
+                        child: Container(
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusLg,
+                            ),
+                            border: Border.all(
+                              color: theme.dividerColor,
+                              width: StillwaterTokens.borderWidthHairline,
+                            ),
                           ),
-                          border: Border.all(
-                            color: theme.dividerColor,
-                            width: StillwaterTokens.borderWidthHairline,
+                          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const FfSkeletonBlock(width: 100, height: 12),
+                              const SizedBox(height: StillwaterTokens.spaceSm),
+                              const FfSkeletonBlock(width: 140, height: 28),
+                              const SizedBox(height: StillwaterTokens.spaceMd),
+                              Row(
+                                children: const [
+                                  Expanded(child: FfSkeletonBlock(height: 40)),
+                                  SizedBox(width: StillwaterTokens.spaceSm),
+                                  Expanded(child: FfSkeletonBlock(height: 40)),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                        child: const Center(child: CircularProgressIndicator()),
                       ),
                   error:
                       (e, _) => Container(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: StillwaterTokens.spaceMd,
+                          vertical: StillwaterTokens.spaceSm,
+                        ),
                         decoration: BoxDecoration(
                           color: theme.cardColor,
                           borderRadius: BorderRadius.circular(
@@ -439,9 +461,21 @@ class DashboardScreen extends ConsumerWidget {
                             width: StillwaterTokens.borderWidthHairline,
                           ),
                         ),
-                        child: Text(
-                          'Could not load cash flow: $e',
-                          style: theme.textTheme.bodySmall,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.wifi_off_rounded,
+                              size: 16,
+                              color: theme.colorScheme.secondary,
+                            ),
+                            const SizedBox(width: StillwaterTokens.spaceSm),
+                            Expanded(
+                              child: Text(
+                                'Could not load cash flow data',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                 ),
@@ -458,7 +492,24 @@ class DashboardScreen extends ConsumerWidget {
                       onManageAccounts: onManageAccounts,
                       onAddAccount: onAddAccount,
                     ),
-                loading: () => const SizedBox(height: 108),
+                loading:
+                    () => FfSkeletonLoader(
+                      child: SizedBox(
+                        height: 108,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StillwaterTokens.spaceLg,
+                          ),
+                          child: Row(
+                            children: const [
+                              FfSkeletonBlock(width: 176, height: 108, borderRadius: 12),
+                              SizedBox(width: StillwaterTokens.spaceSm),
+                              FfSkeletonBlock(width: 176, height: 108, borderRadius: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 error: (e, _) => const SizedBox.shrink(),
               ),
 
@@ -743,15 +794,69 @@ class DashboardScreen extends ConsumerWidget {
                   );
                 },
                 loading:
-                    () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(StillwaterTokens.space2Xl),
-                        child: CircularProgressIndicator(),
+                    () => Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceLg,
+                      ),
+                      child: FfSkeletonLoader(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusLg,
+                            ),
+                            border: Border.all(
+                              color: theme.dividerColor,
+                              width: StillwaterTokens.borderWidthHairline,
+                            ),
+                          ),
+                          child: Column(
+                            children: const [
+                              FfTransactionSkeletonRow(),
+                              Divider(height: 1),
+                              FfTransactionSkeletonRow(),
+                              Divider(height: 1),
+                              FfTransactionSkeletonRow(),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                 error:
-                    (e, _) =>
-                        Center(child: Text('Error loading transactions: $e')),
+                    (e, _) => Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceLg,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusLg,
+                          ),
+                          border: Border.all(
+                            color: theme.dividerColor,
+                            width: StillwaterTokens.borderWidthHairline,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline_rounded,
+                              size: 18,
+                              color: theme.colorScheme.secondary,
+                            ),
+                            const SizedBox(width: StillwaterTokens.spaceSm),
+                            Expanded(
+                              child: Text(
+                                'Could not load transactions',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
               ),
 
               const SizedBox(height: StillwaterTokens.space2Xl),

@@ -197,4 +197,39 @@ void main() {
       expect(summary.expenses, 130);
     },
   );
+
+  test('searches payee across casing and extra whitespace variants', () {
+    final txs = [
+      transaction(
+        id: '1',
+        merchant: 'Bismi CAFE',
+        amount: 50,
+        type: TransactionType.expense,
+      ),
+      transaction(
+        id: '2',
+        merchant: 'Zomato India',
+        amount: 200,
+        type: TransactionType.expense,
+      ),
+    ];
+
+    expect(
+      applyTransactionFilter(
+        transactions: txs,
+        filter: const TransactionFilterState(searchQuery: '  bismi   cafe  '),
+        accounts: [account],
+      ).single.id,
+      '1',
+    );
+
+    expect(
+      applyTransactionFilter(
+        transactions: txs,
+        filter: const TransactionFilterState(searchQuery: 'zomato'),
+        accounts: [account],
+      ).single.id,
+      '2',
+    );
+  });
 }
