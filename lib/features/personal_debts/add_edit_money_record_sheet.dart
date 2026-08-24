@@ -5,6 +5,7 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/money_record.dart';
+import '../../models/account.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
@@ -12,6 +13,7 @@ import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'money_records_controller.dart';
+import '../accounts/accounts_controller.dart';
 
 class AddEditMoneyRecordSheet extends ConsumerStatefulWidget {
   final MoneyRecord? initialRecord;
@@ -41,6 +43,8 @@ class _AddEditMoneyRecordSheetState
   late bool _isReminderEnabled;
   late int _reminderDays;
   bool _isSaving = false;
+  bool _recordInTransactions = true;
+  String? _selectedAccountId;
 
   bool get isEditing => widget.initialRecord != null;
 
@@ -51,17 +55,17 @@ class _AddEditMoneyRecordSheetState
     _type = init?.type ?? widget.defaultType ?? MoneyRecordType.lent;
     _nameController = TextEditingController(text: init?.personName ?? '');
     _amountController = TextEditingController(
-      text: init != null
-          ? (init.originalAmount.truncateToDouble() == init.originalAmount
-              ? init.originalAmount.toInt().toString()
-              : init.originalAmount.toStringAsFixed(2))
-          : '',
+      text:
+          init != null
+              ? (init.originalAmount.truncateToDouble() == init.originalAmount
+                  ? init.originalAmount.toInt().toString()
+                  : init.originalAmount.toStringAsFixed(2))
+              : '',
     );
     _notesController = TextEditingController(text: init?.notes ?? '');
 
     _transactionDate = init?.transactionDate ?? DateTime.now();
-    _dueDate = init?.dueDate ??
-        DateTime.now().add(const Duration(days: 30));
+    _dueDate = init?.dueDate ?? DateTime.now().add(const Duration(days: 30));
     _isReminderEnabled = init?.isReminderEnabled ?? true;
     _reminderDays = init?.reminderDaysBefore ?? 1;
   }
@@ -97,9 +101,8 @@ class _AddEditMoneyRecordSheetState
   Future<void> _pickDueDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dueDate.isBefore(_transactionDate)
-          ? _transactionDate
-          : _dueDate,
+      initialDate:
+          _dueDate.isBefore(_transactionDate) ? _transactionDate : _dueDate,
       firstDate: _transactionDate,
       lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
@@ -120,7 +123,10 @@ class _AddEditMoneyRecordSheetState
     final amount =
         CurrencyFormatter.parse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
-      FfSnackbar.show(context, message: 'Please enter a valid positive amount.');
+      FfSnackbar.show(
+        context,
+        message: 'Please enter a valid positive amount.',
+      );
       return;
     }
 
@@ -137,6 +143,10 @@ class _AddEditMoneyRecordSheetState
       );
       return;
     }
+    if (!isEditing && _recordInTransactions && _selectedAccountId == null) {
+      FfSnackbar.show(context, message: 'Select the account for this entry.');
+      return;
+    }
 
     setState(() => _isSaving = true);
     final controller = ref.read(moneyRecordsControllerProvider.notifier);
@@ -149,9 +159,10 @@ class _AddEditMoneyRecordSheetState
           originalAmount: amount,
           transactionDate: _transactionDate,
           dueDate: _dueDate,
-          notes: _notesController.text.trim().isNotEmpty
-              ? _notesController.text.trim()
-              : null,
+          notes:
+              _notesController.text.trim().isNotEmpty
+                  ? _notesController.text.trim()
+                  : null,
           isReminderEnabled: _isReminderEnabled,
           reminderDaysBefore: _reminderDays,
         );
@@ -163,11 +174,14 @@ class _AddEditMoneyRecordSheetState
           originalAmount: amount,
           transactionDate: _transactionDate,
           dueDate: _dueDate,
-          notes: _notesController.text.trim().isNotEmpty
-              ? _notesController.text.trim()
-              : null,
+          notes:
+              _notesController.text.trim().isNotEmpty
+                  ? _notesController.text.trim()
+                  : null,
           isReminderEnabled: _isReminderEnabled,
           reminderDaysBefore: _reminderDays,
+          accountId: _selectedAccountId,
+          recordInTransactions: _recordInTransactions,
         );
       }
 
@@ -175,9 +189,10 @@ class _AddEditMoneyRecordSheetState
         Navigator.of(context).pop(true);
         FfSnackbar.show(
           context,
-          message: isEditing
-              ? 'Record updated successfully.'
-              : 'Money record created.',
+          message:
+              isEditing
+                  ? 'Record updated successfully.'
+                  : 'Money record created.',
         );
       }
     } catch (e) {
@@ -191,6 +206,15 @@ class _AddEditMoneyRecordSheetState
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
+    final accounts =
+        ref
+            .watch(accountsWithBalancesProvider)
+            .valueOrNull
+            ?.where((account) => !account.isArchived)
+            .toList() ??
+        const <Account>[];
+    _selectedAccountId ??= accounts.firstOrNull?.id;
+    if (accounts.isEmpty) _recordInTransactions = false;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -210,14 +234,16 @@ class _AddEditMoneyRecordSheetState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               FfSheetHeader(
-                title: isEditing
-                    ? 'Edit Record'
-                    : (_type == MoneyRecordType.lent
-                        ? 'I Lent Money'
-                        : 'I Borrowed Money'),
-                subtitle: isEditing
-                    ? 'Update lending / borrowing details'
-                    : 'Track money owed to you or money you owe',
+                title:
+                    isEditing
+                        ? 'Edit Record'
+                        : (_type == MoneyRecordType.lent
+                            ? 'I Lent Money'
+                            : 'I Borrowed Money'),
+                subtitle:
+                    isEditing
+                        ? 'Update lending / borrowing details'
+                        : 'Track money owed to you or money you owe',
               ),
 
               Flexible(
@@ -248,6 +274,40 @@ class _AddEditMoneyRecordSheetState
                           ),
                         ],
                       ),
+
+                      if (!isEditing) ...[
+                        const SizedBox(height: StillwaterTokens.spaceMd),
+                        FfSwitchRow(
+                          title: 'Record in transactions and update balance',
+                          subtitle:
+                              _type == MoneyRecordType.lent
+                                  ? 'Creates an account outflow and receivable.'
+                                  : 'Creates an account inflow and liability.',
+                          value: _recordInTransactions,
+                          onChanged:
+                              (value) =>
+                                  setState(() => _recordInTransactions = value),
+                        ),
+                        if (_recordInTransactions)
+                          DropdownButtonFormField<String>(
+                            value: _selectedAccountId,
+                            decoration: const InputDecoration(
+                              labelText: 'Account',
+                            ),
+                            items:
+                                accounts
+                                    .map(
+                                      (account) => DropdownMenuItem(
+                                        value: account.id,
+                                        child: Text(account.name),
+                                      ),
+                                    )
+                                    .toList(),
+                            onChanged:
+                                (value) =>
+                                    setState(() => _selectedAccountId = value),
+                          ),
+                      ],
 
                       const SizedBox(height: StillwaterTokens.spaceLg),
 
@@ -311,9 +371,10 @@ class _AddEditMoneyRecordSheetState
                               CurrencyFormatter.currencySymbol,
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: _type == MoneyRecordType.lent
-                                    ? context.finColors.income
-                                    : context.finColors.expense,
+                                color:
+                                    _type == MoneyRecordType.lent
+                                        ? context.finColors.income
+                                        : context.finColors.expense,
                               ),
                             ),
                           ),
@@ -354,7 +415,9 @@ class _AddEditMoneyRecordSheetState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(height: StillwaterTokens.spaceXs),
+                                const SizedBox(
+                                  height: StillwaterTokens.spaceXs,
+                                ),
                                 InkWell(
                                   onTap: _pickTransactionDate,
                                   borderRadius: BorderRadius.circular(
@@ -366,8 +429,9 @@ class _AddEditMoneyRecordSheetState
                                       vertical: StillwaterTokens.spaceMd,
                                     ),
                                     decoration: BoxDecoration(
-                                      border:
-                                          Border.all(color: theme.dividerColor),
+                                      border: Border.all(
+                                        color: theme.dividerColor,
+                                      ),
                                       borderRadius: BorderRadius.circular(
                                         StillwaterTokens.radiusMd,
                                       ),
@@ -412,7 +476,9 @@ class _AddEditMoneyRecordSheetState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(height: StillwaterTokens.spaceXs),
+                                const SizedBox(
+                                  height: StillwaterTokens.spaceXs,
+                                ),
                                 InkWell(
                                   onTap: _pickDueDate,
                                   borderRadius: BorderRadius.circular(
@@ -424,8 +490,9 @@ class _AddEditMoneyRecordSheetState
                                       vertical: StillwaterTokens.spaceMd,
                                     ),
                                     decoration: BoxDecoration(
-                                      border:
-                                          Border.all(color: theme.dividerColor),
+                                      border: Border.all(
+                                        color: theme.dividerColor,
+                                      ),
                                       borderRadius: BorderRadius.circular(
                                         StillwaterTokens.radiusMd,
                                       ),
@@ -492,8 +559,7 @@ class _AddEditMoneyRecordSheetState
                       // ── 6. Reminder Settings ──────────────────────────────
                       FfSwitchRow(
                         title: 'Enable Reminder',
-                        subtitle:
-                            'Track upcoming repayment due date',
+                        subtitle: 'Track upcoming repayment due date',
                         value: _isReminderEnabled,
                         onChanged: (val) {
                           setState(() => _isReminderEnabled = val);

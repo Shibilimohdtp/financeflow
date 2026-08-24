@@ -37,27 +37,47 @@ class IsarInvestmentRepository implements InvestmentRepository {
       isArchived: entity.isArchived,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      ledgerBaselineInvestedAmount: entity.ledgerBaselineInvestedAmount,
+      ledgerBaselineCurrentValue: entity.ledgerBaselineCurrentValue,
+      ledgerBaselineRealizedProfitLoss: entity.ledgerBaselineRealizedProfitLoss,
     );
   }
 
   InvestmentEntity _toEntity(Investment domain) {
-    return InvestmentEntity()
-      ..uuid = domain.id
-      ..name = domain.name
-      ..assetType = domain.assetType.toDbString()
-      ..accountId = domain.accountId
-      ..quantityOrUnits = domain.quantityOrUnits
-      ..purchasePrice = domain.purchasePrice
-      ..purchaseDate = domain.purchaseDate
-      ..currentValue = domain.currentValue
-      ..investedAmount = domain.investedAmount
-      ..realizedProfitLoss = domain.realizedProfitLoss
-      ..unrealizedProfitLoss = domain.unrealizedProfitLoss
-      ..lastValuationDate = domain.lastValuationDate
-      ..notes = domain.notes
-      ..isArchived = domain.isArchived
-      ..createdAt = domain.createdAt
-      ..updatedAt = domain.updatedAt;
+    final entity =
+        InvestmentEntity()
+          ..uuid = domain.id
+          ..name = domain.name
+          ..assetType = domain.assetType.toDbString()
+          ..accountId = domain.accountId
+          ..quantityOrUnits = domain.quantityOrUnits
+          ..purchasePrice = domain.purchasePrice
+          ..purchaseDate = domain.purchaseDate
+          ..currentValue = domain.currentValue
+          ..investedAmount = domain.investedAmount
+          ..realizedProfitLoss = domain.realizedProfitLoss
+          ..unrealizedProfitLoss = domain.unrealizedProfitLoss
+          ..lastValuationDate = domain.lastValuationDate
+          ..notes = domain.notes
+          ..isArchived = domain.isArchived
+          ..createdAt = domain.createdAt
+          ..updatedAt = domain.updatedAt;
+    entity.ledgerBaselineInvestedAmount = domain.ledgerBaselineInvestedAmount;
+    entity.ledgerBaselineCurrentValue = domain.ledgerBaselineCurrentValue;
+    entity.ledgerBaselineRealizedProfitLoss =
+        domain.ledgerBaselineRealizedProfitLoss;
+    return entity;
+  }
+
+  Investment domainFromEntity(InvestmentEntity entity) => _toDomain(entity);
+
+  InvestmentEntity entityFromDomain(
+    Investment domain, [
+    InvestmentEntity? existing,
+  ]) {
+    final entity = _toEntity(domain);
+    if (existing != null) entity.id = existing.id;
+    return entity;
   }
 
   @override

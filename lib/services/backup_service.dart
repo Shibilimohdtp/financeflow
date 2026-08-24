@@ -145,7 +145,8 @@ class BackupService {
     final investments = await _investmentRepo.getAllInvestments();
     final alerts = await _alertRepo.getAllAlerts();
     final moneyRecords = await _moneyRecordRepo?.getAllRecords() ?? const [];
-    final moneyRepayments = await _moneyRecordRepo?.getAllRepayments() ?? const [];
+    final moneyRepayments =
+        await _moneyRecordRepo?.getAllRepayments() ?? const [];
 
     final metadata = BackupMetadata(
       createdAt: DateTime.now(),

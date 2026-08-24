@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../../core/formatting/currency_formatter.dart';
 import '../../models/transaction.dart';
 import '../../services/ingestion/transaction_merge_service.dart';
 import '../../shared/widgets/ff_amount_text.dart';
@@ -62,7 +63,11 @@ class TransactionDetailScreen extends ConsumerWidget {
                 context,
                 title: 'Delete Transaction?',
                 message:
-                    'Are you sure you want to delete this transaction for "${transaction.merchant}"? This action can be undone briefly.',
+                    transaction.linkedLoanId != null
+                        ? 'Delete this payment and reopen its linked EMI installment? The loan balance and next due date will be recalculated. This can be undone briefly.'
+                        : transaction.linkedMoneyRecordId != null
+                        ? 'Delete this linked ledger operation? The personal debt balance and settlement status will be recalculated. This can be undone briefly.'
+                        : 'Are you sure you want to delete this transaction for "${transaction.merchant}"? This action can be undone briefly.',
                 confirmLabel: 'Delete',
                 isDestructive: true,
               );
@@ -148,7 +153,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                         ),
                       ),
                       child: Text(
-                        transaction.type.displayName,
+                        transaction.effectivePurpose.displayName,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.secondary,
                           fontWeight: FontWeight.w600,
@@ -271,6 +276,30 @@ class TransactionDetailScreen extends ConsumerWidget {
                       label: 'Destination Account',
                       value:
                           '${toAccount.name} ${toAccount.maskedIdentifier ?? ''}',
+                    ),
+                  ],
+                  if (transaction.externalCounterpartyName != null &&
+                      transaction.externalCounterpartyName!.isNotEmpty) ...[
+                    const Divider(height: 1),
+                    _buildDetailRow(
+                      context,
+                      label: 'Counterparty',
+                      value: transaction.externalCounterpartyName!,
+                    ),
+                  ],
+                  if (transaction.linkedLoanId != null) ...[
+                    const Divider(height: 1),
+                    _buildDetailRow(
+                      context,
+                      label: 'Loan link',
+                      value: transaction.linkedLoanId!,
+                    ),
+                    const Divider(height: 1),
+                    _buildDetailRow(
+                      context,
+                      label: 'Payment split',
+                      value:
+                          'Principal ${CurrencyFormatter.formatINR(transaction.principalAmount)} · Interest ${CurrencyFormatter.formatINR(transaction.interestAmount)} · Fees ${CurrencyFormatter.formatINR(transaction.feeAmount)}',
                     ),
                   ],
                   const Divider(height: 1),

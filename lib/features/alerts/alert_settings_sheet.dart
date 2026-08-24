@@ -67,7 +67,9 @@ class AlertSettingsSheet extends ConsumerWidget {
 
                   // ── 2. Category Triggers ─────────────────────────────────────
                   if (settings.isAlertsEnabled) ...[
-                    const FfSectionHeader(title: 'Active Notification Triggers'),
+                    const FfSectionHeader(
+                      title: 'Active Notification Triggers',
+                    ),
                     FfGroupedContainer(
                       children: [
                         FfSwitchRow(
@@ -90,7 +92,9 @@ class AlertSettingsSheet extends ConsumerWidget {
                           value: settings.isSubscriptionAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
-                              settings.copyWith(isSubscriptionAlertsEnabled: val),
+                              settings.copyWith(
+                                isSubscriptionAlertsEnabled: val,
+                              ),
                             );
                           },
                         ),
@@ -114,7 +118,9 @@ class AlertSettingsSheet extends ConsumerWidget {
                           value: settings.isNeedsReviewAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
-                              settings.copyWith(isNeedsReviewAlertsEnabled: val),
+                              settings.copyWith(
+                                isNeedsReviewAlertsEnabled: val,
+                              ),
                             );
                           },
                         ),

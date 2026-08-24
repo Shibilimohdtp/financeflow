@@ -111,7 +111,10 @@ class MoneyLendingCalculator {
       final recordRepayments = repaymentsByRecord[record.id] ?? const [];
       final remaining = record.calculateRemainingAmount(recordRepayments);
       final isSettled = record.isFullySettled(recordRepayments);
-      final isOverdue = record.isOverdue(asOfDate: asOfDate, repayments: recordRepayments);
+      final isOverdue = record.isOverdue(
+        asOfDate: asOfDate,
+        repayments: recordRepayments,
+      );
       final isDueSoon = record.isDueSoon(
         asOfDate: asOfDate,
         thresholdDays: dueSoonDays,
@@ -233,39 +236,78 @@ class MoneyLendingCalculator {
 
     switch (filter) {
       case MoneyRecordFilter.all:
-        return sortRecords(records, repayments, asOfDate: asOfDate, dueSoonDays: dueSoonDays);
+        return sortRecords(
+          records,
+          repayments,
+          asOfDate: asOfDate,
+          dueSoonDays: dueSoonDays,
+        );
 
       case MoneyRecordFilter.owedToMe:
-        final filtered = records.where((r) => r.type == MoneyRecordType.lent).toList();
-        return sortRecords(filtered, repayments, asOfDate: asOfDate, dueSoonDays: dueSoonDays);
+        final filtered =
+            records.where((r) => r.type == MoneyRecordType.lent).toList();
+        return sortRecords(
+          filtered,
+          repayments,
+          asOfDate: asOfDate,
+          dueSoonDays: dueSoonDays,
+        );
 
       case MoneyRecordFilter.iOwe:
-        final filtered = records.where((r) => r.type == MoneyRecordType.borrowed).toList();
-        return sortRecords(filtered, repayments, asOfDate: asOfDate, dueSoonDays: dueSoonDays);
+        final filtered =
+            records.where((r) => r.type == MoneyRecordType.borrowed).toList();
+        return sortRecords(
+          filtered,
+          repayments,
+          asOfDate: asOfDate,
+          dueSoonDays: dueSoonDays,
+        );
 
       case MoneyRecordFilter.overdue:
-        final filtered = records.where((r) {
-          final reps = repaymentsByRecord[r.id] ?? const [];
-          return !r.isFullySettled(reps) &&
-              r.isOverdue(asOfDate: asOfDate, repayments: reps);
-        }).toList();
-        return sortRecords(filtered, repayments, asOfDate: asOfDate, dueSoonDays: dueSoonDays);
+        final filtered =
+            records.where((r) {
+              final reps = repaymentsByRecord[r.id] ?? const [];
+              return !r.isFullySettled(reps) &&
+                  r.isOverdue(asOfDate: asOfDate, repayments: reps);
+            }).toList();
+        return sortRecords(
+          filtered,
+          repayments,
+          asOfDate: asOfDate,
+          dueSoonDays: dueSoonDays,
+        );
 
       case MoneyRecordFilter.dueSoon:
-        final filtered = records.where((r) {
-          final reps = repaymentsByRecord[r.id] ?? const [];
-          return !r.isFullySettled(reps) &&
-              !r.isOverdue(asOfDate: asOfDate, repayments: reps) &&
-              r.isDueSoon(asOfDate: asOfDate, thresholdDays: dueSoonDays, repayments: reps);
-        }).toList();
-        return sortRecords(filtered, repayments, asOfDate: asOfDate, dueSoonDays: dueSoonDays);
+        final filtered =
+            records.where((r) {
+              final reps = repaymentsByRecord[r.id] ?? const [];
+              return !r.isFullySettled(reps) &&
+                  !r.isOverdue(asOfDate: asOfDate, repayments: reps) &&
+                  r.isDueSoon(
+                    asOfDate: asOfDate,
+                    thresholdDays: dueSoonDays,
+                    repayments: reps,
+                  );
+            }).toList();
+        return sortRecords(
+          filtered,
+          repayments,
+          asOfDate: asOfDate,
+          dueSoonDays: dueSoonDays,
+        );
 
       case MoneyRecordFilter.settled:
-        final filtered = records.where((r) {
-          final reps = repaymentsByRecord[r.id] ?? const [];
-          return r.isFullySettled(reps);
-        }).toList();
-        return sortRecords(filtered, repayments, asOfDate: asOfDate, dueSoonDays: dueSoonDays);
+        final filtered =
+            records.where((r) {
+              final reps = repaymentsByRecord[r.id] ?? const [];
+              return r.isFullySettled(reps);
+            }).toList();
+        return sortRecords(
+          filtered,
+          repayments,
+          asOfDate: asOfDate,
+          dueSoonDays: dueSoonDays,
+        );
     }
   }
 }

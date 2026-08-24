@@ -126,6 +126,10 @@ void main() {
           id: 't3',
           amount: 8000.0,
           type: TransactionType.loanEmi,
+          purpose: TransactionPurpose.loanRepayment,
+          principalComponent: 6500.0,
+          interestComponent: 1500.0,
+          feeComponent: 0.0,
           categoryId: 'cat_emi',
           categoryName: 'EMI',
           categoryIcon: 'payments',
@@ -157,8 +161,10 @@ void main() {
       final cashFlow = BalanceCalculator.calculateMonthlyCashFlow(transactions);
 
       expect(cashFlow.totalIncome, 50000.0);
-      expect(cashFlow.totalExpense, 20000.0); // 12000 + 8000
-      expect(cashFlow.netSavings, 30000.0);
+      expect(cashFlow.totalExpense, 13500.0); // food + EMI interest
+      expect(cashFlow.cashOutflow, 20000.0); // food + complete EMI
+      expect(cashFlow.debtPrincipalPaid, 6500.0);
+      expect(cashFlow.netSavings, 36500.0);
       expect(cashFlow.isPositiveSavings, isTrue);
     });
 

@@ -187,6 +187,8 @@ class IsarService {
       await isar.loanEntitys.clear();
       await isar.emiPaymentEntitys.clear();
       await isar.investmentEntitys.clear();
+      await isar.moneyRecordEntitys.clear();
+      await isar.moneyRepaymentEntitys.clear();
       await isar.alertEntitys.clear();
       await isar.aiActivityLogEntitys.clear();
     });

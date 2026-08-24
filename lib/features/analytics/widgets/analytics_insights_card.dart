@@ -39,9 +39,10 @@ class AnalyticsInsightsCard extends StatelessWidget {
         const SizedBox(height: StillwaterTokens.spaceXs),
         FfGroupedContainer(
           showDividers: true,
-          children: insights
-              .map((ins) => _InsightRow(insight: ins, theme: theme))
-              .toList(),
+          children:
+              insights
+                  .map((ins) => _InsightRow(insight: ins, theme: theme))
+                  .toList(),
         ),
       ],
     );
@@ -79,23 +80,28 @@ class AnalyticsInsightsCard extends StatelessWidget {
       IconData icon;
 
       if (rate >= 0.3) {
-        narrative = 'Excellent savings rate of ${(rate * 100).toStringAsFixed(0)}%! You are building wealth effectively.';
+        narrative =
+            'Excellent savings rate of ${(rate * 100).toStringAsFixed(0)}%! You are building wealth effectively.';
         color = finColors.savings;
         icon = Icons.star_outline_rounded;
       } else if (rate >= 0.2) {
-        narrative = 'Good savings rate of ${(rate * 100).toStringAsFixed(0)}%. Financial experts recommend 20%+.';
+        narrative =
+            'Good savings rate of ${(rate * 100).toStringAsFixed(0)}%. Financial experts recommend 20%+.';
         color = finColors.savings;
         icon = Icons.savings_outlined;
       } else if (rate >= 0.05) {
-        narrative = 'Savings rate is ${(rate * 100).toStringAsFixed(0)}%. Aim for 20%+ to build a stronger financial cushion.';
+        narrative =
+            'Savings rate is ${(rate * 100).toStringAsFixed(0)}%. Aim for 20%+ to build a stronger financial cushion.';
         color = context.theme.colorScheme.primary;
         icon = Icons.savings_outlined;
       } else if (rate > 0) {
-        narrative = 'Savings rate is only ${(rate * 100).toStringAsFixed(0)}%. Review expenses to save more this period.';
+        narrative =
+            'Savings rate is only ${(rate * 100).toStringAsFixed(0)}%. Review expenses to save more this period.';
         color = finColors.expense;
         icon = Icons.warning_amber_rounded;
       } else {
-        narrative = 'Spending exceeded income this period. Review your budget to get back on track.';
+        narrative =
+            'Spending exceeded income this period. Review your budget to get back on track.';
         color = finColors.expense;
         icon = Icons.trending_down_rounded;
       }
@@ -132,16 +138,16 @@ class AnalyticsInsightsCard extends StatelessWidget {
       final isUp = expPct > 0;
       insights.add(
         _InsightData(
-          icon: isUp
-              ? Icons.trending_up_rounded
-              : Icons.trending_down_rounded,
+          icon: isUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
           iconColor: isUp ? finColors.expense : finColors.savings,
-          title: isUp
-              ? 'Spending is up ${expPct.abs().toStringAsFixed(0)}% vs last period'
-              : 'Spending is down ${expPct.abs().toStringAsFixed(0)}% vs last period',
-          subtitle: isUp
-              ? 'Check your top categories for unexpected increases.'
-              : 'Great work — keep the momentum going!',
+          title:
+              isUp
+                  ? 'Spending is up ${expPct.abs().toStringAsFixed(0)}% vs last period'
+                  : 'Spending is down ${expPct.abs().toStringAsFixed(0)}% vs last period',
+          subtitle:
+              isUp
+                  ? 'Check your top categories for unexpected increases.'
+                  : 'Great work — keep the momentum going!',
         ),
       );
     }

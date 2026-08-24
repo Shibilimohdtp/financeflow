@@ -26,7 +26,9 @@ abstract class MoneyRecordRepository {
     String recordId, {
     String userId = 'local_user',
   });
-  Stream<List<MoneyRepayment>> watchAllRepayments({String userId = 'local_user'});
+  Stream<List<MoneyRepayment>> watchAllRepayments({
+    String userId = 'local_user',
+  });
   Future<void> addRepayment(MoneyRepayment repayment);
   Future<void> deleteRepayment(String id, {String userId = 'local_user'});
 }
@@ -52,8 +54,17 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       settledAt: entity.settledAt,
+      originTransactionId: entity.originTransactionId,
     );
   }
+
+  MoneyRecord recordFromEntity(MoneyRecordEntity entity) =>
+      _toRecordDomain(entity);
+
+  MoneyRecordEntity recordEntityFromDomain(
+    MoneyRecord domain, [
+    MoneyRecordEntity? existing,
+  ]) => _toRecordEntity(domain, existing);
 
   MoneyRecordEntity _toRecordEntity(
     MoneyRecord domain, [
@@ -74,6 +85,7 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
     entity.updatedAt = domain.updatedAt;
     entity.settledAt = domain.settledAt;
     entity.status = domain.settledAt != null ? 'settled' : 'active';
+    entity.originTransactionId = domain.originTransactionId;
     return entity;
   }
 
@@ -86,8 +98,17 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
       repaymentDate: entity.repaymentDate,
       notes: entity.notes,
       createdAt: entity.createdAt,
+      transactionId: entity.transactionId,
     );
   }
+
+  MoneyRepayment repaymentFromEntity(MoneyRepaymentEntity entity) =>
+      _toRepaymentDomain(entity);
+
+  MoneyRepaymentEntity repaymentEntityFromDomain(
+    MoneyRepayment domain, [
+    MoneyRepaymentEntity? existing,
+  ]) => _toRepaymentEntity(domain, existing);
 
   MoneyRepaymentEntity _toRepaymentEntity(
     MoneyRepayment domain, [
@@ -101,16 +122,20 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
     entity.repaymentDate = domain.repaymentDate;
     entity.notes = domain.notes;
     entity.createdAt = domain.createdAt;
+    entity.transactionId = domain.transactionId;
     return entity;
   }
 
   @override
-  Future<List<MoneyRecord>> getAllRecords({String userId = 'local_user'}) async {
-    final entities = await isar.moneyRecordEntitys
-        .filter()
-        .userIdEqualTo(userId)
-        .sortByDueDateDesc()
-        .findAll();
+  Future<List<MoneyRecord>> getAllRecords({
+    String userId = 'local_user',
+  }) async {
+    final entities =
+        await isar.moneyRecordEntitys
+            .filter()
+            .userIdEqualTo(userId)
+            .sortByDueDateDesc()
+            .findAll();
     return entities.map(_toRecordDomain).toList();
   }
 
@@ -129,12 +154,13 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
     String id, {
     String userId = 'local_user',
   }) async {
-    final entity = await isar.moneyRecordEntitys
-        .filter()
-        .uuidEqualTo(id)
-        .and()
-        .userIdEqualTo(userId)
-        .findFirst();
+    final entity =
+        await isar.moneyRecordEntitys
+            .filter()
+            .uuidEqualTo(id)
+            .and()
+            .userIdEqualTo(userId)
+            .findFirst();
     if (entity == null) return null;
     return _toRecordDomain(entity);
   }
@@ -143,12 +169,13 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
   Future<void> saveRecord(MoneyRecord record) async {
     record.validate();
     await isar.writeTxn(() async {
-      final existing = await isar.moneyRecordEntitys
-          .filter()
-          .uuidEqualTo(record.id)
-          .and()
-          .userIdEqualTo(record.userId)
-          .findFirst();
+      final existing =
+          await isar.moneyRecordEntitys
+              .filter()
+              .uuidEqualTo(record.id)
+              .and()
+              .userIdEqualTo(record.userId)
+              .findFirst();
       final entity = _toRecordEntity(record, existing);
       await isar.moneyRecordEntitys.put(entity);
     });
@@ -179,11 +206,12 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
   Future<List<MoneyRepayment>> getAllRepayments({
     String userId = 'local_user',
   }) async {
-    final entities = await isar.moneyRepaymentEntitys
-        .filter()
-        .userIdEqualTo(userId)
-        .sortByRepaymentDateDesc()
-        .findAll();
+    final entities =
+        await isar.moneyRepaymentEntitys
+            .filter()
+            .userIdEqualTo(userId)
+            .sortByRepaymentDateDesc()
+            .findAll();
     return entities.map(_toRepaymentDomain).toList();
   }
 
@@ -192,13 +220,14 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
     String recordId, {
     String userId = 'local_user',
   }) async {
-    final entities = await isar.moneyRepaymentEntitys
-        .filter()
-        .moneyRecordIdEqualTo(recordId)
-        .and()
-        .userIdEqualTo(userId)
-        .sortByRepaymentDateDesc()
-        .findAll();
+    final entities =
+        await isar.moneyRepaymentEntitys
+            .filter()
+            .moneyRecordIdEqualTo(recordId)
+            .and()
+            .userIdEqualTo(userId)
+            .sortByRepaymentDateDesc()
+            .findAll();
     return entities.map(_toRepaymentDomain).toList();
   }
 
@@ -233,19 +262,23 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
   Future<void> addRepayment(MoneyRepayment repayment) async {
     repayment.validate();
     await isar.writeTxn(() async {
-      final existing = await isar.moneyRepaymentEntitys
-          .filter()
-          .uuidEqualTo(repayment.id)
-          .and()
-          .userIdEqualTo(repayment.userId)
-          .findFirst();
+      final existing =
+          await isar.moneyRepaymentEntitys
+              .filter()
+              .uuidEqualTo(repayment.id)
+              .and()
+              .userIdEqualTo(repayment.userId)
+              .findFirst();
       final entity = _toRepaymentEntity(repayment, existing);
       await isar.moneyRepaymentEntitys.put(entity);
     });
   }
 
   @override
-  Future<void> deleteRepayment(String id, {String userId = 'local_user'}) async {
+  Future<void> deleteRepayment(
+    String id, {
+    String userId = 'local_user',
+  }) async {
     await isar.writeTxn(() async {
       await isar.moneyRepaymentEntitys
           .filter()

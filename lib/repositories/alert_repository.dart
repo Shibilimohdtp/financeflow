@@ -13,6 +13,8 @@ abstract class AlertRepository {
   Future<void> markAllAsRead();
   Future<void> dismissAlert(String id);
   Future<void> clearAllAlerts();
+  /// Removes duplicate records left by older alert scans, keeping the newest.
+  Future<void> deduplicateAlerts();
   Future<bool> alertExistsForEntity({
     required AlertType type,
     required String relatedEntityId,
@@ -143,6 +145,36 @@ class IsarAlertRepository implements AlertRepository {
   Future<void> clearAllAlerts() async {
     await isar.writeTxn(() async {
       await isar.alertEntitys.clear();
+    });
+  }
+
+  @override
+  Future<void> deduplicateAlerts() async {
+    await isar.writeTxn(() async {
+      final alerts = await isar.alertEntitys.where().findAll();
+      final newestByKey = <String, AlertEntity>{};
+      final duplicates = <Id>[];
+
+      for (final alert in alerts) {
+        final day =
+            '${alert.createdAt.year}-${alert.createdAt.month}-${alert.createdAt.day}';
+        // New alerts have a stable entity identity. The title/message fallback
+        // also repairs duplicate budget alerts created before that identity was
+        // persisted.
+        final identity = alert.relatedEntityId ?? '${alert.title}\u0000${alert.message}';
+        final key = '${alert.type}\u0000$identity\u0000$day';
+        final current = newestByKey[key];
+        if (current == null || alert.createdAt.isAfter(current.createdAt)) {
+          if (current != null) duplicates.add(current.id);
+          newestByKey[key] = alert;
+        } else {
+          duplicates.add(alert.id);
+        }
+      }
+
+      if (duplicates.isNotEmpty) {
+        await isar.alertEntitys.deleteAll(duplicates);
+      }
     });
   }
 

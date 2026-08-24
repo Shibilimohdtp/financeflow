@@ -38,10 +38,11 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AddRepaymentSheet(
-        record: liveRecord,
-        remainingBalance: remaining,
-      ),
+      builder:
+          (_) => AddRepaymentSheet(
+            record: liveRecord,
+            remainingBalance: remaining,
+          ),
     );
   }
 
@@ -115,8 +116,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       orElse: () => record,
     );
 
-    final repaymentsAsync =
-        ref.watch(moneyRecordRepaymentsProvider(liveRecord.id));
+    final repaymentsAsync = ref.watch(
+      moneyRecordRepaymentsProvider(liveRecord.id),
+    );
     final repayments = repaymentsAsync.value ?? [];
 
     final totalRepaid = liveRecord.calculateTotalRepaid(repayments);
@@ -125,12 +127,14 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
     final isOverdue = liveRecord.isOverdue(repayments: repayments);
     final isDueSoon = liveRecord.isDueSoon(repayments: repayments);
     final status = liveRecord.calculateStatus(repayments);
-    final progress = liveRecord.originalAmount > 0
-        ? (totalRepaid / liveRecord.originalAmount).clamp(0.0, 1.0)
-        : 0.0;
+    final progress =
+        liveRecord.originalAmount > 0
+            ? (totalRepaid / liveRecord.originalAmount).clamp(0.0, 1.0)
+            : 0.0;
 
     final isLent = liveRecord.type == MoneyRecordType.lent;
-    final typeColor = isLent ? context.finColors.income : context.finColors.expense;
+    final typeColor =
+        isLent ? context.finColors.income : context.finColors.expense;
 
     return Scaffold(
       appBar: AppBar(
@@ -268,8 +272,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       ),
                       decoration: BoxDecoration(
                         color: typeColor.withValues(alpha: 0.12),
-                        borderRadius:
-                            BorderRadius.circular(StillwaterTokens.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusSm,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -298,8 +303,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       ),
                       decoration: BoxDecoration(
                         color: status.color.withValues(alpha: 0.12),
-                        borderRadius:
-                            BorderRadius.circular(StillwaterTokens.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusSm,
+                        ),
                       ),
                       child: Text(
                         status.displayName,
@@ -328,9 +334,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   CurrencyFormatter.format(remaining),
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: isSettled
-                        ? context.finColors.income
-                        : typeColor,
+                    color: isSettled ? context.finColors.income : typeColor,
                     fontFeatures: StillwaterTypography.tabularFeatures,
                   ),
                 ),
@@ -339,17 +343,15 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
 
                 // Progress Bar
                 ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(StillwaterTokens.radiusFull),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusFull,
+                  ),
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
-                    backgroundColor:
-                        theme.dividerColor.withValues(alpha: 0.3),
+                    backgroundColor: theme.dividerColor.withValues(alpha: 0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      isSettled
-                          ? context.finColors.income
-                          : typeColor,
+                      isSettled ? context.finColors.income : typeColor,
                     ),
                   ),
                 ),
@@ -415,11 +417,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     label: 'Record Repayment',
                     leadingIcon: const Icon(Icons.payments_outlined, size: 18),
                     variant: FfButtonVariant.primary,
-                    onPressed: () => _openRepaymentSheet(
-                      context,
-                      liveRecord,
-                      remaining,
-                    ),
+                    onPressed:
+                        () =>
+                            _openRepaymentSheet(context, liveRecord, remaining),
                   ),
                 ),
                 const SizedBox(width: StillwaterTokens.spaceSm),
@@ -427,7 +427,10 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   flex: 2,
                   child: FfButton(
                     label: 'Settle',
-                    leadingIcon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                    leadingIcon: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 18,
+                    ),
                     variant: FfButtonVariant.secondary,
                     onPressed: () async {
                       final controller = ref.read(
@@ -494,9 +497,10 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 _DetailTile(
                   icon: Icons.notifications_none_rounded,
                   label: 'Reminder',
-                  value: liveRecord.isReminderEnabled
-                      ? 'Enabled (${liveRecord.reminderDaysBefore} ${liveRecord.reminderDaysBefore == 1 ? 'day' : 'days'} before)'
-                      : 'Disabled',
+                  value:
+                      liveRecord.isReminderEnabled
+                          ? 'Enabled (${liveRecord.reminderDaysBefore} ${liveRecord.reminderDaysBefore == 1 ? 'day' : 'days'} before)'
+                          : 'Disabled',
                 ),
                 if (liveRecord.notes != null &&
                     liveRecord.notes!.isNotEmpty) ...[
@@ -516,17 +520,19 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
           // ── 5. Repayment History Section ──────────────────────────────────
           _SectionHeader(
             title: 'Repayment History (${repayments.length})',
-            trailing: repayments.isNotEmpty && !isSettled
-                ? TextButton.icon(
-                    onPressed: () => _openRepaymentSheet(
-                      context,
-                      liveRecord,
-                      remaining,
-                    ),
-                    icon: const Icon(Icons.add_rounded, size: 16),
-                    label: const Text('Add'),
-                  )
-                : null,
+            trailing:
+                repayments.isNotEmpty && !isSettled
+                    ? TextButton.icon(
+                      onPressed:
+                          () => _openRepaymentSheet(
+                            context,
+                            liveRecord,
+                            remaining,
+                          ),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Add'),
+                    )
+                    : null,
           ),
           const SizedBox(height: StillwaterTokens.spaceXs),
 
@@ -556,7 +562,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     Text(
                       'Tap "Record Repayment" above when a payment is made.',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary.withValues(alpha: 0.8),
+                        color: theme.colorScheme.secondary.withValues(
+                          alpha: 0.8,
+                        ),
                       ),
                     ),
                   ],
@@ -584,8 +592,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       height: 38,
                       decoration: BoxDecoration(
                         color: context.finColors.income.withValues(alpha: 0.12),
-                        borderRadius:
-                            BorderRadius.circular(StillwaterTokens.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusSm,
+                        ),
                       ),
                       child: Icon(
                         Icons.check_rounded,
@@ -609,7 +618,8 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline_rounded, size: 18),
                       tooltip: 'Delete repayment',
-                      onPressed: () => _confirmDeleteRepayment(context, ref, item),
+                      onPressed:
+                          () => _confirmDeleteRepayment(context, ref, item),
                     ),
                   );
                 },

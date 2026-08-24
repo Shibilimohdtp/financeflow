@@ -80,7 +80,7 @@ class SubscriptionService {
     // Group expense transactions by normalized merchant
     final Map<String, List<Transaction>> byMerchant = {};
     for (final tx in transactions) {
-      if (tx.type != TransactionType.expense || tx.amount <= 0) continue;
+      if (tx.consumptionExpenseAmount <= 0) continue;
       final normalized =
           MerchantNormalizationService.normalize(tx.merchant).toLowerCase();
       if (normalized.isEmpty) continue;

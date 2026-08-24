@@ -298,8 +298,8 @@ final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>(
             double mInc = 0.0;
             for (final tx in transactions) {
               if (tx.date.year == range.start.year && tx.date.month == m) {
-                if (tx.type == TransactionType.expense) mExp += tx.amount;
-                if (tx.type == TransactionType.income) mInc += tx.amount;
+                mExp += tx.consumptionExpenseAmount;
+                mInc += tx.earnedIncomeAmount;
               }
             }
             items.add(
@@ -321,8 +321,8 @@ final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>(
               if (tx.date.year == dayDate.year &&
                   tx.date.month == dayDate.month &&
                   tx.date.day == dayDate.day) {
-                if (tx.type == TransactionType.expense) dExp += tx.amount;
-                if (tx.type == TransactionType.income) dInc += tx.amount;
+                dExp += tx.consumptionExpenseAmount;
+                dInc += tx.earnedIncomeAmount;
               }
             }
             items.add(
@@ -345,8 +345,8 @@ final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>(
                 if (tx.date.year == dayDate.year &&
                     tx.date.month == dayDate.month &&
                     tx.date.day == dayDate.day) {
-                  if (tx.type == TransactionType.expense) dExp += tx.amount;
-                  if (tx.type == TransactionType.income) dInc += tx.amount;
+                  dExp += tx.consumptionExpenseAmount;
+                  dInc += tx.earnedIncomeAmount;
                 }
               }
               items.add(
@@ -371,8 +371,8 @@ final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>(
               for (final tx in transactions) {
                 if (!tx.date.isBefore(startD) &&
                     tx.date.isBefore(endD.add(const Duration(days: 1)))) {
-                  if (tx.type == TransactionType.expense) chunkExp += tx.amount;
-                  if (tx.type == TransactionType.income) chunkInc += tx.amount;
+                  chunkExp += tx.consumptionExpenseAmount;
+                  chunkInc += tx.earnedIncomeAmount;
                 }
               }
               items.add(
@@ -415,10 +415,10 @@ final topSpendingCategoriesProvider = Provider<
   return txAsync.when(
     data: (transactions) {
       final expenses =
-          transactions.where((t) => t.type == TransactionType.expense).toList();
+          transactions.where((t) => t.consumptionExpenseAmount > 0).toList();
       final totalExpense = expenses.fold<double>(
         0.0,
-        (sum, t) => sum + t.amount,
+        (sum, t) => sum + t.consumptionExpenseAmount,
       );
 
       final Map<
@@ -440,7 +440,7 @@ final topSpendingCategoriesProvider = Provider<
           name: tx.categoryName,
           icon: tx.categoryIcon,
           color: tx.categoryColor,
-          amount: current.amount + tx.amount,
+          amount: current.amount + tx.consumptionExpenseAmount,
           count: current.count + 1,
         );
       }

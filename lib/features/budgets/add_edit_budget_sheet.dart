@@ -165,7 +165,9 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final categories =
         (categoriesAsync.value ?? [])
-            .where((c) => !c.isArchived && c.typeCompatibility.contains('expense'))
+            .where(
+              (c) => !c.isArchived && c.typeCompatibility.contains('expense'),
+            )
             .toList()
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
@@ -338,7 +340,9 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                                       decoration: BoxDecoration(
                                         color:
                                             isSelected
-                                                ? theme.colorScheme.primaryContainer
+                                                ? theme
+                                                    .colorScheme
+                                                    .primaryContainer
                                                 : theme.cardColor,
                                         borderRadius: BorderRadius.circular(
                                           StillwaterTokens.radiusMd,

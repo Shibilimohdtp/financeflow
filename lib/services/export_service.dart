@@ -258,13 +258,12 @@ class ExportService {
     final Map<String, double> categorySpending = {};
 
     for (final tx in transactions) {
-      if (tx.type == TransactionType.income) {
-        income += tx.amount;
-      } else if (tx.type == TransactionType.expense ||
-          tx.type == TransactionType.loanEmi) {
-        expense += tx.amount;
+      income += tx.earnedIncomeAmount;
+      if (tx.consumptionExpenseAmount > 0) {
+        expense += tx.consumptionExpenseAmount;
         categorySpending[tx.categoryName] =
-            (categorySpending[tx.categoryName] ?? 0.0) + tx.amount;
+            (categorySpending[tx.categoryName] ?? 0.0) +
+            tx.consumptionExpenseAmount;
       }
     }
 

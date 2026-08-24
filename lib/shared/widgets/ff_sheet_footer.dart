@@ -49,7 +49,8 @@ class FfSheetFooter extends StatelessWidget {
             child: FfButton(
               label: secondaryLabel!,
               variant: FfButtonVariant.outlined,
-              onPressed: onSecondaryPressed ?? () => Navigator.of(context).pop(),
+              onPressed:
+                  onSecondaryPressed ?? () => Navigator.of(context).pop(),
             ),
           ),
           const SizedBox(width: StillwaterTokens.spaceMd),

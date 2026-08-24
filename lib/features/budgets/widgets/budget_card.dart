@@ -56,7 +56,8 @@ class BudgetCard extends StatelessWidget {
     }
 
     final percentage = summary.percentageUsed.clamp(0.0, 1.0);
-    final percentageLabel = '${(summary.percentageUsed * 100).toStringAsFixed(0)}%';
+    final percentageLabel =
+        '${(summary.percentageUsed * 100).toStringAsFixed(0)}%';
 
     return Semantics(
       button: true,
@@ -192,7 +193,9 @@ class BudgetCard extends StatelessWidget {
                                     size: 18,
                                     color: theme.colorScheme.error,
                                   ),
-                                  const SizedBox(width: StillwaterTokens.spaceSm),
+                                  const SizedBox(
+                                    width: StillwaterTokens.spaceSm,
+                                  ),
                                   Text(
                                     'Delete',
                                     style: TextStyle(

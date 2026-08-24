@@ -13,7 +13,7 @@
 class DatabaseMigrations {
   DatabaseMigrations._();
 
-  static const int currentSchemaVersion = 1;
+  static const int currentSchemaVersion = 2;
 
   static Future<void> performMigrationsIfNeeded() async {
     // Migration logic for future versions will be placed here

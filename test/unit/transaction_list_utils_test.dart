@@ -120,8 +120,8 @@ void main() {
   test('summaries exclude transfers and groups dates for scanning', () {
     final summary = calculateTransactionListSummary(items);
     expect(summary.income, 2500);
-    expect(summary.expenses, 984.50);
-    expect(summary.net, 1515.50);
+    expect(summary.expenses, 84.50);
+    expect(summary.net, 2415.50);
     expect(
       groupTransactionsForList(items, now: now).map((group) => group.label),
       ['Today', 'This week', 'Earlier this month', 'Older dates'],
@@ -194,7 +194,9 @@ void main() {
       }
       final summary = calculateTransactionListSummary(allTypes);
       expect(summary.income, 100);
-      expect(summary.expenses, 130);
+      // Consumption excludes investment principal and unallocated loan
+      // principal. Legacy cash remains an outflow pending user review.
+      expect(summary.expenses, 60);
     },
   );
 

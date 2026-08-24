@@ -8,6 +8,8 @@ void main() {
     required ThemeData theme,
     required int selectedIndex,
     required ValueChanged<int> onDestinationSelected,
+    int pendingReviewCount = 0,
+    int unreadAlertsCount = 0,
     MediaQueryData mediaQueryData = const MediaQueryData(),
   }) {
     return MaterialApp(
@@ -18,6 +20,8 @@ void main() {
           body: const SizedBox.expand(),
           bottomNavigationBar: StillwaterBottomNavigationBar(
             selectedIndex: selectedIndex,
+            pendingReviewCount: pendingReviewCount,
+            unreadAlertsCount: unreadAlertsCount,
             onDestinationSelected: onDestinationSelected,
           ),
         ),
@@ -64,6 +68,23 @@ void main() {
         expect(find.byIcon(selectedIcons[index]), findsOneWidget);
       }
     }
+  });
+
+  testWidgets('renders badges for pending items and unread alerts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildSubject(
+        theme: StillwaterTheme.daylight,
+        selectedIndex: 0,
+        pendingReviewCount: 3,
+        unreadAlertsCount: 2,
+        onDestinationSelected: (_) {},
+      ),
+    );
+
+    expect(find.text('3'), findsOneWidget);
+    expect(find.byType(Badge), findsWidgets);
   });
 
   testWidgets(

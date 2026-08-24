@@ -14,11 +14,17 @@ final analyticsCustomDateRangeProvider =
       return null;
     });
 
-final selectedAnalyticsAccountIdProvider = StateProvider<String?>((ref) => null);
+final selectedAnalyticsAccountIdProvider = StateProvider<String?>(
+  (ref) => null,
+);
 
-final selectedAnalyticsTypeProvider = StateProvider<TransactionType?>((ref) => null);
+final selectedAnalyticsTypeProvider = StateProvider<TransactionType?>(
+  (ref) => null,
+);
 
-final analyticsRawTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+final analyticsRawTransactionsProvider = StreamProvider<List<Transaction>>((
+  ref,
+) {
   final repo = ref.watch(transactionRepositoryProvider);
   return repo.watchAllTransactions();
 });
@@ -34,7 +40,12 @@ final analyticsReportProvider = Provider<AsyncValue<AnalyticsReport>>((ref) {
     data: (transactions) {
       var filtered = transactions;
       if (accountId != null && accountId.isNotEmpty) {
-        filtered = filtered.where((t) => t.accountId == accountId || t.toAccountId == accountId).toList();
+        filtered =
+            filtered
+                .where(
+                  (t) => t.accountId == accountId || t.toAccountId == accountId,
+                )
+                .toList();
       }
       if (txType != null) {
         filtered = filtered.where((t) => t.type == txType).toList();
@@ -52,4 +63,3 @@ final analyticsReportProvider = Provider<AsyncValue<AnalyticsReport>>((ref) {
     error: (e, st) => AsyncValue.error(e, st),
   );
 });
-

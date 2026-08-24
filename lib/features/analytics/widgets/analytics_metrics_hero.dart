@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/analytics_calculator.dart';
@@ -17,12 +17,12 @@ class AnalyticsMetricsHero extends StatelessWidget {
     final theme = context.theme;
     final finColors = context.finColors;
 
-    final savingsColor = report.netSavings >= 0
-        ? finColors.savings
-        : finColors.expense;
-    final savingsRateColor = report.savingsRate >= 0.2
-        ? finColors.savings
-        : report.savingsRate >= 0.05
+    final savingsColor =
+        report.netSavings >= 0 ? finColors.savings : finColors.expense;
+    final savingsRateColor =
+        report.savingsRate >= 0.2
+            ? finColors.savings
+            : report.savingsRate >= 0.05
             ? theme.colorScheme.primary
             : finColors.expense;
 
@@ -44,7 +44,9 @@ class AnalyticsMetricsHero extends StatelessWidget {
               Container(width: 1, height: 48, color: theme.dividerColor),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.only(
+                    left: StillwaterTokens.spaceMd,
+                  ),
                   child: _MetricBlock(
                     label: 'Total Outflow',
                     value: CurrencyFormatter.formatINR(report.totalExpense),
@@ -75,7 +77,9 @@ class AnalyticsMetricsHero extends StatelessWidget {
               Container(width: 1, height: 48, color: theme.dividerColor),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.only(
+                    left: StillwaterTokens.spaceMd,
+                  ),
                   child: _MetricBlock(
                     label: 'Savings Rate',
                     value: '${(report.savingsRate * 100).toStringAsFixed(0)}%',
@@ -107,7 +111,9 @@ class AnalyticsMetricsHero extends StatelessWidget {
               Container(width: 1, height: 48, color: theme.dividerColor),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.only(
+                    left: StillwaterTokens.spaceMd,
+                  ),
                   child: _MetricBlock(
                     label: 'Transactions',
                     value: '${report.transactionCount}',
@@ -177,10 +183,13 @@ class _MetricBlock extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                      ? finColors.savings.withValues(alpha: 0.1)
-                      : finColors.expense.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                  color:
+                      (isIncome ? trendPct! >= 0 : trendPct! <= 0)
+                          ? finColors.savings.withValues(alpha: 0.1)
+                          : finColors.expense.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusSm,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -190,18 +199,20 @@ class _MetricBlock extends StatelessWidget {
                           ? Icons.arrow_upward_rounded
                           : Icons.arrow_downward_rounded,
                       size: 9,
-                      color: (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                          ? finColors.savings
-                          : finColors.expense,
+                      color:
+                          (isIncome ? trendPct! >= 0 : trendPct! <= 0)
+                              ? finColors.savings
+                              : finColors.expense,
                     ),
                     Text(
                       '${trendPct!.abs().toStringAsFixed(0)}%',
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
-                        color: (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                            ? finColors.savings
-                            : finColors.expense,
+                        color:
+                            (isIncome ? trendPct! >= 0 : trendPct! <= 0)
+                                ? finColors.savings
+                                : finColors.expense,
                       ),
                     ),
                   ],
@@ -213,17 +224,21 @@ class _MetricBlock extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: badgePositive
-                      ? finColors.savings.withValues(alpha: 0.12)
-                      : finColors.expense.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                  color:
+                      badgePositive
+                          ? finColors.savings.withValues(alpha: 0.12)
+                          : finColors.expense.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusSm,
+                  ),
                 ),
                 child: Text(
                   badgeText!,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
-                    color: badgePositive ? finColors.savings : finColors.expense,
+                    color:
+                        badgePositive ? finColors.savings : finColors.expense,
                   ),
                 ),
               ),

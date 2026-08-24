@@ -34,8 +34,10 @@ class BudgetInsightsCard extends StatelessWidget {
     final approachingBudgets =
         summaries.where((s) => s.isApproachingThreshold).toList();
 
-    final maxDaysRemaining =
-        summaries.fold<int>(0, (max, s) => s.daysRemaining > max ? s.daysRemaining : max);
+    final maxDaysRemaining = summaries.fold<int>(
+      0,
+      (max, s) => s.daysRemaining > max ? s.daysRemaining : max,
+    );
     final overallDailyAllowance =
         maxDaysRemaining > 0 && totalRemaining > 0
             ? totalRemaining / maxDaysRemaining
@@ -50,7 +52,8 @@ class BudgetInsightsCard extends StatelessWidget {
         _BudgetInsightItem(
           icon: Icons.error_outline_rounded,
           iconColor: finColors.expense,
-          title: '${exceededBudgets.length} ${exceededBudgets.length == 1 ? 'category exceeds' : 'categories exceed'} planned limit',
+          title:
+              '${exceededBudgets.length} ${exceededBudgets.length == 1 ? 'category exceeds' : 'categories exceed'} planned limit',
           subtitle:
               '$names ${exceededBudgets.length == 1 ? 'has' : 'have'} gone beyond the allocated budget for this period.',
         ),

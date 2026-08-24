@@ -41,7 +41,10 @@ List<Transaction> applyTransactionFilter({
   final accountNames = {
     for (final account in accounts) account.id: account.name,
   };
-  final query = filter.searchQuery.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  final query = filter.searchQuery.trim().toLowerCase().replaceAll(
+    RegExp(r'\s+'),
+    ' ',
+  );
   final results =
       transactions.where((transaction) {
         if (filter.selectedType != null &&
@@ -78,21 +81,23 @@ List<Transaction> applyTransactionFilter({
         }
         if (query.isEmpty) return true;
 
-        final searchable =
-            <String>[
-              transaction.merchant,
-              transaction.normalizedMerchant ?? '',
-              transaction.notes ?? '',
-              transaction.amount.toString(),
-              transaction.categoryName,
-              transaction.paymentMethod ?? '',
-              transaction.type.displayName,
-              accountNames[transaction.accountId] ?? transaction.accountId,
-              accountNames[transaction.toAccountId] ??
-                  transaction.toAccountId ??
-                  '',
-              ...transaction.tags,
-            ].join(' ').toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+        final searchable = <String>[
+          transaction.merchant,
+          transaction.normalizedMerchant ?? '',
+          transaction.notes ?? '',
+          transaction.amount.toString(),
+          transaction.categoryName,
+          transaction.paymentMethod ?? '',
+          transaction.type.displayName,
+          transaction.effectivePurpose.displayName,
+          transaction.externalCounterpartyName ?? '',
+          transaction.linkedLoanId ?? '',
+          accountNames[transaction.accountId] ?? transaction.accountId,
+          accountNames[transaction.toAccountId] ??
+              transaction.toAccountId ??
+              '',
+          ...transaction.tags,
+        ].join(' ').toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
         return searchable.contains(query);
       }).toList();
 
@@ -113,11 +118,8 @@ TransactionListSummary calculateTransactionListSummary(
   var income = 0.0;
   var expenses = 0.0;
   for (final transaction in transactions) {
-    if (transaction.type == TransactionType.income) {
-      income += transaction.amount;
-    } else if (transaction.type != TransactionType.transfer) {
-      expenses += transaction.amount;
-    }
+    income += transaction.earnedIncomeAmount;
+    expenses += transaction.consumptionExpenseAmount;
   }
   return TransactionListSummary(income: income, expenses: expenses);
 }

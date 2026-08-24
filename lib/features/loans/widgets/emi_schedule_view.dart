@@ -10,6 +10,8 @@ import '../../../shared/widgets/ff_confirm_dialog.dart';
 import '../../../shared/widgets/ff_snackbar.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../loans_controller.dart';
+import '../../accounts/accounts_controller.dart';
+import '../payment_account_picker.dart';
 
 class EmiScheduleView extends ConsumerWidget {
   final Loan loan;
@@ -21,6 +23,19 @@ class EmiScheduleView extends ConsumerWidget {
     WidgetRef ref,
     AmortizationScheduleItem item,
   ) async {
+    final accounts =
+        ref.read(accountsWithBalancesProvider).valueOrNull ?? const [];
+    final payingAccount =
+        accounts.isEmpty
+            ? null
+            : await showPaymentAccountPicker(
+              context: context,
+              accounts: accounts,
+              selectedAccountId: loan.accountId,
+            );
+    if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
+      return;
+    }
     final confirmed = await FfConfirmDialog.show(
       context,
       title: 'Pay Installment #${item.monthNumber}?',
@@ -36,6 +51,7 @@ class EmiScheduleView extends ConsumerWidget {
             .markInstallmentPaid(
               loan: loan,
               installmentNumber: item.monthNumber,
+              accountId: payingAccount?.id,
             );
         if (context.mounted) {
           FfSnackbar.show(
@@ -56,6 +72,19 @@ class EmiScheduleView extends ConsumerWidget {
     WidgetRef ref,
     List<AmortizationScheduleItem> overdueItems,
   ) async {
+    final accounts =
+        ref.read(accountsWithBalancesProvider).valueOrNull ?? const [];
+    final payingAccount =
+        accounts.isEmpty
+            ? null
+            : await showPaymentAccountPicker(
+              context: context,
+              accounts: accounts,
+              selectedAccountId: loan.accountId,
+            );
+    if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
+      return;
+    }
     final totalOverdueAmount = overdueItems.fold<double>(
       0.0,
       (sum, item) => sum + item.emiAmount,
@@ -73,7 +102,7 @@ class EmiScheduleView extends ConsumerWidget {
       try {
         await ref
             .read(loansControllerProvider.notifier)
-            .markAllOverduePaid(loan: loan);
+            .markAllOverduePaid(loan: loan, accountId: payingAccount?.id);
         if (context.mounted) {
           FfSnackbar.show(
             context,

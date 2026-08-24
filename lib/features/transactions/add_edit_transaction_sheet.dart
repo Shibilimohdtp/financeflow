@@ -8,9 +8,15 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/category.dart';
+import '../../models/loan.dart';
+import '../../models/investment.dart';
+import '../../models/money_record.dart';
 import '../../models/transaction.dart';
+import '../../repositories/loan_repository.dart';
+import '../../repositories/investment_repository.dart';
 import '../../services/categorization_service.dart';
 import '../../services/merchant_normalization_service.dart';
+import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
@@ -21,6 +27,7 @@ import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
+import '../personal_debts/money_records_controller.dart';
 import 'transactions_controller.dart';
 
 /// A redesigned, clean, minimal, mobile-first transaction entry surface.
@@ -40,14 +47,22 @@ class AddEditTransactionSheet extends ConsumerStatefulWidget {
 class _AddEditTransactionSheetState
     extends ConsumerState<AddEditTransactionSheet> {
   late TransactionType _selectedType;
+  late TransactionPurpose _selectedPurpose;
   late final TextEditingController _amountController;
   late final TextEditingController _merchantController;
   late final TextEditingController _notesController;
   late final TextEditingController _tagsController;
+  late final TextEditingController _counterpartyController;
+  late final TextEditingController _principalController;
+  late final TextEditingController _interestController;
+  late final TextEditingController _feeController;
 
   Category? _selectedCategory;
   Account? _selectedAccount;
   Account? _selectedToAccount;
+  Loan? _selectedLoan;
+  MoneyRecord? _selectedMoneyRecord;
+  Investment? _selectedInvestment;
   DateTime _selectedDate = DateTime.now();
   String _selectedPaymentMethod = 'UPI';
 
@@ -78,6 +93,7 @@ class _AddEditTransactionSheetState
     super.initState();
     final initial = widget.initialTransaction;
     _selectedType = initial?.type ?? TransactionType.expense;
+    _selectedPurpose = initial?.effectivePurpose ?? TransactionPurpose.expense;
     _amountController = TextEditingController(
       text: initial == null ? '' : _formatInitialAmount(initial.amount),
     );
@@ -85,6 +101,18 @@ class _AddEditTransactionSheetState
     _notesController = TextEditingController(text: initial?.notes ?? '');
     _tagsController = TextEditingController(
       text: initial?.tags.join(', ') ?? '',
+    );
+    _counterpartyController = TextEditingController(
+      text: initial?.externalCounterpartyName ?? '',
+    );
+    _principalController = TextEditingController(
+      text: initial?.principalComponent?.toStringAsFixed(2) ?? '',
+    );
+    _interestController = TextEditingController(
+      text: initial?.interestComponent?.toStringAsFixed(2) ?? '',
+    );
+    _feeController = TextEditingController(
+      text: initial?.feeComponent?.toStringAsFixed(2) ?? '',
     );
     _selectedDate = initial?.date ?? DateTime.now();
     _selectedPaymentMethod =
@@ -112,6 +140,10 @@ class _AddEditTransactionSheetState
     _merchantController.dispose();
     _notesController.dispose();
     _tagsController.dispose();
+    _counterpartyController.dispose();
+    _principalController.dispose();
+    _interestController.dispose();
+    _feeController.dispose();
     super.dispose();
   }
 
@@ -139,7 +171,16 @@ class _AddEditTransactionSheetState
     _ => _allPaymentMethods,
   };
 
-  bool get _needsCategory => _selectedType != TransactionType.transfer;
+  bool get _needsCategory =>
+      _selectedPurpose != TransactionPurpose.internalTransfer;
+
+  bool get _needsCounterparty => <TransactionPurpose>{
+    TransactionPurpose.lending,
+    TransactionPurpose.borrowing,
+    TransactionPurpose.personalDebtRepaymentMade,
+    TransactionPurpose.personalDebtRepaymentReceived,
+    TransactionPurpose.loanDisbursement,
+  }.contains(_selectedPurpose);
 
   void _onMerchantChanged() {
     final merchant = _merchantController.text.trim();
@@ -247,6 +288,78 @@ class _AddEditTransactionSheetState
       if (_selectedAccount == null && accounts.isNotEmpty) {
         _selectedAccount = accounts.first;
       }
+    });
+  }
+
+  TransactionType _typeForPurpose(
+    TransactionPurpose purpose,
+  ) => switch (purpose) {
+    TransactionPurpose.income ||
+    TransactionPurpose.borrowing ||
+    TransactionPurpose.loanDisbursement ||
+    TransactionPurpose.personalDebtRepaymentReceived => TransactionType.income,
+    TransactionPurpose.internalTransfer => TransactionType.transfer,
+    TransactionPurpose.investmentPurchase ||
+    TransactionPurpose.investmentRedemption => TransactionType.investment,
+    TransactionPurpose.loanRepayment => TransactionType.loanEmi,
+    TransactionPurpose.legacyCash => TransactionType.cash,
+    _ => TransactionType.expense,
+  };
+
+  void _changePurpose(
+    TransactionPurpose purpose,
+    List<Category> categories,
+    List<Account> accounts,
+    List<Transaction> history,
+  ) {
+    if (_selectedPurpose == purpose) return;
+    final type = _typeForPurpose(purpose);
+    setState(() {
+      _selectedPurpose = purpose;
+      _selectedLoan = null;
+      _selectedMoneyRecord = null;
+      _selectedInvestment = null;
+      _counterpartyController.clear();
+      _principalController.clear();
+      _interestController.clear();
+      _feeController.clear();
+      if (purpose != TransactionPurpose.internalTransfer) {
+        _selectedToAccount = null;
+      }
+    });
+    _changeType(type, categories, accounts, history);
+  }
+
+  Future<void> _selectLoan(Loan? loan) async {
+    setState(() => _selectedLoan = loan);
+    if (loan == null) {
+      _principalController.clear();
+      _interestController.clear();
+      _feeController.clear();
+      return;
+    }
+    final payments = await ref
+        .read(loanRepositoryProvider)
+        .getPaymentsForLoan(loan.id);
+    if (!mounted) return;
+    final unpaid =
+        LoanCalculator.generateSchedule(
+          loan,
+          payments: payments,
+        ).where((item) => !item.isPaid).toList();
+    if (unpaid.isEmpty) return;
+    final item = unpaid.first;
+    setState(() {
+      _amountController.text = item.emiAmount.toStringAsFixed(2);
+      _principalController.text = item.principalPaid.toStringAsFixed(2);
+      _interestController.text = item.interestPaid.toStringAsFixed(2);
+      _feeController.text = '0.00';
+      _merchantController.text = loan.name;
+      _counterpartyController.text = loan.lender;
+      _selectedAccount ??=
+          (ref.read(rawAccountsStreamProvider).value ?? const <Account>[])
+              .where((account) => account.id == loan.accountId)
+              .firstOrNull;
     });
   }
 
@@ -402,6 +515,22 @@ class _AddEditTransactionSheetState
       }
     }
 
+    if ((_selectedPurpose == TransactionPurpose.lending ||
+            _selectedPurpose == TransactionPurpose.borrowing ||
+            _selectedPurpose == TransactionPurpose.loanDisbursement) &&
+        _counterpartyController.text.trim().isEmpty) {
+      setState(() => _merchantError = 'Enter the external person or lender.');
+      return;
+    }
+    if (<TransactionPurpose>{
+          TransactionPurpose.personalDebtRepaymentMade,
+          TransactionPurpose.personalDebtRepaymentReceived,
+        }.contains(_selectedPurpose) &&
+        _selectedMoneyRecord == null) {
+      setState(() => _merchantError = 'Select the debt record being repaid.');
+      return;
+    }
+
     if (_needsCategory && _selectedCategory == null) {
       setState(() => _categoryError = 'Please select a category.');
       return;
@@ -411,10 +540,16 @@ class _AddEditTransactionSheetState
 
     try {
       final now = DateTime.now();
+      final txId = widget.initialTransaction?.id ?? const Uuid().v4();
+      final createsDebt = <TransactionPurpose>{
+        TransactionPurpose.lending,
+        TransactionPurpose.borrowing,
+      }.contains(_selectedPurpose);
       final tx = Transaction(
-        id: widget.initialTransaction?.id ?? const Uuid().v4(),
+        id: txId,
         amount: amount,
         type: _selectedType,
+        purpose: _selectedPurpose,
         categoryId: _selectedCategory?.id ?? 'cat_transfer',
         categoryName: _selectedCategory?.name ?? 'Transfer',
         categoryIcon: _selectedCategory?.iconIdentifier ?? 'sync',
@@ -429,7 +564,42 @@ class _AddEditTransactionSheetState
         source: widget.initialTransaction?.source ?? TransactionSource.manual,
         paymentMethod: _selectedPaymentMethod,
         accountId: _selectedAccount!.id,
-        toAccountId: _selectedToAccount?.id,
+        toAccountId:
+            _selectedPurpose == TransactionPurpose.internalTransfer
+                ? _selectedToAccount?.id
+                : null,
+        externalCounterpartyName:
+            _counterpartyController.text.trim().isEmpty
+                ? _selectedMoneyRecord?.personName
+                : _counterpartyController.text.trim(),
+        linkedLoanId:
+            _selectedPurpose == TransactionPurpose.loanRepayment
+                ? _selectedLoan?.id
+                : null,
+        linkedMoneyRecordId:
+            createsDebt
+                ? (widget.initialTransaction?.linkedMoneyRecordId ??
+                    'debt_$txId')
+                : _selectedMoneyRecord?.id,
+        linkedInvestmentId:
+            <TransactionPurpose>{
+                  TransactionPurpose.investmentPurchase,
+                  TransactionPurpose.investmentRedemption,
+                }.contains(_selectedPurpose)
+                ? _selectedInvestment?.id
+                : null,
+        principalComponent:
+            _selectedLoan == null && _selectedInvestment == null
+                ? null
+                : CurrencyFormatter.parse(_principalController.text),
+        interestComponent:
+            _selectedLoan == null && _selectedInvestment == null
+                ? null
+                : CurrencyFormatter.parse(_interestController.text),
+        feeComponent:
+            _selectedLoan == null && _selectedInvestment == null
+                ? null
+                : CurrencyFormatter.parse(_feeController.text),
         tags:
             _tagsController.text
                 .split(',')
@@ -439,6 +609,18 @@ class _AddEditTransactionSheetState
         isReviewed: true,
         createdAt: widget.initialTransaction?.createdAt ?? now,
         updatedAt: now,
+        originalMerchant: widget.initialTransaction?.originalMerchant,
+        sourceName: widget.initialTransaction?.sourceName,
+        sourceReference: widget.initialTransaction?.sourceReference,
+        sourceMessageId: widget.initialTransaction?.sourceMessageId,
+        fingerprint: widget.initialTransaction?.fingerprint,
+        duplicateGroupId: widget.initialTransaction?.duplicateGroupId,
+        mergedSources: widget.initialTransaction?.mergedSources ?? const [],
+        importedAt: widget.initialTransaction?.importedAt,
+        detectedAt: widget.initialTransaction?.detectedAt,
+        reviewStatus: widget.initialTransaction?.reviewStatus ?? 'confirmed',
+        categorizationConfidence:
+            widget.initialTransaction?.categorizationConfidence,
       );
 
       if (_selectedCategory != null && _needsCategory) {
@@ -540,8 +722,8 @@ class _AddEditTransactionSheetState
 
     final saveButtonText =
         widget.initialTransaction == null
-            ? 'Save ${_selectedType.displayName}'
-            : 'Update ${_selectedType.displayName}';
+            ? 'Save ${_selectedPurpose.displayName}'
+            : 'Update ${_selectedPurpose.displayName}';
 
     return DraggableScrollableSheet(
       initialChildSize: 0.92,
@@ -594,6 +776,13 @@ class _AddEditTransactionSheetState
                           categories: categories,
                         ),
                         const SizedBox(height: StillwaterTokens.spaceLg),
+
+                        _buildPurposeFields(),
+                        if (_selectedPurpose != TransactionPurpose.expense &&
+                            _selectedPurpose != TransactionPurpose.income &&
+                            _selectedPurpose !=
+                                TransactionPurpose.internalTransfer)
+                          const SizedBox(height: StillwaterTokens.spaceLg),
 
                         // Category Section (if applicable)
                         if (_needsCategory) ...[
@@ -650,92 +839,91 @@ class _AddEditTransactionSheetState
     required List<Account> accounts,
     required List<Transaction> history,
   }) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
+    final incoming = <TransactionPurpose>{
+      TransactionPurpose.income,
+      TransactionPurpose.borrowing,
+      TransactionPurpose.personalDebtRepaymentReceived,
+      TransactionPurpose.loanDisbursement,
+      TransactionPurpose.investmentRedemption,
+    };
+    final intent =
+        _selectedPurpose == TransactionPurpose.internalTransfer
+            ? 'Move Money'
+            : incoming.contains(_selectedPurpose)
+            ? 'Money In'
+            : 'Money Out';
+    final purposes = switch (intent) {
+      'Money In' => const [
+        TransactionPurpose.income,
+        TransactionPurpose.borrowing,
+        TransactionPurpose.personalDebtRepaymentReceived,
+        TransactionPurpose.loanDisbursement,
+        TransactionPurpose.investmentRedemption,
+      ],
+      'Move Money' => const [TransactionPurpose.internalTransfer],
+      _ => const [
+        TransactionPurpose.expense,
+        TransactionPurpose.lending,
+        TransactionPurpose.personalDebtRepaymentMade,
+        TransactionPurpose.loanRepayment,
+        TransactionPurpose.investmentPurchase,
+      ],
+    };
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children:
-            TransactionType.values.map((type) {
-              final isSelected = _selectedType == type;
-              final typeColor = _typeColor(context, type);
-
-              final label = switch (type) {
-                TransactionType.loanEmi => 'Loan EMI',
-                _ => type.displayName,
-              };
-
-              return Padding(
-                padding: const EdgeInsets.only(
-                  right: StillwaterTokens.space2Xs + 2,
-                ),
-                child: InkWell(
-                  onTap: () => _changeType(type, categories, accounts, history),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
-                  child: AnimatedContainer(
-                    duration: StillwaterTokens.durationFast,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceSm,
-                      vertical: StillwaterTokens.spaceXs,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('What are you doing?', style: context.theme.textTheme.labelLarge),
+        const SizedBox(height: StillwaterTokens.spaceXs),
+        Wrap(
+          spacing: StillwaterTokens.spaceXs,
+          children:
+              ['Money Out', 'Money In', 'Move Money'].map((label) {
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: intent == label,
+                  onSelected: (_) {
+                    final purpose = switch (label) {
+                      'Money In' => TransactionPurpose.income,
+                      'Move Money' => TransactionPurpose.internalTransfer,
+                      _ => TransactionPurpose.expense,
+                    };
+                    _changePurpose(purpose, categories, accounts, history);
+                  },
+                );
+              }).toList(),
+        ),
+        const SizedBox(height: StillwaterTokens.spaceSm),
+        DropdownButtonFormField<TransactionPurpose>(
+          key: ValueKey(intent),
+          value:
+              purposes.contains(_selectedPurpose)
+                  ? _selectedPurpose
+                  : purposes.first,
+          decoration: const InputDecoration(labelText: 'Purpose'),
+          items:
+              purposes
+                  .map(
+                    (purpose) => DropdownMenuItem(
+                      value: purpose,
+                      child: Text(purpose.displayName),
                     ),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? (isDark
-                                  ? typeColor.withValues(alpha: 0.22)
-                                  : typeColor.withValues(alpha: 0.12))
-                              : (isDark
-                                  ? StillwaterColors.darkSurfaceContainerLow
-                                  : StillwaterColors.lightSurfaceContainerLow),
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusFull,
-                      ),
-                      border: Border.all(
-                        color:
-                            isSelected
-                                ? typeColor
-                                : (isDark
-                                    ? StillwaterColors.darkBorderHairline
-                                    : StillwaterColors.lightBorderHairline),
-                        width:
-                            isSelected
-                                ? StillwaterTokens.borderWidthStrong
-                                : StillwaterTokens.borderWidthHairline,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _typeIcon(type),
-                          size: 16,
-                          color:
-                              isSelected
-                                  ? typeColor
-                                  : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: StillwaterTokens.space2Xs),
-                        Text(
-                          label,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color:
-                                isSelected
-                                    ? typeColor
-                                    : theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-      ),
+                  )
+                  .toList(),
+          onChanged: (purpose) {
+            if (purpose != null) {
+              _changePurpose(purpose, categories, accounts, history);
+            }
+          },
+        ),
+        if (_selectedPurpose == TransactionPurpose.internalTransfer) ...[
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Text(
+            'Move money between accounts you own. This is not income or spending.',
+            style: context.theme.textTheme.bodySmall,
+          ),
+        ],
+      ],
     );
   }
 
@@ -865,6 +1053,226 @@ class _AddEditTransactionSheetState
     );
   }
 
+  Widget _buildPurposeFields() {
+    if (_selectedPurpose == TransactionPurpose.loanRepayment) {
+      final loans =
+          (ref.watch(allLoansStreamProvider).valueOrNull ?? const <Loan>[])
+              .where((loan) => loan.status == LoanStatus.active)
+              .toList();
+      if (_selectedLoan == null &&
+          widget.initialTransaction?.linkedLoanId != null) {
+        _selectedLoan =
+            loans
+                .where(
+                  (loan) => loan.id == widget.initialTransaction!.linkedLoanId,
+                )
+                .firstOrNull;
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            value: _selectedLoan?.id ?? 'unlinked',
+            decoration: const InputDecoration(labelText: 'Tracked loan'),
+            items: [
+              const DropdownMenuItem(
+                value: 'unlinked',
+                child: Text('Unlinked loan payment'),
+              ),
+              ...loans.map(
+                (loan) => DropdownMenuItem(
+                  value: loan.id,
+                  child: Text('${loan.name} · ${loan.lender}'),
+                ),
+              ),
+            ],
+            onChanged:
+                (id) => _selectLoan(
+                  loans.where((loan) => loan.id == id).firstOrNull,
+                ),
+          ),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          Text(
+            _selectedLoan == null
+                ? 'This payment will affect the account, but will not update a loan schedule.'
+                : 'Expected EMI ${CurrencyFormatter.formatINR(_selectedLoan!.emiAmount)} · Outstanding ${CurrencyFormatter.formatINR(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
+            style: context.theme.textTheme.bodySmall,
+          ),
+          if (_selectedLoan != null) ...[
+            const SizedBox(height: StillwaterTokens.spaceSm),
+            Row(
+              children: [
+                Expanded(
+                  child: _componentField(_principalController, 'Principal'),
+                ),
+                const SizedBox(width: StillwaterTokens.spaceXs),
+                Expanded(
+                  child: _componentField(_interestController, 'Interest'),
+                ),
+                const SizedBox(width: StillwaterTokens.spaceXs),
+                Expanded(child: _componentField(_feeController, 'Fees')),
+              ],
+            ),
+          ],
+        ],
+      );
+    }
+
+    if (_selectedPurpose == TransactionPurpose.investmentPurchase ||
+        _selectedPurpose == TransactionPurpose.investmentRedemption) {
+      final investments =
+          ref.watch(allInvestmentsStreamProvider).valueOrNull ??
+          const <Investment>[];
+      if (_selectedInvestment == null &&
+          widget.initialTransaction?.linkedInvestmentId != null) {
+        _selectedInvestment =
+            investments
+                .where(
+                  (investment) =>
+                      investment.id ==
+                      widget.initialTransaction!.linkedInvestmentId,
+                )
+                .firstOrNull;
+      }
+      return Column(
+        children: [
+          DropdownButtonFormField<String>(
+            value: _selectedInvestment?.id ?? 'unlinked',
+            decoration: const InputDecoration(labelText: 'Investment asset'),
+            items: [
+              const DropdownMenuItem(
+                value: 'unlinked',
+                child: Text('Unlinked investment movement'),
+              ),
+              ...investments.map(
+                (investment) => DropdownMenuItem(
+                  value: investment.id,
+                  child: Text(investment.name),
+                ),
+              ),
+            ],
+            onChanged:
+                (id) => setState(() {
+                  _selectedInvestment =
+                      investments
+                          .where((investment) => investment.id == id)
+                          .firstOrNull;
+                  if (_selectedInvestment != null) {
+                    _merchantController.text = _selectedInvestment!.name;
+                    final amount =
+                        CurrencyFormatter.parse(_amountController.text) ?? 0;
+                    _principalController.text = amount.toStringAsFixed(2);
+                    _interestController.text = '0.00';
+                    _feeController.text = '0.00';
+                  }
+                }),
+          ),
+          const SizedBox(height: StillwaterTokens.spaceSm),
+          Row(
+            children: [
+              Expanded(
+                child: _componentField(
+                  _principalController,
+                  _selectedPurpose == TransactionPurpose.investmentRedemption
+                      ? 'Cost basis'
+                      : 'Asset value',
+                ),
+              ),
+              const SizedBox(width: StillwaterTokens.spaceXs),
+              if (_selectedPurpose ==
+                  TransactionPurpose.investmentRedemption) ...[
+                Expanded(
+                  child: _componentField(_interestController, 'Realized gain'),
+                ),
+                const SizedBox(width: StillwaterTokens.spaceXs),
+              ],
+              Expanded(child: _componentField(_feeController, 'Fees')),
+            ],
+          ),
+        ],
+      );
+    }
+
+    final isRepayment = <TransactionPurpose>{
+      TransactionPurpose.personalDebtRepaymentMade,
+      TransactionPurpose.personalDebtRepaymentReceived,
+    }.contains(_selectedPurpose);
+    if (isRepayment) {
+      final records =
+          ref.watch(allMoneyRecordsStreamProvider).valueOrNull ??
+          const <MoneyRecord>[];
+      final expectedType =
+          _selectedPurpose == TransactionPurpose.personalDebtRepaymentReceived
+              ? MoneyRecordType.lent
+              : MoneyRecordType.borrowed;
+      final eligible =
+          records
+              .where(
+                (record) =>
+                    record.type == expectedType && record.settledAt == null,
+              )
+              .toList();
+      if (_selectedMoneyRecord == null &&
+          widget.initialTransaction?.linkedMoneyRecordId != null) {
+        _selectedMoneyRecord =
+            eligible
+                .where(
+                  (record) =>
+                      record.id ==
+                      widget.initialTransaction!.linkedMoneyRecordId,
+                )
+                .firstOrNull;
+      }
+      return DropdownButtonFormField<String>(
+        value: _selectedMoneyRecord?.id,
+        decoration: const InputDecoration(labelText: 'Debt record'),
+        hint: const Text('Select person and balance'),
+        items:
+            eligible
+                .map(
+                  (record) => DropdownMenuItem(
+                    value: record.id,
+                    child: Text(
+                      '${record.personName} · ${CurrencyFormatter.formatINR(record.originalAmount)}',
+                    ),
+                  ),
+                )
+                .toList(),
+        onChanged:
+            (id) => setState(() {
+              _selectedMoneyRecord =
+                  eligible.where((record) => record.id == id).firstOrNull;
+              _counterpartyController.text =
+                  _selectedMoneyRecord?.personName ?? '';
+            }),
+      );
+    }
+
+    if (_needsCounterparty ||
+        _selectedPurpose == TransactionPurpose.lending ||
+        _selectedPurpose == TransactionPurpose.borrowing) {
+      return TextFormField(
+        controller: _counterpartyController,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(
+          labelText: 'Person / counterparty',
+          helperText: 'A person is kept separate from accounts you own.',
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _componentField(TextEditingController controller, String label) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+      decoration: InputDecoration(labelText: label, prefixText: '₹ '),
+    );
+  }
+
   Widget _buildMerchantField({
     required List<PayeeSuggestion> suggestions,
     required List<Category> categories,
@@ -896,11 +1304,12 @@ class _AddEditTransactionSheetState
     };
 
     final typedText = _merchantController.text.trim().toLowerCase();
-    final visibleSuggestions = typedText.isEmpty
-        ? suggestions
-        : suggestions
-            .where((s) => s.displayName.toLowerCase() != typedText)
-            .toList();
+    final visibleSuggestions =
+        typedText.isEmpty
+            ? suggestions
+            : suggestions
+                .where((s) => s.displayName.toLowerCase() != typedText)
+                .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,19 +1361,18 @@ class _AddEditTransactionSheetState
                           _merchantController.text = suggestion.displayName;
                           _merchantController
                               .selection = TextSelection.fromPosition(
-                            TextPosition(
-                              offset: suggestion.displayName.length,
-                            ),
+                            TextPosition(offset: suggestion.displayName.length),
                           );
                           if (_needsCategory &&
                               _selectedCategory == null &&
                               suggestion.primaryCategoryId != null) {
-                            final match = categories
-                                .where(
-                                  (c) =>
-                                      c.id == suggestion.primaryCategoryId,
-                                )
-                                .firstOrNull;
+                            final match =
+                                categories
+                                    .where(
+                                      (c) =>
+                                          c.id == suggestion.primaryCategoryId,
+                                    )
+                                    .firstOrNull;
                             if (match != null) {
                               setState(() {
                                 _selectedCategory = match;
@@ -1366,15 +1774,6 @@ class _AddEditTransactionSheetState
 
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
-
-  static IconData _typeIcon(TransactionType type) => switch (type) {
-    TransactionType.expense => Icons.arrow_upward_rounded,
-    TransactionType.income => Icons.arrow_downward_rounded,
-    TransactionType.transfer => Icons.swap_horiz_rounded,
-    TransactionType.investment => Icons.trending_up_rounded,
-    TransactionType.loanEmi => Icons.receipt_long_rounded,
-    TransactionType.cash => Icons.payments_outlined,
-  };
 }
 
 /// A compact, rich tile button for selecting an Account.

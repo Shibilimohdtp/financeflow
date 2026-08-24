@@ -252,6 +252,15 @@ class BackupDataPayload {
     'paymentMethod': t.paymentMethod,
     'accountId': t.accountId,
     'toAccountId': t.toAccountId,
+    'purpose': t.purpose?.name,
+    'direction': t.direction?.name,
+    'externalCounterpartyName': t.externalCounterpartyName,
+    'linkedLoanId': t.linkedLoanId,
+    'linkedMoneyRecordId': t.linkedMoneyRecordId,
+    'linkedInvestmentId': t.linkedInvestmentId,
+    'principalComponent': t.principalComponent,
+    'interestComponent': t.interestComponent,
+    'feeComponent': t.feeComponent,
     'tags': t.tags,
     'isReviewed': t.isReviewed,
     'originalMerchant': t.originalMerchant,
@@ -260,31 +269,39 @@ class BackupDataPayload {
     'updatedAt': t.updatedAt.toIso8601String(),
   };
 
-  static Transaction _transactionFromJson(Map<String, dynamic> j) =>
-      Transaction(
-        id: j['id'] as String,
-        amount: (j['amount'] as num).toDouble(),
-        type: TransactionType.fromString(j['type'] as String? ?? 'expense'),
-        categoryId: j['categoryId'] as String,
-        categoryName: j['categoryName'] as String,
-        categoryIcon: j['categoryIcon'] as String,
-        categoryColor: j['categoryColor'] as String,
-        merchant: j['merchant'] as String,
-        date: DateTime.parse(j['date'] as String),
-        notes: j['notes'] as String?,
-        source: TransactionSource.fromString(
-          j['source'] as String? ?? 'manual',
-        ),
-        paymentMethod: j['paymentMethod'] as String?,
-        accountId: j['accountId'] as String,
-        toAccountId: j['toAccountId'] as String?,
-        tags: List<String>.from(j['tags'] as List? ?? []),
-        isReviewed: j['isReviewed'] as bool? ?? true,
-        originalMerchant: j['originalMerchant'] as String?,
-        normalizedMerchant: j['normalizedMerchant'] as String?,
-        createdAt: DateTime.parse(j['createdAt'] as String),
-        updatedAt: DateTime.parse(j['updatedAt'] as String),
-      );
+  static Transaction _transactionFromJson(
+    Map<String, dynamic> j,
+  ) => Transaction(
+    id: j['id'] as String,
+    amount: (j['amount'] as num).toDouble(),
+    type: TransactionType.fromString(j['type'] as String? ?? 'expense'),
+    categoryId: j['categoryId'] as String,
+    categoryName: j['categoryName'] as String,
+    categoryIcon: j['categoryIcon'] as String,
+    categoryColor: j['categoryColor'] as String,
+    merchant: j['merchant'] as String,
+    date: DateTime.parse(j['date'] as String),
+    notes: j['notes'] as String?,
+    source: TransactionSource.fromString(j['source'] as String? ?? 'manual'),
+    paymentMethod: j['paymentMethod'] as String?,
+    accountId: j['accountId'] as String,
+    toAccountId: j['toAccountId'] as String?,
+    purpose: TransactionPurpose.fromString(j['purpose'] as String?),
+    direction: AccountMovementDirection.fromString(j['direction'] as String?),
+    externalCounterpartyName: j['externalCounterpartyName'] as String?,
+    linkedLoanId: j['linkedLoanId'] as String?,
+    linkedMoneyRecordId: j['linkedMoneyRecordId'] as String?,
+    linkedInvestmentId: j['linkedInvestmentId'] as String?,
+    principalComponent: (j['principalComponent'] as num?)?.toDouble(),
+    interestComponent: (j['interestComponent'] as num?)?.toDouble(),
+    feeComponent: (j['feeComponent'] as num?)?.toDouble(),
+    tags: List<String>.from(j['tags'] as List? ?? []),
+    isReviewed: j['isReviewed'] as bool? ?? true,
+    originalMerchant: j['originalMerchant'] as String?,
+    normalizedMerchant: j['normalizedMerchant'] as String?,
+    createdAt: DateTime.parse(j['createdAt'] as String),
+    updatedAt: DateTime.parse(j['updatedAt'] as String),
+  );
 
   static Map<String, dynamic> _categoryToJson(Category c) => {
     'id': c.id,
@@ -510,6 +527,9 @@ class BackupDataPayload {
     'notes': i.notes,
     'createdAt': i.createdAt.toIso8601String(),
     'updatedAt': i.updatedAt.toIso8601String(),
+    'ledgerBaselineInvestedAmount': i.ledgerBaselineInvestedAmount,
+    'ledgerBaselineCurrentValue': i.ledgerBaselineCurrentValue,
+    'ledgerBaselineRealizedProfitLoss': i.ledgerBaselineRealizedProfitLoss,
   };
 
   static Investment _investmentFromJson(Map<String, dynamic> j) => Investment(
@@ -534,6 +554,12 @@ class BackupDataPayload {
     notes: j['notes'] as String?,
     createdAt: DateTime.parse(j['createdAt'] as String),
     updatedAt: DateTime.parse(j['updatedAt'] as String),
+    ledgerBaselineInvestedAmount:
+        (j['ledgerBaselineInvestedAmount'] as num?)?.toDouble(),
+    ledgerBaselineCurrentValue:
+        (j['ledgerBaselineCurrentValue'] as num?)?.toDouble(),
+    ledgerBaselineRealizedProfitLoss:
+        (j['ledgerBaselineRealizedProfitLoss'] as num?)?.toDouble(),
   );
 }
 

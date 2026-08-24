@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../../models/investment.dart';
 import '../../repositories/investment_repository.dart';
 import '../../services/investment_calculator.dart';
+import '../../services/financial_operation_service.dart';
+import '../../database/isar_service.dart';
 
 final portfolioSummaryProvider = Provider<PortfolioSummary>((ref) {
   final investments = ref.watch(allInvestmentsStreamProvider).value ?? const [];
@@ -11,9 +13,11 @@ final portfolioSummaryProvider = Provider<PortfolioSummary>((ref) {
 
 class InvestmentsController extends StateNotifier<AsyncValue<void>> {
   final InvestmentRepository _repository;
+  final FinancialOperationService? _coordinator;
   static const _uuid = Uuid();
 
-  InvestmentsController(this._repository) : super(const AsyncValue.data(null));
+  InvestmentsController(this._repository, [this._coordinator])
+    : super(const AsyncValue.data(null));
 
   Future<void> addInvestment({
     required String name,
@@ -85,7 +89,11 @@ class InvestmentsController extends StateNotifier<AsyncValue<void>> {
   Future<void> deleteInvestment(String id) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.deleteInvestment(id);
+      if (_coordinator != null) {
+        await _coordinator.deleteInvestmentKeepingHistory(id);
+      } else {
+        await _repository.deleteInvestment(id);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -96,5 +104,10 @@ class InvestmentsController extends StateNotifier<AsyncValue<void>> {
 final investmentsControllerProvider =
     StateNotifierProvider<InvestmentsController, AsyncValue<void>>((ref) {
       final repo = ref.watch(investmentRepositoryProvider);
-      return InvestmentsController(repo);
+      return InvestmentsController(
+        repo,
+        IsarService.isInitialized
+            ? ref.watch(financialOperationServiceProvider)
+            : null,
+      );
     });

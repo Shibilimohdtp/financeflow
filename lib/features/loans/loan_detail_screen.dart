@@ -13,6 +13,8 @@ import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loans_controller.dart';
+import '../accounts/accounts_controller.dart';
+import 'payment_account_picker.dart';
 import 'widgets/emi_schedule_view.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
@@ -37,7 +39,7 @@ class LoanDetailScreen extends ConsumerWidget {
       context,
       title: 'Delete Loan?',
       message:
-          'Are you sure you want to remove "${currentLoan.name}" and all its EMI payment history from your tracker?',
+          'Remove "${currentLoan.name}" from the tracker? Linked transactions will be kept as unlinked historical loan payments; schedule allocations will be removed.',
       confirmLabel: 'Delete',
       isDestructive: true,
     );
@@ -62,6 +64,19 @@ class LoanDetailScreen extends ConsumerWidget {
     final instNum = nextInstallment?.monthNumber ?? 1;
     final emiAmount = nextInstallment?.emiAmount ?? currentLoan.emiAmount;
     final dueDate = nextInstallment?.dueDate ?? currentLoan.nextDueDate;
+    final accounts =
+        ref.read(accountsWithBalancesProvider).valueOrNull ?? const [];
+    final payingAccount =
+        accounts.isEmpty
+            ? null
+            : await showPaymentAccountPicker(
+              context: context,
+              accounts: accounts,
+              selectedAccountId: currentLoan.accountId,
+            );
+    if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
+      return;
+    }
 
     final confirmed = await FfConfirmDialog.show(
       context,
@@ -75,7 +90,11 @@ class LoanDetailScreen extends ConsumerWidget {
       try {
         await ref
             .read(loansControllerProvider.notifier)
-            .markInstallmentPaid(loan: currentLoan, installmentNumber: instNum);
+            .markInstallmentPaid(
+              loan: currentLoan,
+              installmentNumber: instNum,
+              accountId: payingAccount?.id,
+            );
         if (context.mounted) {
           FfSnackbar.show(
             context,
@@ -100,6 +119,19 @@ class LoanDetailScreen extends ConsumerWidget {
       0.0,
       (sum, item) => sum + item.emiAmount,
     );
+    final accounts =
+        ref.read(accountsWithBalancesProvider).valueOrNull ?? const [];
+    final payingAccount =
+        accounts.isEmpty
+            ? null
+            : await showPaymentAccountPicker(
+              context: context,
+              accounts: accounts,
+              selectedAccountId: currentLoan.accountId,
+            );
+    if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
+      return;
+    }
 
     final confirmed = await FfConfirmDialog.show(
       context,
@@ -113,7 +145,10 @@ class LoanDetailScreen extends ConsumerWidget {
       try {
         await ref
             .read(loansControllerProvider.notifier)
-            .markAllOverduePaid(loan: currentLoan);
+            .markAllOverduePaid(
+              loan: currentLoan,
+              accountId: payingAccount?.id,
+            );
         if (context.mounted) {
           FfSnackbar.show(
             context,

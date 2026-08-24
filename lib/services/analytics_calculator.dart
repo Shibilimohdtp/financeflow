@@ -322,17 +322,13 @@ class AnalyticsCalculator {
           (name: 'Account', expense: 0.0, income: 0.0, count: 0);
       accountMap[accId] = (
         name: currentAcc.name,
-        expense:
-            currentAcc.expense +
-            (tx.type == TransactionType.expense ? tx.amount : 0.0),
-        income:
-            currentAcc.income +
-            (tx.type == TransactionType.income ? tx.amount : 0.0),
+        expense: currentAcc.expense + tx.consumptionExpenseAmount,
+        income: currentAcc.income + tx.earnedIncomeAmount,
         count: currentAcc.count + 1,
       );
 
-      if (tx.type == TransactionType.income) {
-        totalIncome += tx.amount;
+      if (tx.earnedIncomeAmount > 0) {
+        totalIncome += tx.earnedIncomeAmount;
 
         final existingIncCat =
             incomeCatMap[tx.categoryId] ??
@@ -347,14 +343,16 @@ class AnalyticsCalculator {
           name: tx.categoryName.isNotEmpty ? tx.categoryName : 'Income',
           icon: tx.categoryIcon,
           color: tx.categoryColor,
-          amount: existingIncCat.amount + tx.amount,
+          amount: existingIncCat.amount + tx.earnedIncomeAmount,
           count: existingIncCat.count + 1,
         );
-      } else if (tx.type == TransactionType.expense) {
-        totalExpense += tx.amount;
+      }
+      if (tx.consumptionExpenseAmount > 0) {
+        final expenseAmount = tx.consumptionExpenseAmount;
+        totalExpense += expenseAmount;
         expenseCount++;
-        if (tx.amount > highestTx) {
-          highestTx = tx.amount;
+        if (expenseAmount > highestTx) {
+          highestTx = expenseAmount;
         }
 
         // Category breakdown
@@ -371,7 +369,7 @@ class AnalyticsCalculator {
           name: tx.categoryName,
           icon: tx.categoryIcon,
           color: tx.categoryColor,
-          amount: existingCat.amount + tx.amount,
+          amount: existingCat.amount + expenseAmount,
           count: existingCat.count + 1,
         );
 
@@ -382,7 +380,7 @@ class AnalyticsCalculator {
         final existingMerch =
             merchantMap[normalizedMerchant] ?? (amount: 0.0, count: 0);
         merchantMap[normalizedMerchant] = (
-          amount: existingMerch.amount + tx.amount,
+          amount: existingMerch.amount + expenseAmount,
           count: existingMerch.count + 1,
         );
 
@@ -390,7 +388,7 @@ class AnalyticsCalculator {
         final w = tx.date.weekday;
         final existingW = weekdayMap[w]!;
         weekdayMap[w] = (
-          amount: existingW.amount + tx.amount,
+          amount: existingW.amount + expenseAmount,
           count: existingW.count + 1,
         );
       }
@@ -516,10 +514,9 @@ class AnalyticsCalculator {
             .toList();
 
     // Process Largest Transactions
-    final largestTransactions =
-        List<Transaction>.from(
-            inRangeTxs.where((t) => t.type == TransactionType.expense),
-          )..sort((a, b) => b.amount.compareTo(a.amount));
+    final largestTransactions = List<Transaction>.from(
+      inRangeTxs.where((t) => t.consumptionExpenseAmount > 0),
+    )..sort((a, b) => b.amount.compareTo(a.amount));
     final topLargest = largestTransactions.take(5).toList();
 
     // Process Day of Week Breakdown
@@ -555,12 +552,14 @@ class AnalyticsCalculator {
               !t.date.isAfter(prevBounds.end);
         }).toList();
 
-    final prevExpense = prevInRangeTxs
-        .where((t) => t.type == TransactionType.expense)
-        .fold<double>(0.0, (sum, t) => sum + t.amount);
-    final prevIncome = prevInRangeTxs
-        .where((t) => t.type == TransactionType.income)
-        .fold<double>(0.0, (sum, t) => sum + t.amount);
+    final prevExpense = prevInRangeTxs.fold<double>(
+      0.0,
+      (sum, t) => sum + t.consumptionExpenseAmount,
+    );
+    final prevIncome = prevInRangeTxs.fold<double>(
+      0.0,
+      (sum, t) => sum + t.earnedIncomeAmount,
+    );
 
     double? expenseChangePct;
     if (prevExpense > 0) {
@@ -617,8 +616,8 @@ class AnalyticsCalculator {
           if (tx.date.year == d.year &&
               tx.date.month == d.month &&
               tx.date.day == d.day) {
-            if (tx.type == TransactionType.expense) dayExp += tx.amount;
-            if (tx.type == TransactionType.income) dayInc += tx.amount;
+            dayExp += tx.consumptionExpenseAmount;
+            dayInc += tx.earnedIncomeAmount;
           }
         }
 
@@ -644,8 +643,8 @@ class AnalyticsCalculator {
           if (tx.date.year == d.year &&
               tx.date.month == d.month &&
               tx.date.day == d.day) {
-            if (tx.type == TransactionType.expense) dayExp += tx.amount;
-            if (tx.type == TransactionType.income) dayInc += tx.amount;
+            dayExp += tx.consumptionExpenseAmount;
+            dayInc += tx.earnedIncomeAmount;
           }
         }
 
@@ -681,8 +680,8 @@ class AnalyticsCalculator {
 
         for (final tx in transactions) {
           if (tx.date.year == start.year && tx.date.month == m) {
-            if (tx.type == TransactionType.expense) mExp += tx.amount;
-            if (tx.type == TransactionType.income) mInc += tx.amount;
+            mExp += tx.consumptionExpenseAmount;
+            mInc += tx.earnedIncomeAmount;
           }
         }
 
@@ -708,8 +707,8 @@ class AnalyticsCalculator {
           if (tx.date.year == d.year &&
               tx.date.month == d.month &&
               tx.date.day == d.day) {
-            if (tx.type == TransactionType.expense) dExp += tx.amount;
-            if (tx.type == TransactionType.income) dInc += tx.amount;
+            dExp += tx.consumptionExpenseAmount;
+            dInc += tx.earnedIncomeAmount;
           }
         }
 

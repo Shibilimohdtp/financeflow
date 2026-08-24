@@ -44,7 +44,8 @@ class BudgetVisualSummaryCard extends StatelessWidget {
     } else if (isApproaching) {
       statusColor = theme.colorScheme.tertiary;
       statusIcon = Icons.warning_amber_rounded;
-      statusMessage = 'Approaching limit (${(percentage * 100).toStringAsFixed(0)}% used)';
+      statusMessage =
+          'Approaching limit (${(percentage * 100).toStringAsFixed(0)}% used)';
     } else {
       statusColor = finColors.income;
       statusIcon = Icons.check_circle_outline_rounded;
@@ -237,11 +238,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 36,
-                color: theme.dividerColor,
-              ),
+              Container(width: 1, height: 36, color: theme.dividerColor),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(
@@ -298,10 +295,7 @@ class _SummaryPillar extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style: StillwaterTypography.numMd(color: color),
-          ),
+          child: Text(value, style: StillwaterTypography.numMd(color: color)),
         ),
       ],
     );

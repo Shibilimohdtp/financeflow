@@ -29,6 +29,11 @@ class EmiPaymentEntity {
 
   String? accountId;
 
+  @Index()
+  String? transactionId;
+
+  bool isHistoricalStatusOnly = false;
+
   String? notes;
 
   late DateTime createdAt;

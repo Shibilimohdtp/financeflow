@@ -41,6 +41,30 @@ class TransactionEntity {
 
   String? toAccountId; // For transfer transactions
 
+  @Index()
+  String? purpose;
+
+  @Index()
+  String? direction;
+
+  @Index(type: IndexType.value, caseSensitive: false)
+  String? externalCounterpartyName;
+
+  @Index()
+  String? linkedLoanId;
+
+  @Index()
+  String? linkedMoneyRecordId;
+
+  @Index()
+  String? linkedInvestmentId;
+
+  double? principalComponent;
+
+  double? interestComponent;
+
+  double? feeComponent;
+
   List<String> tags = [];
 
   bool isReviewed = true;

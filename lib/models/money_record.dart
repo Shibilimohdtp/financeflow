@@ -128,6 +128,7 @@ class MoneyRecord {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? settledAt;
+  final String? originTransactionId;
 
   const MoneyRecord({
     required this.id,
@@ -143,6 +144,7 @@ class MoneyRecord {
     required this.createdAt,
     required this.updatedAt,
     this.settledAt,
+    this.originTransactionId,
   });
 
   MoneyRecord copyWith({
@@ -159,7 +161,9 @@ class MoneyRecord {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? settledAt,
+    String? originTransactionId,
     bool clearSettledAt = false,
+    bool clearOriginTransactionId = false,
   }) {
     return MoneyRecord(
       id: id ?? this.id,
@@ -175,6 +179,10 @@ class MoneyRecord {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       settledAt: clearSettledAt ? null : (settledAt ?? this.settledAt),
+      originTransactionId:
+          clearOriginTransactionId
+              ? null
+              : originTransactionId ?? this.originTransactionId,
     );
   }
 
@@ -182,7 +190,8 @@ class MoneyRecord {
     if (personName.trim().isEmpty) {
       throw const ValidationError(
         message: "Person's name is required.",
-        actionableStep: 'Enter the name of the person you lent to or borrowed from.',
+        actionableStep:
+            'Enter the name of the person you lent to or borrowed from.',
       );
     }
     if (originalAmount <= 0) {
@@ -192,7 +201,11 @@ class MoneyRecord {
       );
     }
 
-    final txDay = DateTime(transactionDate.year, transactionDate.month, transactionDate.day);
+    final txDay = DateTime(
+      transactionDate.year,
+      transactionDate.month,
+      transactionDate.day,
+    );
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
     if (dueDay.isBefore(txDay)) {
       throw const ValidationError(
@@ -286,6 +299,7 @@ class MoneyRecord {
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
     'settledAt': settledAt?.toIso8601String(),
+    'originTransactionId': originTransactionId,
   };
 
   factory MoneyRecord.fromJson(Map<String, dynamic> json) => MoneyRecord(
@@ -301,6 +315,10 @@ class MoneyRecord {
     reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 1,
     createdAt: DateTime.parse(json['createdAt'] as String),
     updatedAt: DateTime.parse(json['updatedAt'] as String),
-    settledAt: json['settledAt'] != null ? DateTime.parse(json['settledAt'] as String) : null,
+    settledAt:
+        json['settledAt'] != null
+            ? DateTime.parse(json['settledAt'] as String)
+            : null,
+    originTransactionId: json['originTransactionId'] as String?,
   );
 }

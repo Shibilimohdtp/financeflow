@@ -49,14 +49,15 @@ class CategoryTransactionsSheet extends StatelessWidget {
           top: Radius.circular(StillwaterTokens.radius2Xl),
         ),
       ),
-      builder: (_) => CategoryTransactionsSheet(
-        categoryName: categoryName,
-        categoryIcon: categoryIcon,
-        categoryColor: categoryColor,
-        totalAmount: totalAmount,
-        periodLabel: periodLabel,
-        transactions: transactions,
-      ),
+      builder:
+          (_) => CategoryTransactionsSheet(
+            categoryName: categoryName,
+            categoryIcon: categoryIcon,
+            categoryColor: categoryColor,
+            totalAmount: totalAmount,
+            periodLabel: periodLabel,
+            transactions: transactions,
+          ),
     );
   }
 
@@ -82,7 +83,8 @@ class CategoryTransactionsSheet extends StatelessWidget {
           children: [
             FfSheetHeader(
               title: categoryName,
-              subtitle: '$periodLabel · ${transactions.length} ${transactions.length == 1 ? "transaction" : "transactions"}',
+              subtitle:
+                  '$periodLabel · ${transactions.length} ${transactions.length == 1 ? "transaction" : "transactions"}',
               trailing: FfCategoryTile(
                 iconIdentifier: categoryIcon,
                 colorTokenIdentifier: categoryColor,
@@ -102,7 +104,9 @@ class CategoryTransactionsSheet extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusLg,
+                  ),
                   border: Border.all(
                     color: theme.dividerColor,
                     width: StillwaterTokens.borderWidthHairline,
@@ -130,101 +134,139 @@ class CategoryTransactionsSheet extends StatelessWidget {
             ),
             const SizedBox(height: StillwaterTokens.spaceSm),
             Expanded(
-              child: transactions.isEmpty
-                  ? Center(
-                      child: FfEmptyState(
-                        icon: Icons.receipt_long_outlined,
-                        title: 'No transactions found',
-                        description: 'No payments were recorded for $categoryName during this time period.',
-                      ),
-                    )
-                  : ListView(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(
-                        StillwaterTokens.spaceLg,
-                        StillwaterTokens.spaceXs,
-                        StillwaterTokens.spaceLg,
-                        StillwaterTokens.space3Xl,
-                      ),
-                      children: [
-                        FfGroupedContainer(
-                          children: transactions.map((tx) {
-                            return InkWell(
-                              onTap: () => _openDetail(context, tx),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: StillwaterTokens.spaceMd,
-                                  vertical: StillwaterTokens.spaceSm,
-                                ),
-                                child: Row(
-                                  children: [
-                                    FfCategoryTile(
-                                      iconIdentifier: tx.categoryIcon,
-                                      colorTokenIdentifier: tx.categoryColor,
-                                      size: 36,
-                                    ),
-                                    const SizedBox(width: StillwaterTokens.spaceSm),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
+              child:
+                  transactions.isEmpty
+                      ? Center(
+                        child: FfEmptyState(
+                          icon: Icons.receipt_long_outlined,
+                          title: 'No transactions found',
+                          description:
+                              'No payments were recorded for $categoryName during this time period.',
+                        ),
+                      )
+                      : ListView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(
+                          StillwaterTokens.spaceLg,
+                          StillwaterTokens.spaceXs,
+                          StillwaterTokens.spaceLg,
+                          StillwaterTokens.space3Xl,
+                        ),
+                        children: [
+                          FfGroupedContainer(
+                            children:
+                                transactions.map((tx) {
+                                  return InkWell(
+                                    onTap: () => _openDetail(context, tx),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: StillwaterTokens.spaceMd,
+                                        vertical: StillwaterTokens.spaceSm,
+                                      ),
+                                      child: Row(
                                         children: [
-                                          Text(
-                                            tx.merchant,
-                                            style: theme.textTheme.titleSmall?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                          FfCategoryTile(
+                                            iconIdentifier: tx.categoryIcon,
+                                            colorTokenIdentifier:
+                                                tx.categoryColor,
+                                            size: 36,
                                           ),
-                                          const SizedBox(height: StillwaterTokens.space3Xs),
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  DateFormatter.formatTransactionDate(tx.date),
-                                                  style: theme.textTheme.bodySmall?.copyWith(
-                                                    fontSize: 11,
-                                                    color: theme.colorScheme.secondary,
-                                                  ),
+                                          const SizedBox(
+                                            width: StillwaterTokens.spaceSm,
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  tx.merchant,
+                                                  style: theme
+                                                      .textTheme
+                                                      .titleSmall
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
-                                              ),
-                                              const SizedBox(width: StillwaterTokens.spaceXs),
-                                              Flexible(
-                                                child: FfSourceBadge(
-                                                  source: tx.source,
-                                                  sourceName: tx.sourceName,
-                                                  isMerged: tx.mergedSources.length > 1,
+                                                const SizedBox(
+                                                  height:
+                                                      StillwaterTokens.space3Xs,
                                                 ),
-                                              ),
-                                            ],
+                                                Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        DateFormatter.formatTransactionDate(
+                                                          tx.date,
+                                                        ),
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                              fontSize: 11,
+                                                              color:
+                                                                  theme
+                                                                      .colorScheme
+                                                                      .secondary,
+                                                            ),
+                                                        maxLines: 1,
+                                                        overflow:
+                                                            TextOverflow
+                                                                .ellipsis,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                      width:
+                                                          StillwaterTokens
+                                                              .spaceXs,
+                                                    ),
+                                                    Flexible(
+                                                      child: FfSourceBadge(
+                                                        source: tx.source,
+                                                        sourceName:
+                                                            tx.sourceName,
+                                                        isMerged:
+                                                            tx
+                                                                .mergedSources
+                                                                .length >
+                                                            1,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            width: StillwaterTokens.spaceSm,
+                                          ),
+                                          FfAmountText(
+                                            amount: tx.amount,
+                                            type: tx.type,
+                                            size: FfAmountSize.md,
+                                            showSign: true,
+                                          ),
+                                          const SizedBox(
+                                            width: StillwaterTokens.space2Xs,
+                                          ),
+                                          Icon(
+                                            Icons.chevron_right_rounded,
+                                            size: 16,
+                                            color: theme.colorScheme.outline,
                                           ),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: StillwaterTokens.spaceSm),
-                                    FfAmountText(
-                                      amount: tx.amount,
-                                      type: tx.type,
-                                      size: FfAmountSize.md,
-                                      showSign: true,
-                                    ),
-                                    const SizedBox(width: StillwaterTokens.space2Xs),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 16,
-                                      color: theme.colorScheme.outline,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
+                                  );
+                                }).toList(),
+                          ),
+                        ],
+                      ),
             ),
           ],
         );

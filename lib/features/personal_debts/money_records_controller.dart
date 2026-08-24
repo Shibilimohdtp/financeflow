@@ -3,7 +3,11 @@ import 'package:uuid/uuid.dart';
 import '../../core/errors/app_error.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
+import '../../models/transaction.dart';
 import '../../repositories/money_record_repository.dart';
+import '../../repositories/transaction_repository.dart';
+import '../../services/financial_operation_service.dart';
+import '../../database/isar_service.dart';
 import '../../services/money_lending_calculator.dart';
 
 final allMoneyRecordsStreamProvider = StreamProvider<List<MoneyRecord>>((ref) {
@@ -11,17 +15,18 @@ final allMoneyRecordsStreamProvider = StreamProvider<List<MoneyRecord>>((ref) {
   return repository.watchAllRecords();
 });
 
-final allMoneyRepaymentsStreamProvider =
-    StreamProvider<List<MoneyRepayment>>((ref) {
+final allMoneyRepaymentsStreamProvider = StreamProvider<List<MoneyRepayment>>((
+  ref,
+) {
   final repository = ref.watch(moneyRecordRepositoryProvider);
   return repository.watchAllRepayments();
 });
 
 final moneyRecordRepaymentsProvider =
     StreamProvider.family<List<MoneyRepayment>, String>((ref, recordId) {
-  final repository = ref.watch(moneyRecordRepositoryProvider);
-  return repository.watchRepaymentsForRecord(recordId);
-});
+      final repository = ref.watch(moneyRecordRepositoryProvider);
+      return repository.watchRepaymentsForRecord(recordId);
+    });
 
 final moneyRecordFilterProvider = StateProvider<MoneyRecordFilter>((ref) {
   return MoneyRecordFilter.all;
@@ -44,16 +49,26 @@ final filteredMoneyRecordsProvider = Provider<List<MoneyRecord>>((ref) {
 
 final moneyRecordsControllerProvider =
     StateNotifierProvider<MoneyRecordsController, AsyncValue<void>>((ref) {
-  final repository = ref.watch(moneyRecordRepositoryProvider);
-  return MoneyRecordsController(repository);
-});
+      final repository = ref.watch(moneyRecordRepositoryProvider);
+      final hasDatabase = IsarService.isInitialized;
+      return MoneyRecordsController(
+        repository,
+        hasDatabase ? ref.watch(financialOperationServiceProvider) : null,
+        hasDatabase ? ref.watch(transactionRepositoryProvider) : null,
+      );
+    });
 
 class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
   final MoneyRecordRepository _repository;
+  final FinancialOperationService? _coordinator;
+  final TransactionRepository? _transactions;
   static const _uuid = Uuid();
 
-  MoneyRecordsController(this._repository)
-      : super(const AsyncValue.data(null));
+  MoneyRecordsController(
+    this._repository, [
+    this._coordinator,
+    this._transactions,
+  ]) : super(const AsyncValue.data(null));
 
   Future<void> addRecord({
     required String personName,
@@ -65,12 +80,15 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
     bool isReminderEnabled = true,
     int reminderDaysBefore = 1,
     String userId = 'local_user',
+    String? accountId,
+    bool recordInTransactions = false,
   }) async {
     state = const AsyncValue.loading();
     try {
       final now = DateTime.now();
+      final recordId = 'rec_${_uuid.v4()}';
       final record = MoneyRecord(
-        id: 'rec_${_uuid.v4()}',
+        id: recordId,
         userId: userId,
         type: type,
         personName: personName.trim(),
@@ -85,7 +103,40 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
       );
 
       record.validate();
-      await _repository.saveRecord(record);
+      if (recordInTransactions && accountId != null && _coordinator != null) {
+        final transactionId = 'debt_origin_$recordId';
+        await _coordinator.postTransaction(
+          Transaction(
+            id: transactionId,
+            amount: originalAmount,
+            type:
+                type == MoneyRecordType.lent
+                    ? TransactionType.expense
+                    : TransactionType.income,
+            purpose:
+                type == MoneyRecordType.lent
+                    ? TransactionPurpose.lending
+                    : TransactionPurpose.borrowing,
+            categoryId: 'cat_personal_debt',
+            categoryName: 'Personal debt',
+            categoryIcon: 'person',
+            categoryColor: 'debt',
+            merchant: personName.trim(),
+            externalCounterpartyName: personName.trim(),
+            date: transactionDate,
+            notes: notes,
+            accountId: accountId,
+            linkedMoneyRecordId: recordId,
+            createdAt: now,
+            updatedAt: now,
+          ),
+          moneyRecordDetails: record.copyWith(
+            originTransactionId: transactionId,
+          ),
+        );
+      } else {
+        await _repository.saveRecord(record);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -99,8 +150,10 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
       record.validate();
 
       // Safe update check: ensure originalAmount is not less than total repaid
-      final repayments =
-          await _repository.getRepaymentsForRecord(record.id, userId: record.userId);
+      final repayments = await _repository.getRepaymentsForRecord(
+        record.id,
+        userId: record.userId,
+      );
       final totalRepaid = record.calculateTotalRepaid(repayments);
       if (record.originalAmount < (totalRepaid - 0.001)) {
         throw ValidationError(
@@ -116,15 +169,46 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
 
       final updated = record.copyWith(
         personName: record.personName.trim(),
-        notes: record.notes?.trim().isNotEmpty == true ? record.notes!.trim() : null,
+        notes:
+            record.notes?.trim().isNotEmpty == true
+                ? record.notes!.trim()
+                : null,
         updatedAt: now,
-        settledAt: isNowSettled
-            ? (record.settledAt ?? now)
-            : (record.settledAt != null && !isNowSettled ? null : record.settledAt),
+        settledAt:
+            isNowSettled
+                ? (record.settledAt ?? now)
+                : (record.settledAt != null && !isNowSettled
+                    ? null
+                    : record.settledAt),
         clearSettledAt: !isNowSettled && record.settledAt != null,
       );
 
-      await _repository.saveRecord(updated);
+      if (record.originTransactionId != null &&
+          _coordinator != null &&
+          _transactions != null) {
+        final origin = await _transactions.getTransactionById(
+          record.originTransactionId!,
+        );
+        if (origin != null) {
+          await _coordinator.postTransaction(
+            origin.copyWith(
+              amount: updated.originalAmount,
+              merchant: updated.personName,
+              externalCounterpartyName: updated.personName,
+              date: updated.transactionDate,
+              notes: updated.notes,
+              updatedAt: now,
+            ),
+            moneyRecordDetails: updated,
+          );
+        } else {
+          await _repository.saveRecord(
+            updated.copyWith(clearOriginTransactionId: true),
+          );
+        }
+      } else {
+        await _repository.saveRecord(updated);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -135,7 +219,12 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
   Future<void> deleteRecord(String id, {String userId = 'local_user'}) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.deleteRecord(id, userId: userId);
+      final record = await _repository.getRecordById(id, userId: userId);
+      if (record?.originTransactionId != null && _coordinator != null) {
+        await _coordinator.deleteTransaction(record!.originTransactionId!);
+      } else {
+        await _repository.deleteRecord(id, userId: userId);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -149,19 +238,27 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
     required DateTime repaymentDate,
     String? notes,
     String userId = 'local_user',
+    String? accountId,
+    bool recordInTransactions = false,
   }) async {
     state = const AsyncValue.loading();
     try {
-      final record = await _repository.getRecordById(moneyRecordId, userId: userId);
+      final record = await _repository.getRecordById(
+        moneyRecordId,
+        userId: userId,
+      );
       if (record == null) {
         throw const ValidationError(
           message: 'Record not found.',
-          actionableStep: 'Please select an existing lending or borrowing record.',
+          actionableStep:
+              'Please select an existing lending or borrowing record.',
         );
       }
 
-      final repayments =
-          await _repository.getRepaymentsForRecord(moneyRecordId, userId: userId);
+      final repayments = await _repository.getRepaymentsForRecord(
+        moneyRecordId,
+        userId: userId,
+      );
       final remaining = record.calculateRemainingAmount(repayments);
 
       final repayment = MoneyRepayment(
@@ -175,17 +272,51 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
       );
 
       repayment.validate(remainingBalance: remaining);
-      await _repository.addRepayment(repayment);
-
-      // Auto-settle record if balance is 0
-      final updatedRepayments = [...repayments, repayment];
-      final newRemaining = record.calculateRemainingAmount(updatedRepayments);
-      if (newRemaining <= 0.001 && record.settledAt == null) {
-        final settledRecord = record.copyWith(
-          settledAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+      if (recordInTransactions && accountId != null && _coordinator != null) {
+        await _coordinator.postTransaction(
+          Transaction(
+            id: 'debt_repayment_${repayment.id}',
+            amount: amount,
+            type:
+                record.type == MoneyRecordType.lent
+                    ? TransactionType.income
+                    : TransactionType.expense,
+            purpose:
+                record.type == MoneyRecordType.lent
+                    ? TransactionPurpose.personalDebtRepaymentReceived
+                    : TransactionPurpose.personalDebtRepaymentMade,
+            categoryId: 'cat_personal_debt',
+            categoryName: 'Personal debt repayment',
+            categoryIcon: 'payments',
+            categoryColor: 'debt',
+            merchant: record.personName,
+            externalCounterpartyName: record.personName,
+            date: repaymentDate,
+            notes: notes,
+            accountId: accountId,
+            linkedMoneyRecordId: record.id,
+            principalComponent: amount,
+            createdAt: repayment.createdAt,
+            updatedAt: repayment.createdAt,
+          ),
         );
-        await _repository.saveRecord(settledRecord);
+      } else {
+        await _repository.addRepayment(repayment);
+      }
+
+      if (!(recordInTransactions &&
+          accountId != null &&
+          _coordinator != null)) {
+        // Legacy/status-only repayment path.
+        final updatedRepayments = [...repayments, repayment];
+        final newRemaining = record.calculateRemainingAmount(updatedRepayments);
+        if (newRemaining <= 0.001 && record.settledAt == null) {
+          final settledRecord = record.copyWith(
+            settledAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          await _repository.saveRecord(settledRecord);
+        }
       }
 
       state = const AsyncValue.data(null);
@@ -202,13 +333,26 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.deleteRepayment(repaymentId, userId: userId);
+      final repayment =
+          (await _repository.getAllRepayments(
+            userId: userId,
+          )).where((item) => item.id == repaymentId).firstOrNull;
+      if (repayment?.transactionId != null && _coordinator != null) {
+        await _coordinator.deleteTransaction(repayment!.transactionId!);
+      } else {
+        await _repository.deleteRepayment(repaymentId, userId: userId);
+      }
 
       // Check if record was settled; if remaining > 0, un-settle it
-      final record = await _repository.getRecordById(moneyRecordId, userId: userId);
+      final record = await _repository.getRecordById(
+        moneyRecordId,
+        userId: userId,
+      );
       if (record != null && record.settledAt != null) {
-        final repayments =
-            await _repository.getRepaymentsForRecord(moneyRecordId, userId: userId);
+        final repayments = await _repository.getRepaymentsForRecord(
+          moneyRecordId,
+          userId: userId,
+        );
         final remaining = record.calculateRemainingAmount(repayments);
         if (remaining > 0.001) {
           final unSettledRecord = record.copyWith(

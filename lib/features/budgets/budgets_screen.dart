@@ -187,36 +187,37 @@ class BudgetsScreen extends ConsumerWidget {
             FfSectionHeader(
               title: 'Category Budgets',
               padding: EdgeInsets.zero,
-              trailing: (summariesAsync.valueOrNull?.isNotEmpty ?? false)
-                  ? PopupMenuButton<BudgetPeriod?>(
-                    icon: Icon(
-                      Icons.filter_list_rounded,
-                      size: 20,
-                      color:
-                          selectedPeriodFilter != null
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.secondary,
-                    ),
-                    tooltip: 'Filter by period',
-                    onSelected: (period) {
-                      ref
-                          .read(selectedBudgetPeriodFilterProvider.notifier)
-                          .state = period;
-                    },
-                    itemBuilder:
-                        (ctx) => [
-                          const PopupMenuItem(
-                            value: null,
-                            child: Text('All Periods'),
-                          ),
-                          for (final p in BudgetPeriod.values)
-                            PopupMenuItem(
-                              value: p,
-                              child: Text(p.displayName),
-                            ),
-                        ],
-                  )
-                  : null,
+              trailing:
+                  (summariesAsync.valueOrNull?.isNotEmpty ?? false)
+                      ? PopupMenuButton<BudgetPeriod?>(
+                        icon: Icon(
+                          Icons.filter_list_rounded,
+                          size: 20,
+                          color:
+                              selectedPeriodFilter != null
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.secondary,
+                        ),
+                        tooltip: 'Filter by period',
+                        onSelected: (period) {
+                          ref
+                              .read(selectedBudgetPeriodFilterProvider.notifier)
+                              .state = period;
+                        },
+                        itemBuilder:
+                            (ctx) => [
+                              const PopupMenuItem(
+                                value: null,
+                                child: Text('All Periods'),
+                              ),
+                              for (final p in BudgetPeriod.values)
+                                PopupMenuItem(
+                                  value: p,
+                                  child: Text(p.displayName),
+                                ),
+                            ],
+                      )
+                      : null,
             ),
 
             if (selectedPeriodFilter != null) ...[
@@ -267,7 +268,8 @@ class BudgetsScreen extends ConsumerWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: items.length,
                   separatorBuilder:
-                      (_, __) => const SizedBox(height: StillwaterTokens.spaceSm),
+                      (_, __) =>
+                          const SizedBox(height: StillwaterTokens.spaceSm),
                   itemBuilder: (context, index) {
                     final summary = items[index];
                     return BudgetCard(

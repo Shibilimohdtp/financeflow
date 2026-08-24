@@ -65,6 +65,58 @@ enum TransactionType {
   }
 }
 
+/// Why money moved. This is deliberately independent from how an entry is
+/// grouped in the legacy UI (`TransactionType`).
+enum TransactionPurpose {
+  expense,
+  income,
+  internalTransfer,
+  lending,
+  borrowing,
+  personalDebtRepaymentMade,
+  personalDebtRepaymentReceived,
+  loanDisbursement,
+  loanRepayment,
+  investmentPurchase,
+  investmentRedemption,
+  accountAdjustment,
+  legacyCash;
+
+  String get displayName => switch (this) {
+    expense => 'Expense',
+    income => 'Income',
+    internalTransfer => 'Between owned accounts',
+    lending => 'Lend to someone',
+    borrowing => 'Borrow from someone',
+    personalDebtRepaymentMade => 'Repay personal borrowing',
+    personalDebtRepaymentReceived => 'Receive repayment',
+    loanDisbursement => 'Loan disbursement',
+    loanRepayment => 'Pay Loan / EMI',
+    investmentPurchase => 'Invest',
+    investmentRedemption => 'Investment redemption',
+    accountAdjustment => 'Account adjustment',
+    legacyCash => 'Legacy cash entry',
+  };
+
+  static TransactionPurpose? fromString(String? value) {
+    if (value == null || value.isEmpty) return null;
+    return TransactionPurpose.values.where((e) => e.name == value).firstOrNull;
+  }
+}
+
+enum AccountMovementDirection {
+  inflow,
+  outflow,
+  internal;
+
+  static AccountMovementDirection? fromString(String? value) {
+    if (value == null || value.isEmpty) return null;
+    return AccountMovementDirection.values
+        .where((e) => e.name == value)
+        .firstOrNull;
+  }
+}
+
 enum TransactionSource {
   manual,
   notification,
@@ -140,6 +192,15 @@ class Transaction {
   final String? paymentMethod;
   final String accountId;
   final String? toAccountId;
+  final TransactionPurpose? purpose;
+  final AccountMovementDirection? direction;
+  final String? externalCounterpartyName;
+  final String? linkedLoanId;
+  final String? linkedMoneyRecordId;
+  final String? linkedInvestmentId;
+  final double? principalComponent;
+  final double? interestComponent;
+  final double? feeComponent;
   final List<String> tags;
   final bool isReviewed;
   final DateTime createdAt;
@@ -175,6 +236,15 @@ class Transaction {
     this.paymentMethod,
     required this.accountId,
     this.toAccountId,
+    this.purpose,
+    this.direction,
+    this.externalCounterpartyName,
+    this.linkedLoanId,
+    this.linkedMoneyRecordId,
+    this.linkedInvestmentId,
+    this.principalComponent,
+    this.interestComponent,
+    this.feeComponent,
     this.tags = const [],
     this.isReviewed = true,
     required this.createdAt,
@@ -208,6 +278,17 @@ class Transaction {
     String? paymentMethod,
     String? accountId,
     String? toAccountId,
+    bool clearToAccountId = false,
+    TransactionPurpose? purpose,
+    AccountMovementDirection? direction,
+    String? externalCounterpartyName,
+    String? linkedLoanId,
+    String? linkedMoneyRecordId,
+    String? linkedInvestmentId,
+    double? principalComponent,
+    double? interestComponent,
+    double? feeComponent,
+    bool clearSemanticLinks = false,
     List<String>? tags,
     bool? isReviewed,
     DateTime? createdAt,
@@ -239,7 +320,33 @@ class Transaction {
       source: source ?? this.source,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       accountId: accountId ?? this.accountId,
-      toAccountId: toAccountId ?? this.toAccountId,
+      toAccountId: clearToAccountId ? null : toAccountId ?? this.toAccountId,
+      purpose: purpose ?? this.purpose,
+      direction: direction ?? this.direction,
+      externalCounterpartyName:
+          clearSemanticLinks
+              ? null
+              : externalCounterpartyName ?? this.externalCounterpartyName,
+      linkedLoanId:
+          clearSemanticLinks ? null : linkedLoanId ?? this.linkedLoanId,
+      linkedMoneyRecordId:
+          clearSemanticLinks
+              ? null
+              : linkedMoneyRecordId ?? this.linkedMoneyRecordId,
+      linkedInvestmentId:
+          clearSemanticLinks
+              ? null
+              : linkedInvestmentId ?? this.linkedInvestmentId,
+      principalComponent:
+          clearSemanticLinks
+              ? null
+              : principalComponent ?? this.principalComponent,
+      interestComponent:
+          clearSemanticLinks
+              ? null
+              : interestComponent ?? this.interestComponent,
+      feeComponent:
+          clearSemanticLinks ? null : feeComponent ?? this.feeComponent,
       tags: tags ?? this.tags,
       isReviewed: isReviewed ?? this.isReviewed,
       createdAt: createdAt ?? this.createdAt,
@@ -259,6 +366,59 @@ class Transaction {
           categorizationConfidence ?? this.categorizationConfidence,
     );
   }
+
+  TransactionPurpose get effectivePurpose =>
+      purpose ??
+      switch (type) {
+        TransactionType.expense => TransactionPurpose.expense,
+        TransactionType.income => TransactionPurpose.income,
+        TransactionType.transfer => TransactionPurpose.internalTransfer,
+        TransactionType.investment => TransactionPurpose.investmentPurchase,
+        TransactionType.loanEmi => TransactionPurpose.loanRepayment,
+        TransactionType.cash => TransactionPurpose.legacyCash,
+      };
+
+  AccountMovementDirection get effectiveDirection =>
+      direction ??
+      switch (effectivePurpose) {
+        TransactionPurpose.income ||
+        TransactionPurpose.borrowing ||
+        TransactionPurpose.personalDebtRepaymentReceived ||
+        TransactionPurpose.loanDisbursement ||
+        TransactionPurpose
+            .investmentRedemption => AccountMovementDirection.inflow,
+        TransactionPurpose.internalTransfer =>
+          AccountMovementDirection.internal,
+        _ => AccountMovementDirection.outflow,
+      };
+
+  double get feeAmount => feeComponent ?? 0;
+  double get interestAmount => interestComponent ?? 0;
+  double get principalAmount => principalComponent ?? 0;
+
+  double get earnedIncomeAmount => switch (effectivePurpose) {
+    TransactionPurpose.income => amount,
+    TransactionPurpose.investmentRedemption => interestAmount,
+    _ => 0,
+  };
+
+  double get consumptionExpenseAmount => switch (effectivePurpose) {
+    TransactionPurpose.expense || TransactionPurpose.legacyCash => amount,
+    TransactionPurpose.loanRepayment => interestAmount + feeAmount,
+    TransactionPurpose.investmentPurchase ||
+    TransactionPurpose.investmentRedemption => feeAmount,
+    _ => 0,
+  };
+
+  double get cashInflowAmount =>
+      effectiveDirection == AccountMovementDirection.inflow ? amount : 0;
+  double get cashOutflowAmount =>
+      effectiveDirection == AccountMovementDirection.outflow ? amount : 0;
+
+  bool get isLinkedOperation =>
+      linkedLoanId != null ||
+      linkedMoneyRecordId != null ||
+      linkedInvestmentId != null;
 
   /// Validation according to Phase 1 and 3 rules
   void validate() {
@@ -301,6 +461,11 @@ class Transaction {
           actionableStep: 'Choose a category for this transaction.',
         );
       }
+    }
+    if (principalAmount < 0 || interestAmount < 0 || feeAmount < 0) {
+      throw const ValidationError(
+        message: 'Transaction components cannot be negative.',
+      );
     }
   }
 }

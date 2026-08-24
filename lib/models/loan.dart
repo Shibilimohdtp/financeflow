@@ -360,6 +360,8 @@ class EmiPayment {
   final double interestPaid;
   final double emiAmount;
   final String? accountId;
+  final String? transactionId;
+  final bool isHistoricalStatusOnly;
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -374,6 +376,8 @@ class EmiPayment {
     required this.interestPaid,
     required this.emiAmount,
     this.accountId,
+    this.transactionId,
+    this.isHistoricalStatusOnly = false,
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -412,6 +416,9 @@ class EmiPayment {
     double? interestPaid,
     double? emiAmount,
     String? accountId,
+    String? transactionId,
+    bool? isHistoricalStatusOnly,
+    bool clearTransactionId = false,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -426,6 +433,10 @@ class EmiPayment {
       interestPaid: interestPaid ?? this.interestPaid,
       emiAmount: emiAmount ?? this.emiAmount,
       accountId: accountId ?? this.accountId,
+      transactionId:
+          clearTransactionId ? null : transactionId ?? this.transactionId,
+      isHistoricalStatusOnly:
+          isHistoricalStatusOnly ?? this.isHistoricalStatusOnly,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -442,6 +453,8 @@ class EmiPayment {
     'interestPaid': interestPaid,
     'emiAmount': emiAmount,
     'accountId': accountId,
+    'transactionId': transactionId,
+    'isHistoricalStatusOnly': isHistoricalStatusOnly,
     'notes': notes,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
@@ -457,6 +470,8 @@ class EmiPayment {
     interestPaid: (json['interestPaid'] as num).toDouble(),
     emiAmount: (json['emiAmount'] as num).toDouble(),
     accountId: json['accountId'] as String?,
+    transactionId: json['transactionId'] as String?,
+    isHistoricalStatusOnly: json['isHistoricalStatusOnly'] as bool? ?? false,
     notes: json['notes'] as String?,
     createdAt: DateTime.parse(json['createdAt'] as String),
     updatedAt: DateTime.parse(json['updatedAt'] as String),

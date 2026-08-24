@@ -21,24 +21,17 @@ class BalanceCalculator {
 
     for (final tx in allTransactions) {
       if (tx.accountId == account.id) {
-        switch (tx.type) {
-          case TransactionType.income:
+        switch (tx.effectiveDirection) {
+          case AccountMovementDirection.inflow:
             balance += tx.amount;
-            break;
-          case TransactionType.expense:
-          case TransactionType.investment:
-          case TransactionType.loanEmi:
-          case TransactionType.cash:
+          case AccountMovementDirection.outflow:
+          case AccountMovementDirection.internal:
             balance -= tx.amount;
-            break;
-          case TransactionType.transfer:
-            balance -= tx.amount;
-            break;
         }
       }
 
-      // Handle transfers received into this account
-      if (tx.type == TransactionType.transfer && tx.toAccountId == account.id) {
+      if (tx.effectiveDirection == AccountMovementDirection.internal &&
+          tx.toAccountId == account.id) {
         balance += tx.amount;
       }
     }
@@ -52,21 +45,25 @@ class BalanceCalculator {
   ) {
     double totalIncome = 0.0;
     double totalExpense = 0.0;
+    double cashInflow = 0.0;
+    double cashOutflow = 0.0;
+    double debtPrincipalPaid = 0.0;
+    double investingCashFlow = 0.0;
 
     for (final tx in monthTransactions) {
-      switch (tx.type) {
-        case TransactionType.income:
-          totalIncome += tx.amount;
-          break;
-        case TransactionType.expense:
-        case TransactionType.loanEmi:
-        case TransactionType.investment:
-        case TransactionType.cash:
-          totalExpense += tx.amount;
-          break;
-        case TransactionType.transfer:
-          // Transfers between personal accounts do not count toward external income or expenses
-          break;
+      totalIncome += tx.earnedIncomeAmount;
+      totalExpense += tx.consumptionExpenseAmount;
+      cashInflow += tx.cashInflowAmount;
+      cashOutflow += tx.cashOutflowAmount;
+      if (tx.effectivePurpose == TransactionPurpose.loanRepayment ||
+          tx.effectivePurpose == TransactionPurpose.personalDebtRepaymentMade) {
+        debtPrincipalPaid += tx.principalAmount;
+      }
+      if (tx.effectivePurpose == TransactionPurpose.investmentPurchase) {
+        investingCashFlow -= tx.amount;
+      } else if (tx.effectivePurpose ==
+          TransactionPurpose.investmentRedemption) {
+        investingCashFlow += tx.amount;
       }
     }
 
@@ -76,6 +73,10 @@ class BalanceCalculator {
       totalIncome: totalIncome,
       totalExpense: totalExpense,
       netSavings: netSavings,
+      cashInflow: cashInflow,
+      cashOutflow: cashOutflow,
+      debtPrincipalPaid: debtPrincipalPaid,
+      investingCashFlow: investingCashFlow,
     );
   }
 
@@ -91,12 +92,21 @@ class MonthlyCashFlow {
   final double totalIncome;
   final double totalExpense;
   final double netSavings;
+  final double cashInflow;
+  final double cashOutflow;
+  final double debtPrincipalPaid;
+  final double investingCashFlow;
 
   const MonthlyCashFlow({
     required this.totalIncome,
     required this.totalExpense,
     required this.netSavings,
+    this.cashInflow = 0,
+    this.cashOutflow = 0,
+    this.debtPrincipalPaid = 0,
+    this.investingCashFlow = 0,
   });
 
   bool get isPositiveSavings => netSavings >= 0;
+  double get netCashFlow => cashInflow - cashOutflow;
 }

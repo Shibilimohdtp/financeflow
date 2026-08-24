@@ -61,8 +61,7 @@ class _PayeeAggregate {
     displayNames[rawName] = (displayNames[rawName] ?? 0) + 1;
 
     if (tx.categoryId.isNotEmpty) {
-      categoryCounts[tx.categoryId] =
-          (categoryCounts[tx.categoryId] ?? 0) + 1;
+      categoryCounts[tx.categoryId] = (categoryCounts[tx.categoryId] ?? 0) + 1;
       categoryNames[tx.categoryId] = tx.categoryName;
       final prevDate = categoryLastUsed[tx.categoryId];
       if (prevDate == null || tx.date.isAfter(prevDate)) {
@@ -122,10 +121,7 @@ class PayeeSuggestionService {
 
   /// Normalize a raw payee input to a canonical matching key
   static String normalizeKey(String input) {
-    return input
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    return input.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   /// Clean display name helper
@@ -165,16 +161,21 @@ class PayeeSuggestionService {
     DateTime? now,
   }) {
     final referenceDate = now ?? DateTime.now();
-    final cleanQuery = query?.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ?? '';
+    final cleanQuery =
+        query?.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ?? '';
 
     // 1. Group and aggregate transactions for the matching type
-    final typeTransactions = transactions.where((tx) => tx.type == type && tx.merchant.trim().isNotEmpty);
+    final typeTransactions = transactions.where(
+      (tx) => tx.type == type && tx.merchant.trim().isNotEmpty,
+    );
 
     final aggregates = <String, _PayeeAggregate>{};
     for (final tx in typeTransactions) {
       final key = normalizeKey(tx.merchant);
       if (key.isEmpty) continue;
-      aggregates.putIfAbsent(key, () => _PayeeAggregate(key)).addTransaction(tx);
+      aggregates
+          .putIfAbsent(key, () => _PayeeAggregate(key))
+          .addTransaction(tx);
     }
 
     if (aggregates.isEmpty) {
@@ -204,7 +205,8 @@ class PayeeSuggestionService {
 
         if (normKey == cleanQuery || normNameLower == cleanQuery) {
           queryScore = 2000.0;
-        } else if (normKey.startsWith(cleanQuery) || normNameLower.startsWith(cleanQuery)) {
+        } else if (normKey.startsWith(cleanQuery) ||
+            normNameLower.startsWith(cleanQuery)) {
           queryScore = 1000.0;
         } else {
           // Check if any word starts with query
@@ -219,11 +221,13 @@ class PayeeSuggestionService {
       }
 
       // Category matching & scoring
-      final isCatMatch = hasCategory && (agg.categoryCounts[cleanCategoryId] ?? 0) > 0;
+      final isCatMatch =
+          hasCategory && (agg.categoryCounts[cleanCategoryId] ?? 0) > 0;
       final catCount = isCatMatch ? agg.categoryCounts[cleanCategoryId]! : 0;
-      final catLastUsed = isCatMatch
-          ? agg.categoryLastUsed[cleanCategoryId] ?? agg.lastUsed
-          : agg.lastUsed;
+      final catLastUsed =
+          isCatMatch
+              ? agg.categoryLastUsed[cleanCategoryId] ?? agg.lastUsed
+              : agg.lastUsed;
 
       double categoryScore = 0.0;
       String? reasonLabel;
@@ -231,9 +235,11 @@ class PayeeSuggestionService {
       if (isCatMatch) {
         // Base category boost + frequency within category + recency within category
         final catRecency = calculateRecencyScore(catLastUsed, referenceDate);
-        categoryScore = 500.0 + (catCount * 50.0).clamp(0.0, 300.0) + catRecency;
+        categoryScore =
+            500.0 + (catCount * 50.0).clamp(0.0, 300.0) + catRecency;
         final catName = agg.categoryNames[cleanCategoryId];
-        reasonLabel = catName != null ? 'Used with $catName' : 'Used with this category';
+        reasonLabel =
+            catName != null ? 'Used with $catName' : 'Used with this category';
       } else if (hasCategory) {
         reasonLabel = 'Recent';
       } else {
@@ -242,9 +248,13 @@ class PayeeSuggestionService {
 
       // General frequency & recency
       final generalFreqScore = (agg.totalCount * 15.0).clamp(0.0, 200.0);
-      final generalRecencyScore = calculateRecencyScore(agg.lastUsed, referenceDate);
+      final generalRecencyScore = calculateRecencyScore(
+        agg.lastUsed,
+        referenceDate,
+      );
 
-      final totalScore = queryScore + categoryScore + generalFreqScore + generalRecencyScore;
+      final totalScore =
+          queryScore + categoryScore + generalFreqScore + generalRecencyScore;
 
       scoredList.add(
         PayeeSuggestion(

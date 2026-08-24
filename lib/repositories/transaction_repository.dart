@@ -60,6 +60,15 @@ class IsarTransactionRepository implements TransactionRepository {
       paymentMethod: entity.paymentMethod,
       accountId: entity.accountId,
       toAccountId: entity.toAccountId,
+      purpose: TransactionPurpose.fromString(entity.purpose),
+      direction: AccountMovementDirection.fromString(entity.direction),
+      externalCounterpartyName: entity.externalCounterpartyName,
+      linkedLoanId: entity.linkedLoanId,
+      linkedMoneyRecordId: entity.linkedMoneyRecordId,
+      linkedInvestmentId: entity.linkedInvestmentId,
+      principalComponent: entity.principalComponent,
+      interestComponent: entity.interestComponent,
+      feeComponent: entity.feeComponent,
       tags: List<String>.from(entity.tags),
       isReviewed: entity.isReviewed,
       createdAt: entity.createdAt,
@@ -78,6 +87,13 @@ class IsarTransactionRepository implements TransactionRepository {
       categorizationConfidence: entity.categorizationConfidence,
     );
   }
+
+  Transaction domainFromEntity(TransactionEntity entity) => _toDomain(entity);
+
+  TransactionEntity entityFromDomain(
+    Transaction domain, [
+    TransactionEntity? existing,
+  ]) => _toEntity(domain, existing);
 
   TransactionEntity _toEntity(
     Transaction domain, [
@@ -98,6 +114,15 @@ class IsarTransactionRepository implements TransactionRepository {
     entity.paymentMethod = domain.paymentMethod;
     entity.accountId = domain.accountId;
     entity.toAccountId = domain.toAccountId;
+    entity.purpose = domain.purpose?.name;
+    entity.direction = domain.direction?.name;
+    entity.externalCounterpartyName = domain.externalCounterpartyName;
+    entity.linkedLoanId = domain.linkedLoanId;
+    entity.linkedMoneyRecordId = domain.linkedMoneyRecordId;
+    entity.linkedInvestmentId = domain.linkedInvestmentId;
+    entity.principalComponent = domain.principalComponent;
+    entity.interestComponent = domain.interestComponent;
+    entity.feeComponent = domain.feeComponent;
     entity.tags = domain.tags;
     entity.isReviewed = domain.isReviewed;
     entity.createdAt = domain.createdAt;
@@ -233,7 +258,7 @@ class IsarTransactionRepository implements TransactionRepository {
 
     var domainList = entities.map(_toDomain).toList();
 
-    // In-memory multi-field search for merchant, notes, categoryName, tags, amount
+    // In-memory multi-field search, including explicit semantic/link fields.
     if (query != null && query.trim().isNotEmpty) {
       final q = query.trim().toLowerCase();
       domainList =
@@ -243,11 +268,24 @@ class IsarTransactionRepository implements TransactionRepository {
             final catMatch = tx.categoryName.toLowerCase().contains(q);
             final tagMatch = tx.tags.any((t) => t.toLowerCase().contains(q));
             final amountMatch = tx.amount.toString().contains(q);
+            final purposeMatch = tx.effectivePurpose.name
+                .toLowerCase()
+                .contains(q);
+            final counterpartyMatch =
+                tx.externalCounterpartyName?.toLowerCase().contains(q) ?? false;
+            final linkMatch = [
+              tx.linkedLoanId,
+              tx.linkedMoneyRecordId,
+              tx.linkedInvestmentId,
+            ].whereType<String>().any((id) => id.toLowerCase().contains(q));
             return merchantMatch ||
                 notesMatch ||
                 catMatch ||
                 tagMatch ||
-                amountMatch;
+                amountMatch ||
+                purposeMatch ||
+                counterpartyMatch ||
+                linkMatch;
           }).toList();
     }
 
@@ -308,11 +346,27 @@ class IsarTransactionRepository implements TransactionRepository {
                     (t) => t.toLowerCase().contains(q),
                   );
                   final amountMatch = tx.amount.toString().contains(q);
+                  final purposeMatch = tx.effectivePurpose.name
+                      .toLowerCase()
+                      .contains(q);
+                  final counterpartyMatch =
+                      tx.externalCounterpartyName?.toLowerCase().contains(q) ??
+                      false;
+                  final linkMatch = [
+                    tx.linkedLoanId,
+                    tx.linkedMoneyRecordId,
+                    tx.linkedInvestmentId,
+                  ].whereType<String>().any(
+                    (id) => id.toLowerCase().contains(q),
+                  );
                   return merchantMatch ||
                       notesMatch ||
                       catMatch ||
                       tagMatch ||
-                      amountMatch;
+                      amountMatch ||
+                      purposeMatch ||
+                      counterpartyMatch ||
+                      linkMatch;
                 }).toList();
           }
 

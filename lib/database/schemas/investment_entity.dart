@@ -42,4 +42,10 @@ class InvestmentEntity {
   late DateTime createdAt;
 
   late DateTime updatedAt;
+
+  double? ledgerBaselineInvestedAmount;
+
+  double? ledgerBaselineCurrentValue;
+
+  double? ledgerBaselineRealizedProfitLoss;
 }

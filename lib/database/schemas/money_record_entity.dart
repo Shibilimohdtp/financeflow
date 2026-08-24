@@ -41,4 +41,7 @@ class MoneyRecordEntity {
 
   @Index()
   String status = 'active';
+
+  @Index()
+  String? originTransactionId;
 }

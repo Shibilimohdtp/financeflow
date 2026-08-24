@@ -4,7 +4,6 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/budget.dart';
-import '../../models/transaction.dart';
 import '../../services/budget_calculator.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
@@ -103,7 +102,7 @@ class BudgetDetailScreen extends ConsumerWidget {
     // Matching transactions for this budget in this period
     final matchingTransactions =
         allTransactions.where((tx) {
-            if (tx.type != TransactionType.expense) return false;
+            if (tx.consumptionExpenseAmount <= 0) return false;
             if (tx.categoryId != budget.categoryId) return false;
             return !tx.date.isBefore(bounds.start) &&
                 !tx.date.isAfter(bounds.end);
@@ -125,7 +124,8 @@ class BudgetDetailScreen extends ConsumerWidget {
     } else if (isApproaching) {
       progressColor = theme.colorScheme.tertiary;
       statusIcon = Icons.warning_amber_rounded;
-      statusLabel = 'Approaching threshold (${(budget.alertThreshold * 100).toInt()}%)';
+      statusLabel =
+          'Approaching threshold (${(budget.alertThreshold * 100).toInt()}%)';
     } else {
       progressColor = theme.colorScheme.primary;
       statusIcon = Icons.check_circle_outline_rounded;
@@ -437,7 +437,8 @@ class BudgetDetailScreen extends ConsumerWidget {
               FfListRow(
                 icon: Icons.inventory_2_outlined,
                 title: 'Status',
-                subtitle: budget.isArchived ? 'Archived' : 'Active and tracking',
+                subtitle:
+                    budget.isArchived ? 'Archived' : 'Active and tracking',
                 showChevron: false,
               ),
             ],

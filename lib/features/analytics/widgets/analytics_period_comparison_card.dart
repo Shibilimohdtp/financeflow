@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/analytics_calculator.dart';
@@ -119,9 +119,10 @@ class _ComparisonRow extends StatelessWidget {
     final isUp = changePercentage > 0;
     final isGood = isPositiveWhenDown ? !isUp : isUp;
     final changeColor = isGood ? finColors.savings : finColors.expense;
-    final changeText = isUp
-        ? '↑ ${changePercentage.abs().toStringAsFixed(0)}% higher'
-        : '↓ ${changePercentage.abs().toStringAsFixed(0)}% lower';
+    final changeText =
+        isUp
+            ? '↑ ${changePercentage.abs().toStringAsFixed(0)}% higher'
+            : '↓ ${changePercentage.abs().toStringAsFixed(0)}% lower';
 
     return Padding(
       padding: const EdgeInsets.symmetric(

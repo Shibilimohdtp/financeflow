@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../../models/loan.dart';
 import '../../repositories/loan_repository.dart';
 import '../../services/loan_calculator.dart';
+import '../../services/financial_operation_service.dart';
+import '../../database/isar_service.dart';
 
 final loansSummaryProvider = Provider<
   ({double totalOutstanding, double totalMonthlyEmi, int activeLoansCount})
@@ -44,9 +46,11 @@ final loanScheduleProvider =
 
 class LoansController extends StateNotifier<AsyncValue<void>> {
   final LoanRepository _repository;
+  final FinancialOperationService? _coordinator;
   static const _uuid = Uuid();
 
-  LoansController(this._repository) : super(const AsyncValue.data(null));
+  LoansController(this._repository, [this._coordinator])
+    : super(const AsyncValue.data(null));
 
   Future<void> addLoan({
     required String name,
@@ -124,6 +128,7 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
                   interestPaid: item.interestPaid,
                   emiAmount: item.emiAmount,
                   accountId: accountId,
+                  isHistoricalStatusOnly: true,
                   notes: 'Marked paid on loan setup',
                   createdAt: now,
                   updatedAt: now,
@@ -158,7 +163,11 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
   Future<void> deleteLoan(String id) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.deleteLoan(id);
+      if (_coordinator != null) {
+        await _coordinator.deleteLoanKeepingHistory(id);
+      } else {
+        await _repository.deleteLoan(id);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -175,27 +184,35 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final split = LoanCalculator.calculateInstallmentSplit(
-        loan: loan,
-        installmentNumber: installmentNumber,
-      );
-
-      final payment = EmiPayment(
-        id: 'emi_${_uuid.v4()}',
-        loanId: loan.id,
-        installmentNumber: installmentNumber,
-        dueDate: split.dueDate,
-        paymentDate: paymentDate ?? DateTime.now(),
-        principalPaid: split.principal,
-        interestPaid: split.interest,
-        emiAmount: split.emi,
-        accountId: accountId ?? loan.accountId,
-        notes: notes,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      await _repository.recordEmiPayment(payment);
+      final payingAccountId = accountId ?? loan.accountId;
+      if (_coordinator != null && payingAccountId != null) {
+        await _coordinator.postTrackedInstallment(
+          loan: loan,
+          installmentNumber: installmentNumber,
+          accountId: payingAccountId,
+          paymentDate: paymentDate,
+        );
+      } else {
+        final split = LoanCalculator.calculateInstallmentSplit(
+          loan: loan,
+          installmentNumber: installmentNumber,
+        );
+        final payment = EmiPayment(
+          id: 'emi_${_uuid.v4()}',
+          loanId: loan.id,
+          installmentNumber: installmentNumber,
+          dueDate: split.dueDate,
+          paymentDate: paymentDate ?? DateTime.now(),
+          principalPaid: split.principal,
+          interestPaid: split.interest,
+          emiAmount: split.emi,
+          accountId: payingAccountId,
+          notes: notes,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await _repository.recordEmiPayment(payment);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -231,6 +248,16 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
                 orElse: () => unpaid.first,
               )
               : unpaid.first;
+
+      if (_coordinator != null && loan.accountId != null && emiAmount == null) {
+        await _coordinator.postTrackedInstallment(
+          loan: loan,
+          installmentNumber: targetInstallment.monthNumber,
+          accountId: loan.accountId!,
+        );
+        state = const AsyncValue.data(null);
+        return;
+      }
 
       final payment = EmiPayment(
         id: 'emi_${_uuid.v4()}',
@@ -275,25 +302,36 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
       }
 
       final now = DateTime.now();
-      final newPayments =
-          overdue.map((item) {
-            return EmiPayment(
-              id: 'emi_${_uuid.v4()}',
-              loanId: loan.id,
-              installmentNumber: item.monthNumber,
-              dueDate: item.dueDate,
-              paymentDate: paymentDate ?? now,
-              principalPaid: item.principalPaid,
-              interestPaid: item.interestPaid,
-              emiAmount: item.emiAmount,
-              accountId: accountId ?? loan.accountId,
-              notes: 'Bulk overdue payment',
-              createdAt: now,
-              updatedAt: now,
-            );
-          }).toList();
-
-      await _repository.recordMultipleEmiPayments(newPayments);
+      final payingAccountId = accountId ?? loan.accountId;
+      if (_coordinator != null && payingAccountId != null) {
+        for (final item in overdue) {
+          await _coordinator.postTrackedInstallment(
+            loan: loan,
+            installmentNumber: item.monthNumber,
+            accountId: payingAccountId,
+            paymentDate: paymentDate,
+          );
+        }
+      } else {
+        final newPayments =
+            overdue.map((item) {
+              return EmiPayment(
+                id: 'emi_${_uuid.v4()}',
+                loanId: loan.id,
+                installmentNumber: item.monthNumber,
+                dueDate: item.dueDate,
+                paymentDate: paymentDate ?? now,
+                principalPaid: item.principalPaid,
+                interestPaid: item.interestPaid,
+                emiAmount: item.emiAmount,
+                accountId: accountId ?? loan.accountId,
+                notes: 'Bulk overdue payment',
+                createdAt: now,
+                updatedAt: now,
+              );
+            }).toList();
+        await _repository.recordMultipleEmiPayments(newPayments);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -305,7 +343,11 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
   Future<void> deletePayment(String paymentId) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.deleteEmiPayment(paymentId);
+      if (_coordinator != null) {
+        await _coordinator.deleteEmiPayment(paymentId);
+      } else {
+        await _repository.deleteEmiPayment(paymentId);
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -316,5 +358,9 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
 final loansControllerProvider =
     StateNotifierProvider<LoansController, AsyncValue<void>>((ref) {
       final repo = ref.watch(loanRepositoryProvider);
-      return LoansController(repo);
+      final coordinator =
+          IsarService.isInitialized
+              ? ref.watch(financialOperationServiceProvider)
+              : null;
+      return LoansController(repo, coordinator);
     });

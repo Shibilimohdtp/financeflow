@@ -8,6 +8,7 @@ class MoneyRepayment {
   final DateTime repaymentDate;
   final String? notes;
   final DateTime createdAt;
+  final String? transactionId;
 
   const MoneyRepayment({
     required this.id,
@@ -17,6 +18,7 @@ class MoneyRepayment {
     required this.repaymentDate,
     this.notes,
     required this.createdAt,
+    this.transactionId,
   });
 
   MoneyRepayment copyWith({
@@ -27,6 +29,8 @@ class MoneyRepayment {
     DateTime? repaymentDate,
     String? notes,
     DateTime? createdAt,
+    String? transactionId,
+    bool clearTransactionId = false,
   }) {
     return MoneyRepayment(
       id: id ?? this.id,
@@ -36,6 +40,8 @@ class MoneyRepayment {
       repaymentDate: repaymentDate ?? this.repaymentDate,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      transactionId:
+          clearTransactionId ? null : transactionId ?? this.transactionId,
     );
   }
 
@@ -43,7 +49,8 @@ class MoneyRepayment {
     if (moneyRecordId.trim().isEmpty) {
       throw const ValidationError(
         message: 'Record ID is required.',
-        actionableStep: 'Associate this repayment with a valid lending/borrowing record.',
+        actionableStep:
+            'Associate this repayment with a valid lending/borrowing record.',
       );
     }
     if (amount <= 0) {
@@ -55,7 +62,8 @@ class MoneyRepayment {
     if (remainingBalance != null && amount > (remainingBalance + 0.001)) {
       throw const ValidationError(
         message: 'Repayment amount cannot exceed the remaining balance.',
-        actionableStep: 'Enter an amount less than or equal to the outstanding balance.',
+        actionableStep:
+            'Enter an amount less than or equal to the outstanding balance.',
       );
     }
   }
@@ -68,6 +76,7 @@ class MoneyRepayment {
     'repaymentDate': repaymentDate.toIso8601String(),
     'notes': notes,
     'createdAt': createdAt.toIso8601String(),
+    'transactionId': transactionId,
   };
 
   factory MoneyRepayment.fromJson(Map<String, dynamic> json) => MoneyRepayment(
@@ -78,5 +87,6 @@ class MoneyRepayment {
     repaymentDate: DateTime.parse(json['repaymentDate'] as String),
     notes: json['notes'] as String?,
     createdAt: DateTime.parse(json['createdAt'] as String),
+    transactionId: json['transactionId'] as String?,
   );
 }

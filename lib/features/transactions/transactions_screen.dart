@@ -691,10 +691,7 @@ class _CashFlowSummary extends StatelessWidget {
   final TransactionListSummary summary;
   final bool isPrivacyBlur;
 
-  const _CashFlowSummary({
-    required this.summary,
-    this.isPrivacyBlur = false,
-  });
+  const _CashFlowSummary({required this.summary, this.isPrivacyBlur = false});
 
   @override
   Widget build(BuildContext context) {
@@ -719,22 +716,14 @@ class _CashFlowSummary extends StatelessWidget {
               positive: true,
               isPrivacyBlur: isPrivacyBlur,
             ),
-            Container(
-              width: 1,
-              height: 36,
-              color: context.theme.dividerColor,
-            ),
+            Container(width: 1, height: 36, color: context.theme.dividerColor),
             _SummaryValue(
               label: 'Expenses',
               value: summary.expenses,
               positive: false,
               isPrivacyBlur: isPrivacyBlur,
             ),
-            Container(
-              width: 1,
-              height: 36,
-              color: context.theme.dividerColor,
-            ),
+            Container(width: 1, height: 36, color: context.theme.dividerColor),
             _SummaryValue(
               label: 'Net',
               value: summary.net,
@@ -768,7 +757,9 @@ class _SummaryValue extends StatelessWidget {
 
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceXs),
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceXs,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -784,22 +775,23 @@ class _SummaryValue extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: isPrivacyBlur
-                  ? Text('₹ ••••••', style: StillwaterTypography.numMd())
-                  : Text(
-                    CurrencyFormatter.format(
-                      value,
-                      showSign: label == 'Net',
-                      isIncome: positive,
-                      isExpense: !positive,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: StillwaterTypography.numMd(
-                      color:
-                          positive ? finColors.income : finColors.expense,
-                    ),
-                  ),
+              child:
+                  isPrivacyBlur
+                      ? Text('₹ ••••••', style: StillwaterTypography.numMd())
+                      : Text(
+                        CurrencyFormatter.format(
+                          value,
+                          showSign: label == 'Net',
+                          isIncome: positive,
+                          isExpense: !positive,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: StillwaterTypography.numMd(
+                          color:
+                              positive ? finColors.income : finColors.expense,
+                        ),
+                      ),
             ),
           ],
         ),

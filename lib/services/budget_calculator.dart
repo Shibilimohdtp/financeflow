@@ -84,11 +84,11 @@ class BudgetCalculator {
 
     double total = 0.0;
     for (final tx in transactions) {
-      if (tx.type != TransactionType.expense) continue;
+      if (tx.consumptionExpenseAmount <= 0) continue;
       if (tx.categoryId != budget.categoryId) continue;
 
       if (!tx.date.isBefore(bounds.start) && !tx.date.isAfter(bounds.end)) {
-        total += tx.amount;
+        total += tx.consumptionExpenseAmount;
       }
     }
     return total;

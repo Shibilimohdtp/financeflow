@@ -56,6 +56,11 @@ class IsarLoanRepository implements LoanRepository {
     );
   }
 
+  Loan domainFromEntity(LoanEntity entity) => _toDomain(entity);
+
+  LoanEntity entityFromDomain(Loan domain, [LoanEntity? existing]) =>
+      _toEntity(domain, existing);
+
   LoanEntity _toEntity(Loan domain, [LoanEntity? existing]) {
     final entity = existing ?? LoanEntity();
     entity.uuid = domain.id;
@@ -93,11 +98,21 @@ class IsarLoanRepository implements LoanRepository {
       interestPaid: entity.interestPaid,
       emiAmount: entity.emiAmount,
       accountId: entity.accountId,
+      transactionId: entity.transactionId,
+      isHistoricalStatusOnly: entity.isHistoricalStatusOnly,
       notes: entity.notes,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
   }
+
+  EmiPayment paymentFromEntity(EmiPaymentEntity entity) =>
+      _toPaymentDomain(entity);
+
+  EmiPaymentEntity paymentEntityFromDomain(
+    EmiPayment domain, [
+    EmiPaymentEntity? existing,
+  ]) => _toPaymentEntity(domain, existing);
 
   EmiPaymentEntity _toPaymentEntity(
     EmiPayment domain, [
@@ -113,6 +128,8 @@ class IsarLoanRepository implements LoanRepository {
     entity.interestPaid = domain.interestPaid;
     entity.emiAmount = domain.emiAmount;
     entity.accountId = domain.accountId;
+    entity.transactionId = domain.transactionId;
+    entity.isHistoricalStatusOnly = domain.isHistoricalStatusOnly;
     entity.notes = domain.notes;
     entity.createdAt = domain.createdAt;
     entity.updatedAt = domain.updatedAt;

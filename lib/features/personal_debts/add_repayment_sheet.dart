@@ -5,12 +5,15 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/money_record.dart';
+import '../../models/account.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
+import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'money_records_controller.dart';
+import '../accounts/accounts_controller.dart';
 
 class AddRepaymentSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -33,6 +36,8 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
 
   late DateTime _repaymentDate;
   bool _isSaving = false;
+  bool _recordInTransactions = true;
+  String? _selectedAccountId;
 
   @override
   void initState() {
@@ -61,7 +66,9 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _repaymentDate,
-      firstDate: widget.record.transactionDate.subtract(const Duration(days: 30)),
+      firstDate: widget.record.transactionDate.subtract(
+        const Duration(days: 30),
+      ),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
@@ -87,6 +94,10 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
       );
       return;
     }
+    if (_recordInTransactions && _selectedAccountId == null) {
+      FfSnackbar.show(context, message: 'Select the account for this payment.');
+      return;
+    }
 
     setState(() => _isSaving = true);
     final controller = ref.read(moneyRecordsControllerProvider.notifier);
@@ -96,9 +107,12 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
         moneyRecordId: widget.record.id,
         amount: amount,
         repaymentDate: _repaymentDate,
-        notes: _notesController.text.trim().isNotEmpty
-            ? _notesController.text.trim()
-            : null,
+        notes:
+            _notesController.text.trim().isNotEmpty
+                ? _notesController.text.trim()
+                : null,
+        accountId: _selectedAccountId,
+        recordInTransactions: _recordInTransactions,
       );
 
       if (mounted) {
@@ -117,6 +131,15 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final isLent = widget.record.type == MoneyRecordType.lent;
+    final accounts =
+        ref
+            .watch(accountsWithBalancesProvider)
+            .valueOrNull
+            ?.where((account) => !account.isArchived)
+            .toList() ??
+        const <Account>[];
+    _selectedAccountId ??= accounts.firstOrNull?.id;
+    if (accounts.isEmpty) _recordInTransactions = false;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -137,9 +160,10 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
             children: [
               FfSheetHeader(
                 title: 'Record Repayment',
-                subtitle: isLent
-                    ? 'Payment from ${widget.record.personName}'
-                    : 'Payment to ${widget.record.personName}',
+                subtitle:
+                    isLent
+                        ? 'Payment from ${widget.record.personName}'
+                        : 'Payment to ${widget.record.personName}',
               ),
 
               Flexible(
@@ -156,8 +180,9 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                         padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius:
-                              BorderRadius.circular(StillwaterTokens.radiusMd),
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusMd,
+                          ),
                           border: Border.all(
                             color: theme.dividerColor.withValues(alpha: 0.4),
                           ),
@@ -176,9 +201,13 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(height: StillwaterTokens.space2Xs),
+                                const SizedBox(
+                                  height: StillwaterTokens.space2Xs,
+                                ),
                                 Text(
-                                  CurrencyFormatter.format(widget.remainingBalance),
+                                  CurrencyFormatter.format(
+                                    widget.remainingBalance,
+                                  ),
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     fontFeatures:
@@ -189,7 +218,10 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                             ),
                             TextButton.icon(
                               onPressed: _setFullAmount,
-                              icon: const Icon(Icons.flash_on_rounded, size: 16),
+                              icon: const Icon(
+                                Icons.flash_on_rounded,
+                                size: 16,
+                              ),
                               label: const Text('Pay Full'),
                               style: TextButton.styleFrom(
                                 visualDensity: VisualDensity.compact,
@@ -204,6 +236,39 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                       ),
 
                       const SizedBox(height: StillwaterTokens.spaceLg),
+
+                      FfSwitchRow(
+                        title: 'Record in transactions and update balance',
+                        subtitle:
+                            isLent
+                                ? 'Money received increases the selected account.'
+                                : 'Money paid decreases the selected account.',
+                        value: _recordInTransactions,
+                        onChanged:
+                            (value) =>
+                                setState(() => _recordInTransactions = value),
+                      ),
+                      if (_recordInTransactions) ...[
+                        DropdownButtonFormField<String>(
+                          value: _selectedAccountId,
+                          decoration: const InputDecoration(
+                            labelText: 'Account',
+                          ),
+                          items:
+                              accounts
+                                  .map(
+                                    (account) => DropdownMenuItem(
+                                      value: account.id,
+                                      child: Text(account.name),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged:
+                              (value) =>
+                                  setState(() => _selectedAccountId = value),
+                        ),
+                        const SizedBox(height: StillwaterTokens.spaceLg),
+                      ],
 
                       // Repayment Amount Input
                       Text(
@@ -274,8 +339,9 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                       const SizedBox(height: StillwaterTokens.spaceXs),
                       InkWell(
                         onTap: _pickDate,
-                        borderRadius:
-                            BorderRadius.circular(StillwaterTokens.radiusMd),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusMd,
+                        ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: StillwaterTokens.spaceMd,

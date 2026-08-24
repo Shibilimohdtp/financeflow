@@ -120,7 +120,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
       context,
       title: 'Delete Investment?',
       message:
-          'Are you sure you want to remove "${currentInv.name}" from your local portfolio?',
+          'Remove "${currentInv.name}" from your local portfolio? Linked ledger entries will be kept as unlinked historical investment movements.',
       confirmLabel: 'Delete',
       isDestructive: true,
     );

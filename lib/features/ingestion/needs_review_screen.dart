@@ -69,8 +69,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                   children: [
                     const FfSheetHeader(
                       title: 'Edit Pending Transaction',
-                      subtitle:
-                          'Review and categorize before importing',
+                      subtitle: 'Review and categorize before importing',
                     ),
                     const Divider(height: 1, thickness: 1),
                     Flexible(
@@ -92,8 +91,8 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                               controller: amountController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                               decoration: const InputDecoration(
                                 labelText: 'Amount (₹)',
                                 prefixText: '₹ ',
@@ -101,97 +100,106 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                             ),
                             const SizedBox(height: StillwaterTokens.spaceMd),
 
-                      // Payee / Merchant
-                      TextField(
-                        controller: merchantController,
-                        decoration: const InputDecoration(
-                          labelText: 'Payee / Merchant',
-                        ),
-                      ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                            // Payee / Merchant
+                            TextField(
+                              controller: merchantController,
+                              decoration: const InputDecoration(
+                                labelText: 'Payee / Merchant',
+                              ),
+                            ),
+                            const SizedBox(height: StillwaterTokens.spaceMd),
 
-                      // Type
-                      DropdownButtonFormField<TransactionType>(
-                        value: selectedType,
-                        decoration: const InputDecoration(labelText: 'Type'),
-                        items:
-                            [
-                                  TransactionType.expense,
-                                  TransactionType.income,
-                                  TransactionType.transfer,
-                                ]
-                                .map(
-                                  (t) => DropdownMenuItem(
-                                    value: t,
-                                    child: Text(t.displayName),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (t) {
-                          if (t != null) setModalState(() => selectedType = t);
-                        },
-                      ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                            // Type
+                            DropdownButtonFormField<TransactionType>(
+                              value: selectedType,
+                              decoration: const InputDecoration(
+                                labelText: 'Type',
+                              ),
+                              items:
+                                  [
+                                        TransactionType.expense,
+                                        TransactionType.income,
+                                        TransactionType.transfer,
+                                      ]
+                                      .map(
+                                        (t) => DropdownMenuItem(
+                                          value: t,
+                                          child: Text(t.displayName),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (t) {
+                                if (t != null) {
+                                  setModalState(() => selectedType = t);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: StillwaterTokens.spaceMd),
 
-                      // Category
-                      DropdownButtonFormField<String>(
-                        value:
-                            categories.any((c) => c.id == selectedCategoryId)
-                                ? selectedCategoryId
-                                : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                        ),
-                        hint: Text(selectedCategoryName),
-                        items:
-                            categories
-                                .map(
-                                  (c) => DropdownMenuItem(
-                                    value: c.id,
-                                    child: Text(c.name),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (id) {
-                          if (id != null) {
-                            final cat = categories.firstWhere(
-                              (c) => c.id == id,
-                            );
-                            setModalState(() {
-                              selectedCategoryId = cat.id;
-                              selectedCategoryName = cat.name;
-                              selectedCategoryIcon = cat.iconIdentifier;
-                              selectedCategoryColor = cat.colorTokenIdentifier;
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                            // Category
+                            DropdownButtonFormField<String>(
+                              value:
+                                  categories.any(
+                                        (c) => c.id == selectedCategoryId,
+                                      )
+                                      ? selectedCategoryId
+                                      : null,
+                              decoration: const InputDecoration(
+                                labelText: 'Category',
+                              ),
+                              hint: Text(selectedCategoryName),
+                              items:
+                                  categories
+                                      .map(
+                                        (c) => DropdownMenuItem(
+                                          value: c.id,
+                                          child: Text(c.name),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (id) {
+                                if (id != null) {
+                                  final cat = categories.firstWhere(
+                                    (c) => c.id == id,
+                                  );
+                                  setModalState(() {
+                                    selectedCategoryId = cat.id;
+                                    selectedCategoryName = cat.name;
+                                    selectedCategoryIcon = cat.iconIdentifier;
+                                    selectedCategoryColor =
+                                        cat.colorTokenIdentifier;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: StillwaterTokens.spaceMd),
 
-                      // Account
-                      DropdownButtonFormField<String>(
-                        value:
-                            accounts.any((a) => a.id == selectedAccountId)
-                                ? selectedAccountId
-                                : (accounts.isNotEmpty
-                                    ? accounts.first.id
-                                    : null),
-                        decoration: const InputDecoration(labelText: 'Account'),
-                        items:
-                            accounts
-                                .map(
-                                  (a) => DropdownMenuItem(
-                                    value: a.id,
-                                    child: Text(a.name),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (id) {
-                          if (id != null) {
-                            setModalState(() => selectedAccountId = id);
-                          }
-                        },
-                      ),
+                            // Account
+                            DropdownButtonFormField<String>(
+                              value:
+                                  accounts.any((a) => a.id == selectedAccountId)
+                                      ? selectedAccountId
+                                      : (accounts.isNotEmpty
+                                          ? accounts.first.id
+                                          : null),
+                              decoration: const InputDecoration(
+                                labelText: 'Account',
+                              ),
+                              items:
+                                  accounts
+                                      .map(
+                                        (a) => DropdownMenuItem(
+                                          value: a.id,
+                                          child: Text(a.name),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (id) {
+                                if (id != null) {
+                                  setModalState(() => selectedAccountId = id);
+                                }
+                              },
+                            ),
                           ],
                         ),
                       ),

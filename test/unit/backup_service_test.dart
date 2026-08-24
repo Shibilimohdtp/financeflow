@@ -52,6 +52,10 @@ void main() {
             id: 'tx_1',
             amount: 500.0,
             type: TransactionType.expense,
+            purpose: TransactionPurpose.lending,
+            direction: AccountMovementDirection.outflow,
+            externalCounterpartyName: 'Asha',
+            linkedMoneyRecordId: 'debt_1',
             categoryId: 'cat_dining',
             categoryName: 'Dining',
             categoryIcon: 'restaurant',
@@ -89,7 +93,48 @@ void main() {
         expect(recovered.transactions.length, equals(1));
         expect(recovered.transactions.first.merchant, equals('Swiggy'));
         expect(recovered.transactions.first.amount, equals(500.0));
+        expect(
+          recovered.transactions.first.purpose,
+          TransactionPurpose.lending,
+        );
+        expect(recovered.transactions.first.externalCounterpartyName, 'Asha');
+        expect(recovered.transactions.first.linkedMoneyRecordId, 'debt_1');
       },
     );
+
+    test('older backup transactions derive semantics without new fields', () {
+      final old = <String, dynamic>{
+        'metadata': {
+          'version': 1,
+          'createdAt': now.toIso8601String(),
+          'transactionCount': 1,
+          'accountCount': 0,
+          'budgetCount': 0,
+          'goalCount': 0,
+          'subscriptionCount': 0,
+          'loanCount': 0,
+          'investmentCount': 0,
+        },
+        'transactions': [
+          {
+            'id': 'legacy_cash',
+            'amount': 100,
+            'type': 'cash',
+            'categoryId': 'legacy',
+            'categoryName': 'Cash',
+            'categoryIcon': 'cash',
+            'categoryColor': 'slate',
+            'merchant': 'Legacy cash',
+            'date': now.toIso8601String(),
+            'accountId': 'cash',
+            'createdAt': now.toIso8601String(),
+            'updatedAt': now.toIso8601String(),
+          },
+        ],
+      };
+      final restored = BackupDataPayload.fromJson(old).transactions.single;
+      expect(restored.purpose, isNull);
+      expect(restored.effectivePurpose, TransactionPurpose.legacyCash);
+    });
   });
 }

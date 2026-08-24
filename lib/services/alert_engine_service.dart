@@ -12,6 +12,7 @@ import 'budget_calculator.dart';
 class AlertEngineService {
   final AlertRepository _alertRepository;
   static const _uuid = Uuid();
+  Future<List<AlertItem>>? _activeScan;
 
   AlertEngineService({required AlertRepository alertRepository})
     : _alertRepository = alertRepository;
@@ -25,7 +26,30 @@ class AlertEngineService {
     required List<Loan> activeLoans,
     required int pendingReviewCount,
     DateTime? referenceDate,
+  }) {
+    // The inbox can be opened again before its initial scan finishes. Reuse the
+    // in-flight scan so the exists-then-save checks cannot race each other.
+    return _activeScan ??= _scanAndGenerateAlerts(
+      settings: settings,
+      activeBudgets: activeBudgets,
+      monthTransactions: monthTransactions,
+      activeSubscriptions: activeSubscriptions,
+      activeLoans: activeLoans,
+      pendingReviewCount: pendingReviewCount,
+      referenceDate: referenceDate,
+    ).whenComplete(() => _activeScan = null);
+  }
+
+  Future<List<AlertItem>> _scanAndGenerateAlerts({
+    required AppSettings settings,
+    required List<Budget> activeBudgets,
+    required List<Transaction> monthTransactions,
+    required List<Subscription> activeSubscriptions,
+    required List<Loan> activeLoans,
+    required int pendingReviewCount,
+    DateTime? referenceDate,
   }) async {
+    await _alertRepository.deduplicateAlerts();
     if (!settings.isAlertsEnabled) return const [];
 
     final now = referenceDate ?? DateTime.now();
@@ -57,6 +81,8 @@ class AlertEngineService {
               title: '$name budget exceeded',
               message: '$name is $formattedOver over this month’s budget.',
               severity: AlertSeverity.urgent,
+              relatedEntityType: 'budget',
+              relatedEntityId: budget.id,
               scheduledAt: now,
               createdAt: now,
             );
@@ -78,6 +104,8 @@ class AlertEngineService {
               title: '$name nearing budget limit',
               message: '$name has reached $pct% of its planned budget.',
               severity: AlertSeverity.attention,
+              relatedEntityType: 'budget',
+              relatedEntityId: budget.id,
               scheduledAt: now,
               createdAt: now,
             );

@@ -26,11 +26,11 @@ class InsightEngine {
     // Filter current month expenses and income
     final currentExpenses =
         currentMonthTransactions
-            .where((t) => t.type == TransactionType.expense)
+            .where((t) => t.consumptionExpenseAmount > 0)
             .toList();
     final previousExpenses =
         previousMonthTransactions
-            .where((t) => t.type == TransactionType.expense)
+            .where((t) => t.consumptionExpenseAmount > 0)
             .toList();
 
     final currentCashFlow = BalanceCalculator.calculateMonthlyCashFlow(
@@ -71,7 +71,7 @@ class InsightEngine {
         final current =
             catTotals[tx.categoryId] ?? (amount: 0.0, name: tx.categoryName);
         catTotals[tx.categoryId] = (
-          amount: current.amount + tx.amount,
+          amount: current.amount + tx.consumptionExpenseAmount,
           name: tx.categoryName.isNotEmpty ? tx.categoryName : 'Expenses',
         );
       }
@@ -112,7 +112,7 @@ class InsightEngine {
       final Map<String, double> prevCatMap = {};
       for (final tx in previousExpenses) {
         prevCatMap[tx.categoryId] =
-            (prevCatMap[tx.categoryId] ?? 0.0) + tx.amount;
+            (prevCatMap[tx.categoryId] ?? 0.0) + tx.consumptionExpenseAmount;
       }
 
       final Map<String, ({double amount, String name})> currCatMap = {};
@@ -120,7 +120,7 @@ class InsightEngine {
         final curr =
             currCatMap[tx.categoryId] ?? (amount: 0.0, name: tx.categoryName);
         currCatMap[tx.categoryId] = (
-          amount: curr.amount + tx.amount,
+          amount: curr.amount + tx.consumptionExpenseAmount,
           name: tx.categoryName,
         );
       }

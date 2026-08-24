@@ -112,6 +112,9 @@ class Investment {
   final bool isArchived;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? ledgerBaselineInvestedAmount;
+  final double? ledgerBaselineCurrentValue;
+  final double? ledgerBaselineRealizedProfitLoss;
 
   const Investment({
     required this.id,
@@ -130,6 +133,9 @@ class Investment {
     this.isArchived = false,
     required this.createdAt,
     required this.updatedAt,
+    this.ledgerBaselineInvestedAmount,
+    this.ledgerBaselineCurrentValue,
+    this.ledgerBaselineRealizedProfitLoss,
   });
 
   /// Absolute gain / loss amount
@@ -160,6 +166,9 @@ class Investment {
     bool? isArchived,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? ledgerBaselineInvestedAmount,
+    double? ledgerBaselineCurrentValue,
+    double? ledgerBaselineRealizedProfitLoss,
   }) {
     return Investment(
       id: id ?? this.id,
@@ -178,6 +187,13 @@ class Investment {
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      ledgerBaselineInvestedAmount:
+          ledgerBaselineInvestedAmount ?? this.ledgerBaselineInvestedAmount,
+      ledgerBaselineCurrentValue:
+          ledgerBaselineCurrentValue ?? this.ledgerBaselineCurrentValue,
+      ledgerBaselineRealizedProfitLoss:
+          ledgerBaselineRealizedProfitLoss ??
+          this.ledgerBaselineRealizedProfitLoss,
     );
   }
 
@@ -198,6 +214,9 @@ class Investment {
     'isArchived': isArchived,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
+    'ledgerBaselineInvestedAmount': ledgerBaselineInvestedAmount,
+    'ledgerBaselineCurrentValue': ledgerBaselineCurrentValue,
+    'ledgerBaselineRealizedProfitLoss': ledgerBaselineRealizedProfitLoss,
   };
 
   factory Investment.fromJson(Map<String, dynamic> json) => Investment(
@@ -221,5 +240,11 @@ class Investment {
     isArchived: json['isArchived'] as bool? ?? false,
     createdAt: DateTime.parse(json['createdAt'] as String),
     updatedAt: DateTime.parse(json['updatedAt'] as String),
+    ledgerBaselineInvestedAmount:
+        (json['ledgerBaselineInvestedAmount'] as num?)?.toDouble(),
+    ledgerBaselineCurrentValue:
+        (json['ledgerBaselineCurrentValue'] as num?)?.toDouble(),
+    ledgerBaselineRealizedProfitLoss:
+        (json['ledgerBaselineRealizedProfitLoss'] as num?)?.toDouble(),
   );
 }

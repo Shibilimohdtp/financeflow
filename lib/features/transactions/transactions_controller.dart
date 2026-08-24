@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/transaction.dart';
 import '../../repositories/transaction_repository.dart';
+import '../../services/financial_operation_service.dart';
 import '../accounts/accounts_controller.dart';
 import 'transaction_list_utils.dart';
 
@@ -118,17 +119,17 @@ final transactionsControllerProvider =
 
 class TransactionsController extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
-  Transaction? _lastDeletedTransaction;
+  FinancialOperationSnapshot? _lastDeletedOperation;
 
   TransactionsController(this._ref) : super(const AsyncValue.data(null));
 
-  Transaction? get lastDeletedTransaction => _lastDeletedTransaction;
+  Transaction? get lastDeletedTransaction => _lastDeletedOperation?.transaction;
 
   Future<void> saveTransaction(Transaction transaction) async {
     state = const AsyncValue.loading();
     try {
-      final repo = _ref.read(transactionRepositoryProvider);
-      await repo.saveTransaction(transaction);
+      final coordinator = _ref.read(financialOperationServiceProvider);
+      await coordinator.postTransaction(transaction);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -139,9 +140,10 @@ class TransactionsController extends StateNotifier<AsyncValue<void>> {
   Future<void> deleteTransaction(Transaction transaction) async {
     state = const AsyncValue.loading();
     try {
-      _lastDeletedTransaction = transaction;
-      final repo = _ref.read(transactionRepositoryProvider);
-      await repo.deleteTransaction(transaction.id);
+      final coordinator = _ref.read(financialOperationServiceProvider);
+      _lastDeletedOperation = await coordinator.deleteTransaction(
+        transaction.id,
+      );
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -150,9 +152,10 @@ class TransactionsController extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> undoDelete() async {
-    if (_lastDeletedTransaction != null) {
-      await saveTransaction(_lastDeletedTransaction!);
-      _lastDeletedTransaction = null;
+    if (_lastDeletedOperation != null) {
+      final coordinator = _ref.read(financialOperationServiceProvider);
+      await coordinator.restore(_lastDeletedOperation!);
+      _lastDeletedOperation = null;
     }
   }
 }

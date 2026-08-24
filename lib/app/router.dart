@@ -9,7 +9,9 @@ import '../features/settings/settings_screen.dart';
 import '../features/transactions/add_edit_transaction_sheet.dart';
 import '../features/transactions/transaction_detail_screen.dart';
 import '../features/transactions/transactions_screen.dart';
+import '../features/ingestion/needs_review_controller.dart';
 import '../models/transaction.dart';
+import '../repositories/alert_repository.dart';
 import '../shared/widgets/stillwater_bottom_navigation_bar.dart';
 
 final currentNavIndexProvider = StateProvider<int>((ref) => 0);
@@ -48,6 +50,8 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(currentNavIndexProvider);
+    final pendingCount = ref.watch(pendingReviewCountProvider);
+    final unreadAlerts = ref.watch(unreadAlertsCountProvider);
 
     final screens = [
       DashboardScreen(
@@ -79,6 +83,8 @@ class AppShell extends ConsumerWidget {
       body: IndexedStack(index: currentIndex, children: screens),
       bottomNavigationBar: StillwaterBottomNavigationBar(
         selectedIndex: currentIndex,
+        pendingReviewCount: pendingCount,
+        unreadAlertsCount: unreadAlerts,
         onDestinationSelected: (index) {
           ref.read(currentNavIndexProvider.notifier).state = index;
         },

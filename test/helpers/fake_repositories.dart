@@ -933,6 +933,25 @@ class FakeAlertRepository implements AlertRepository {
   }
 
   @override
+  Future<void> deduplicateAlerts() async {
+    final newestByKey = <String, AlertItem>{};
+    for (final alert in _alerts.values) {
+      final day =
+          '${alert.createdAt.year}-${alert.createdAt.month}-${alert.createdAt.day}';
+      final identity = alert.relatedEntityId ?? '${alert.title}\u0000${alert.message}';
+      final key = '${alert.type}\u0000$identity\u0000$day';
+      final current = newestByKey[key];
+      if (current == null || alert.createdAt.isAfter(current.createdAt)) {
+        newestByKey[key] = alert;
+      }
+    }
+    _alerts
+      ..clear()
+      ..addEntries(newestByKey.values.map((alert) => MapEntry(alert.id, alert)));
+    _controller.add(_alerts.values.toList());
+  }
+
+  @override
   Future<bool> alertExistsForEntity({
     required AlertType type,
     required String relatedEntityId,

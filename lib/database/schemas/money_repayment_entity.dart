@@ -23,4 +23,7 @@ class MoneyRepaymentEntity {
   String? notes;
 
   late DateTime createdAt;
+
+  @Index()
+  String? transactionId;
 }
