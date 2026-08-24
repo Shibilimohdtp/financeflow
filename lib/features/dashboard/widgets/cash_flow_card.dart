@@ -39,6 +39,14 @@ class CashFlowCard extends StatelessWidget {
     final finColors = context.finColors;
     final displayPeriod = periodLabel ?? DateFormatter.formatMonthYear(month);
 
+    final hasActivity =
+        (chartItems != null &&
+            chartItems!.any(
+              (i) => i.value > 0 || (i.secondaryValue ?? 0) > 0,
+            )) ||
+        cashFlow.totalIncome > 0 ||
+        cashFlow.totalExpense > 0;
+
     return Semantics(
       container: true,
       label:
@@ -49,7 +57,7 @@ class CashFlowCard extends StatelessWidget {
         padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
         decoration: BoxDecoration(
           color: theme.cardColor,
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+          borderRadius: BorderRadius.circular(StillwaterTokens.radiusXl),
           border: Border.all(
             color: theme.dividerColor,
             width: StillwaterTokens.borderWidthHairline,
@@ -57,15 +65,15 @@ class CashFlowCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: theme.shadowColor.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Row: Period & Navigation
+            // Header Row: Period Title, Date Navigators, and Analytics CTA
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -147,7 +155,7 @@ class CashFlowCard extends StatelessWidget {
 
             const SizedBox(height: StillwaterTokens.spaceMd),
 
-            // Net Flow metric
+            // Net Savings Metric
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -155,7 +163,8 @@ class CashFlowCard extends StatelessWidget {
                   'Net Savings',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
                   ),
                 ),
                 const SizedBox(height: StillwaterTokens.space3Xs),
@@ -184,12 +193,16 @@ class CashFlowCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: StillwaterTokens.spaceSm,
-                      vertical: StillwaterTokens.spaceXs,
+                      vertical: StillwaterTokens.spaceSm,
                     ),
                     decoration: BoxDecoration(
-                      color: finColors.income.withValues(alpha: 0.05),
+                      color: finColors.income.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusSm,
+                        StillwaterTokens.radiusMd,
+                      ),
+                      border: Border.all(
+                        color: finColors.income.withValues(alpha: 0.16),
+                        width: StillwaterTokens.borderWidthHairline,
                       ),
                     ),
                     child: Column(
@@ -208,6 +221,7 @@ class CashFlowCard extends StatelessWidget {
                                 'Income',
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.secondary,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 11,
                                 ),
                                 maxLines: 1,
@@ -235,12 +249,16 @@ class CashFlowCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: StillwaterTokens.spaceSm,
-                      vertical: StillwaterTokens.spaceXs,
+                      vertical: StillwaterTokens.spaceSm,
                     ),
                     decoration: BoxDecoration(
-                      color: finColors.expense.withValues(alpha: 0.05),
+                      color: finColors.expense.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusSm,
+                        StillwaterTokens.radiusMd,
+                      ),
+                      border: Border.all(
+                        color: finColors.expense.withValues(alpha: 0.16),
+                        width: StillwaterTokens.borderWidthHairline,
                       ),
                     ),
                     child: Column(
@@ -259,6 +277,7 @@ class CashFlowCard extends StatelessWidget {
                                 'Expenses',
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.secondary,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 11,
                                 ),
                                 maxLines: 1,
@@ -281,51 +300,66 @@ class CashFlowCard extends StatelessWidget {
               ],
             ),
 
-            // Optional Chart Section if chart items exist
-            if (chartItems != null && chartItems!.isNotEmpty) ...[
+            // Chart Section
+            if (chartItems != null &&
+                chartItems!.isNotEmpty &&
+                hasActivity) ...[
               const SizedBox(height: StillwaterTokens.spaceLg),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: finColors.expense,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: StillwaterTokens.space2Xs),
-                      Text(
-                        'Expenses',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Activity Breakdown',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceMd),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: finColors.income,
-                          shape: BoxShape.circle,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: finColors.expense,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: StillwaterTokens.space2Xs),
+                          Text(
+                            'Expenses',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: StillwaterTokens.space2Xs),
-                      Text(
-                        'Income',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontSize: 11,
-                        ),
+                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: finColors.income,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: StillwaterTokens.space2Xs),
+                          Text(
+                            'Income',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -334,8 +368,36 @@ class CashFlowCard extends StatelessWidget {
               const SizedBox(height: StillwaterTokens.spaceXs),
               FfBarChart(
                 items: chartItems!,
-                height: 120,
+                height: 124,
                 semanticsSummary: 'Cash flow activity chart for $displayPeriod',
+              ),
+            ] else if (!hasActivity) ...[
+              const SizedBox(height: StillwaterTokens.spaceLg),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: StillwaterTokens.spaceMd,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.bar_chart_rounded,
+                        size: 18,
+                        color: theme.colorScheme.secondary.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      Text(
+                        'No transactions recorded for this period.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ],
@@ -344,4 +406,3 @@ class CashFlowCard extends StatelessWidget {
     );
   }
 }
-

@@ -81,6 +81,7 @@ class IngestionService {
     DateTime? timestamp,
     String defaultAccountId = 'acc_primary_cash',
     bool autoStagePending = true,
+    String? sourceIdentifier,
   }) async {
     final parsed = _notificationRegistry.parse(
       packageName: packageName,
@@ -101,6 +102,7 @@ class IngestionService {
     );
 
     final resolved = parsed.copyWith(
+      sourceIdentifier: sourceIdentifier,
       duplicateStatus: duplicateMatch.level,
       matchedTransactionId: duplicateMatch.matchedTransaction?.id,
       matchedTransaction: duplicateMatch.matchedTransaction,
@@ -123,6 +125,7 @@ class IngestionService {
     DateTime? timestamp,
     String defaultAccountId = 'acc_primary_cash',
     bool autoStagePending = true,
+    String? sourceIdentifier,
   }) async {
     final parsed = _smsRegistry.parse(
       sender: sender,
@@ -142,6 +145,7 @@ class IngestionService {
     );
 
     final resolved = parsed.copyWith(
+      sourceIdentifier: sourceIdentifier,
       duplicateStatus: duplicateMatch.level,
       matchedTransactionId: duplicateMatch.matchedTransaction?.id,
       matchedTransaction: duplicateMatch.matchedTransaction,
@@ -155,6 +159,83 @@ class IngestionService {
     }
 
     return resolved;
+  }
+
+  /// Product policy for real-time sources: trustworthy new transactions are
+  /// committed immediately; uncertain and duplicate items remain reviewable.
+  Future<IngestionResult> ingestSms({
+    required String sender,
+    required String body,
+    DateTime? timestamp,
+    String? sourceIdentifier,
+    String defaultAccountId = 'acc_primary_cash',
+  }) async {
+    final parsed = await processSms(
+      sender: sender,
+      body: body,
+      timestamp: timestamp,
+      sourceIdentifier: sourceIdentifier,
+      defaultAccountId: defaultAccountId,
+      autoStagePending: false,
+    );
+    return _persistRealtime(parsed);
+  }
+
+  Future<IngestionResult> ingestNotification({
+    required String packageName,
+    required String title,
+    required String text,
+    DateTime? timestamp,
+    String? sourceIdentifier,
+    String defaultAccountId = 'acc_primary_cash',
+  }) async {
+    final parsed = await processNotification(
+      packageName: packageName,
+      title: title,
+      text: text,
+      timestamp: timestamp,
+      sourceIdentifier: sourceIdentifier,
+      defaultAccountId: defaultAccountId,
+      autoStagePending: false,
+    );
+    return _persistRealtime(parsed);
+  }
+
+  Future<IngestionResult> _persistRealtime(ParsedTransaction? parsed) async {
+    if (parsed == null) {
+      return const IngestionResult(IngestionDisposition.rejected);
+    }
+
+    final pending =
+        await _pendingTransactionRepository.getPendingTransactions();
+    final alreadyPending = pending.any(
+      (item) =>
+          (parsed.sourceIdentifier?.isNotEmpty == true &&
+              item.sourceIdentifier == parsed.sourceIdentifier) ||
+          item.fingerprint == parsed.fingerprint,
+    );
+    if (alreadyPending) {
+      return IngestionResult(IngestionDisposition.duplicate, parsed: parsed);
+    }
+
+    final canAutoCommit =
+        parsed.isValid &&
+        !parsed.hasWarnings &&
+        !parsed.isDuplicate &&
+        parsed.reviewStatus == ReviewStatus.confirmed &&
+        parsed.categorizationConfidence >= 0.7;
+    if (canAutoCommit) {
+      await _transactionRepository.saveTransaction(parsed.toTransaction());
+      return IngestionResult(IngestionDisposition.committed, parsed: parsed);
+    }
+
+    await _pendingTransactionRepository.savePendingTransaction(parsed);
+    return IngestionResult(
+      parsed.isDuplicate
+          ? IngestionDisposition.duplicate
+          : IngestionDisposition.pending,
+      parsed: parsed,
+    );
   }
 
   /// Commit an ImportReviewSession to the database
@@ -221,3 +302,12 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
     pendingTransactionRepository: pendingRepo,
   );
 });
+
+enum IngestionDisposition { committed, pending, duplicate, rejected }
+
+class IngestionResult {
+  final IngestionDisposition disposition;
+  final ParsedTransaction? parsed;
+
+  const IngestionResult(this.disposition, {this.parsed});
+}

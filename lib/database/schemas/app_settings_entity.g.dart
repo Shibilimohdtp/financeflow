@@ -52,108 +52,143 @@ const AppSettingsEntitySchema = CollectionSchema(
       name: r'hasCompletedOnboarding',
       type: IsarType.bool,
     ),
-    r'isAlertsEnabled': PropertySchema(
+    r'ingestionDuplicateCount': PropertySchema(
       id: 7,
+      name: r'ingestionDuplicateCount',
+      type: IsarType.long,
+    ),
+    r'ingestionLastError': PropertySchema(
+      id: 8,
+      name: r'ingestionLastError',
+      type: IsarType.string,
+    ),
+    r'ingestionParsedCount': PropertySchema(
+      id: 9,
+      name: r'ingestionParsedCount',
+      type: IsarType.long,
+    ),
+    r'ingestionRejectedCount': PropertySchema(
+      id: 10,
+      name: r'ingestionRejectedCount',
+      type: IsarType.long,
+    ),
+    r'isAlertsEnabled': PropertySchema(
+      id: 11,
       name: r'isAlertsEnabled',
       type: IsarType.bool,
     ),
     r'isBackupReminderEnabled': PropertySchema(
-      id: 8,
+      id: 12,
       name: r'isBackupReminderEnabled',
       type: IsarType.bool,
     ),
     r'isBiometricEnabled': PropertySchema(
-      id: 9,
+      id: 13,
       name: r'isBiometricEnabled',
       type: IsarType.bool,
     ),
     r'isBudgetAlertsEnabled': PropertySchema(
-      id: 10,
+      id: 14,
       name: r'isBudgetAlertsEnabled',
       type: IsarType.bool,
     ),
     r'isDenseMode': PropertySchema(
-      id: 11,
+      id: 15,
       name: r'isDenseMode',
       type: IsarType.bool,
     ),
     r'isGeminiEnabled': PropertySchema(
-      id: 12,
+      id: 16,
       name: r'isGeminiEnabled',
       type: IsarType.bool,
     ),
     r'isLoanAlertsEnabled': PropertySchema(
-      id: 13,
+      id: 17,
       name: r'isLoanAlertsEnabled',
       type: IsarType.bool,
     ),
     r'isNeedsReviewAlertsEnabled': PropertySchema(
-      id: 14,
+      id: 18,
       name: r'isNeedsReviewAlertsEnabled',
       type: IsarType.bool,
     ),
     r'isNotificationDetectionEnabled': PropertySchema(
-      id: 15,
+      id: 19,
       name: r'isNotificationDetectionEnabled',
       type: IsarType.bool,
     ),
     r'isPinEnabled': PropertySchema(
-      id: 16,
+      id: 20,
       name: r'isPinEnabled',
       type: IsarType.bool,
     ),
     r'isPrivacyBlurEnabled': PropertySchema(
-      id: 17,
+      id: 21,
       name: r'isPrivacyBlurEnabled',
       type: IsarType.bool,
     ),
     r'isScreenshotProtectionEnabled': PropertySchema(
-      id: 18,
+      id: 22,
       name: r'isScreenshotProtectionEnabled',
       type: IsarType.bool,
     ),
     r'isSmsDetectionEnabled': PropertySchema(
-      id: 19,
+      id: 23,
       name: r'isSmsDetectionEnabled',
       type: IsarType.bool,
     ),
     r'isSubscriptionAlertsEnabled': PropertySchema(
-      id: 20,
+      id: 24,
       name: r'isSubscriptionAlertsEnabled',
       type: IsarType.bool,
     ),
     r'lastAlertScan': PropertySchema(
-      id: 21,
+      id: 25,
       name: r'lastAlertScan',
       type: IsarType.dateTime,
     ),
     r'lastBackupDate': PropertySchema(
-      id: 22,
+      id: 26,
       name: r'lastBackupDate',
       type: IsarType.dateTime,
     ),
+    r'lastGmailScan': PropertySchema(
+      id: 27,
+      name: r'lastGmailScan',
+      type: IsarType.dateTime,
+    ),
     r'lastIngestionScan': PropertySchema(
-      id: 23,
+      id: 28,
       name: r'lastIngestionScan',
       type: IsarType.dateTime,
     ),
+    r'lastSuccessfulNotificationEvent': PropertySchema(
+      id: 29,
+      name: r'lastSuccessfulNotificationEvent',
+      type: IsarType.dateTime,
+    ),
+    r'lastSuccessfulSmsEvent': PropertySchema(
+      id: 30,
+      name: r'lastSuccessfulSmsEvent',
+      type: IsarType.dateTime,
+    ),
     r'selectedNotificationPackages': PropertySchema(
-      id: 24,
+      id: 31,
       name: r'selectedNotificationPackages',
       type: IsarType.stringList,
     ),
     r'selectedSmsSenders': PropertySchema(
-      id: 25,
+      id: 32,
       name: r'selectedSmsSenders',
       type: IsarType.stringList,
     ),
     r'themeMode': PropertySchema(
-      id: 26,
+      id: 33,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 27,
+      id: 34,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -184,6 +219,12 @@ int _appSettingsEntityEstimateSize(
     for (var i = 0; i < object.dismissedInsightIds.length; i++) {
       final value = object.dismissedInsightIds[i];
       bytesCount += value.length * 3;
+    }
+  }
+  {
+    final value = object.ingestionLastError;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
     }
   }
   bytesCount += 3 + object.selectedNotificationPackages.length * 3;
@@ -217,27 +258,34 @@ void _appSettingsEntitySerialize(
   writer.writeDateTime(offsets[4], object.geminiConsentDate);
   writer.writeBool(offsets[5], object.geminiConsentGranted);
   writer.writeBool(offsets[6], object.hasCompletedOnboarding);
-  writer.writeBool(offsets[7], object.isAlertsEnabled);
-  writer.writeBool(offsets[8], object.isBackupReminderEnabled);
-  writer.writeBool(offsets[9], object.isBiometricEnabled);
-  writer.writeBool(offsets[10], object.isBudgetAlertsEnabled);
-  writer.writeBool(offsets[11], object.isDenseMode);
-  writer.writeBool(offsets[12], object.isGeminiEnabled);
-  writer.writeBool(offsets[13], object.isLoanAlertsEnabled);
-  writer.writeBool(offsets[14], object.isNeedsReviewAlertsEnabled);
-  writer.writeBool(offsets[15], object.isNotificationDetectionEnabled);
-  writer.writeBool(offsets[16], object.isPinEnabled);
-  writer.writeBool(offsets[17], object.isPrivacyBlurEnabled);
-  writer.writeBool(offsets[18], object.isScreenshotProtectionEnabled);
-  writer.writeBool(offsets[19], object.isSmsDetectionEnabled);
-  writer.writeBool(offsets[20], object.isSubscriptionAlertsEnabled);
-  writer.writeDateTime(offsets[21], object.lastAlertScan);
-  writer.writeDateTime(offsets[22], object.lastBackupDate);
-  writer.writeDateTime(offsets[23], object.lastIngestionScan);
-  writer.writeStringList(offsets[24], object.selectedNotificationPackages);
-  writer.writeStringList(offsets[25], object.selectedSmsSenders);
-  writer.writeString(offsets[26], object.themeMode);
-  writer.writeDateTime(offsets[27], object.updatedAt);
+  writer.writeLong(offsets[7], object.ingestionDuplicateCount);
+  writer.writeString(offsets[8], object.ingestionLastError);
+  writer.writeLong(offsets[9], object.ingestionParsedCount);
+  writer.writeLong(offsets[10], object.ingestionRejectedCount);
+  writer.writeBool(offsets[11], object.isAlertsEnabled);
+  writer.writeBool(offsets[12], object.isBackupReminderEnabled);
+  writer.writeBool(offsets[13], object.isBiometricEnabled);
+  writer.writeBool(offsets[14], object.isBudgetAlertsEnabled);
+  writer.writeBool(offsets[15], object.isDenseMode);
+  writer.writeBool(offsets[16], object.isGeminiEnabled);
+  writer.writeBool(offsets[17], object.isLoanAlertsEnabled);
+  writer.writeBool(offsets[18], object.isNeedsReviewAlertsEnabled);
+  writer.writeBool(offsets[19], object.isNotificationDetectionEnabled);
+  writer.writeBool(offsets[20], object.isPinEnabled);
+  writer.writeBool(offsets[21], object.isPrivacyBlurEnabled);
+  writer.writeBool(offsets[22], object.isScreenshotProtectionEnabled);
+  writer.writeBool(offsets[23], object.isSmsDetectionEnabled);
+  writer.writeBool(offsets[24], object.isSubscriptionAlertsEnabled);
+  writer.writeDateTime(offsets[25], object.lastAlertScan);
+  writer.writeDateTime(offsets[26], object.lastBackupDate);
+  writer.writeDateTime(offsets[27], object.lastGmailScan);
+  writer.writeDateTime(offsets[28], object.lastIngestionScan);
+  writer.writeDateTime(offsets[29], object.lastSuccessfulNotificationEvent);
+  writer.writeDateTime(offsets[30], object.lastSuccessfulSmsEvent);
+  writer.writeStringList(offsets[31], object.selectedNotificationPackages);
+  writer.writeStringList(offsets[32], object.selectedSmsSenders);
+  writer.writeString(offsets[33], object.themeMode);
+  writer.writeDateTime(offsets[34], object.updatedAt);
 }
 
 AppSettingsEntity _appSettingsEntityDeserialize(
@@ -255,28 +303,36 @@ AppSettingsEntity _appSettingsEntityDeserialize(
   object.geminiConsentGranted = reader.readBool(offsets[5]);
   object.hasCompletedOnboarding = reader.readBool(offsets[6]);
   object.id = id;
-  object.isAlertsEnabled = reader.readBool(offsets[7]);
-  object.isBackupReminderEnabled = reader.readBool(offsets[8]);
-  object.isBiometricEnabled = reader.readBool(offsets[9]);
-  object.isBudgetAlertsEnabled = reader.readBool(offsets[10]);
-  object.isDenseMode = reader.readBool(offsets[11]);
-  object.isGeminiEnabled = reader.readBool(offsets[12]);
-  object.isLoanAlertsEnabled = reader.readBool(offsets[13]);
-  object.isNeedsReviewAlertsEnabled = reader.readBool(offsets[14]);
-  object.isNotificationDetectionEnabled = reader.readBool(offsets[15]);
-  object.isPinEnabled = reader.readBool(offsets[16]);
-  object.isPrivacyBlurEnabled = reader.readBool(offsets[17]);
-  object.isScreenshotProtectionEnabled = reader.readBool(offsets[18]);
-  object.isSmsDetectionEnabled = reader.readBool(offsets[19]);
-  object.isSubscriptionAlertsEnabled = reader.readBool(offsets[20]);
-  object.lastAlertScan = reader.readDateTimeOrNull(offsets[21]);
-  object.lastBackupDate = reader.readDateTimeOrNull(offsets[22]);
-  object.lastIngestionScan = reader.readDateTimeOrNull(offsets[23]);
+  object.ingestionDuplicateCount = reader.readLong(offsets[7]);
+  object.ingestionLastError = reader.readStringOrNull(offsets[8]);
+  object.ingestionParsedCount = reader.readLong(offsets[9]);
+  object.ingestionRejectedCount = reader.readLong(offsets[10]);
+  object.isAlertsEnabled = reader.readBool(offsets[11]);
+  object.isBackupReminderEnabled = reader.readBool(offsets[12]);
+  object.isBiometricEnabled = reader.readBool(offsets[13]);
+  object.isBudgetAlertsEnabled = reader.readBool(offsets[14]);
+  object.isDenseMode = reader.readBool(offsets[15]);
+  object.isGeminiEnabled = reader.readBool(offsets[16]);
+  object.isLoanAlertsEnabled = reader.readBool(offsets[17]);
+  object.isNeedsReviewAlertsEnabled = reader.readBool(offsets[18]);
+  object.isNotificationDetectionEnabled = reader.readBool(offsets[19]);
+  object.isPinEnabled = reader.readBool(offsets[20]);
+  object.isPrivacyBlurEnabled = reader.readBool(offsets[21]);
+  object.isScreenshotProtectionEnabled = reader.readBool(offsets[22]);
+  object.isSmsDetectionEnabled = reader.readBool(offsets[23]);
+  object.isSubscriptionAlertsEnabled = reader.readBool(offsets[24]);
+  object.lastAlertScan = reader.readDateTimeOrNull(offsets[25]);
+  object.lastBackupDate = reader.readDateTimeOrNull(offsets[26]);
+  object.lastGmailScan = reader.readDateTimeOrNull(offsets[27]);
+  object.lastIngestionScan = reader.readDateTimeOrNull(offsets[28]);
+  object.lastSuccessfulNotificationEvent =
+      reader.readDateTimeOrNull(offsets[29]);
+  object.lastSuccessfulSmsEvent = reader.readDateTimeOrNull(offsets[30]);
   object.selectedNotificationPackages =
-      reader.readStringList(offsets[24]) ?? [];
-  object.selectedSmsSenders = reader.readStringList(offsets[25]) ?? [];
-  object.themeMode = reader.readString(offsets[26]);
-  object.updatedAt = reader.readDateTime(offsets[27]);
+      reader.readStringList(offsets[31]) ?? [];
+  object.selectedSmsSenders = reader.readStringList(offsets[32]) ?? [];
+  object.themeMode = reader.readString(offsets[33]);
+  object.updatedAt = reader.readDateTime(offsets[34]);
   return object;
 }
 
@@ -302,13 +358,13 @@ P _appSettingsEntityDeserializeProp<P>(
     case 6:
       return (reader.readBool(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 10:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 11:
       return (reader.readBool(offset)) as P;
     case 12:
@@ -330,18 +386,32 @@ P _appSettingsEntityDeserializeProp<P>(
     case 20:
       return (reader.readBool(offset)) as P;
     case 21:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 22:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 23:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 24:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readBool(offset)) as P;
     case 25:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 26:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 27:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 28:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 29:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 30:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 31:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 32:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 33:
+      return (reader.readString(offset)) as P;
+    case 34:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1070,6 +1140,328 @@ extension AppSettingsEntityQueryFilter
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionDuplicateCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ingestionDuplicateCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionDuplicateCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ingestionDuplicateCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionDuplicateCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ingestionDuplicateCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionDuplicateCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ingestionDuplicateCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'ingestionLastError',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'ingestionLastError',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ingestionLastError',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ingestionLastError',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ingestionLastError',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ingestionLastError',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'ingestionLastError',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'ingestionLastError',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'ingestionLastError',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'ingestionLastError',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ingestionLastError',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionLastErrorIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'ingestionLastError',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionParsedCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ingestionParsedCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionParsedCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ingestionParsedCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionParsedCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ingestionParsedCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionParsedCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ingestionParsedCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionRejectedCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ingestionRejectedCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionRejectedCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ingestionRejectedCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionRejectedCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ingestionRejectedCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      ingestionRejectedCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ingestionRejectedCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
       isAlertsEnabledEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1358,6 +1750,80 @@ extension AppSettingsEntityQueryFilter
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastGmailScanIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastGmailScan',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastGmailScanIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastGmailScan',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastGmailScanEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastGmailScan',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastGmailScanGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastGmailScan',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastGmailScanLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastGmailScan',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastGmailScanBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastGmailScan',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
       lastIngestionScanIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1423,6 +1889,154 @@ extension AppSettingsEntityQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'lastIngestionScan',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulNotificationEventIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastSuccessfulNotificationEvent',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulNotificationEventIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastSuccessfulNotificationEvent',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulNotificationEventEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastSuccessfulNotificationEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulNotificationEventGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastSuccessfulNotificationEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulNotificationEventLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastSuccessfulNotificationEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulNotificationEventBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastSuccessfulNotificationEvent',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulSmsEventIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastSuccessfulSmsEvent',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulSmsEventIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastSuccessfulSmsEvent',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulSmsEventEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastSuccessfulSmsEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulSmsEventGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastSuccessfulSmsEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulSmsEventLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastSuccessfulSmsEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastSuccessfulSmsEventBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastSuccessfulSmsEvent',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -2171,6 +2785,62 @@ extension AppSettingsEntityQuerySortBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionDuplicateCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionDuplicateCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionDuplicateCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionDuplicateCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionLastError() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionLastError', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionLastErrorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionLastError', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionParsedCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionParsedCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionParsedCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionParsedCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionRejectedCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionRejectedCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByIngestionRejectedCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionRejectedCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       sortByIsAlertsEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isAlertsEnabled', Sort.asc);
@@ -2395,6 +3065,20 @@ extension AppSettingsEntityQuerySortBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastGmailScan() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastGmailScan', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastGmailScanDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastGmailScan', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       sortByLastIngestionScan() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastIngestionScan', Sort.asc);
@@ -2405,6 +3089,34 @@ extension AppSettingsEntityQuerySortBy
       sortByLastIngestionScanDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastIngestionScan', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastSuccessfulNotificationEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulNotificationEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastSuccessfulNotificationEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulNotificationEvent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastSuccessfulSmsEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSmsEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastSuccessfulSmsEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSmsEvent', Sort.desc);
     });
   }
 
@@ -2533,6 +3245,62 @@ extension AppSettingsEntityQuerySortThenBy
       thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionDuplicateCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionDuplicateCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionDuplicateCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionDuplicateCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionLastError() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionLastError', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionLastErrorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionLastError', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionParsedCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionParsedCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionParsedCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionParsedCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionRejectedCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionRejectedCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByIngestionRejectedCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ingestionRejectedCount', Sort.desc);
     });
   }
 
@@ -2761,6 +3529,20 @@ extension AppSettingsEntityQuerySortThenBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastGmailScan() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastGmailScan', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastGmailScanDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastGmailScan', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       thenByLastIngestionScan() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastIngestionScan', Sort.asc);
@@ -2771,6 +3553,34 @@ extension AppSettingsEntityQuerySortThenBy
       thenByLastIngestionScanDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastIngestionScan', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastSuccessfulNotificationEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulNotificationEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastSuccessfulNotificationEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulNotificationEvent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastSuccessfulSmsEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSmsEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastSuccessfulSmsEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSmsEvent', Sort.desc);
     });
   }
 
@@ -2851,6 +3661,35 @@ extension AppSettingsEntityQueryWhereDistinct
       distinctByHasCompletedOnboarding() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hasCompletedOnboarding');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByIngestionDuplicateCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ingestionDuplicateCount');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByIngestionLastError({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ingestionLastError',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByIngestionParsedCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ingestionParsedCount');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByIngestionRejectedCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ingestionRejectedCount');
     });
   }
 
@@ -2967,9 +3806,30 @@ extension AppSettingsEntityQueryWhereDistinct
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByLastGmailScan() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastGmailScan');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
       distinctByLastIngestionScan() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'lastIngestionScan');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByLastSuccessfulNotificationEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastSuccessfulNotificationEvent');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByLastSuccessfulSmsEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastSuccessfulSmsEvent');
     });
   }
 
@@ -3056,6 +3916,34 @@ extension AppSettingsEntityQueryProperty
       hasCompletedOnboardingProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'hasCompletedOnboarding');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, int, QQueryOperations>
+      ingestionDuplicateCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ingestionDuplicateCount');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, String?, QQueryOperations>
+      ingestionLastErrorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ingestionLastError');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, int, QQueryOperations>
+      ingestionParsedCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ingestionParsedCount');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, int, QQueryOperations>
+      ingestionRejectedCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ingestionRejectedCount');
     });
   }
 
@@ -3172,9 +4060,30 @@ extension AppSettingsEntityQueryProperty
   }
 
   QueryBuilder<AppSettingsEntity, DateTime?, QQueryOperations>
+      lastGmailScanProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastGmailScan');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, DateTime?, QQueryOperations>
       lastIngestionScanProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastIngestionScan');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, DateTime?, QQueryOperations>
+      lastSuccessfulNotificationEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastSuccessfulNotificationEvent');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, DateTime?, QQueryOperations>
+      lastSuccessfulSmsEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastSuccessfulSmsEvent');
     });
   }
 

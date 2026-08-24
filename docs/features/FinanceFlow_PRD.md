@@ -4,6 +4,14 @@
 
 Version 1.0
 
+Implementation note (2026-08-24): Android bank SMS and selected payment-app
+notification ingestion are connected through native receivers and a private
+on-device queue. High-confidence new items auto-commit; uncertain and duplicate
+items require review. Gmail OAuth/email ingestion and XLSX/OFX/QIF imports are
+specified but not implemented in the current build. See
+`Transaction_Ingestion_Implementation.md` for device setup, testing, privacy,
+and distribution limitations.
+
 Author Product & Technical Specification
 
 ---

@@ -5,6 +5,7 @@ import '../features/security/lock_screen.dart';
 import '../features/settings/settings_controller.dart';
 import '../models/app_settings.dart';
 import '../shared/widgets/financeflow_mark.dart';
+import '../services/ingestion/ingestion_coordinator.dart';
 import '../theme/stillwater_theme.dart';
 import 'router.dart';
 
@@ -15,6 +16,8 @@ class FinanceFlowApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Starts the Android bridge and drains events captured before Flutter ran.
+    ref.watch(ingestionCoordinatorProvider);
     final settingsAsync = ref.watch(settingsStreamProvider);
     final isUnlocked = ref.watch(isAppUnlockedProvider);
 

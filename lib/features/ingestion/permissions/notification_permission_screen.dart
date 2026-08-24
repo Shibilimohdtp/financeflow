@@ -6,6 +6,7 @@ import '../../../shared/widgets/ff_privacy_badge.dart';
 import '../../../shared/widgets/ff_snackbar.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
+import '../../../services/ingestion/ingestion_coordinator.dart';
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -39,6 +40,9 @@ class _NotificationPermissionScreenState
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
+    final hasAccess =
+        ref.watch(ingestionPlatformStatusProvider).value?.notificationAccess ??
+        false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Notification Detection')),
@@ -107,6 +111,22 @@ class _NotificationPermissionScreenState
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
+          ListTile(
+            leading: Icon(
+              hasAccess ? Icons.check_circle_outline : Icons.info_outline,
+            ),
+            title: Text(
+              'Android notification access: ${hasAccess ? 'Allowed' : 'Not allowed'}',
+            ),
+            subtitle: Text(
+              hasAccess
+                  ? 'The system notification-listener service is available.'
+                  : 'Android requires a separate action in Notification Access settings.',
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
           // ── 2. Supported Apps List ────────────────────────────────────
           _SectionLabel(label: 'Select Payment Apps to Monitor'),
           const SizedBox(height: StillwaterTokens.spaceXs),
@@ -168,9 +188,18 @@ class _NotificationPermissionScreenState
 
           // ── 3. Save Controls ─────────────────────────────────────────
           FfButton(
-            label: 'Enable On-Device Notification Detection',
+            label:
+                hasAccess
+                    ? 'Enable On-Device Notification Detection'
+                    : 'Open Android Notification Access',
             leadingIcon: const Icon(Icons.check_rounded, size: 18),
             onPressed: () async {
+              if (!hasAccess) {
+                await ref
+                    .read(ingestionCoordinatorProvider)
+                    .openNotificationAccessSettings();
+                return;
+              }
               final settings = ref.read(settingsStreamProvider).value;
               if (settings != null) {
                 await ref

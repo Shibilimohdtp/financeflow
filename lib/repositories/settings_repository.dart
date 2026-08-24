@@ -65,6 +65,13 @@ class IsarSettingsRepository implements SettingsRepository {
                 'UNIONB',
               ],
       lastIngestionScan: entity.lastIngestionScan,
+      lastSuccessfulSmsEvent: entity.lastSuccessfulSmsEvent,
+      lastSuccessfulNotificationEvent: entity.lastSuccessfulNotificationEvent,
+      lastGmailScan: entity.lastGmailScan,
+      ingestionParsedCount: entity.ingestionParsedCount,
+      ingestionRejectedCount: entity.ingestionRejectedCount,
+      ingestionDuplicateCount: entity.ingestionDuplicateCount,
+      ingestionLastError: entity.ingestionLastError,
       isGeminiEnabled: entity.isGeminiEnabled,
       geminiConsentGranted: entity.geminiConsentGranted,
       geminiConsentDate: entity.geminiConsentDate,
@@ -126,6 +133,14 @@ class IsarSettingsRepository implements SettingsRepository {
           settings.selectedNotificationPackages;
       entity.selectedSmsSenders = settings.selectedSmsSenders;
       entity.lastIngestionScan = settings.lastIngestionScan;
+      entity.lastSuccessfulSmsEvent = settings.lastSuccessfulSmsEvent;
+      entity.lastSuccessfulNotificationEvent =
+          settings.lastSuccessfulNotificationEvent;
+      entity.lastGmailScan = settings.lastGmailScan;
+      entity.ingestionParsedCount = settings.ingestionParsedCount;
+      entity.ingestionRejectedCount = settings.ingestionRejectedCount;
+      entity.ingestionDuplicateCount = settings.ingestionDuplicateCount;
+      entity.ingestionLastError = settings.ingestionLastError;
 
       // Phase 4
       entity.isGeminiEnabled = settings.isGeminiEnabled;
@@ -140,7 +155,9 @@ class IsarSettingsRepository implements SettingsRepository {
       entity.lastBackupDate = settings.lastBackupDate;
       entity.lastAlertScan = settings.lastAlertScan;
       entity.autoLockTimeoutMinutes = settings.autoLockTimeoutMinutes;
-      entity.dismissedInsightIds = List<String>.from(settings.dismissedInsightIds);
+      entity.dismissedInsightIds = List<String>.from(
+        settings.dismissedInsightIds,
+      );
 
       entity.updatedAt = DateTime.now();
 

@@ -129,7 +129,7 @@ class TopCategoriesCard extends StatelessWidget {
                                                 .colorScheme
                                                 .surfaceContainerHighest,
                                         color: catColor,
-                                        minHeight: 4,
+                                        minHeight: 5,
                                       ),
                                     ),
                                   ),
@@ -138,11 +138,11 @@ class TopCategoriesCard extends StatelessWidget {
                                   ),
                                   Text(
                                     '${(cat.percentage * 100).toStringAsFixed(0)}%',
-                                    style: theme.textTheme.labelSmall
-                                        ?.copyWith(
-                                          color: theme.colorScheme.secondary,
-                                          fontSize: 11,
-                                        ),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.secondary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -156,7 +156,7 @@ class TopCategoriesCard extends StatelessWidget {
                                       : '${cat.transactionCount} transactions',
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: theme.colorScheme.secondary,
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                   ),
                                 ),
                               ],

@@ -56,6 +56,13 @@ class AppSettings {
   final List<String> selectedNotificationPackages;
   final List<String> selectedSmsSenders;
   final DateTime? lastIngestionScan;
+  final DateTime? lastSuccessfulSmsEvent;
+  final DateTime? lastSuccessfulNotificationEvent;
+  final DateTime? lastGmailScan;
+  final int ingestionParsedCount;
+  final int ingestionRejectedCount;
+  final int ingestionDuplicateCount;
+  final String? ingestionLastError;
 
   // Phase 4 Settings
   final bool isGeminiEnabled;
@@ -100,6 +107,13 @@ class AppSettings {
       'UNIONB',
     ],
     this.lastIngestionScan,
+    this.lastSuccessfulSmsEvent,
+    this.lastSuccessfulNotificationEvent,
+    this.lastGmailScan,
+    this.ingestionParsedCount = 0,
+    this.ingestionRejectedCount = 0,
+    this.ingestionDuplicateCount = 0,
+    this.ingestionLastError,
     this.isGeminiEnabled = false,
     this.geminiConsentGranted = false,
     this.geminiConsentDate,
@@ -129,6 +143,13 @@ class AppSettings {
     List<String>? selectedNotificationPackages,
     List<String>? selectedSmsSenders,
     DateTime? lastIngestionScan,
+    DateTime? lastSuccessfulSmsEvent,
+    DateTime? lastSuccessfulNotificationEvent,
+    DateTime? lastGmailScan,
+    int? ingestionParsedCount,
+    int? ingestionRejectedCount,
+    int? ingestionDuplicateCount,
+    String? ingestionLastError,
     bool? isGeminiEnabled,
     bool? geminiConsentGranted,
     DateTime? geminiConsentDate,
@@ -162,6 +183,18 @@ class AppSettings {
           selectedNotificationPackages ?? this.selectedNotificationPackages,
       selectedSmsSenders: selectedSmsSenders ?? this.selectedSmsSenders,
       lastIngestionScan: lastIngestionScan ?? this.lastIngestionScan,
+      lastSuccessfulSmsEvent:
+          lastSuccessfulSmsEvent ?? this.lastSuccessfulSmsEvent,
+      lastSuccessfulNotificationEvent:
+          lastSuccessfulNotificationEvent ??
+          this.lastSuccessfulNotificationEvent,
+      lastGmailScan: lastGmailScan ?? this.lastGmailScan,
+      ingestionParsedCount: ingestionParsedCount ?? this.ingestionParsedCount,
+      ingestionRejectedCount:
+          ingestionRejectedCount ?? this.ingestionRejectedCount,
+      ingestionDuplicateCount:
+          ingestionDuplicateCount ?? this.ingestionDuplicateCount,
+      ingestionLastError: ingestionLastError ?? this.ingestionLastError,
       isGeminiEnabled: isGeminiEnabled ?? this.isGeminiEnabled,
       geminiConsentGranted: geminiConsentGranted ?? this.geminiConsentGranted,
       geminiConsentDate: geminiConsentDate ?? this.geminiConsentDate,

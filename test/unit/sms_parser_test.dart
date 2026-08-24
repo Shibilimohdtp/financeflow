@@ -113,6 +113,26 @@ void main() {
       expect(parsed.sourceName, equals('Axis Bank'));
     });
 
+    for (final bankCase in const [
+      ('FEDBNK', 'Federal Bank', 'Federal Bank'),
+      ('CANBNK', 'Canara Bank', 'Canara Bank'),
+      ('UNIONB', 'Union Bank', 'Union Bank'),
+    ]) {
+      test('Parses ${bankCase.$2} debit SMS', () {
+        final result = registry.parse(
+          sender: bankCase.$1,
+          body:
+              '${bankCase.$2}: Rs 750.00 debited from A/C **1234 to AMAZON on 22-AUG-26. Ref 778899.',
+          timestamp: DateTime(2026, 8, 22),
+        );
+        expect(result, isNotNull);
+        expect(result!.sourceName, bankCase.$3);
+        expect(result.amount, 750);
+        expect(result.type, TransactionType.expense);
+        expect(result.referenceNumber, '778899');
+      });
+    }
+
     test('Parses Generic UPI transaction SMS', () {
       final parser = GenericUpiSmsParser();
       final now = DateTime.now();

@@ -4,12 +4,13 @@ import '../../../services/balance_calculator.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_colors.dart';
 import '../../../theme/stillwater_tokens.dart';
-
+import '../dashboard_controller.dart';
 
 class TotalBalanceHero extends StatelessWidget {
   final double totalBalance;
   final int activeAccountsCount;
   final MonthlyCashFlow? monthlyCashFlow;
+  final PeriodComparisonMetric? trendMetric;
   final bool isPrivacyBlur;
   final VoidCallback onToggleBlur;
   final VoidCallback? onManageAccounts;
@@ -19,6 +20,7 @@ class TotalBalanceHero extends StatelessWidget {
     required this.totalBalance,
     required this.activeAccountsCount,
     this.monthlyCashFlow,
+    this.trendMetric,
     required this.isPrivacyBlur,
     required this.onToggleBlur,
     this.onManageAccounts,
@@ -28,7 +30,6 @@ class TotalBalanceHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final finColors = context.finColors;
-
 
     return Semantics(
       container: true,
@@ -51,7 +52,7 @@ class TotalBalanceHero extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: theme.shadowColor.withValues(alpha: 0.03),
-              blurRadius: 12,
+              blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],
@@ -60,7 +61,7 @@ class TotalBalanceHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Top Row: Label, Account Count, and Privacy Toggle
+            // Top Row: Label, Account Count Pill, and Privacy Eye Toggle
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -153,16 +154,37 @@ class TotalBalanceHero extends StatelessWidget {
 
             const SizedBox(height: StillwaterTokens.spaceXs),
 
-            // Large Hero Balance
-            FfAmountText(
-              amount: totalBalance,
-              size: FfAmountSize.hero,
-              isBlurred: isPrivacyBlur,
-              showSign: false,
-              colorOverride: theme.colorScheme.onSurface,
+            // Large Hero Balance with Trend Indicator Badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: FfAmountText(
+                    amount: totalBalance,
+                    size: FfAmountSize.hero,
+                    isBlurred: isPrivacyBlur,
+                    showSign: false,
+                    colorOverride:
+                        totalBalance < 0
+                            ? finColors.expense
+                            : theme.colorScheme.onSurface,
+                  ),
+                ),
+                if (trendMetric != null &&
+                    trendMetric!.hasPreviousData &&
+                    !isPrivacyBlur) ...[
+                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  _TrendBadge(
+                    metric: trendMetric!,
+                    finColors: finColors,
+                    theme: theme,
+                  ),
+                ],
+              ],
             ),
 
-            // Financial overview chips: Income | Expenses | Savings Rate
+            // Financial overview breakdown chips: Income | Expenses | Net Savings
             if (monthlyCashFlow != null) ...[
               const SizedBox(height: StillwaterTokens.spaceMd),
               Wrap(
@@ -205,8 +227,62 @@ class TotalBalanceHero extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Private chip widgets
+// Private widgets
 // ---------------------------------------------------------------------------
+
+/// Trend badge comparing current period's spend with previous period.
+class _TrendBadge extends StatelessWidget {
+  final PeriodComparisonMetric metric;
+  final FfFinColors finColors;
+  final ThemeData theme;
+
+  const _TrendBadge({
+    required this.metric,
+    required this.finColors,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final expChange = metric.expenseChangePct;
+    final isDecrease = expChange < 0;
+    // Lower spending is positive/green, higher spending is warning/expense color
+    final color = isDecrease ? finColors.savings : finColors.expense;
+    final icon =
+        isDecrease ? Icons.trending_down_rounded : Icons.trending_up_rounded;
+    final formattedPct = '${expChange.abs().toStringAsFixed(1)}%';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceSm,
+        vertical: StillwaterTokens.space3Xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        border: Border.all(
+          color: color.withValues(alpha: 0.20),
+          width: StillwaterTokens.borderWidthHairline,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: StillwaterTokens.space3Xs),
+          Text(
+            '$formattedPct spend',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Tinted pill chip showing a financial figure (income or expense).
 class _FinancialChip extends StatelessWidget {

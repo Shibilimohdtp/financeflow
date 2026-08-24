@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
 import '../../models/subscription.dart';
 import '../../models/transaction.dart';
 import '../../repositories/alert_repository.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/subscription_repository.dart';
-import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_category_tile.dart';
-import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_source_badge.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
+import '../ai/ai_query_sheet.dart';
 import '../alerts/alerts_inbox_screen.dart';
 import '../budgets/budgets_controller.dart';
 import '../ingestion/needs_review_controller.dart';
@@ -26,16 +21,17 @@ import '../savings_goals/savings_goals_controller.dart';
 import '../settings/settings_controller.dart';
 import '../subscriptions/subscriptions_screen.dart';
 import '../transactions/add_edit_transaction_sheet.dart';
-import '../../shared/widgets/ff_segmented_pill.dart';
-import '../ai/ai_query_sheet.dart';
 import 'dashboard_controller.dart';
 import 'insights_controller.dart';
 import 'widgets/account_summary_strip.dart';
 import 'widgets/actionable_items_section.dart';
 import 'widgets/budget_overview_card.dart';
 import 'widgets/cash_flow_card.dart';
+import 'widgets/home_header.dart';
 import 'widgets/home_loans_overview.dart';
+import 'widgets/home_period_selector.dart';
 import 'widgets/home_quick_actions.dart';
+import 'widgets/home_recent_transactions.dart';
 import 'widgets/local_insights_card.dart';
 import 'widgets/savings_goals_overview_card.dart';
 import 'widgets/top_categories_card.dart';
@@ -71,21 +67,11 @@ class DashboardScreen extends ConsumerWidget {
     this.onOpenSettings,
   });
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
-    } else if (hour < 17) {
-      return 'Good afternoon';
-    } else {
-      return 'Good evening';
-    }
-  }
-
   void _openTransfer(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => const AddEditTransactionSheet(),
     );
   }
@@ -110,12 +96,14 @@ class DashboardScreen extends ConsumerWidget {
     final recentTxAsync = ref.watch(recentTransactionsProvider);
     final selectedMonth = ref.watch(selectedDashboardMonthProvider);
     final selectedPeriod = ref.watch(selectedDashboardPeriodProvider);
+    final trendMetric = ref.watch(periodComparisonProvider);
     final topCategoriesAsync = ref.watch(topSpendingCategoriesProvider);
     final overallBudgetAsync = ref.watch(overallBudgetSummaryProvider);
+    final activeBudgetsAsync = ref.watch(budgetSummariesProvider);
     final overallGoalAsync = ref.watch(overallSavingsGoalSummaryProvider);
     final insightsAsync = ref.watch(dashboardInsightsProvider);
 
-    // Loans & Subscriptions Data (Safely guarded against uninitialized state)
+    // Loans & Subscriptions Data
     final allLoans = ref.watch(allLoansStreamProvider).valueOrNull ?? const [];
     final activeLoans =
         allLoans.where((l) => l.status == LoanStatus.active).toList();
@@ -152,81 +140,37 @@ class DashboardScreen extends ConsumerWidget {
     final monthlyCashFlow = cashFlowAsync.valueOrNull;
     final overBudgetCount =
         overallBudgetAsync.valueOrNull?.overBudgetCount ?? 0;
+    final activeBudgetsList = activeBudgetsAsync.valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: StillwaterTokens.spaceLg,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _getGreeting(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                'FinanceFlow',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Badge(
-              isLabelVisible: unreadAlerts > 0,
-              label: Text('$unreadAlerts'),
-              child: const Icon(Icons.notifications_outlined),
-            ),
-            tooltip: 'Alerts & Reminders',
-            visualDensity: VisualDensity.compact,
-            onPressed:
-                onOpenAlerts ?? () => _push(context, const AlertsInboxScreen()),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.auto_awesome,
-              color: context.aiColors.accent,
-            ),
-            tooltip: 'Ask Your Finances',
-            visualDensity: VisualDensity.compact,
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (_) => const AiQuerySheet(),
-              );
-            },
-          ),
-          const Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
-            child: Center(child: FfPrivacyBadge(label: 'On-device')),
-          ),
-        ],
+      appBar: HomeHeader(
+        unreadAlerts: unreadAlerts,
+        onOpenAlerts:
+            onOpenAlerts ?? () => _push(context, const AlertsInboxScreen()),
+        onOpenAi: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => const AiQuerySheet(),
+          );
+        },
+        onOpenSettings: onOpenSettings,
       ),
       body: RefreshIndicator(
         color: theme.colorScheme.primary,
         onRefresh: () async {
           ref.invalidate(dashboardTransactionsProvider);
+          ref.invalidate(dashboardPreviousTransactionsProvider);
           ref.invalidate(monthTransactionsProvider);
           ref.invalidate(monthlyCashFlowProvider);
+          ref.invalidate(previousPeriodCashFlowProvider);
           ref.invalidate(dashboardCashFlowChartProvider);
           ref.invalidate(accountsWithBalancesProvider);
           ref.invalidate(recentTransactionsProvider);
           ref.invalidate(topSpendingCategoriesProvider);
           ref.invalidate(overallBudgetSummaryProvider);
+          ref.invalidate(budgetSummariesProvider);
           ref.invalidate(overallSavingsGoalSummaryProvider);
           ref.invalidate(dashboardInsightsProvider);
           ref.invalidate(allLoansStreamProvider);
@@ -241,11 +185,12 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Total Balance Hero (Primary Visual Anchor)
+              // 1. Main Balance Hero Card (Primary Command Anchor)
               TotalBalanceHero(
                 totalBalance: totalBalance,
                 activeAccountsCount: activeAccountsCount,
                 monthlyCashFlow: monthlyCashFlow,
+                trendMetric: trendMetric,
                 isPrivacyBlur: isPrivacyBlur,
                 onToggleBlur: () {
                   ref
@@ -257,63 +202,39 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceMd),
 
-              // 2. Period Selector Pills (This Month, Last Month, This Year, Custom)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                ),
-                child: FfSegmentedPill<DashboardPeriod>(
-                  options: const [
-                    FfSegmentOption(
-                      value: DashboardPeriod.thisMonth,
-                      label: 'This Month',
-                    ),
-                    FfSegmentOption(
-                      value: DashboardPeriod.lastMonth,
-                      label: 'Last Month',
-                    ),
-                    FfSegmentOption(
-                      value: DashboardPeriod.thisYear,
-                      label: 'This Year',
-                    ),
-                    FfSegmentOption(
-                      value: DashboardPeriod.custom,
-                      label: 'Custom',
-                    ),
-                  ],
-                  selectedValue: selectedPeriod,
-                  onSelected: (chosen) async {
-                    if (chosen == DashboardPeriod.custom) {
-                      final now = DateTime.now();
-                      final picked = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2035),
-                        initialDateRange: DateTimeRange(
-                          start: DateTime(now.year, now.month, 1),
-                          end: now,
-                        ),
+              // 2. Period Selector (This Week, This Month, Last Month, This Year, Custom)
+              HomePeriodSelector(
+                selectedPeriod: selectedPeriod,
+                onSelected: (chosen) async {
+                  if (chosen == DashboardPeriod.custom) {
+                    final now = DateTime.now();
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2035),
+                      initialDateRange: DateTimeRange(
+                        start: DateTime(now.year, now.month, 1),
+                        end: now,
+                      ),
+                    );
+                    if (picked != null) {
+                      ref.read(dashboardCustomRangeProvider.notifier).state = (
+                        start: picked.start,
+                        end: picked.end,
                       );
-                      if (picked != null) {
-                        ref
-                            .read(dashboardCustomRangeProvider.notifier)
-                            .state = (start: picked.start, end: picked.end);
-                        ref
-                            .read(selectedDashboardPeriodProvider.notifier)
-                            .state = chosen;
-                      }
-                    } else {
-                      ref
-                          .read(selectedDashboardPeriodProvider.notifier)
-                          .state = chosen;
+                      ref.read(selectedDashboardPeriodProvider.notifier).state =
+                          chosen;
                     }
-                  },
-                ),
+                  } else {
+                    ref.read(selectedDashboardPeriodProvider.notifier).state =
+                        chosen;
+                  }
+                },
               ),
 
               const SizedBox(height: StillwaterTokens.spaceMd),
 
-              // 3. Quick Actions
+              // 3. Quick Actions Widget
               HomeQuickActions(
                 onAddTransaction: onAddTransaction,
                 onTransfer: () => _openTransfer(context),
@@ -359,7 +280,7 @@ class DashboardScreen extends ConsumerWidget {
                   overBudgetCount > 0)
                 const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 5. Cash Flow & Visualization Summary
+              // 5. Cash Flow & Visualization Summary Card
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: StillwaterTokens.spaceLg,
@@ -419,23 +340,25 @@ class DashboardScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: theme.cardColor,
                             borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusLg,
+                              StillwaterTokens.radiusXl,
                             ),
                             border: Border.all(
                               color: theme.dividerColor,
                               width: StillwaterTokens.borderWidthHairline,
                             ),
                           ),
-                          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+                          padding: const EdgeInsets.all(
+                            StillwaterTokens.spaceLg,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const FfSkeletonBlock(width: 100, height: 12),
-                              const SizedBox(height: StillwaterTokens.spaceSm),
-                              const FfSkeletonBlock(width: 140, height: 28),
-                              const SizedBox(height: StillwaterTokens.spaceMd),
+                            children: const [
+                              FfSkeletonBlock(width: 100, height: 12),
+                              SizedBox(height: StillwaterTokens.spaceSm),
+                              FfSkeletonBlock(width: 140, height: 28),
+                              SizedBox(height: StillwaterTokens.spaceMd),
                               Row(
-                                children: const [
+                                children: [
                                   Expanded(child: FfSkeletonBlock(height: 40)),
                                   SizedBox(width: StillwaterTokens.spaceSm),
                                   Expanded(child: FfSkeletonBlock(height: 40)),
@@ -483,7 +406,7 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 5. Accounts Overview
+              // 6. Accounts & Wallets Overview
               accountsAsync.when(
                 data:
                     (accountsList) => AccountSummaryStrip(
@@ -495,16 +418,24 @@ class DashboardScreen extends ConsumerWidget {
                 loading:
                     () => FfSkeletonLoader(
                       child: SizedBox(
-                        height: 108,
+                        height: 112,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: StillwaterTokens.spaceLg,
                           ),
                           child: Row(
                             children: const [
-                              FfSkeletonBlock(width: 176, height: 108, borderRadius: 12),
+                              FfSkeletonBlock(
+                                width: 176,
+                                height: 112,
+                                borderRadius: 16,
+                              ),
                               SizedBox(width: StillwaterTokens.spaceSm),
-                              FfSkeletonBlock(width: 176, height: 108, borderRadius: 12),
+                              FfSkeletonBlock(
+                                width: 176,
+                                height: 112,
+                                borderRadius: 16,
+                              ),
                             ],
                           ),
                         ),
@@ -513,7 +444,7 @@ class DashboardScreen extends ConsumerWidget {
                 error: (e, _) => const SizedBox.shrink(),
               ),
 
-              // 6. Budgets & Spending
+              // 7. Budgets & Spending Overview
               overallBudgetAsync.when(
                 data: (budgetSummary) {
                   if (budgetSummary.totalBudgeted <= 0) {
@@ -528,6 +459,7 @@ class DashboardScreen extends ConsumerWidget {
                       totalSpent: budgetSummary.totalSpent,
                       totalRemaining: budgetSummary.totalRemaining,
                       overBudgetCount: budgetSummary.overBudgetCount,
+                      activeBudgets: activeBudgetsList,
                       isPrivacyBlur: isPrivacyBlur,
                       onViewBudgets: onOpenBudgets ?? () {},
                     ),
@@ -537,7 +469,7 @@ class DashboardScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              // 7. Loans & EMIs Overview
+              // 8. Loans & EMIs Overview
               if (activeLoans.isNotEmpty) ...[
                 const SizedBox(height: StillwaterTokens.spaceLg),
                 HomeLoansOverview(
@@ -557,7 +489,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
 
-              // 8. Savings Goals Overview (if active)
+              // 9. Savings Goals Overview
               overallGoalAsync.when(
                 data: (goalSummary) {
                   if (goalSummary.totalTarget <= 0) {
@@ -582,7 +514,7 @@ class DashboardScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              // 9. Top Spending Categories
+              // 10. Top Spending Categories
               topCategoriesAsync.when(
                 data: (topCats) {
                   if (topCats.isEmpty) return const SizedBox.shrink();
@@ -601,7 +533,7 @@ class DashboardScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              // 10. Local Insights
+              // 11. Local On-Device Insights
               insightsAsync.when(
                 data: (insights) {
                   if (insights.isEmpty) return const SizedBox.shrink();
@@ -618,181 +550,16 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceXl),
 
-              // 11. Recent Transactions Preview
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Recent Transactions',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.1,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      onPressed: onViewAllTransactions,
-                      child: const Text('View all'),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceXs),
-
+              // 12. Recent Transactions List
               recentTxAsync.when(
-                data: (transactions) {
-                  if (transactions.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceLg,
-                        vertical: StillwaterTokens.spaceSm,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusLg,
-                          ),
-                          border: Border.all(
-                            color: theme.dividerColor,
-                            width: StillwaterTokens.borderWidthHairline,
-                          ),
-                        ),
-                        child: FfEmptyState(
-                          icon: Icons.receipt_long_outlined,
-                          title: 'No transactions yet',
-                          description:
-                              'Add your first expense or income to start organizing your finances offline.',
-                          actionLabel: 'Add Transaction',
-                          onAction: onAddTransaction,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceLg,
+                data:
+                    (transactions) => HomeRecentTransactions(
+                      transactions: transactions,
+                      isPrivacyBlur: isPrivacyBlur,
+                      onViewAll: onViewAllTransactions,
+                      onAddTransaction: onAddTransaction,
+                      onOpenDetail: onOpenTransactionDetail,
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusLg,
-                        ),
-                        border: Border.all(
-                          color: theme.dividerColor,
-                          width: StillwaterTokens.borderWidthHairline,
-                        ),
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: transactions.length,
-                        separatorBuilder: (context, index) => const Divider(),
-                        itemBuilder: (context, index) {
-                          final tx = transactions[index];
-                          return InkWell(
-                            onTap: () => onOpenTransactionDetail(tx),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceMd,
-                                vertical: StillwaterTokens.spaceSm,
-                              ),
-                              child: Row(
-                                children: [
-                                  FfCategoryTile(
-                                    iconIdentifier: tx.categoryIcon,
-                                    colorTokenIdentifier: tx.categoryColor,
-                                    size: 36,
-                                  ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceSm,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          tx.merchant,
-                                          style: theme.textTheme.titleSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(
-                                          height: StillwaterTokens.space3Xs,
-                                        ),
-                                        Row(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                DateFormatter.formatTransactionDate(
-                                                  tx.date,
-                                                ),
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                      fontSize: 11,
-                                                      color:
-                                                          theme
-                                                              .colorScheme
-                                                              .secondary,
-                                                    ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              width: StillwaterTokens.spaceXs,
-                                            ),
-                                            Flexible(
-                                              child: FfSourceBadge(
-                                                source: tx.source,
-                                                sourceName: tx.sourceName,
-                                                isMerged:
-                                                    tx.mergedSources.length > 1,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceSm,
-                                  ),
-                                  FfAmountText(
-                                    amount: tx.amount,
-                                    type: tx.type,
-                                    size: FfAmountSize.md,
-                                    isBlurred: isPrivacyBlur,
-                                    showSign: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  );
-                },
                 loading:
                     () => Padding(
                       padding: const EdgeInsets.symmetric(
@@ -861,7 +628,7 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.space2Xl),
 
-              // 12. Reassuring Offline Status Badge
+              // 13. Reassuring Offline Status Badge Footer
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: StillwaterTokens.spaceLg,

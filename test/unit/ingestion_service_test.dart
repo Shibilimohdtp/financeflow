@@ -230,5 +230,59 @@ void main() {
         expect(pendingList.first.normalizedMerchant, equals('Swiggy'));
       },
     );
+
+    test('high-confidence realtime SMS is committed automatically', () async {
+      final result = await service.ingestSms(
+        sender: 'HDFCBK',
+        body:
+            'HDFC Bank: Rs 1500.00 debited from a/c **4321 on 22-AUG-26 to SWIGGY. UPI Ref 42352345.',
+        timestamp: DateTime(2026, 8, 22, 12),
+        sourceIdentifier: 'sms-1',
+        defaultAccountId: defaultAcc.id,
+      );
+
+      expect(result.disposition, IngestionDisposition.committed);
+      expect(await txRepo.getAllTransactions(), hasLength(1));
+      expect(await pendingRepo.getPendingTransactions(), isEmpty);
+    });
+
+    test('uncertain realtime SMS is routed to Needs Review', () async {
+      final result = await service.ingestSms(
+        sender: 'HDFCBK',
+        body:
+            'HDFC Bank: Rs 999.00 debited from a/c **4321 on 22-AUG-26. Ref 111222.',
+        timestamp: DateTime(2026, 8, 22, 12),
+        sourceIdentifier: 'sms-uncertain',
+        defaultAccountId: defaultAcc.id,
+      );
+
+      expect(result.disposition, IngestionDisposition.pending);
+      expect(await txRepo.getAllTransactions(), isEmpty);
+      expect(await pendingRepo.getPendingTransactions(), hasLength(1));
+    });
+
+    test('cross-source duplicate is not automatically committed twice', () async {
+      await service.ingestSms(
+        sender: 'HDFCBK',
+        body:
+            'HDFC Bank: Rs 325.00 debited from a/c **4321 on 22-AUG-26 to UBER. UPI Ref 42352345.',
+        timestamp: DateTime(2026, 8, 22, 12),
+        sourceIdentifier: 'sms-original',
+        defaultAccountId: defaultAcc.id,
+      );
+
+      final notification = await service.ingestNotification(
+        packageName: 'com.google.android.apps.nbu.paisa.user',
+        title: 'Google Pay',
+        text: 'Paid ₹325 to Uber successfully',
+        timestamp: DateTime(2026, 8, 22, 12, 1),
+        sourceIdentifier: 'notification-copy',
+        defaultAccountId: defaultAcc.id,
+      );
+
+      expect(notification.disposition, IngestionDisposition.duplicate);
+      expect(await txRepo.getAllTransactions(), hasLength(1));
+      expect(await pendingRepo.getPendingTransactions(), hasLength(1));
+    });
   });
 }

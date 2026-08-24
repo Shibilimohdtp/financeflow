@@ -37,7 +37,7 @@ class AccountSummaryStrip extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Accounts',
+                  'Accounts & Wallets',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
@@ -129,7 +129,7 @@ class AccountSummaryStrip extends StatelessWidget {
           )
         else
           SizedBox(
-            height: 108,
+            height: 112,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(
                 horizontal: StillwaterTokens.spaceLg,

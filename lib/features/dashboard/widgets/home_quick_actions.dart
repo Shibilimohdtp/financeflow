@@ -90,9 +90,7 @@ class HomeQuickActions extends StatelessWidget {
             ? theme.colorScheme.primary
             : theme.colorScheme.surfaceContainerLow;
     final fgColor =
-        isPrimary
-            ? theme.colorScheme.onPrimary
-            : theme.colorScheme.onSurfaceVariant;
+        isPrimary ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface;
     final borderColor =
         isPrimary ? theme.colorScheme.primary : theme.dividerColor;
 

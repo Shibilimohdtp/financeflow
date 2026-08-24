@@ -13,10 +13,10 @@ import 'dashboard_controller.dart';
 /// The previous implementation used an in-memory StateProvider, which meant
 /// every app restart recreated every insight. The settings repository is the
 /// existing singleton local store, so it is also safe across device restarts.
-final dismissedInsightIdsProvider = StateNotifierProvider<
-  DismissedInsightIdsController,
-  Set<String>
->((ref) => DismissedInsightIdsController(ref));
+final dismissedInsightIdsProvider =
+    StateNotifierProvider<DismissedInsightIdsController, Set<String>>(
+      (ref) => DismissedInsightIdsController(ref),
+    );
 
 class DismissedInsightIdsController extends StateNotifier<Set<String>> {
   DismissedInsightIdsController(this._ref) : super(const {}) {
@@ -42,10 +42,8 @@ class DismissedInsightIdsController extends StateNotifier<Set<String>> {
       final repository = _ref.read(settingsRepositoryProvider);
       final settings = await repository.getSettings();
       final pending = Set<String>.from(_pendingDismissals);
-      final ids = {
-        ...settings.dismissedInsightIds,
-        ...pending,
-      }.toList()..sort();
+      final ids =
+          {...settings.dismissedInsightIds, ...pending}.toList()..sort();
       await repository.updateSettings(
         settings.copyWith(dismissedInsightIds: ids),
       );

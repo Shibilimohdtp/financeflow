@@ -9,6 +9,8 @@ import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../services/ingestion/ingestion_coordinator.dart';
+import '../../services/ingestion/ingestion_platform.dart';
 import '../accounts/accounts_screen.dart';
 import '../ai/ai_query_sheet.dart';
 import '../ai/gemini_consent_screen.dart';
@@ -30,6 +32,31 @@ import '../subscriptions/subscriptions_screen.dart';
 import '../transactions/transactions_controller.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
+
+String _smsStatusLabel(IngestionPlatformStatus? status) {
+  if (status == null) return 'Checking';
+  switch (status.smsPermission) {
+    case IngestionPermissionState.granted:
+      return 'Granted';
+    case IngestionPermissionState.denied:
+      return 'Denied';
+    case IngestionPermissionState.permanentlyDenied:
+      return 'Permanently denied';
+    case IngestionPermissionState.restricted:
+      return 'Restricted';
+    case IngestionPermissionState.unavailable:
+      return 'Unavailable';
+  }
+}
+
+String _ingestionTime(DateTime? value) {
+  if (value == null) return 'Never';
+  final local = value.toLocal();
+  return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
+      '${local.day.toString().padLeft(2, '0')} '
+      '${local.hour.toString().padLeft(2, '0')}:'
+      '${local.minute.toString().padLeft(2, '0')}';
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // More Screen — navigation hub (tab 4)
@@ -91,7 +118,8 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.handshake_outlined,
                       label: 'Lending & Borrowing',
                       subtitle: 'Track money lent to & borrowed from others',
-                      onTap: () => _push(context, const LendingBorrowingScreen()),
+                      onTap:
+                          () => _push(context, const LendingBorrowingScreen()),
                     ),
                     _NavRow(
                       icon: Icons.repeat_rounded,
@@ -280,6 +308,8 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
     final theme = context.theme;
     final settings =
         ref.watch(settingsStreamProvider).value ?? const AppSettings();
+    final ingestionStatus = ref.watch(ingestionPlatformStatusProvider).value;
+    final awaitingReview = ref.watch(pendingReviewCountProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -434,9 +464,13 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 label: 'Notification Detection',
                 subtitle:
                     settings.isNotificationDetectionEnabled
-                        ? 'Active for ${settings.selectedNotificationPackages.length} payment apps'
+                        ? ingestionStatus?.notificationAccess == true
+                            ? 'Active for ${settings.selectedNotificationPackages.length} payment apps'
+                            : 'Enabled, but Android access is not allowed'
                         : 'Disabled · tap to set up',
-                value: settings.isNotificationDetectionEnabled,
+                value:
+                    settings.isNotificationDetectionEnabled &&
+                    ingestionStatus?.notificationAccess == true,
                 onChanged: (val) {
                   if (val) {
                     _push(context, const NotificationPermissionScreen());
@@ -456,10 +490,15 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 label: 'Bank SMS Detection',
                 subtitle:
                     settings.isSmsDetectionEnabled
-                        ? 'Active for Indian banking SMS templates'
+                        ? ingestionStatus?.smsPermission ==
+                                IngestionPermissionState.granted
+                            ? 'Active for Indian banking SMS templates'
+                            : 'Enabled, but Android SMS permission is not granted'
                         : 'Disabled · tap to set up',
-                value: settings.isSmsDetectionEnabled,
-                isLast: true,
+                value:
+                    settings.isSmsDetectionEnabled &&
+                    ingestionStatus?.smsPermission ==
+                        IngestionPermissionState.granted,
                 onChanged: (val) {
                   if (val) {
                     _push(context, const SmsPermissionScreen());
@@ -471,6 +510,60 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                         );
                   }
                 },
+              ),
+              _SettingsRow(
+                icon: Icons.email_outlined,
+                label: 'Bank Email Detection',
+                subtitle:
+                    'Not configured · Gmail OAuth and scanning are unavailable in this build',
+                value: 'Unavailable',
+                isLast: true,
+                onTap: null,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+          _SettingsGroup(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ingestion diagnostics',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    Text(
+                      'SMS permission: ${_smsStatusLabel(ingestionStatus)}\n'
+                      'Notification access: ${ingestionStatus?.notificationAccess == true ? 'Allowed' : 'Not allowed'}\n'
+                      'Gmail connection: Not configured\n'
+                      'Last SMS event: ${_ingestionTime(settings.lastSuccessfulSmsEvent)}\n'
+                      'Last notification event: ${_ingestionTime(settings.lastSuccessfulNotificationEvent)}\n'
+                      'Last Gmail scan: Never\n'
+                      'Parsed: ${settings.ingestionParsedCount} · Rejected: ${settings.ingestionRejectedCount}\n'
+                      'Duplicates: ${settings.ingestionDuplicateCount} · Awaiting review: $awaitingReview\n'
+                      'Last error: ${settings.ingestionLastError ?? 'None'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                        height: 1.55,
+                      ),
+                    ),
+                    if (settings.isSmsDetectionEnabled &&
+                        ingestionStatus?.smsPermission !=
+                            IngestionPermissionState.granted) ...[
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      Text(
+                        'Action: open Bank SMS Detection and grant Android access.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -545,6 +638,49 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                             );
                           }
                         },
+                      ),
+                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      Wrap(
+                        spacing: StillwaterTokens.spaceSm,
+                        runSpacing: StillwaterTokens.spaceSm,
+                        children: [
+                          FfButton(
+                            label: 'Inject Sample SMS',
+                            variant: FfButtonVariant.outlined,
+                            size: FfButtonSize.sm,
+                            onPressed: () async {
+                              final result =
+                                  await ref
+                                      .read(ingestionCoordinatorProvider)
+                                      .injectSampleSms();
+                              if (context.mounted) {
+                                FfSnackbar.show(
+                                  context,
+                                  message:
+                                      'Sample SMS: ${result.disposition.name}.',
+                                );
+                              }
+                            },
+                          ),
+                          FfButton(
+                            label: 'Inject Sample Notification',
+                            variant: FfButtonVariant.outlined,
+                            size: FfButtonSize.sm,
+                            onPressed: () async {
+                              final result =
+                                  await ref
+                                      .read(ingestionCoordinatorProvider)
+                                      .injectSampleNotification();
+                              if (context.mounted) {
+                                FfSnackbar.show(
+                                  context,
+                                  message:
+                                      'Sample notification: ${result.disposition.name}.',
+                                );
+                              }
+                            },
+                          ),
+                        ],
                       ),
                       const SizedBox(height: StillwaterTokens.spaceSm),
                       FfButton(

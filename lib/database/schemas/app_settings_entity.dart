@@ -31,6 +31,13 @@ class AppSettingsEntity {
   List<String> selectedSmsSenders = [];
 
   DateTime? lastIngestionScan;
+  DateTime? lastSuccessfulSmsEvent;
+  DateTime? lastSuccessfulNotificationEvent;
+  DateTime? lastGmailScan;
+  int ingestionParsedCount = 0;
+  int ingestionRejectedCount = 0;
+  int ingestionDuplicateCount = 0;
+  String? ingestionLastError;
 
   // Phase 4 Settings
   bool isGeminiEnabled = false;

@@ -439,4 +439,123 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'DashboardScreen period selector supports This Week, This Month, Last Month, This Year and triggers updates',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            monthlyCashFlowProvider.overrideWithValue(
+              AsyncValue.data(testCashFlow),
+            ),
+            accountsWithBalancesProvider.overrideWithValue(
+              AsyncValue.data([testAccount]),
+            ),
+            totalNetWorthProvider.overrideWithValue(
+              const AsyncValue.data(48500.0),
+            ),
+            recentTransactionsProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            dashboardInsightsProvider.overrideWithValue(
+              const AsyncValue.data([]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: DashboardScreen(
+              onAddTransaction: () {},
+              onViewAllTransactions: () {},
+              onManageAccounts: () {},
+              onAddAccount: () {},
+              onOpenTransactionDetail: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify all period pills are present
+      expect(find.text('This Week'), findsOneWidget);
+      expect(find.text('This Month'), findsWidgets);
+      expect(find.text('Last Month'), findsOneWidget);
+      expect(find.text('This Year'), findsOneWidget);
+      expect(find.text('Custom'), findsOneWidget);
+
+      // Tap This Week
+      await tester.tap(find.text('This Week'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      // Tap This Year
+      await tester.tap(find.text('This Year'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'DashboardScreen renders period comparison trend badge when comparison data exists',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            monthlyCashFlowProvider.overrideWithValue(
+              const AsyncValue.data(
+                MonthlyCashFlow(
+                  totalIncome: 80000.0,
+                  totalExpense: 1200.0,
+                  netSavings: 78800.0,
+                ),
+              ),
+            ),
+            previousPeriodCashFlowProvider.overrideWithValue(
+              const AsyncValue.data(
+                MonthlyCashFlow(
+                  totalIncome: 75000.0,
+                  totalExpense: 1500.0,
+                  netSavings: 73500.0,
+                ),
+              ),
+            ),
+            accountsWithBalancesProvider.overrideWithValue(
+              AsyncValue.data([testAccount]),
+            ),
+            totalNetWorthProvider.overrideWithValue(
+              const AsyncValue.data(48500.0),
+            ),
+            recentTransactionsProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            dashboardInsightsProvider.overrideWithValue(
+              const AsyncValue.data([]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: DashboardScreen(
+              onAddTransaction: () {},
+              onViewAllTransactions: () {},
+              onManageAccounts: () {},
+              onAddAccount: () {},
+              onOpenTransactionDetail: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // -20.0% spend trend badge should be displayed
+      expect(find.text('20.0% spend'), findsOneWidget);
+    },
+  );
 }

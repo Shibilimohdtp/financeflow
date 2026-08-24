@@ -38,7 +38,7 @@ void main() {
       expect(find.text('PhonePe'), findsOneWidget);
       expect(find.text('Paytm'), findsOneWidget);
       expect(
-        find.text('Enable On-Device Notification Detection'),
+        find.text('Open Android Notification Access'),
         findsOneWidget,
       );
     },

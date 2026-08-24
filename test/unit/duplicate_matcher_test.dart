@@ -73,6 +73,33 @@ void main() {
       expect(match.reasons.any((r) => r.contains('reference')), isTrue);
     });
 
+    test('matches a future email alert against an SMS transaction', () {
+      final email = ParsedTransaction(
+        source: TransactionSource.email,
+        sourceName: 'Gmail',
+        sourceIdentifier: 'gmail-message-id',
+        amount: 450,
+        type: TransactionType.expense,
+        rawMerchant: 'SWIGGY',
+        normalizedMerchant: 'Swiggy',
+        date: now.add(const Duration(minutes: 2)),
+        referenceNumber: 'UTR123456789012',
+        accountId: 'acc_hdfc',
+        categoryId: 'food_dining',
+        categoryName: 'Food & Dining',
+        categoryIcon: 'restaurant',
+        categoryColor: 'clay',
+        fingerprint: 'email-fingerprint',
+      );
+
+      final match = DuplicateMatcher.findDuplicate(
+        incoming: email,
+        existingTransactions: [existingT1],
+      );
+      expect(match.level, DuplicateMatchLevel.exact);
+      expect(match.matchedTransaction?.source, TransactionSource.sms);
+    });
+
     test(
       'Exact match by same calendar day, exact amount, and canonical merchant',
       () {

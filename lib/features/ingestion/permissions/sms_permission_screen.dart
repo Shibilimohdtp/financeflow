@@ -6,6 +6,8 @@ import '../../../shared/widgets/ff_privacy_badge.dart';
 import '../../../shared/widgets/ff_snackbar.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
+import '../../../services/ingestion/ingestion_coordinator.dart';
+import '../../../services/ingestion/ingestion_platform.dart';
 
 class SmsPermissionScreen extends ConsumerStatefulWidget {
   const SmsPermissionScreen({super.key});
@@ -30,6 +32,9 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
+    final status = ref.watch(ingestionPlatformStatusProvider).value;
+    final permission =
+        status?.smsPermission ?? IngestionPermissionState.unavailable;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Bank SMS Detection')),
@@ -98,6 +103,18 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
+          ListTile(
+            leading: Icon(
+              permission == IngestionPermissionState.granted
+                  ? Icons.check_circle_outline
+                  : Icons.info_outline,
+            ),
+            title: Text('Android permission: ${_permissionLabel(permission)}'),
+            subtitle: Text(_permissionExplanation(permission)),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
           // ── 2. Supported Indian Banks List ───────────────────────────
           _SectionLabel(label: 'Supported Banking Templates'),
           const SizedBox(height: StillwaterTokens.spaceXs),
@@ -158,8 +175,19 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
             label: 'Enable On-Device SMS Detection',
             leadingIcon: const Icon(Icons.sms_outlined, size: 18),
             onPressed: () async {
+              final coordinator = ref.read(ingestionCoordinatorProvider);
+              final platformStatus =
+                  permission == IngestionPermissionState.permanentlyDenied
+                      ? null
+                      : await coordinator.requestSmsPermission();
+              if (permission == IngestionPermissionState.permanentlyDenied) {
+                await coordinator.openAppSettings();
+                return;
+              }
               final settings = ref.read(settingsStreamProvider).value;
-              if (settings != null) {
+              if (settings != null &&
+                  platformStatus?.smsPermission ==
+                      IngestionPermissionState.granted) {
                 await ref
                     .read(settingsControllerProvider.notifier)
                     .updateSettings(
@@ -171,6 +199,12 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                     message: 'On-device SMS detection enabled.',
                   );
                 }
+              } else if (context.mounted) {
+                FfSnackbar.show(
+                  context,
+                  message:
+                      'SMS permission was not granted. Detection remains off.',
+                );
               }
             },
           ),
@@ -179,6 +213,36 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
         ],
       ),
     );
+  }
+}
+
+String _permissionLabel(IngestionPermissionState state) {
+  switch (state) {
+    case IngestionPermissionState.granted:
+      return 'Granted';
+    case IngestionPermissionState.denied:
+      return 'Denied';
+    case IngestionPermissionState.permanentlyDenied:
+      return 'Permanently denied';
+    case IngestionPermissionState.restricted:
+      return 'Restricted by device policy';
+    case IngestionPermissionState.unavailable:
+      return 'Unavailable';
+  }
+}
+
+String _permissionExplanation(IngestionPermissionState state) {
+  switch (state) {
+    case IngestionPermissionState.granted:
+      return 'New matching bank SMS can be captured while the app is backgrounded.';
+    case IngestionPermissionState.denied:
+      return 'Android will ask for SMS access. The setting is not enabled unless access is granted.';
+    case IngestionPermissionState.permanentlyDenied:
+      return 'Permission must be restored from Android App Settings.';
+    case IngestionPermissionState.restricted:
+      return 'A device administrator or Android policy prevents SMS access.';
+    case IngestionPermissionState.unavailable:
+      return 'SMS ingestion is Android-only and requires telephony support.';
   }
 }
 
