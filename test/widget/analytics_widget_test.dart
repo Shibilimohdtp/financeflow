@@ -91,9 +91,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          rawAccountsStreamProvider.overrideWith(
-            (ref) => Stream.value([]),
-          ),
+          rawAccountsStreamProvider.overrideWith((ref) => Stream.value([])),
           analyticsReportProvider.overrideWithValue(
             AsyncValue.data(testReport),
           ),
@@ -109,7 +107,7 @@ void main() {
 
     expect(find.text('Analytics & Trends'), findsOneWidget);
     expect(find.text('Total Inflow'), findsOneWidget);
-    expect(find.text('₹75,000'), findsOneWidget);
+    expect(find.text('₹75,000'), findsWidgets);
     expect(find.text('Total Outflow'), findsOneWidget);
     expect(find.text('₹25,000'), findsOneWidget);
     expect(find.text('Net Savings'), findsOneWidget);
@@ -119,13 +117,13 @@ void main() {
     expect(find.text('Swiggy'), findsOneWidget);
 
     // Test clicking category row opens CategoryTransactionsSheet
-    await tester.drag(find.byType(ListView), const Offset(0, -650));
+    final categoryRow = find.byKey(const ValueKey('category-row-cat_dining'));
+    await tester.ensureVisible(categoryRow);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Dining').first);
+    await tester.tap(categoryRow);
     await tester.pumpAndSettle();
 
     expect(find.byType(CategoryTransactionsSheet), findsOneWidget);
     expect(find.text('Total Spent in Period'), findsOneWidget);
   });
 }
-

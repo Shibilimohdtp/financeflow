@@ -156,6 +156,7 @@ class BackupService {
     final investments = await _investmentRepo.getAllInvestments();
     final alerts = await _alertRepo.getAllAlerts();
     final moneyRecords = await _moneyRecordRepo?.getAllRecords() ?? const [];
+    final moneyAdvances = await _moneyRecordRepo?.getAllAdvances() ?? const [];
     final moneyRepayments =
         await _moneyRecordRepo?.getAllRepayments() ?? const [];
     final pendingTransactions =
@@ -176,6 +177,7 @@ class BackupService {
       investmentCount: investments.length,
       alertCount: alerts.length,
       moneyRecordCount: moneyRecords.length,
+      moneyAdvanceCount: moneyAdvances.length,
       moneyRepaymentCount: moneyRepayments.length,
       pendingTransactionCount: pendingTransactions.length,
       settingsIncluded: settings != null,
@@ -195,6 +197,7 @@ class BackupService {
       investments: investments,
       alerts: alerts,
       moneyRecords: moneyRecords,
+      moneyAdvances: moneyAdvances,
       moneyRepayments: moneyRepayments,
       pendingTransactions: pendingTransactions,
       appSettings: settings,
@@ -365,9 +368,13 @@ class BackupService {
           for (final r in payload.moneyRecords) {
             await _moneyRecordRepo.saveRecord(r);
           }
+          for (final adv in payload.moneyAdvances) {
+            await _moneyRecordRepo.saveAdvance(adv);
+          }
           for (final rep in payload.moneyRepayments) {
             await _moneyRecordRepo.addRepayment(rep);
           }
+          await _moneyRecordRepo.migrateAdvancesAndConsolidateDuplicates();
         }
         if (_pendingTxRepo != null && payload.pendingTransactions.isNotEmpty) {
           await _pendingTxRepo.savePendingTransactions(
@@ -481,9 +488,13 @@ class BackupService {
           for (final r in payload.moneyRecords) {
             await _moneyRecordRepo.saveRecord(r);
           }
+          for (final adv in payload.moneyAdvances) {
+            await _moneyRecordRepo.saveAdvance(adv);
+          }
           for (final rep in payload.moneyRepayments) {
             await _moneyRecordRepo.addRepayment(rep);
           }
+          await _moneyRecordRepo.migrateAdvancesAndConsolidateDuplicates();
         }
         if (_pendingTxRepo != null && payload.pendingTransactions.isNotEmpty) {
           await _pendingTxRepo.savePendingTransactions(

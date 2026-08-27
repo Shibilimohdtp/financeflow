@@ -8,10 +8,12 @@ import '../database/schemas/emi_payment_entity.dart';
 import '../database/schemas/account_entity.dart';
 import '../database/schemas/loan_entity.dart';
 import '../database/schemas/investment_entity.dart';
+import '../database/schemas/money_advance_entity.dart';
 import '../database/schemas/money_record_entity.dart';
 import '../database/schemas/money_repayment_entity.dart';
 import '../database/schemas/transaction_entity.dart';
 import '../models/loan.dart';
+import '../models/money_advance.dart';
 import '../models/money_record.dart';
 import '../models/money_repayment.dart';
 import '../models/transaction.dart';
@@ -30,12 +32,14 @@ class FinancialOperationSnapshot {
     required this.transaction,
     this.emiPayments = const [],
     this.moneyRecord,
+    this.moneyAdvances = const [],
     this.moneyRepayments = const [],
   });
 
   final Transaction transaction;
   final List<EmiPayment> emiPayments;
   final MoneyRecord? moneyRecord;
+  final List<MoneyAdvance> moneyAdvances;
   final List<MoneyRepayment> moneyRepayments;
 }
 
@@ -71,6 +75,7 @@ class FinancialOperationService {
 
       final affectedLoans = <String>{};
       final affectedInvestments = <String>{};
+      final affectedRecords = <String>{};
       if (existing != null) {
         final existingDomain = _transactions.domainFromEntity(existing);
         if (existingDomain.linkedInvestmentId != null) {
@@ -84,13 +89,13 @@ class FinancialOperationService {
               TransactionPurpose.lending,
               TransactionPurpose.borrowing,
             }.contains(transaction.effectivePurpose);
-        affectedLoans.addAll(
-          await _reverseLinks(
-            existing.uuid,
-            preserveOriginRecordId:
-                preservesOrigin ? transaction.linkedMoneyRecordId : null,
-          ),
+        final reversed = await _reverseLinks(
+          existing.uuid,
+          preserveOriginRecordId:
+              preservesOrigin ? transaction.linkedMoneyRecordId : null,
         );
+        affectedLoans.addAll(reversed.affectedLoans);
+        affectedRecords.addAll(reversed.affectedRecords);
       }
 
       await isar.transactionEntitys.put(
@@ -122,10 +127,25 @@ class FinancialOperationService {
           }
         case TransactionPurpose.lending:
         case TransactionPurpose.borrowing:
-          await _postMoneyRecord(transaction, details: moneyRecordDetails);
+          final recordId = await _postMoneyRecord(
+            transaction,
+            details: moneyRecordDetails,
+          );
+          affectedRecords.add(recordId);
+          if (transaction.linkedMoneyRecordId != recordId) {
+            final txWithLink = transaction.copyWith(
+              linkedMoneyRecordId: recordId,
+            );
+            await isar.transactionEntitys.put(
+              _transactions.entityFromDomain(txWithLink, existing),
+            );
+          }
         case TransactionPurpose.personalDebtRepaymentMade:
         case TransactionPurpose.personalDebtRepaymentReceived:
           await _postMoneyRepayment(transaction);
+          if (transaction.linkedMoneyRecordId != null) {
+            affectedRecords.add(transaction.linkedMoneyRecordId!);
+          }
         default:
           break;
       }
@@ -136,343 +156,345 @@ class FinancialOperationService {
       for (final investmentId in affectedInvestments) {
         await _recalculateInvestment(investmentId);
       }
+      for (final recordId in affectedRecords) {
+        await _recalculateMoneyRecord(recordId);
+      }
     });
   }
 
-  /// Posts an installment from the Loans feature. A stable transaction id makes
-  /// this safe to retry after a double tap or interrupted UI transition.
-  Future<String> postTrackedInstallment({
-    required Loan loan,
-    required int installmentNumber,
-    required String accountId,
-    DateTime? paymentDate,
-    String? transactionId,
-  }) async {
-    final split = LoanCalculator.calculateInstallmentSplit(
-      loan: loan,
-      installmentNumber: installmentNumber,
-    );
-    final id = transactionId ?? 'loan_${loan.id}_$installmentNumber';
-    final now = DateTime.now();
-    await postTransaction(
-      Transaction(
-        id: id,
-        amount: MoneyMath.round(split.emi),
-        type: TransactionType.loanEmi,
-        purpose: TransactionPurpose.loanRepayment,
-        direction: AccountMovementDirection.outflow,
-        categoryId: 'cat_loan_emi',
-        categoryName: 'Loan / EMI',
-        categoryIcon: 'receipt_long',
-        categoryColor: 'debt',
-        merchant: loan.name,
-        externalCounterpartyName: loan.lender,
-        date: paymentDate ?? now,
-        source: TransactionSource.manual,
-        paymentMethod: 'Auto Debit',
-        accountId: accountId,
-        linkedLoanId: loan.id,
-        principalComponent: MoneyMath.round(split.principal),
-        interestComponent: MoneyMath.round(split.interest),
-        feeComponent: MoneyMath.round(
-          split.emi - split.principal - split.interest,
-        ).clamp(0, double.infinity),
-        tags: const ['linked-loan-payment'],
-        isReviewed: true,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      preferredInstallmentNumber: installmentNumber,
-    );
-    return id;
-  }
-
-  Future<FinancialOperationSnapshot?> deleteTransaction(String id) async {
-    FinancialOperationSnapshot? snapshot;
-    await isar.writeTxn(() async {
-      final entity =
-          await isar.transactionEntitys.filter().uuidEqualTo(id).findFirst();
-      if (entity == null) return;
-
-      final paymentEntities =
-          await isar.emiPaymentEntitys
+  Future<FinancialOperationSnapshot?> deleteTransaction(
+    String transactionId,
+  ) async {
+    return isar.writeTxn(() async {
+      final existing =
+          await isar.transactionEntitys
               .filter()
-              .transactionIdEqualTo(id)
-              .findAll();
-      final repaymentEntities =
-          await isar.moneyRepaymentEntitys
-              .filter()
-              .transactionIdEqualTo(id)
-              .findAll();
-      final recordEntity =
+              .uuidEqualTo(transactionId)
+              .findFirst();
+      if (existing == null) return null;
+
+      final domain = _transactions.domainFromEntity(existing);
+      final emiPayments =
+          (await isar.emiPaymentEntitys
+                  .filter()
+                  .transactionIdEqualTo(transactionId)
+                  .findAll())
+              .map(_loans.paymentFromEntity)
+              .toList();
+      final repayments =
+          (await isar.moneyRepaymentEntitys
+                  .filter()
+                  .transactionIdEqualTo(transactionId)
+                  .findAll())
+              .map(_money.repaymentFromEntity)
+              .toList();
+      final advances =
+          (await isar.moneyAdvanceEntitys
+                  .filter()
+                  .transactionIdEqualTo(transactionId)
+                  .findAll())
+              .map(_money.advanceFromEntity)
+              .toList();
+      final originRecord =
           await isar.moneyRecordEntitys
               .filter()
-              .originTransactionIdEqualTo(id)
+              .originTransactionIdEqualTo(transactionId)
               .findFirst();
-      final recordRepayments =
-          recordEntity == null
-              ? <MoneyRepaymentEntity>[]
-              : await isar.moneyRepaymentEntitys
-                  .filter()
-                  .moneyRecordIdEqualTo(recordEntity.uuid)
-                  .findAll();
 
-      snapshot = FinancialOperationSnapshot(
-        transaction: _transactions.domainFromEntity(entity),
-        emiPayments: paymentEntities.map(_loans.paymentFromEntity).toList(),
-        moneyRecord:
-            recordEntity == null ? null : _money.recordFromEntity(recordEntity),
-        moneyRepayments:
-            <MoneyRepayment>[
-                  ...repaymentEntities.map(_money.repaymentFromEntity),
-                  ...recordRepayments.map(_money.repaymentFromEntity),
-                ]
-                .fold(<String, MoneyRepayment>{}, (map, item) {
-                  map[item.id] = item;
-                  return map;
-                })
-                .values
-                .toList(),
-      );
+      final reversed = await _reverseLinks(transactionId);
+      await isar.transactionEntitys.delete(existing.id);
 
-      final affectedLoans = await _reverseLinks(id);
-      final affectedInvestmentId = entity.linkedInvestmentId;
-      await isar.transactionEntitys.delete(entity.id);
-      for (final loanId in affectedLoans) {
+      for (final loanId in reversed.affectedLoans) {
         await _recalculateLoan(loanId);
       }
-      if (affectedInvestmentId != null) {
-        await _recalculateInvestment(affectedInvestmentId);
+      if (domain.linkedInvestmentId != null) {
+        await _recalculateInvestment(domain.linkedInvestmentId!);
       }
+      for (final recordId in reversed.affectedRecords) {
+        await _recalculateMoneyRecord(recordId);
+      }
+
+      return FinancialOperationSnapshot(
+        transaction: domain,
+        emiPayments: emiPayments,
+        moneyRecord:
+            originRecord != null ? _money.recordFromEntity(originRecord) : null,
+        moneyAdvances: advances,
+        moneyRepayments: repayments,
+      );
     });
-    return snapshot;
   }
 
   Future<void> restore(FinancialOperationSnapshot snapshot) async {
     await isar.writeTxn(() async {
-      await _validateAccounts(snapshot.transaction);
-      final existing =
-          await isar.transactionEntitys
-              .filter()
-              .uuidEqualTo(snapshot.transaction.id)
-              .findFirst();
       await isar.transactionEntitys.put(
-        _transactions.entityFromDomain(snapshot.transaction, existing),
+        _transactions.entityFromDomain(snapshot.transaction),
       );
+      for (final p in snapshot.emiPayments) {
+        await isar.emiPaymentEntitys.put(_loans.paymentEntityFromDomain(p));
+      }
       if (snapshot.moneyRecord != null) {
-        final old =
-            await isar.moneyRecordEntitys
-                .filter()
-                .uuidEqualTo(snapshot.moneyRecord!.id)
-                .findFirst();
         await isar.moneyRecordEntitys.put(
-          _money.recordEntityFromDomain(snapshot.moneyRecord!, old),
+          _money.recordEntityFromDomain(snapshot.moneyRecord!),
         );
       }
-      for (final repayment in snapshot.moneyRepayments) {
-        final old =
-            await isar.moneyRepaymentEntitys
-                .filter()
-                .uuidEqualTo(repayment.id)
-                .findFirst();
+      for (final a in snapshot.moneyAdvances) {
+        await isar.moneyAdvanceEntitys.put(_money.advanceEntityFromDomain(a));
+      }
+      for (final r in snapshot.moneyRepayments) {
         await isar.moneyRepaymentEntitys.put(
-          _money.repaymentEntityFromDomain(repayment, old),
+          _money.repaymentEntityFromDomain(r),
         );
       }
-      final affectedLoans = <String>{};
-      for (final payment in snapshot.emiPayments) {
-        final old =
-            await isar.emiPaymentEntitys
-                .filter()
-                .uuidEqualTo(payment.id)
-                .findFirst();
-        await isar.emiPaymentEntitys.put(
-          _loans.paymentEntityFromDomain(payment, old),
-        );
-        affectedLoans.add(payment.loanId);
+
+      if (snapshot.transaction.linkedLoanId != null) {
+        await _recalculateLoan(snapshot.transaction.linkedLoanId!);
       }
-      for (final loanId in affectedLoans) {
-        await _recalculateLoan(loanId);
+      if (snapshot.transaction.linkedInvestmentId != null) {
+        await _recalculateInvestment(snapshot.transaction.linkedInvestmentId!);
+      }
+      if (snapshot.transaction.linkedMoneyRecordId != null) {
+        await _recalculateMoneyRecord(
+          snapshot.transaction.linkedMoneyRecordId!,
+        );
+      }
+      if (snapshot.moneyRecord != null) {
+        await _recalculateMoneyRecord(snapshot.moneyRecord!.id);
       }
     });
   }
 
-  /// Deleting a linked allocation follows the documented owner policy: delete
-  /// its ledger transaction and all allocations. Historical status-only rows
-  /// have no owner and are deleted directly.
-  Future<FinancialOperationSnapshot?> deleteEmiPayment(String paymentId) async {
-    final payment =
-        await isar.emiPaymentEntitys
-            .filter()
-            .uuidEqualTo(paymentId)
-            .findFirst();
-    if (payment == null) return null;
-    if (payment.transactionId != null) {
-      return deleteTransaction(payment.transactionId!);
-    }
-    await isar.writeTxn(() async {
-      await isar.emiPaymentEntitys.delete(payment.id);
-      await _recalculateLoan(payment.loanId);
-    });
-    return null;
+  Future<String> postTrackedInstallment({
+    required Loan loan,
+    required int installmentNumber,
+    required String accountId,
+    required DateTime paymentDate,
+    String? transactionId,
+  }) async {
+    final payments = await _loans.getPaymentsForLoan(loan.id);
+    final split = LoanCalculator.calculateInstallmentSplit(
+      loan: loan,
+      installmentNumber: installmentNumber,
+    );
+
+    final existingForNumber =
+        payments
+            .where((p) => p.installmentNumber == installmentNumber)
+            .firstOrNull;
+    final txId = transactionId ?? existingForNumber?.transactionId ?? 'tx_${DateTime.now().microsecondsSinceEpoch}';
+
+    final transaction = Transaction(
+      id: txId,
+      amount: split.emi,
+      type: TransactionType.expense,
+      purpose: TransactionPurpose.loanRepayment,
+      categoryId: 'cat_loan_repayment',
+      categoryName: 'Loan Repayment',
+      categoryIcon: 'account_balance',
+      categoryColor: 'loan',
+      merchant: loan.lender,
+      date: paymentDate,
+      accountId: accountId,
+      linkedLoanId: loan.id,
+      principalComponent: split.principal,
+      interestComponent: split.interest,
+      feeComponent: 0,
+      notes: 'EMI installment #$installmentNumber for ${loan.name}',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    await postTransaction(
+      transaction,
+      preferredInstallmentNumber: installmentNumber,
+    );
+    return txId;
   }
 
-  /// Removes a tracked loan while retaining linked ledger rows as explicitly
-  /// unlinked historical payments. No misleading live link is left behind.
   Future<void> deleteLoanKeepingHistory(String loanId) async {
     await isar.writeTxn(() async {
-      final payments =
-          await isar.emiPaymentEntitys.filter().loanIdEqualTo(loanId).findAll();
-      for (final payment in payments) {
-        final transactionId = payment.transactionId;
-        if (transactionId == null) continue;
-        final transaction =
-            await isar.transactionEntitys
-                .filter()
-                .uuidEqualTo(transactionId)
-                .findFirst();
-        if (transaction != null) {
-          transaction.linkedLoanId = null;
-          transaction.updatedAt = DateTime.now();
-          await isar.transactionEntitys.put(transaction);
-        }
-      }
-      await isar.emiPaymentEntitys.filter().loanIdEqualTo(loanId).deleteAll();
       await isar.loanEntitys.filter().uuidEqualTo(loanId).deleteAll();
+      await isar.emiPaymentEntitys.filter().loanIdEqualTo(loanId).deleteAll();
     });
   }
 
   Future<void> deleteInvestmentKeepingHistory(String investmentId) async {
     await isar.writeTxn(() async {
-      final entries =
-          await isar.transactionEntitys
-              .filter()
-              .linkedInvestmentIdEqualTo(investmentId)
-              .findAll();
-      for (final entry in entries) {
-        entry.linkedInvestmentId = null;
-        entry.updatedAt = DateTime.now();
-        await isar.transactionEntitys.put(entry);
-      }
-      await isar.investmentEntitys
-          .filter()
-          .uuidEqualTo(investmentId)
-          .deleteAll();
+      await isar.investmentEntitys.filter().uuidEqualTo(investmentId).deleteAll();
     });
   }
 
-  Transaction _normalized(Transaction transaction) {
-    final isInternal =
-        transaction.effectivePurpose == TransactionPurpose.internalTransfer;
-    final keepsCounterparty = <TransactionPurpose>{
-      TransactionPurpose.lending,
-      TransactionPurpose.borrowing,
-      TransactionPurpose.personalDebtRepaymentMade,
-      TransactionPurpose.personalDebtRepaymentReceived,
-      TransactionPurpose.loanDisbursement,
-      TransactionPurpose.loanRepayment,
-    }.contains(transaction.effectivePurpose);
-    return transaction.copyWith(
-      type: _legacyTypeFor(transaction.effectivePurpose),
-      direction: transaction.effectiveDirection,
-      clearToAccountId: !isInternal,
-      externalCounterpartyName:
-          keepsCounterparty ? transaction.externalCounterpartyName : null,
-    );
+  Future<void> deleteEmiPayment(String paymentId) async {
+    await isar.writeTxn(() async {
+      final payment =
+          await isar.emiPaymentEntitys.filter().uuidEqualTo(paymentId).findFirst();
+      if (payment != null) {
+        if (payment.transactionId != null) {
+          await isar.transactionEntitys
+              .filter()
+              .uuidEqualTo(payment.transactionId!)
+              .deleteAll();
+        }
+        await isar.emiPaymentEntitys.delete(payment.id);
+        await _recalculateLoan(payment.loanId);
+      }
+    });
   }
 
-  TransactionType _legacyTypeFor(
-    TransactionPurpose purpose,
-  ) => switch (purpose) {
-    TransactionPurpose.income ||
-    TransactionPurpose.borrowing ||
-    TransactionPurpose.loanDisbursement ||
-    TransactionPurpose.personalDebtRepaymentReceived => TransactionType.income,
-    TransactionPurpose.internalTransfer => TransactionType.transfer,
-    TransactionPurpose.investmentPurchase ||
-    TransactionPurpose.investmentRedemption => TransactionType.investment,
-    TransactionPurpose.loanRepayment => TransactionType.loanEmi,
-    TransactionPurpose.legacyCash => TransactionType.cash,
-    _ => TransactionType.expense,
-  };
+  void validateDraft(Transaction tx) {
+    tx.validate();
+    final purpose = tx.effectivePurpose;
 
-  /// Pure checks shared by staged editing and posting. No ledger writes.
-  static void validateDraft(Transaction transaction) {
-    transaction.validate();
-    _validateComponents(transaction);
-  }
-
-  static void _validateComponents(Transaction transaction) {
-    if (transaction.effectivePurpose == TransactionPurpose.loanRepayment &&
-        transaction.linkedLoanId != null) {
-      final total =
-          transaction.principalAmount +
-          transaction.interestAmount +
-          transaction.feeAmount;
-      if (!MoneyMath.close(total, transaction.amount)) {
+    if (purpose == TransactionPurpose.internalTransfer) {
+      if (tx.toAccountId == null || tx.toAccountId!.isEmpty) {
         throw const ValidationError(
-          message:
-              'Principal, interest and fees must equal the payment amount.',
-          actionableStep: 'Correct the payment split or record it as unlinked.',
+          message: 'Choose a destination account for internal transfers.',
+          actionableStep: 'Select a different owned account in Transfer To.',
+        );
+      }
+      if (tx.toAccountId == tx.accountId) {
+        throw const ValidationError(
+          message: 'Destination account must be different from source account.',
+          actionableStep: 'Choose two distinct accounts.',
         );
       }
     }
-    if (transaction.linkedInvestmentId != null &&
-        transaction.effectivePurpose == TransactionPurpose.investmentPurchase) {
-      if (!MoneyMath.close(
-        transaction.principalAmount + transaction.feeAmount,
-        transaction.amount,
-      )) {
+
+    if (purpose == TransactionPurpose.loanRepayment) {
+      if (tx.linkedLoanId == null || tx.linkedLoanId!.isEmpty) {
         throw const ValidationError(
-          message: 'Investment asset value and fees must equal the cash paid.',
+          message: 'Select a loan for this repayment.',
+          actionableStep: 'Choose a loan from your active liabilities.',
         );
       }
     }
-    if (transaction.linkedInvestmentId != null &&
-        transaction.effectivePurpose ==
-            TransactionPurpose.investmentRedemption) {
-      if (!MoneyMath.close(
-        transaction.principalAmount +
-            transaction.interestAmount -
-            transaction.feeAmount,
-        transaction.amount,
-      )) {
+
+    if (purpose == TransactionPurpose.investmentPurchase ||
+        purpose == TransactionPurpose.investmentRedemption) {
+      if (tx.linkedInvestmentId == null || tx.linkedInvestmentId!.isEmpty) {
         throw const ValidationError(
-          message:
-              'Cost basis plus realized gain, less fees, must equal redemption proceeds.',
+          message: 'Select an investment portfolio or holding.',
+          actionableStep: 'Link the transaction to an investment asset.',
+        );
+      }
+    }
+
+    if (purpose == TransactionPurpose.personalDebtRepaymentMade ||
+        purpose == TransactionPurpose.personalDebtRepaymentReceived) {
+      if (tx.linkedMoneyRecordId == null || tx.linkedMoneyRecordId!.isEmpty) {
+        throw const ValidationError(
+          message: 'Select the personal debt record being settled.',
+          actionableStep: 'Choose an active lent or borrowed record.',
         );
       }
     }
   }
 
-  Future<void> _validateAccounts(Transaction transaction) async {
-    final source =
-        await isar.accountEntitys
-            .filter()
-            .uuidEqualTo(transaction.accountId)
-            .findFirst();
-    if (source == null || source.isArchived) {
-      throw const ValidationError(
-        message: 'The selected account is missing or archived.',
-        actionableStep: 'Choose an active account you own.',
+  Transaction _normalized(Transaction proposed) {
+    var tx = proposed;
+    switch (tx.effectivePurpose) {
+      case TransactionPurpose.internalTransfer:
+        tx = tx.copyWith(
+          type: TransactionType.transfer,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+          linkedMoneyRecordId: null,
+          principalComponent: null,
+          interestComponent: null,
+          feeComponent: null,
+        );
+      case TransactionPurpose.loanDisbursement:
+        tx = tx.copyWith(
+          type: TransactionType.income,
+          toAccountId: null,
+          linkedInvestmentId: null,
+          linkedMoneyRecordId: null,
+        );
+      case TransactionPurpose.loanRepayment:
+        tx = tx.copyWith(
+          type: TransactionType.expense,
+          toAccountId: null,
+          linkedInvestmentId: null,
+          linkedMoneyRecordId: null,
+        );
+      case TransactionPurpose.investmentPurchase:
+        tx = tx.copyWith(
+          type: TransactionType.expense,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedMoneyRecordId: null,
+        );
+      case TransactionPurpose.investmentRedemption:
+        tx = tx.copyWith(
+          type: TransactionType.income,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedMoneyRecordId: null,
+        );
+      case TransactionPurpose.lending:
+        tx = tx.copyWith(
+          type: TransactionType.expense,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+        );
+      case TransactionPurpose.borrowing:
+        tx = tx.copyWith(
+          type: TransactionType.income,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+        );
+      case TransactionPurpose.personalDebtRepaymentReceived:
+        tx = tx.copyWith(
+          type: TransactionType.income,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+        );
+      case TransactionPurpose.personalDebtRepaymentMade:
+        tx = tx.copyWith(
+          type: TransactionType.expense,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+        );
+      case TransactionPurpose.expense:
+      case TransactionPurpose.income:
+      case TransactionPurpose.accountAdjustment:
+      case TransactionPurpose.legacyCash:
+        tx = tx.copyWith(
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+          linkedMoneyRecordId: null,
+          principalComponent: null,
+          interestComponent: null,
+          feeComponent: null,
+        );
+    }
+    return tx;
+  }
+
+  Future<void> _validateAccounts(Transaction tx) async {
+    final from =
+        await isar.accountEntitys.filter().uuidEqualTo(tx.accountId).findFirst();
+    if (from == null || from.isArchived) {
+      throw ValidationError(
+        message: 'Source account is missing or archived.',
+        actionableStep: 'Select an active account for payment.',
       );
     }
-    if (transaction.effectiveDirection == AccountMovementDirection.internal) {
-      final destinationId = transaction.toAccountId;
-      if (destinationId == null || destinationId == transaction.accountId) {
-        throw const ValidationError(
-          message: 'Transfer accounts must be distinct owned accounts.',
-        );
-      }
-      final destination =
+    if (tx.effectivePurpose == TransactionPurpose.internalTransfer) {
+      final to =
           await isar.accountEntitys
               .filter()
-              .uuidEqualTo(destinationId)
+              .uuidEqualTo(tx.toAccountId!)
               .findFirst();
-      if (destination == null || destination.isArchived) {
-        throw const ValidationError(
-          message: 'The destination account is missing or archived.',
-          actionableStep: 'Choose an active destination account you own.',
+      if (to == null || to.isArchived) {
+        throw ValidationError(
+          message: 'Destination account is missing or archived.',
+          actionableStep: 'Select an active destination account.',
         );
       }
     }
@@ -487,56 +509,48 @@ class FinancialOperationService {
         await isar.loanEntitys.filter().uuidEqualTo(loanId).findFirst();
     if (loanEntity == null) {
       throw const ValidationError(
-        message: 'The selected tracked loan was not found.',
+        message: 'The linked loan could not be found.',
       );
     }
     final loan = _loans.domainFromEntity(loanEntity);
-    if (loan.status != LoanStatus.active) {
-      throw const ValidationError(
-        message: 'Only an active loan can receive a payment.',
-      );
-    }
-    final existing =
-        await isar.emiPaymentEntitys.filter().loanIdEqualTo(loanId).findAll();
-    final payments = existing.map(_loans.paymentFromEntity).toList();
-    final unpaid =
-        LoanCalculator.generateSchedule(
-          loan,
-          payments: payments,
-        ).where((item) => !item.isPaid).toList();
-    if (unpaid.isEmpty) {
-      throw const ValidationError(
-        message: 'This loan has no unpaid installments.',
-      );
-    }
-    final installment =
-        preferredInstallmentNumber == null
-            ? unpaid.first
-            : unpaid
-                .where((item) => item.monthNumber == preferredInstallmentNumber)
-                .firstOrNull;
-    if (installment == null) {
-      throw ValidationError(
-        message:
-            'Installment #$preferredInstallmentNumber is already paid or unavailable.',
-      );
-    }
-    if (!MoneyMath.close(transaction.amount, installment.emiAmount)) {
-      throw ValidationError(
-        message:
-            'This amount does not match installment #${installment.monthNumber}.',
-        actionableStep:
-            'Use the expected EMI amount or save this as an unlinked loan payment.',
-      );
-    }
+    final payments = (await isar.emiPaymentEntitys
+            .filter()
+            .loanIdEqualTo(loanId)
+            .findAll())
+        .map(_loans.paymentFromEntity)
+        .toList();
+
+    final nextNumber =
+        preferredInstallmentNumber ??
+        payments
+            .where((p) => p.transactionId == transaction.id)
+            .firstOrNull
+            ?.installmentNumber ??
+        (payments.isEmpty
+            ? 1
+            : (payments.map((p) => p.installmentNumber).reduce((a, b) => a > b ? a : b) + 1));
+
+    final split = LoanCalculator.calculateInstallmentSplit(
+      loan: loan,
+      installmentNumber: nextNumber,
+    );
+
+    final paymentExisting =
+        await isar.emiPaymentEntitys
+            .filter()
+            .loanIdEqualTo(loanId)
+            .and()
+            .transactionIdEqualTo(transaction.id)
+            .findFirst();
+
     final now = DateTime.now();
     final payment = EmiPayment(
-      id: 'emi_${transaction.id}_${installment.monthNumber}',
+      id: paymentExisting?.uuid ?? 'emi_${transaction.id}',
       loanId: loanId,
-      installmentNumber: installment.monthNumber,
-      dueDate: installment.dueDate,
+      installmentNumber: nextNumber,
       paymentDate: transaction.date,
-      principalPaid: transaction.principalAmount,
+      dueDate: split.dueDate,
+      principalPaid: transaction.principalComponent ?? split.principal,
       interestPaid: transaction.interestAmount,
       emiAmount: transaction.amount,
       accountId: transaction.accountId,
@@ -549,64 +563,146 @@ class FinancialOperationService {
     return loanId;
   }
 
-  Future<void> _postMoneyRecord(
+  Future<String> _postMoneyRecord(
     Transaction transaction, {
     MoneyRecord? details,
   }) async {
-    final recordId = transaction.linkedMoneyRecordId;
-    final person = transaction.externalCounterpartyName?.trim();
-    if (recordId == null || person == null || person.isEmpty) {
+    final person =
+        transaction.externalCounterpartyName?.trim() ??
+        details?.personName.trim() ??
+        transaction.merchant.trim();
+    if (person.isEmpty) {
       throw const ValidationError(
-        message: 'A linked debt record and counterparty are required.',
+        message: 'A counterparty person name is required for lending/borrowing.',
       );
     }
-    final existing =
-        await isar.moneyRecordEntitys
-            .filter()
-            .uuidEqualTo(recordId)
-            .findFirst();
+
+    final type =
+        transaction.effectivePurpose == TransactionPurpose.lending
+            ? MoneyRecordType.lent
+            : MoneyRecordType.borrowed;
+    final normalized = MoneyRecord.normalizePersonName(person);
     final now = DateTime.now();
-    final record = MoneyRecord(
-      id: recordId,
-      type:
-          transaction.effectivePurpose == TransactionPurpose.lending
-              ? MoneyRecordType.lent
-              : MoneyRecordType.borrowed,
-      personName: person,
-      originalAmount: transaction.amount,
-      transactionDate: transaction.date,
+
+    // 1. Resolve or locate target MoneyRecord relationship
+    MoneyRecordEntity? recordEntity;
+
+    if (transaction.linkedMoneyRecordId != null &&
+        transaction.linkedMoneyRecordId!.isNotEmpty) {
+      recordEntity =
+          await isar.moneyRecordEntitys
+              .filter()
+              .uuidEqualTo(transaction.linkedMoneyRecordId!)
+              .findFirst();
+    }
+
+    if (recordEntity == null) {
+      if (details?.isCustomSeparateObligation == true) {
+        // Explicit separate debt requested
+        final newRecordId =
+            transaction.linkedMoneyRecordId ?? 'debt_${transaction.id}';
+        final newRecord = MoneyRecord(
+          id: newRecordId,
+          type: type,
+          personName: person,
+          normalizedPersonName: normalized,
+          originalAmount: transaction.amount,
+          transactionDate: transaction.date,
+          dueDate:
+              details?.dueDate ??
+              transaction.date.add(const Duration(days: 30)),
+          notes: details?.notes ?? transaction.notes,
+          isReminderEnabled: details?.isReminderEnabled ?? true,
+          reminderDaysBefore: details?.reminderDaysBefore ?? 1,
+          createdAt: now,
+          updatedAt: now,
+          isCustomSeparateObligation: true,
+          originTransactionId: transaction.id,
+        );
+        recordEntity = _money.recordEntityFromDomain(newRecord);
+        await isar.moneyRecordEntitys.put(recordEntity);
+      } else {
+        // Group by active normalized counterparty + direction
+        recordEntity =
+            await isar.moneyRecordEntitys
+                .filter()
+                .typeEqualTo(type.toDbString())
+                .and()
+                .settledAtIsNull()
+                .and()
+                .isCustomSeparateObligationEqualTo(false)
+                .and()
+                .group(
+                  (q) => q
+                      .normalizedPersonNameEqualTo(normalized)
+                      .or()
+                      .personNameEqualTo(person, caseSensitive: false),
+                )
+                .findFirst();
+
+        if (recordEntity == null) {
+          // No matching active relationship; create a new one
+          final newRecordId =
+              transaction.linkedMoneyRecordId ?? 'debt_${transaction.id}';
+          final newRecord = MoneyRecord(
+            id: newRecordId,
+            type: type,
+            personName: person,
+            normalizedPersonName: normalized,
+            originalAmount: transaction.amount,
+            transactionDate: transaction.date,
+            dueDate:
+              details?.dueDate ??
+              transaction.date.add(const Duration(days: 30)),
+            notes: details?.notes ?? transaction.notes,
+            isReminderEnabled: details?.isReminderEnabled ?? true,
+            reminderDaysBefore: details?.reminderDaysBefore ?? 1,
+            createdAt: now,
+            updatedAt: now,
+            originTransactionId: transaction.id,
+          );
+          recordEntity = _money.recordEntityFromDomain(newRecord);
+          await isar.moneyRecordEntitys.put(recordEntity);
+        }
+      }
+    }
+
+    final targetRecordId = recordEntity.uuid;
+
+    // 2. Create or update MoneyAdvanceEntity for this transaction
+    final advanceId = 'adv_${transaction.id}';
+    final existingAdvance =
+        await isar.moneyAdvanceEntitys
+            .filter()
+            .uuidEqualTo(advanceId)
+            .or()
+            .transactionIdEqualTo(transaction.id)
+            .findFirst();
+
+    final advance = MoneyAdvance(
+      id: existingAdvance?.uuid ?? advanceId,
+      moneyRecordId: targetRecordId,
+      userId: recordEntity.userId,
+      amount: transaction.amount,
+      date: transaction.date,
       dueDate:
           details?.dueDate ??
-          existing?.dueDate ??
-          transaction.date.add(const Duration(days: 30)),
+          existingAdvance?.dueDate ??
+          recordEntity.dueDate,
       notes: details?.notes ?? transaction.notes,
-      isReminderEnabled: details?.isReminderEnabled ?? true,
-      reminderDaysBefore: details?.reminderDaysBefore ?? 1,
-      createdAt: existing?.createdAt ?? now,
+      accountId: transaction.accountId,
+      transactionId: transaction.id,
+      createdAt: existingAdvance?.createdAt ?? now,
       updatedAt: now,
-      originTransactionId: transaction.id,
     );
-    record.validate();
-    final repayments =
-        await isar.moneyRepaymentEntitys
-            .filter()
-            .moneyRecordIdEqualTo(recordId)
-            .findAll();
-    final totalRepaid = repayments.fold<double>(
-      0,
-      (sum, repayment) => sum + repayment.amount,
+    advance.validate();
+    await isar.moneyAdvanceEntitys.put(
+      _money.advanceEntityFromDomain(advance, existingAdvance),
     );
-    if (record.originalAmount + MoneyMath.tolerance < totalRepaid) {
-      throw ValidationError(
-        message:
-            'The original amount cannot be less than repayments already recorded.',
-        actionableStep:
-            'Use at least ${MoneyMath.round(totalRepaid).toStringAsFixed(2)}.',
-      );
-    }
-    await isar.moneyRecordEntitys.put(
-      _money.recordEntityFromDomain(record, existing),
-    );
+
+    // 3. Recalculate relationship amounts, due date, and status
+    await _recalculateMoneyRecord(targetRecordId);
+    return targetRecordId;
   }
 
   Future<void> _postMoneyRepayment(Transaction transaction) async {
@@ -635,13 +731,19 @@ class FinancialOperationService {
         message: 'Repayment direction does not match the debt record.',
       );
     }
-    final old =
+    final oldRepayments =
         await isar.moneyRepaymentEntitys
             .filter()
             .moneyRecordIdEqualTo(recordId)
             .findAll();
+    final advances =
+        await isar.moneyAdvanceEntitys
+            .filter()
+            .moneyRecordIdEqualTo(recordId)
+            .findAll();
     final remaining = record.calculateRemainingAmount(
-      old.map(_money.repaymentFromEntity).toList(),
+      oldRepayments.map(_money.repaymentFromEntity).toList(),
+      advances: advances.map(_money.advanceFromEntity).toList(),
     );
     final repayment = MoneyRepayment(
       id: 'rep_${transaction.id}',
@@ -656,21 +758,10 @@ class FinancialOperationService {
     await isar.moneyRepaymentEntitys.put(
       _money.repaymentEntityFromDomain(repayment),
     );
-    final all = [...old.map(_money.repaymentFromEntity), repayment];
-    final settled = record.calculateRemainingAmount(all) <= MoneyMath.tolerance;
-    await isar.moneyRecordEntitys.put(
-      _money.recordEntityFromDomain(
-        record.copyWith(
-          settledAt: settled ? DateTime.now() : null,
-          clearSettledAt: !settled,
-          updatedAt: DateTime.now(),
-        ),
-        recordEntity,
-      ),
-    );
+    await _recalculateMoneyRecord(recordId);
   }
 
-  Future<Set<String>> _reverseLinks(
+  Future<_ReverseResult> _reverseLinks(
     String transactionId, {
     String? preserveOriginRecordId,
   }) async {
@@ -696,36 +787,46 @@ class FinancialOperationService {
         .transactionIdEqualTo(transactionId)
         .deleteAll();
 
+    final advances =
+        await isar.moneyAdvanceEntitys
+            .filter()
+            .transactionIdEqualTo(transactionId)
+            .findAll();
+    affectedRecords.addAll(advances.map((a) => a.moneyRecordId));
+    await isar.moneyAdvanceEntitys
+        .filter()
+        .transactionIdEqualTo(transactionId)
+        .deleteAll();
+
     final origin =
         await isar.moneyRecordEntitys
             .filter()
             .originTransactionIdEqualTo(transactionId)
             .findFirst();
     if (origin != null && origin.uuid != preserveOriginRecordId) {
-      final linkedRepayments =
+      final remainingAdvances =
+          await isar.moneyAdvanceEntitys
+              .filter()
+              .moneyRecordIdEqualTo(origin.uuid)
+              .count();
+      final remainingRepayments =
           await isar.moneyRepaymentEntitys
               .filter()
               .moneyRecordIdEqualTo(origin.uuid)
-              .findAll();
-      for (final repayment in linkedRepayments) {
-        if (repayment.transactionId != null) {
-          await isar.transactionEntitys
-              .filter()
-              .uuidEqualTo(repayment.transactionId!)
-              .deleteAll();
-        }
+              .count();
+
+      if (remainingAdvances == 0 && remainingRepayments == 0) {
+        affectedRecords.remove(origin.uuid);
+        await isar.moneyRecordEntitys.delete(origin.id);
+      } else {
+        affectedRecords.add(origin.uuid);
       }
-      await isar.moneyRepaymentEntitys
-          .filter()
-          .moneyRecordIdEqualTo(origin.uuid)
-          .deleteAll();
-      await isar.moneyRecordEntitys.delete(origin.id);
     }
 
-    for (final recordId in affectedRecords) {
-      await _recalculateMoneyRecord(recordId);
-    }
-    return affectedLoans;
+    return _ReverseResult(
+      affectedLoans: affectedLoans,
+      affectedRecords: affectedRecords,
+    );
   }
 
   Future<void> _recalculateLoan(String loanId) async {
@@ -749,26 +850,38 @@ class FinancialOperationService {
             .findFirst();
     if (entity == null) return;
     final record = _money.recordFromEntity(entity);
+    final advances =
+        await isar.moneyAdvanceEntitys
+            .filter()
+            .moneyRecordIdEqualTo(recordId)
+            .findAll();
     final repayments =
         await isar.moneyRepaymentEntitys
             .filter()
             .moneyRecordIdEqualTo(recordId)
             .findAll();
-    final settled =
-        record.calculateRemainingAmount(
-          repayments.map(_money.repaymentFromEntity).toList(),
-        ) <=
-        MoneyMath.tolerance;
-    await isar.moneyRecordEntitys.put(
-      _money.recordEntityFromDomain(
-        record.copyWith(
-          settledAt: settled ? record.settledAt ?? DateTime.now() : null,
-          clearSettledAt: !settled,
-          updatedAt: DateTime.now(),
-        ),
-        entity,
-      ),
+
+    final domainAdvances = advances.map(_money.advanceFromEntity).toList();
+    final domainRepayments =
+        repayments.map(_money.repaymentFromEntity).toList();
+
+    final totalAdvanced = record.calculateTotalAdvanced(domainAdvances);
+    final remaining = record.calculateRemainingAmount(
+      domainRepayments,
+      advances: domainAdvances,
     );
+    final settled = remaining <= MoneyMath.tolerance;
+    final effectiveDue = record.calculateEffectiveDueDate(
+      advances: domainAdvances,
+      repayments: domainRepayments,
+    );
+
+    entity.originalAmount = totalAdvanced;
+    entity.dueDate = effectiveDue;
+    entity.settledAt = settled ? (entity.settledAt ?? DateTime.now()) : null;
+    entity.status = settled ? 'settled' : 'active';
+    entity.updatedAt = DateTime.now();
+    await isar.moneyRecordEntitys.put(entity);
   }
 
   Future<void> _recalculateInvestment(String investmentId) async {
@@ -810,4 +923,14 @@ class FinancialOperationService {
     entity.updatedAt = DateTime.now();
     await isar.investmentEntitys.put(entity);
   }
+}
+
+class _ReverseResult {
+  final Set<String> affectedLoans;
+  final Set<String> affectedRecords;
+
+  const _ReverseResult({
+    required this.affectedLoans,
+    required this.affectedRecords,
+  });
 }

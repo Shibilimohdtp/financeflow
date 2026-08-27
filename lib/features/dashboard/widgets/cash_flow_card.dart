@@ -6,6 +6,7 @@ import '../../../services/balance_calculator.dart';
 import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../dashboard_controller.dart';
 
 class CashFlowCard extends StatelessWidget {
   final MonthlyCashFlow cashFlow;
@@ -18,6 +19,7 @@ class CashFlowCard extends StatelessWidget {
   final VoidCallback? onPickMonth;
   final VoidCallback? onOpenAnalytics;
   final List<BarChartItem>? chartItems;
+  final PeriodComparisonMetric? trendMetric;
 
   const CashFlowCard({
     super.key,
@@ -31,6 +33,7 @@ class CashFlowCard extends StatelessWidget {
     this.onPickMonth,
     this.onOpenAnalytics,
     this.chartItems,
+    this.trendMetric,
   });
 
   @override
@@ -184,6 +187,18 @@ class CashFlowCard extends StatelessWidget {
             const SizedBox(height: StillwaterTokens.spaceMd),
             const Divider(),
             const SizedBox(height: StillwaterTokens.spaceSm),
+
+            if (trendMetric?.hasPreviousData == true && !isPrivacyBlur) ...[
+              Text(
+                trendMetric!.expenseChangePct == 0
+                    ? 'Spending unchanged vs previous period'
+                    : 'Spending ${trendMetric!.expenseChangePct < 0 ? 'down' : 'up'} ${trendMetric!.expenseChangePct.abs().toStringAsFixed(1)}% vs previous period',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: StillwaterTokens.spaceSm),
+            ],
 
             // Income and Expense Two-Column Strip
             Row(

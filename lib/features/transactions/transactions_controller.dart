@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/money_record.dart';
 import '../../models/transaction.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../services/financial_operation_service.dart';
@@ -125,11 +126,17 @@ class TransactionsController extends StateNotifier<AsyncValue<void>> {
 
   Transaction? get lastDeletedTransaction => _lastDeletedOperation?.transaction;
 
-  Future<void> saveTransaction(Transaction transaction) async {
+  Future<void> saveTransaction(
+    Transaction transaction, {
+    MoneyRecord? moneyRecordDetails,
+  }) async {
     state = const AsyncValue.loading();
     try {
       final coordinator = _ref.read(financialOperationServiceProvider);
-      await coordinator.postTransaction(transaction);
+      await coordinator.postTransaction(
+        transaction,
+        moneyRecordDetails: moneyRecordDetails,
+      );
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

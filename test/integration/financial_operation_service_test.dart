@@ -6,6 +6,7 @@ import 'package:financeflow/database/schemas/account_entity.dart';
 import 'package:financeflow/database/schemas/emi_payment_entity.dart';
 import 'package:financeflow/database/schemas/loan_entity.dart';
 import 'package:financeflow/database/schemas/investment_entity.dart';
+import 'package:financeflow/database/schemas/money_advance_entity.dart';
 import 'package:financeflow/database/schemas/money_record_entity.dart';
 import 'package:financeflow/database/schemas/money_repayment_entity.dart';
 import 'package:financeflow/database/schemas/transaction_entity.dart';
@@ -69,6 +70,7 @@ void main() {
         InvestmentEntitySchema,
         EmiPaymentEntitySchema,
         MoneyRecordEntitySchema,
+        MoneyAdvanceEntitySchema,
         MoneyRepaymentEntitySchema,
       ],
       directory: directory.path,
@@ -532,4 +534,196 @@ void main() {
       expect(fund?.currentValue, 0);
     },
   );
+
+  test(
+    'Menon lending: ₹2,500 and ₹300 creates 1 active relationship with 2 advances totaling ₹2,800',
+    () async {
+      // 1. First transaction: ₹2,500 lent to Menon
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_1',
+          amount: 2500,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+      );
+
+      var allRecords = await debts.getAllRecords();
+      expect(allRecords, hasLength(1));
+      var menonRecord = allRecords.single;
+      expect(menonRecord.personName, 'Menon');
+      expect(menonRecord.normalizedPersonName, 'menon');
+      expect(menonRecord.originalAmount, 2500);
+      expect(menonRecord.type, MoneyRecordType.lent);
+
+      var menonAdvances = await debts.getAdvancesForRecord(menonRecord.id);
+      expect(menonAdvances, hasLength(1));
+      expect(menonAdvances.first.amount, 2500);
+
+      // 2. Second transaction: ₹300 lent to Menon
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_2',
+          amount: 300,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+      );
+
+      allRecords = await debts.getAllRecords();
+      // Should STILL be 1 active record for Menon!
+      expect(allRecords, hasLength(1));
+      menonRecord = allRecords.single;
+      expect(menonRecord.personName, 'Menon');
+      expect(menonRecord.originalAmount, 2800);
+
+      // Should have 2 advances
+      menonAdvances = await debts.getAdvancesForRecord(menonRecord.id);
+      expect(menonAdvances, hasLength(2));
+      expect(menonAdvances[0].amount, 2500);
+      expect(menonAdvances[1].amount, 300);
+
+      // Both transactions point to the same MoneyRecord
+      final tx1 = await transactions.getTransactionById('tx_menon_1');
+      final tx2 = await transactions.getTransactionById('tx_menon_2');
+      expect(tx1?.linkedMoneyRecordId, menonRecord.id);
+      expect(tx2?.linkedMoneyRecordId, menonRecord.id);
+    },
+  );
+
+  test(
+    'FIFO repayment of ₹2,600 on Menon relationship allocates correctly and delete restores balance',
+    () async {
+      // Setup ₹2,500 + ₹300 lent to Menon
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_1',
+          amount: 2500,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+      );
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_2',
+          amount: 300,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+      );
+
+      final menonRecord = (await debts.getAllRecords()).single;
+      final advances = await debts.getAdvancesForRecord(menonRecord.id);
+
+      // Repay ₹2,600
+      await service.postTransaction(
+        transaction(
+          id: 'tx_repay_menon',
+          amount: 2600,
+          purpose: TransactionPurpose.personalDebtRepaymentReceived,
+          counterparty: 'Menon',
+          debtId: menonRecord.id,
+        ),
+      );
+
+      final repayments = await debts.getRepaymentsForRecord(menonRecord.id);
+      expect(repayments, hasLength(1));
+      expect(repayments.single.amount, 2600);
+
+      expect(menonRecord.calculateRemainingAmount(repayments, advances: advances), 200);
+
+      final allocations = menonRecord.calculateAllocatedAdvances(
+        advances: advances,
+        repayments: repayments,
+      );
+      expect(allocations[0].isFullyPaid, true);
+      expect(allocations[0].allocatedRepaid, 2500);
+      expect(allocations[1].isFullyPaid, false);
+      expect(allocations[1].allocatedRepaid, 100);
+      expect(allocations[1].remainingAmount, 200);
+
+      // Delete the second advance of ₹300
+      await service.deleteTransaction('tx_menon_2');
+      final updatedRecord = (await debts.getAllRecords()).single;
+      final remainingAdvances = await debts.getAdvancesForRecord(updatedRecord.id);
+      expect(remainingAdvances, hasLength(1));
+      expect(remainingAdvances.single.amount, 2500);
+      expect(updatedRecord.originalAmount, 2500);
+    },
+  );
+
+  test(
+    'Separate obligation flag creates isolated MoneyRecord instead of merging',
+    () async {
+      // 1. Active Menon lending relationship
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_1',
+          amount: 2500,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+      );
+
+      // 2. Add another advance marked explicitly as separate obligation
+      final details = MoneyRecord(
+        id: 'tx_menon_sep',
+        type: MoneyRecordType.lent,
+        personName: 'Menon',
+        originalAmount: 5000,
+        transactionDate: now,
+        dueDate: now.add(const Duration(days: 30)),
+        isCustomSeparateObligation: true,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_sep',
+          amount: 5000,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+        moneyRecordDetails: details,
+      );
+
+      final allRecords = await debts.getAllRecords();
+      expect(allRecords, hasLength(2));
+      expect(allRecords.any((r) => r.isCustomSeparateObligation), true);
+    },
+  );
+
+  test(
+    'Borrowing from Menon creates distinct borrowed record, keeping lending record isolated',
+    () async {
+      // Lent ₹2,500 to Menon
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_lent',
+          amount: 2500,
+          purpose: TransactionPurpose.lending,
+          counterparty: 'Menon',
+        ),
+      );
+
+      // Borrowed ₹1,000 from Menon
+      await service.postTransaction(
+        transaction(
+          id: 'tx_menon_borrowed',
+          amount: 1000,
+          purpose: TransactionPurpose.borrowing,
+          counterparty: 'Menon',
+        ),
+      );
+
+      final allRecords = await debts.getAllRecords();
+      expect(allRecords, hasLength(2));
+      final lentRec = allRecords.firstWhere((r) => r.type == MoneyRecordType.lent);
+      final borrowedRec = allRecords.firstWhere((r) => r.type == MoneyRecordType.borrowed);
+
+      expect(lentRec.originalAmount, 2500);
+      expect(borrowedRec.originalAmount, 1000);
+    },
+  );
 }
+

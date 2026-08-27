@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/services/analytics_calculator.dart';
+import 'package:financeflow/features/analytics/cash_flow_chart_data.dart';
 
 void main() {
   group('AnalyticsCalculator Tests', () {
@@ -83,6 +84,112 @@ void main() {
         expect(report.highestTransactionAmount, equals(3000.0));
       },
     );
+
+    test('Custom ranges retain every day and reconcile with report totals', () {
+      final report = AnalyticsCalculator.calculateReport(
+        allTransactions: transactions,
+        timeRange: AnalyticsTimeRange.custom,
+        customStartDate: DateTime(2026, 8, 1),
+        customEndDate: DateTime(2026, 9, 30, 23, 59),
+      );
+      expect(report.timeSeries.length, 61);
+      expect(
+        report.timeSeries.fold<double>(0, (v, p) => v + p.expense),
+        report.totalExpense,
+      );
+      expect(
+        report.timeSeries.fold<double>(0, (v, p) => v + p.income),
+        report.totalIncome,
+      );
+      final chart = CashFlowChartData.fromPoints(
+        points: report.timeSeries,
+        range: report.timeRange,
+        start: report.startDate,
+        end: report.endDate,
+      );
+      expect(chart.buckets.length, lessThanOrEqualTo(7));
+      expect(chart.buckets.fold<double>(0, (v, b) => v + b.expense), 6000);
+      expect(chart.buckets.fold<double>(0, (v, b) => v + b.income), 50000);
+      expect(chart.buckets.last.end, DateTime.utc(2026, 9, 30));
+    });
+
+    test('Monthly chart groups all days including the short final group', () {
+      final points = List.generate(
+        31,
+        (i) => TimeSeriesPoint(
+          date: DateTime(2026, 8, i + 1),
+          label: '${i + 1}',
+          expense: 10,
+          income: i == 30 ? 1000 : 0,
+        ),
+      );
+      final chart = CashFlowChartData.fromPoints(
+        points: points,
+        range: AnalyticsTimeRange.month,
+        start: DateTime(2026, 8, 1),
+        end: DateTime(2026, 8, 31),
+      );
+      expect(chart.buckets.map((b) => b.label), [
+        '1–7',
+        '8–14',
+        '15–21',
+        '22–28',
+        '29–31',
+      ]);
+      expect(chart.buckets.last.expense, 30);
+      expect(chart.buckets.last.income, 1000);
+      expect(chart.buckets.fold<double>(0, (v, b) => v + b.expense), 310);
+      final leap = CashFlowChartData.fromPoints(
+        points: [],
+        range: AnalyticsTimeRange.month,
+        start: DateTime(2024, 2, 1),
+        end: DateTime(2024, 2, 29),
+      );
+      expect(leap.buckets.last.end, DateTime.utc(2024, 2, 29));
+      expect(
+        leap.buckets.every((b) => b.income == 0 && b.expense == 0),
+        isTrue,
+      );
+    });
+
+    test('Year and cross-year custom chart buckets preserve boundaries', () {
+      final chart = CashFlowChartData.fromPoints(
+        points: [
+          TimeSeriesPoint(
+            date: DateTime(2026, 12, 1),
+            label: 'Dec',
+            income: 200,
+            expense: 100,
+          ),
+        ],
+        range: AnalyticsTimeRange.year,
+        start: DateTime(2026, 1, 1),
+        end: DateTime(2026, 12, 31),
+      );
+      expect(chart.buckets.length, 12);
+      expect(chart.buckets.last.net, 100);
+      expect(chart.buckets.last.dateLabel, '1–31 Dec 2026');
+      final custom = CashFlowChartData.fromPoints(
+        points: [
+          TimeSeriesPoint(
+            date: DateTime(2027, 1, 1),
+            label: '1',
+            income: 200,
+            expense: 100,
+          ),
+        ],
+        range: AnalyticsTimeRange.custom,
+        start: DateTime(2026, 12, 29),
+        end: DateTime(2027, 1, 12),
+      );
+      expect(custom.buckets.fold<double>(0, (v, b) => v + b.net), 100);
+      for (var i = 1; i < custom.buckets.length; i++) {
+        expect(
+          custom.buckets[i].start.difference(custom.buckets[i - 1].end).inDays,
+          1,
+        );
+      }
+    });
 
     test('Category breakdown calculates shares accurately', () {
       final report = AnalyticsCalculator.calculateReport(

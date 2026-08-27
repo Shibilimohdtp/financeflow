@@ -27,68 +27,78 @@ const MoneyRecordEntitySchema = CollectionSchema(
       name: r'dueDate',
       type: IsarType.dateTime,
     ),
-    r'isReminderEnabled': PropertySchema(
+    r'isCustomSeparateObligation': PropertySchema(
       id: 2,
+      name: r'isCustomSeparateObligation',
+      type: IsarType.bool,
+    ),
+    r'isReminderEnabled': PropertySchema(
+      id: 3,
       name: r'isReminderEnabled',
       type: IsarType.bool,
     ),
+    r'normalizedPersonName': PropertySchema(
+      id: 4,
+      name: r'normalizedPersonName',
+      type: IsarType.string,
+    ),
     r'notes': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'notes',
       type: IsarType.string,
     ),
     r'originTransactionId': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'originTransactionId',
       type: IsarType.string,
     ),
     r'originalAmount': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'originalAmount',
       type: IsarType.double,
     ),
     r'personName': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'personName',
       type: IsarType.string,
     ),
     r'reminderDaysBefore': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'reminderDaysBefore',
       type: IsarType.long,
     ),
     r'settledAt': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'settledAt',
       type: IsarType.dateTime,
     ),
     r'status': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'status',
       type: IsarType.string,
     ),
     r'transactionDate': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'transactionDate',
       type: IsarType.dateTime,
     ),
     r'type': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'type',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'userId': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'userId',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -146,6 +156,19 @@ const MoneyRecordEntitySchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'personName',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    ),
+    r'normalizedPersonName': IndexSchema(
+      id: 4435071431045847272,
+      name: r'normalizedPersonName',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'normalizedPersonName',
           type: IndexType.hash,
           caseSensitive: true,
         )
@@ -215,6 +238,19 @@ const MoneyRecordEntitySchema = CollectionSchema(
           caseSensitive: true,
         )
       ],
+    ),
+    r'isCustomSeparateObligation': IndexSchema(
+      id: -3255281153115788202,
+      name: r'isCustomSeparateObligation',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'isCustomSeparateObligation',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
     )
   },
   links: {},
@@ -231,6 +267,12 @@ int _moneyRecordEntityEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.normalizedPersonName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   {
     final value = object.notes;
     if (value != null) {
@@ -259,19 +301,21 @@ void _moneyRecordEntitySerialize(
 ) {
   writer.writeDateTime(offsets[0], object.createdAt);
   writer.writeDateTime(offsets[1], object.dueDate);
-  writer.writeBool(offsets[2], object.isReminderEnabled);
-  writer.writeString(offsets[3], object.notes);
-  writer.writeString(offsets[4], object.originTransactionId);
-  writer.writeDouble(offsets[5], object.originalAmount);
-  writer.writeString(offsets[6], object.personName);
-  writer.writeLong(offsets[7], object.reminderDaysBefore);
-  writer.writeDateTime(offsets[8], object.settledAt);
-  writer.writeString(offsets[9], object.status);
-  writer.writeDateTime(offsets[10], object.transactionDate);
-  writer.writeString(offsets[11], object.type);
-  writer.writeDateTime(offsets[12], object.updatedAt);
-  writer.writeString(offsets[13], object.userId);
-  writer.writeString(offsets[14], object.uuid);
+  writer.writeBool(offsets[2], object.isCustomSeparateObligation);
+  writer.writeBool(offsets[3], object.isReminderEnabled);
+  writer.writeString(offsets[4], object.normalizedPersonName);
+  writer.writeString(offsets[5], object.notes);
+  writer.writeString(offsets[6], object.originTransactionId);
+  writer.writeDouble(offsets[7], object.originalAmount);
+  writer.writeString(offsets[8], object.personName);
+  writer.writeLong(offsets[9], object.reminderDaysBefore);
+  writer.writeDateTime(offsets[10], object.settledAt);
+  writer.writeString(offsets[11], object.status);
+  writer.writeDateTime(offsets[12], object.transactionDate);
+  writer.writeString(offsets[13], object.type);
+  writer.writeDateTime(offsets[14], object.updatedAt);
+  writer.writeString(offsets[15], object.userId);
+  writer.writeString(offsets[16], object.uuid);
 }
 
 MoneyRecordEntity _moneyRecordEntityDeserialize(
@@ -284,19 +328,21 @@ MoneyRecordEntity _moneyRecordEntityDeserialize(
   object.createdAt = reader.readDateTime(offsets[0]);
   object.dueDate = reader.readDateTime(offsets[1]);
   object.id = id;
-  object.isReminderEnabled = reader.readBool(offsets[2]);
-  object.notes = reader.readStringOrNull(offsets[3]);
-  object.originTransactionId = reader.readStringOrNull(offsets[4]);
-  object.originalAmount = reader.readDouble(offsets[5]);
-  object.personName = reader.readString(offsets[6]);
-  object.reminderDaysBefore = reader.readLong(offsets[7]);
-  object.settledAt = reader.readDateTimeOrNull(offsets[8]);
-  object.status = reader.readString(offsets[9]);
-  object.transactionDate = reader.readDateTime(offsets[10]);
-  object.type = reader.readString(offsets[11]);
-  object.updatedAt = reader.readDateTime(offsets[12]);
-  object.userId = reader.readString(offsets[13]);
-  object.uuid = reader.readString(offsets[14]);
+  object.isCustomSeparateObligation = reader.readBool(offsets[2]);
+  object.isReminderEnabled = reader.readBool(offsets[3]);
+  object.normalizedPersonName = reader.readStringOrNull(offsets[4]);
+  object.notes = reader.readStringOrNull(offsets[5]);
+  object.originTransactionId = reader.readStringOrNull(offsets[6]);
+  object.originalAmount = reader.readDouble(offsets[7]);
+  object.personName = reader.readString(offsets[8]);
+  object.reminderDaysBefore = reader.readLong(offsets[9]);
+  object.settledAt = reader.readDateTimeOrNull(offsets[10]);
+  object.status = reader.readString(offsets[11]);
+  object.transactionDate = reader.readDateTime(offsets[12]);
+  object.type = reader.readString(offsets[13]);
+  object.updatedAt = reader.readDateTime(offsets[14]);
+  object.userId = reader.readString(offsets[15]);
+  object.uuid = reader.readString(offsets[16]);
   return object;
 }
 
@@ -314,21 +360,21 @@ P _moneyRecordEntityDeserializeProp<P>(
     case 2:
       return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
       return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 6:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 8:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 9:
       return (reader.readString(offset)) as P;
+    case 9:
+      return (reader.readLong(offset)) as P;
     case 10:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 11:
       return (reader.readString(offset)) as P;
     case 12:
@@ -336,6 +382,10 @@ P _moneyRecordEntityDeserializeProp<P>(
     case 13:
       return (reader.readString(offset)) as P;
     case 14:
+      return (reader.readDateTime(offset)) as P;
+    case 15:
+      return (reader.readString(offset)) as P;
+    case 16:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -441,6 +491,15 @@ extension MoneyRecordEntityQueryWhereSort
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'settledAt'),
+      );
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhere>
+      anyIsCustomSeparateObligation() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'isCustomSeparateObligation'),
       );
     });
   }
@@ -690,6 +749,73 @@ extension MoneyRecordEntityQueryWhere
               indexName: r'personName',
               lower: [],
               upper: [personName],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
+      normalizedPersonNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'normalizedPersonName',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
+      normalizedPersonNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'normalizedPersonName',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
+      normalizedPersonNameEqualTo(String? normalizedPersonName) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'normalizedPersonName',
+        value: [normalizedPersonName],
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
+      normalizedPersonNameNotEqualTo(String? normalizedPersonName) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'normalizedPersonName',
+              lower: [],
+              upper: [normalizedPersonName],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'normalizedPersonName',
+              lower: [normalizedPersonName],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'normalizedPersonName',
+              lower: [normalizedPersonName],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'normalizedPersonName',
+              lower: [],
+              upper: [normalizedPersonName],
               includeUpper: false,
             ));
       }
@@ -1108,6 +1234,51 @@ extension MoneyRecordEntityQueryWhere
       }
     });
   }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
+      isCustomSeparateObligationEqualTo(bool isCustomSeparateObligation) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'isCustomSeparateObligation',
+        value: [isCustomSeparateObligation],
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
+      isCustomSeparateObligationNotEqualTo(bool isCustomSeparateObligation) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCustomSeparateObligation',
+              lower: [],
+              upper: [isCustomSeparateObligation],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCustomSeparateObligation',
+              lower: [isCustomSeparateObligation],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCustomSeparateObligation',
+              lower: [isCustomSeparateObligation],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isCustomSeparateObligation',
+              lower: [],
+              upper: [isCustomSeparateObligation],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension MoneyRecordEntityQueryFilter
@@ -1281,11 +1452,175 @@ extension MoneyRecordEntityQueryFilter
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      isCustomSeparateObligationEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isCustomSeparateObligation',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
       isReminderEnabledEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isReminderEnabled',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'normalizedPersonName',
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'normalizedPersonName',
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'normalizedPersonName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'normalizedPersonName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'normalizedPersonName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'normalizedPersonName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'normalizedPersonName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'normalizedPersonName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'normalizedPersonName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'normalizedPersonName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'normalizedPersonName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
+      normalizedPersonNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'normalizedPersonName',
+        value: '',
       ));
     });
   }
@@ -2624,6 +2959,20 @@ extension MoneyRecordEntityQuerySortBy
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      sortByIsCustomSeparateObligation() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCustomSeparateObligation', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      sortByIsCustomSeparateObligationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCustomSeparateObligation', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
       sortByIsReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.asc);
@@ -2634,6 +2983,20 @@ extension MoneyRecordEntityQuerySortBy
       sortByIsReminderEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      sortByNormalizedPersonName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedPersonName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      sortByNormalizedPersonNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedPersonName', Sort.desc);
     });
   }
 
@@ -2850,6 +3213,20 @@ extension MoneyRecordEntityQuerySortThenBy
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      thenByIsCustomSeparateObligation() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCustomSeparateObligation', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      thenByIsCustomSeparateObligationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCustomSeparateObligation', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
       thenByIsReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.asc);
@@ -2860,6 +3237,20 @@ extension MoneyRecordEntityQuerySortThenBy
       thenByIsReminderEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      thenByNormalizedPersonName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedPersonName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
+      thenByNormalizedPersonNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedPersonName', Sort.desc);
     });
   }
 
@@ -3049,9 +3440,24 @@ extension MoneyRecordEntityQueryWhereDistinct
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
+      distinctByIsCustomSeparateObligation() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isCustomSeparateObligation');
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
       distinctByIsReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isReminderEnabled');
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
+      distinctByNormalizedPersonName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'normalizedPersonName',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -3164,9 +3570,23 @@ extension MoneyRecordEntityQueryProperty
   }
 
   QueryBuilder<MoneyRecordEntity, bool, QQueryOperations>
+      isCustomSeparateObligationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isCustomSeparateObligation');
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, bool, QQueryOperations>
       isReminderEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isReminderEnabled');
+    });
+  }
+
+  QueryBuilder<MoneyRecordEntity, String?, QQueryOperations>
+      normalizedPersonNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'normalizedPersonName');
     });
   }
 

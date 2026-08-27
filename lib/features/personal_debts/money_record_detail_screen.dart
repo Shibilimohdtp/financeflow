@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../../models/account.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../shared/widgets/ff_button.dart';
@@ -11,6 +12,8 @@ import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
+import '../accounts/accounts_controller.dart';
+import 'add_advance_sheet.dart';
 import 'add_edit_money_record_sheet.dart';
 import 'add_repayment_sheet.dart';
 import 'money_records_controller.dart';
@@ -26,6 +29,15 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddEditMoneyRecordSheet(initialRecord: liveRecord),
+    );
+  }
+
+  void _openAddAdvanceSheet(BuildContext context, MoneyRecord liveRecord) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddAdvanceSheet(record: liveRecord),
     );
   }
 
@@ -55,7 +67,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       context,
       title: 'Delete Record?',
       message:
-          'Deleting this record will also remove all its repayment logs (${liveRecord.personName}). This cannot be undone.',
+          'Deleting this relationship will also remove all its advance and repayment logs (${liveRecord.personName}). This cannot be undone.',
       confirmLabel: 'Delete Record',
       isDestructive: true,
     );
@@ -116,21 +128,55 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       orElse: () => record,
     );
 
+    final advancesAsync = ref.watch(
+      moneyRecordAdvancesProvider(liveRecord.id),
+    );
+    final advances = advancesAsync.value ?? [];
+
     final repaymentsAsync = ref.watch(
       moneyRecordRepaymentsProvider(liveRecord.id),
     );
     final repayments = repaymentsAsync.value ?? [];
 
+    final accounts =
+        ref.watch(rawAccountsStreamProvider).valueOrNull ?? const <Account>[];
+    final accountMap = {for (final a in accounts) a.id: a.name};
+
+    final totalAdvanced = liveRecord.calculateTotalAdvanced(advances);
     final totalRepaid = liveRecord.calculateTotalRepaid(repayments);
-    final remaining = liveRecord.calculateRemainingAmount(repayments);
-    final isSettled = liveRecord.isFullySettled(repayments);
-    final isOverdue = liveRecord.isOverdue(repayments: repayments);
-    final isDueSoon = liveRecord.isDueSoon(repayments: repayments);
-    final status = liveRecord.calculateStatus(repayments);
+    final remaining = liveRecord.calculateRemainingAmount(
+      repayments,
+      advances: advances,
+    );
+    final isSettled = liveRecord.isFullySettled(
+      repayments,
+      advances: advances,
+    );
+    final isOverdue = liveRecord.isOverdue(
+      repayments: repayments,
+      advances: advances,
+    );
+    final isDueSoon = liveRecord.isDueSoon(
+      repayments: repayments,
+      advances: advances,
+    );
+    final status = liveRecord.calculateStatus(
+      repayments,
+      advances: advances,
+    );
+    final effectiveDueDate = liveRecord.calculateEffectiveDueDate(
+      advances: advances,
+      repayments: repayments,
+    );
     final progress =
-        liveRecord.originalAmount > 0
-            ? (totalRepaid / liveRecord.originalAmount).clamp(0.0, 1.0)
+        totalAdvanced > 0
+            ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0)
             : 0.0;
+
+    final allocations = liveRecord.calculateAllocatedAdvances(
+      advances: advances,
+      repayments: repayments,
+    );
 
     final isLent = liveRecord.type == MoneyRecordType.lent;
     final typeColor =
@@ -213,7 +259,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   const SizedBox(width: StillwaterTokens.spaceSm),
                   Expanded(
                     child: Text(
-                      'Overdue · Repayment was expected by ${DateFormatter.formatShortDate(liveRecord.dueDate)}',
+                      'Overdue · Repayment was expected by ${DateFormatter.formatShortDate(effectiveDueDate)}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: context.finColors.expense,
                         fontWeight: FontWeight.w600,
@@ -244,7 +290,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   const SizedBox(width: StillwaterTokens.spaceSm),
                   Expanded(
                     child: Text(
-                      'Due Soon · Expected by ${DateFormatter.formatShortDate(liveRecord.dueDate)}',
+                      'Due Soon · Expected by ${DateFormatter.formatShortDate(effectiveDueDate)}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: context.finColors.debt,
                         fontWeight: FontWeight.w600,
@@ -358,7 +404,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
 
                 const SizedBox(height: StillwaterTokens.spaceMd),
 
-                // Metrics row: Original Amount vs Total Repaid
+                // Metrics row: Total Advanced vs Total Repaid
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -366,13 +412,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Original Amount',
+                          'Total Advanced',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.secondary,
                           ),
                         ),
                         Text(
-                          CurrencyFormatter.format(liveRecord.originalAmount),
+                          CurrencyFormatter.format(totalAdvanced),
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             fontFeatures: StillwaterTypography.tabularFeatures,
@@ -412,7 +458,6 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
             children: [
               if (!isSettled) ...[
                 Expanded(
-                  flex: 3,
                   child: FfButton(
                     label: 'Record Repayment',
                     leadingIcon: const Icon(Icons.payments_outlined, size: 18),
@@ -424,26 +469,11 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: StillwaterTokens.spaceSm),
                 Expanded(
-                  flex: 2,
                   child: FfButton(
-                    label: 'Settle',
-                    leadingIcon: const Icon(
-                      Icons.check_circle_outline_rounded,
-                      size: 18,
-                    ),
+                    label: isLent ? 'Lend More' : 'Borrow More',
+                    leadingIcon: const Icon(Icons.add_circle_outline, size: 18),
                     variant: FfButtonVariant.secondary,
-                    onPressed: () async {
-                      final controller = ref.read(
-                        moneyRecordsControllerProvider.notifier,
-                      );
-                      await controller.markRecordSettled(liveRecord.id);
-                      if (context.mounted) {
-                        FfSnackbar.show(
-                          context,
-                          message: 'Record marked as settled.',
-                        );
-                      }
-                    },
+                    onPressed: () => _openAddAdvanceSheet(context, liveRecord),
                   ),
                 ),
               ] else ...[
@@ -472,48 +502,186 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceXl),
 
-          // ── 4. Dates & Details Info ───────────────────────────────────────
-          _SectionHeader(title: 'Record Details'),
+          // ── 4. Advance History Section ─────────────────────────────────────
+          _SectionHeader(
+            title:
+                'Advance History (${advances.isNotEmpty ? advances.length : 1})',
+            trailing:
+                !isSettled
+                    ? TextButton.icon(
+                      onPressed: () => _openAddAdvanceSheet(context, liveRecord),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Add Advance'),
+                    )
+                    : null,
+          ),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          FfCard(
-            variant: FfCardVariant.standard,
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _DetailTile(
-                  icon: Icons.calendar_today_outlined,
-                  label: isLent ? 'Lent On' : 'Borrowed On',
-                  value: DateFormatter.formatFullDate(
-                    liveRecord.transactionDate,
+
+          if (advances.isEmpty)
+            FfCard(
+              variant: FfCardVariant.standard,
+              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: typeColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(
+                        StillwaterTokens.radiusSm,
+                      ),
+                    ),
+                    child: Icon(liveRecord.type.icon, color: typeColor, size: 20),
                   ),
-                ),
-                const Divider(height: 1),
-                _DetailTile(
-                  icon: Icons.event_available_outlined,
-                  label: 'Expected Due Date',
-                  value: DateFormatter.formatFullDate(liveRecord.dueDate),
-                ),
-                const Divider(height: 1),
-                _DetailTile(
-                  icon: Icons.notifications_none_rounded,
-                  label: 'Reminder',
-                  value:
-                      liveRecord.isReminderEnabled
-                          ? 'Enabled (${liveRecord.reminderDaysBefore} ${liveRecord.reminderDaysBefore == 1 ? 'day' : 'days'} before)'
-                          : 'Disabled',
-                ),
-                if (liveRecord.notes != null &&
-                    liveRecord.notes!.isNotEmpty) ...[
-                  const Divider(height: 1),
-                  _DetailTile(
-                    icon: Icons.notes_rounded,
-                    label: 'Notes',
-                    value: liveRecord.notes!,
+                  const SizedBox(width: StillwaterTokens.spaceMd),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          CurrencyFormatter.format(liveRecord.originalAmount),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: StillwaterTypography.tabularFeatures,
+                          ),
+                        ),
+                        Text(
+                          '${DateFormatter.formatShortDate(liveRecord.transactionDate)} · Due ${DateFormatter.formatShortDate(liveRecord.dueDate)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              ],
+              ),
+            )
+          else
+            FfCard(
+              variant: FfCardVariant.standard,
+              padding: EdgeInsets.zero,
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: allocations.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (ctx, index) {
+                  final alloc = allocations[index];
+                  final item = alloc.advance;
+                  final accountName =
+                      item.accountId != null
+                          ? accountMap[item.accountId]
+                          : null;
+
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: StillwaterTokens.spaceMd,
+                      vertical: StillwaterTokens.space2Xs,
+                    ),
+                    leading: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color:
+                            alloc.isFullyPaid
+                                ? context.finColors.income.withValues(
+                                  alpha: 0.12,
+                                )
+                                : typeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusSm,
+                        ),
+                      ),
+                      child: Icon(
+                        alloc.isFullyPaid
+                            ? Icons.check_circle_outline_rounded
+                            : liveRecord.type.icon,
+                        color:
+                            alloc.isFullyPaid
+                                ? context.finColors.income
+                                : typeColor,
+                        size: 20,
+                      ),
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          CurrencyFormatter.format(item.amount),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: StillwaterTypography.tabularFeatures,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                alloc.isFullyPaid
+                                    ? context.finColors.income.withValues(
+                                      alpha: 0.12,
+                                    )
+                                    : (alloc.allocatedRepaid > 0.001
+                                        ? context.finColors.debt.withValues(
+                                          alpha: 0.12,
+                                        )
+                                        : theme.dividerColor.withValues(
+                                          alpha: 0.3,
+                                        )),
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusSm,
+                            ),
+                          ),
+                          child: Text(
+                            alloc.isFullyPaid
+                                ? 'Repaid'
+                                : (alloc.allocatedRepaid > 0.001
+                                    ? 'Paid ${CurrencyFormatter.format(alloc.allocatedRepaid)}'
+                                    : 'Unpaid'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color:
+                                  alloc.isFullyPaid
+                                      ? context.finColors.income
+                                      : (alloc.allocatedRepaid > 0.001
+                                          ? context.finColors.debt
+                                          : theme.colorScheme.secondary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text(
+                          '${DateFormatter.formatShortDate(item.date)} · Due ${DateFormatter.formatShortDate(item.dueDate)}${accountName != null ? ' · $accountName' : ''}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                          ),
+                        ),
+                        if (item.notes != null && item.notes!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.notes!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
 
           const SizedBox(height: StillwaterTokens.spaceXl),
 
@@ -530,7 +698,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                             remaining,
                           ),
                       icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Add'),
+                      label: const Text('Add Repayment'),
                     )
                     : null,
           ),
@@ -625,6 +793,51 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 },
               ),
             ),
+
+          const SizedBox(height: StillwaterTokens.spaceXl),
+
+          // ── 6. Dates & Details Info ───────────────────────────────────────
+          _SectionHeader(title: 'Relationship Details'),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          FfCard(
+            variant: FfCardVariant.standard,
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                _DetailTile(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Started On',
+                  value: DateFormatter.formatFullDate(
+                    liveRecord.transactionDate,
+                  ),
+                ),
+                const Divider(height: 1),
+                _DetailTile(
+                  icon: Icons.event_available_outlined,
+                  label: 'Next Due Date',
+                  value: DateFormatter.formatFullDate(effectiveDueDate),
+                ),
+                const Divider(height: 1),
+                _DetailTile(
+                  icon: Icons.notifications_none_rounded,
+                  label: 'Reminder',
+                  value:
+                      liveRecord.isReminderEnabled
+                          ? 'Enabled (${liveRecord.reminderDaysBefore} ${liveRecord.reminderDaysBefore == 1 ? 'day' : 'days'} before)'
+                          : 'Disabled',
+                ),
+                if (liveRecord.notes != null &&
+                    liveRecord.notes!.isNotEmpty) ...[
+                  const Divider(height: 1),
+                  _DetailTile(
+                    icon: Icons.notes_rounded,
+                    label: 'Notes',
+                    value: liveRecord.notes!,
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/errors/app_error.dart';
+import '../../models/money_advance.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../models/transaction.dart';
@@ -14,6 +15,19 @@ final allMoneyRecordsStreamProvider = StreamProvider<List<MoneyRecord>>((ref) {
   final repository = ref.watch(moneyRecordRepositoryProvider);
   return repository.watchAllRecords();
 });
+
+final allMoneyAdvancesStreamProvider = StreamProvider<List<MoneyAdvance>>((
+  ref,
+) {
+  final repository = ref.watch(moneyRecordRepositoryProvider);
+  return repository.watchAllAdvances();
+});
+
+final moneyRecordAdvancesProvider =
+    StreamProvider.family<List<MoneyAdvance>, String>((ref, recordId) {
+      final repository = ref.watch(moneyRecordRepositoryProvider);
+      return repository.watchAdvancesForRecord(recordId);
+    });
 
 final allMoneyRepaymentsStreamProvider = StreamProvider<List<MoneyRepayment>>((
   ref,
@@ -34,17 +48,28 @@ final moneyRecordFilterProvider = StateProvider<MoneyRecordFilter>((ref) {
 
 final moneyLendingSummaryProvider = Provider<MoneyLendingSummary>((ref) {
   final records = ref.watch(allMoneyRecordsStreamProvider).value ?? const [];
+  final advances = ref.watch(allMoneyAdvancesStreamProvider).value ?? const [];
   final repayments =
       ref.watch(allMoneyRepaymentsStreamProvider).value ?? const [];
-  return MoneyLendingCalculator.calculateSummary(records, repayments);
+  return MoneyLendingCalculator.calculateSummary(
+    records,
+    repayments,
+    advances: advances,
+  );
 });
 
 final filteredMoneyRecordsProvider = Provider<List<MoneyRecord>>((ref) {
   final records = ref.watch(allMoneyRecordsStreamProvider).value ?? const [];
+  final advances = ref.watch(allMoneyAdvancesStreamProvider).value ?? const [];
   final repayments =
       ref.watch(allMoneyRepaymentsStreamProvider).value ?? const [];
   final filter = ref.watch(moneyRecordFilterProvider);
-  return MoneyLendingCalculator.filterRecords(records, repayments, filter);
+  return MoneyLendingCalculator.filterRecords(
+    records,
+    repayments,
+    filter,
+    advances: advances,
+  );
 });
 
 final moneyRecordsControllerProvider =
@@ -82,6 +107,7 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
     String userId = 'local_user',
     String? accountId,
     bool recordInTransactions = false,
+    bool isCustomSeparateObligation = false,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -100,6 +126,7 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
         reminderDaysBefore: reminderDaysBefore,
         createdAt: now,
         updatedAt: now,
+        isCustomSeparateObligation: isCustomSeparateObligation,
       );
 
       record.validate();
@@ -136,7 +163,116 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
         );
       } else {
         await _repository.saveRecord(record);
+        // Save initial advance event
+        final advance = MoneyAdvance(
+          id: 'adv_$recordId',
+          moneyRecordId: recordId,
+          userId: userId,
+          amount: originalAmount,
+          date: transactionDate,
+          dueDate: dueDate,
+          notes: notes?.trim().isNotEmpty == true ? notes!.trim() : null,
+          accountId: accountId,
+          createdAt: now,
+          updatedAt: now,
+        );
+        await _repository.saveAdvance(advance);
       }
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> addAdvance({
+    required String moneyRecordId,
+    required double amount,
+    required DateTime date,
+    required DateTime dueDate,
+    String? notes,
+    String? accountId,
+    bool recordInTransactions = false,
+    String userId = 'local_user',
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final record = await _repository.getRecordById(
+        moneyRecordId,
+        userId: userId,
+      );
+      if (record == null) {
+        throw const ValidationError(
+          message: 'Relationship record not found.',
+          actionableStep: 'Select a valid active debt relationship.',
+        );
+      }
+
+      final now = DateTime.now();
+      final advanceId = 'adv_${_uuid.v4()}';
+
+      if (recordInTransactions && accountId != null && _coordinator != null) {
+        final transactionId = 'debt_adv_$advanceId';
+        await _coordinator.postTransaction(
+          Transaction(
+            id: transactionId,
+            amount: amount,
+            type:
+                record.type == MoneyRecordType.lent
+                    ? TransactionType.expense
+                    : TransactionType.income,
+            purpose:
+                record.type == MoneyRecordType.lent
+                    ? TransactionPurpose.lending
+                    : TransactionPurpose.borrowing,
+            categoryId: 'cat_personal_debt',
+            categoryName: 'Personal debt',
+            categoryIcon: 'person',
+            categoryColor: 'debt',
+            merchant: record.personName,
+            externalCounterpartyName: record.personName,
+            date: date,
+            notes: notes,
+            accountId: accountId,
+            linkedMoneyRecordId: record.id,
+            createdAt: now,
+            updatedAt: now,
+          ),
+          moneyRecordDetails: record.copyWith(dueDate: dueDate),
+        );
+      } else {
+        final advance = MoneyAdvance(
+          id: advanceId,
+          moneyRecordId: moneyRecordId,
+          userId: userId,
+          amount: amount,
+          date: date,
+          dueDate: dueDate,
+          notes: notes?.trim().isNotEmpty == true ? notes!.trim() : null,
+          accountId: accountId,
+          createdAt: now,
+          updatedAt: now,
+        );
+        advance.validate();
+        await _repository.saveAdvance(advance);
+
+        // Update relationship aggregate total & un-settle if needed
+        final advances = await _repository.getAdvancesForRecord(
+          moneyRecordId,
+          userId: userId,
+        );
+        final totalAdv = advances.fold<double>(
+          0.0,
+          (sum, a) => sum + a.amount,
+        );
+        final updatedRecord = record.copyWith(
+          originalAmount: totalAdv,
+          clearSettledAt: true,
+          updatedAt: now,
+        );
+        await _repository.saveRecord(updatedRecord);
+      }
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -259,7 +395,14 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
         moneyRecordId,
         userId: userId,
       );
-      final remaining = record.calculateRemainingAmount(repayments);
+      final advances = await _repository.getAdvancesForRecord(
+        moneyRecordId,
+        userId: userId,
+      );
+      final remaining = record.calculateRemainingAmount(
+        repayments,
+        advances: advances,
+      );
 
       final repayment = MoneyRepayment(
         id: 'rep_${_uuid.v4()}',
@@ -309,7 +452,10 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
           _coordinator != null)) {
         // Legacy/status-only repayment path.
         final updatedRepayments = [...repayments, repayment];
-        final newRemaining = record.calculateRemainingAmount(updatedRepayments);
+        final newRemaining = record.calculateRemainingAmount(
+          updatedRepayments,
+          advances: advances,
+        );
         if (newRemaining <= 0.001 && record.settledAt == null) {
           final settledRecord = record.copyWith(
             settledAt: DateTime.now(),
@@ -353,7 +499,14 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
           moneyRecordId,
           userId: userId,
         );
-        final remaining = record.calculateRemainingAmount(repayments);
+        final advances = await _repository.getAdvancesForRecord(
+          moneyRecordId,
+          userId: userId,
+        );
+        final remaining = record.calculateRemainingAmount(
+          repayments,
+          advances: advances,
+        );
         if (remaining > 0.001) {
           final unSettledRecord = record.copyWith(
             clearSettledAt: true,

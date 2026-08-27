@@ -7,6 +7,7 @@ import 'goal_contribution.dart';
 import 'ingestion/parsed_transaction.dart';
 import 'investment.dart';
 import 'loan.dart';
+import 'money_advance.dart';
 import 'money_record.dart';
 import 'money_repayment.dart';
 import 'savings_goal.dart';
@@ -30,6 +31,7 @@ class BackupMetadata {
   final int investmentCount;
   final int alertCount;
   final int moneyRecordCount;
+  final int moneyAdvanceCount;
   final int moneyRepaymentCount;
   final int pendingTransactionCount;
   final bool settingsIncluded;
@@ -51,6 +53,7 @@ class BackupMetadata {
     required this.investmentCount,
     this.alertCount = 0,
     this.moneyRecordCount = 0,
+    this.moneyAdvanceCount = 0,
     this.moneyRepaymentCount = 0,
     this.pendingTransactionCount = 0,
     this.settingsIncluded = false,
@@ -73,6 +76,7 @@ class BackupMetadata {
     'investmentCount': investmentCount,
     'alertCount': alertCount,
     'moneyRecordCount': moneyRecordCount,
+    'moneyAdvanceCount': moneyAdvanceCount,
     'moneyRepaymentCount': moneyRepaymentCount,
     'pendingTransactionCount': pendingTransactionCount,
     'settingsIncluded': settingsIncluded,
@@ -95,6 +99,7 @@ class BackupMetadata {
     investmentCount: json['investmentCount'] as int? ?? 0,
     alertCount: json['alertCount'] as int? ?? 0,
     moneyRecordCount: json['moneyRecordCount'] as int? ?? 0,
+    moneyAdvanceCount: json['moneyAdvanceCount'] as int? ?? 0,
     moneyRepaymentCount: json['moneyRepaymentCount'] as int? ?? 0,
     pendingTransactionCount: json['pendingTransactionCount'] as int? ?? 0,
     settingsIncluded: json['settingsIncluded'] as bool? ?? false,
@@ -115,6 +120,7 @@ class BackupDataPayload {
   final List<Investment> investments;
   final List<AlertItem> alerts;
   final List<MoneyRecord> moneyRecords;
+  final List<MoneyAdvance> moneyAdvances;
   final List<MoneyRepayment> moneyRepayments;
   final List<ParsedTransaction> pendingTransactions;
   final AppSettings? appSettings;
@@ -134,6 +140,7 @@ class BackupDataPayload {
     this.investments = const [],
     this.alerts = const [],
     this.moneyRecords = const [],
+    this.moneyAdvances = const [],
     this.moneyRepayments = const [],
     this.pendingTransactions = const [],
     this.appSettings,
@@ -155,6 +162,7 @@ class BackupDataPayload {
     'investments': investments.map(_investmentToJson).toList(),
     'alerts': alerts.map((a) => a.toJson()).toList(),
     'moneyRecords': moneyRecords.map((r) => r.toJson()).toList(),
+    'moneyAdvances': moneyAdvances.map((a) => a.toJson()).toList(),
     'moneyRepayments': moneyRepayments.map((r) => r.toJson()).toList(),
     'pendingTransactions':
         pendingTransactions.map(_pendingTransactionToJson).toList(),
@@ -175,6 +183,40 @@ class BackupDataPayload {
         json['appSettings'] as Map<String, dynamic>,
       );
     }
+
+    final records =
+        (json['moneyRecords'] as List<dynamic>?)
+            ?.map((e) => MoneyRecord.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [];
+
+    final rawAdvances =
+        (json['moneyAdvances'] as List<dynamic>?)
+            ?.map((e) => MoneyAdvance.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        <MoneyAdvance>[];
+
+    // Backward compatibility: synthesize advances if missing
+    final advances =
+        rawAdvances.isNotEmpty
+            ? rawAdvances
+            : records.map((r) {
+              return MoneyAdvance(
+                id:
+                    r.originTransactionId != null
+                        ? 'adv_${r.originTransactionId}'
+                        : 'adv_${r.id}',
+                moneyRecordId: r.id,
+                userId: r.userId,
+                amount: r.originalAmount,
+                date: r.transactionDate,
+                dueDate: r.dueDate,
+                notes: r.notes,
+                transactionId: r.originTransactionId,
+                createdAt: r.createdAt,
+                updatedAt: r.updatedAt,
+              );
+            }).toList();
 
     return BackupDataPayload(
       metadata: meta,
@@ -233,11 +275,8 @@ class BackupDataPayload {
               ?.map((e) => AlertItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      moneyRecords:
-          (json['moneyRecords'] as List<dynamic>?)
-              ?.map((e) => MoneyRecord.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
+      moneyRecords: records,
+      moneyAdvances: advances,
       moneyRepayments:
           (json['moneyRepayments'] as List<dynamic>?)
               ?.map((e) => MoneyRepayment.fromJson(e as Map<String, dynamic>))

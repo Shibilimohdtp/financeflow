@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../../models/money_advance.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../services/money_lending_calculator.dart';
@@ -40,12 +41,19 @@ class LendingBorrowingScreen extends ConsumerWidget {
     final summary = ref.watch(moneyLendingSummaryProvider);
     final currentFilter = ref.watch(moneyRecordFilterProvider);
     final records = ref.watch(filteredMoneyRecordsProvider);
+    final allAdvances =
+        ref.watch(allMoneyAdvancesStreamProvider).value ?? const [];
     final allRepayments =
         ref.watch(allMoneyRepaymentsStreamProvider).value ?? const [];
 
     final repaymentsByRecord = <String, List<MoneyRepayment>>{};
     for (final r in allRepayments) {
       repaymentsByRecord.putIfAbsent(r.moneyRecordId, () => []).add(r);
+    }
+
+    final advancesByRecord = <String, List<MoneyAdvance>>{};
+    for (final a in allAdvances) {
+      advancesByRecord.putIfAbsent(a.moneyRecordId, () => []).add(a);
     }
 
     return Scaffold(
@@ -238,12 +246,14 @@ class LendingBorrowingScreen extends ConsumerWidget {
                 delegate: SliverChildBuilderDelegate((ctx, index) {
                   final record = records[index];
                   final reps = repaymentsByRecord[record.id] ?? const [];
+                  final advs = advancesByRecord[record.id] ?? const [];
                   return Padding(
                     padding: const EdgeInsets.only(
                       bottom: StillwaterTokens.spaceSm,
                     ),
                     child: _MoneyRecordCard(
                       record: record,
+                      advances: advs,
                       repayments: reps,
                       onTap: () => _openDetail(context, record),
                     ),
@@ -277,9 +287,8 @@ class _SummaryBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return FfCard(
-      variant: FfCardVariant.elevated,
+      variant: FfCardVariant.standard,
       padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,14 +298,14 @@ class _SummaryBox extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 14, color: color),
-                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  Icon(icon, color: color, size: 16),
+                  const SizedBox(width: StillwaterTokens.spaceXs),
                   Text(
                     title,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                      color: color,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -304,10 +313,10 @@ class _SummaryBox extends StatelessWidget {
               InkWell(
                 onTap: onAddTap,
                 borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusFull,
+                  StillwaterTokens.radiusSm,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(2.0),
+                  padding: const EdgeInsets.all(StillwaterTokens.space2Xs),
                   child: Icon(
                     Icons.add_circle_outline_rounded,
                     size: 18,
@@ -320,9 +329,8 @@ class _SummaryBox extends StatelessWidget {
           const SizedBox(height: StillwaterTokens.spaceSm),
           Text(
             CurrencyFormatter.format(amount),
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
-              color: color,
               fontFeatures: StillwaterTypography.tabularFeatures,
             ),
           ),
@@ -345,78 +353,82 @@ class _SummaryBox extends StatelessWidget {
 class _FilterChipItem extends StatelessWidget {
   final String label;
   final int? count;
-  final Color? color;
   final bool isSelected;
   final VoidCallback onTap;
+  final Color? color;
 
   const _FilterChipItem({
     required this.label,
     this.count,
-    this.color,
     required this.isSelected,
     required this.onTap,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final activeColor = color ?? theme.colorScheme.primary;
+    final activeColor = color ?? context.theme.colorScheme.primary;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceMd,
-          vertical: StillwaterTokens.spaceSm - 2,
-        ),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? activeColor.withValues(alpha: 0.15)
-                  : theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.5,
-                  ),
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
-          border: Border.all(
-            color:
-                isSelected
-                    ? activeColor
-                    : theme.dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : theme.colorScheme.onSurface,
+    return FilterChip(
+      selected: isSelected,
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          if (count != null && count! > 0) ...[
+            const SizedBox(width: StillwaterTokens.space2Xs),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.space2Xs,
+                vertical: 1,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    isSelected
+                        ? theme.colorScheme.onPrimary.withValues(alpha: 0.2)
+                        : activeColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(
+                  StillwaterTokens.radiusFull,
+                ),
+              ),
+              child: Text(
+                count.toString(),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? theme.colorScheme.onPrimary : activeColor,
+                ),
               ),
             ),
-            if (count != null && count! > 0) ...[
-              const SizedBox(width: StillwaterTokens.spaceXs),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: isSelected ? activeColor : theme.colorScheme.secondary,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
-                ),
-                child: Text(
-                  '$count',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
+      ),
+      onSelected: (_) => onTap(),
+      selectedColor: activeColor,
+      labelStyle: TextStyle(
+        color:
+            isSelected
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        fontSize: 12,
+      ),
+      backgroundColor: theme.colorScheme.surface,
+      side: BorderSide(
+        color:
+            isSelected
+                ? activeColor
+                : theme.dividerColor.withValues(alpha: 0.4),
+        width: 1,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceSm,
+        vertical: StillwaterTokens.space2Xs,
       ),
     );
   }
@@ -424,11 +436,13 @@ class _FilterChipItem extends StatelessWidget {
 
 class _MoneyRecordCard extends StatelessWidget {
   final MoneyRecord record;
+  final List<MoneyAdvance> advances;
   final List<MoneyRepayment> repayments;
   final VoidCallback onTap;
 
   const _MoneyRecordCard({
     required this.record,
+    this.advances = const [],
     required this.repayments,
     required this.onTap,
   });
@@ -439,16 +453,31 @@ class _MoneyRecordCard extends StatelessWidget {
     final isLent = record.type == MoneyRecordType.lent;
     final typeColor =
         isLent ? context.finColors.income : context.finColors.expense;
+    final totalAdvanced = record.calculateTotalAdvanced(advances);
     final totalRepaid = record.calculateTotalRepaid(repayments);
-    final remaining = record.calculateRemainingAmount(repayments);
-    final isSettled = record.isFullySettled(repayments);
-    final isOverdue = record.isOverdue(repayments: repayments);
-    final isDueSoon = record.isDueSoon(repayments: repayments);
-    final status = record.calculateStatus(repayments);
+    final remaining = record.calculateRemainingAmount(
+      repayments,
+      advances: advances,
+    );
+    final isSettled = record.isFullySettled(repayments, advances: advances);
+    final isOverdue = record.isOverdue(
+      repayments: repayments,
+      advances: advances,
+    );
+    final isDueSoon = record.isDueSoon(
+      repayments: repayments,
+      advances: advances,
+    );
+    final status = record.calculateStatus(repayments, advances: advances);
+    final effectiveDueDate = record.calculateEffectiveDueDate(
+      advances: advances,
+      repayments: repayments,
+    );
     final progress =
-        record.originalAmount > 0
-            ? (totalRepaid / record.originalAmount).clamp(0.0, 1.0)
+        totalAdvanced > 0
+            ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0)
             : 0.0;
+    final advanceCount = advances.isNotEmpty ? advances.length : 1;
 
     return FfCard(
       variant: FfCardVariant.standard,
@@ -457,7 +486,7 @@ class _MoneyRecordCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Person name, direction badge, remaining amount
+          // Row 1: Person name, direction badge, advance count, remaining amount
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -475,18 +504,47 @@ class _MoneyRecordCard extends StatelessWidget {
               ),
               const SizedBox(width: StillwaterTokens.spaceMd),
 
-              // Person name and direction subtitle
+              // Person name, direction subtitle, and advance count pill
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      record.personName,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            record.personName,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (advanceCount > 1) ...[
+                          const SizedBox(width: StillwaterTokens.spaceXs),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(
+                                StillwaterTokens.radiusSm,
+                              ),
+                            ),
+                            child: Text(
+                              '$advanceCount advances',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -510,7 +568,7 @@ class _MoneyRecordCard extends StatelessWidget {
                 ),
               ),
 
-              // Balance & original amount
+              // Balance & total advanced amount
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -522,9 +580,9 @@ class _MoneyRecordCard extends StatelessWidget {
                       fontFeatures: StillwaterTypography.tabularFeatures,
                     ),
                   ),
-                  if (totalRepaid > 0.001)
+                  if (totalRepaid > 0.001 || totalAdvanced > remaining)
                     Text(
-                      'Orig: ${CurrencyFormatter.format(record.originalAmount)}',
+                      'Total: ${CurrencyFormatter.format(totalAdvanced)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.secondary,
                         fontSize: 11,
@@ -580,8 +638,8 @@ class _MoneyRecordCard extends StatelessWidget {
                     isSettled
                         ? 'Settled'
                         : (isOverdue
-                            ? 'Overdue (${DateFormatter.formatShortDate(record.dueDate)})'
-                            : 'Due ${DateFormatter.formatShortDate(record.dueDate)}'),
+                            ? 'Overdue (${DateFormatter.formatShortDate(effectiveDueDate)})'
+                            : 'Due ${DateFormatter.formatShortDate(effectiveDueDate)}'),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color:
                           isOverdue
@@ -598,43 +656,29 @@ class _MoneyRecordCard extends StatelessWidget {
                 ],
               ),
 
-              // Status Pill
+              // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: StillwaterTokens.spaceSm,
-                  vertical: 2,
+                  vertical: StillwaterTokens.space2Xs,
                 ),
                 decoration: BoxDecoration(
                   color: status.color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
+                    StillwaterTokens.radiusFull,
                   ),
                 ),
                 child: Text(
                   status.displayName,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: status.color,
                     fontWeight: FontWeight.w700,
-                    fontSize: 10,
+                    fontSize: 11,
                   ),
                 ),
               ),
             ],
           ),
-
-          // Row 4: Optional Notes Preview
-          if (record.notes != null && record.notes!.isNotEmpty) ...[
-            const SizedBox(height: StillwaterTokens.spaceXs),
-            Text(
-              record.notes!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.secondary,
-                fontStyle: FontStyle.italic,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ],
       ),
     );

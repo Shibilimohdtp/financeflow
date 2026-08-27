@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_screen.dart';
+import 'package:financeflow/features/dashboard/widgets/total_balance_hero.dart';
+import 'package:financeflow/features/dashboard/widgets/cash_flow_card.dart';
 import 'package:financeflow/features/dashboard/insights_controller.dart';
 import 'package:financeflow/features/ingestion/needs_review_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
@@ -18,6 +20,95 @@ import 'package:financeflow/services/balance_calculator.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
 void main() {
+  testWidgets('Compact balance card preserves account and privacy controls', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    var hidden = false;
+    var accountTaps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: StillwaterTheme.deepWater,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder:
+                (context, setState) => TotalBalanceHero(
+                  totalBalance: 48500,
+                  activeAccountsCount: 3,
+                  isPrivacyBlur: hidden,
+                  onToggleBlur: () => setState(() => hidden = !hidden),
+                  onManageAccounts: () => accountTaps++,
+                ),
+          ),
+        ),
+      ),
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('total-balance-card'))).height,
+      lessThan(140),
+    );
+    final accounts = find.byKey(const ValueKey('balance-accounts'));
+    final privacy = find.byKey(const ValueKey('balance-privacy'));
+    expect(tester.getSize(accounts).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(privacy).height, greaterThanOrEqualTo(48));
+    await tester.tap(accounts);
+    expect(accountTaps, 1);
+    expect(find.text('₹48,500'), findsOneWidget);
+    await tester.tap(privacy);
+    await tester.pump();
+    expect(find.text('₹48,500'), findsNothing);
+    expect(find.text('₹ ••••••'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('balance-amount'))).label,
+      'Total balance hidden for privacy',
+    );
+    await tester.tap(privacy);
+    await tester.pump();
+    expect(find.text('₹48,500'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets(
+    'Compact balance supports large negative amounts and enlarged text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      for (final theme in [
+        StillwaterTheme.daylight,
+        StillwaterTheme.deepWater,
+      ]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+              child: Scaffold(
+                body: TotalBalanceHero(
+                  totalBalance: -12345678.90,
+                  activeAccountsCount: 1,
+                  isPrivacyBlur: false,
+                  onToggleBlur: () {},
+                  onManageAccounts: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('− ₹1,23,45,678.90'), findsOneWidget);
+        expect(find.text('1 account'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
   final now = DateTime.now();
 
   final testAccount = Account(
@@ -500,7 +591,7 @@ void main() {
   );
 
   testWidgets(
-    'DashboardScreen renders period comparison trend badge when comparison data exists',
+    'DashboardScreen places spending comparison in Cash Flow instead of balance',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -554,8 +645,18 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // -20.0% spend trend badge should be displayed
-      expect(find.text('20.0% spend'), findsOneWidget);
+      final comparison = find.text('Spending down 20.0% vs previous period');
+      expect(
+        find.descendant(of: find.byType(CashFlowCard), matching: comparison),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(TotalBalanceHero),
+          matching: comparison,
+        ),
+        findsNothing,
+      );
     },
   );
 }

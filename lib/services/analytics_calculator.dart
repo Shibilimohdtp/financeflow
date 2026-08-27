@@ -695,29 +695,31 @@ class AnalyticsCalculator {
         );
       }
     } else {
-      // Custom: daily points
-      final totalDays = end.difference(start).inDays + 1;
-      final step = max(1, (totalDays / 15).floor());
-      for (int i = 0; i < totalDays; i += step) {
-        final d = start.add(Duration(days: i));
-        double dExp = 0.0;
-        double dInc = 0.0;
-
-        for (final tx in transactions) {
-          if (tx.date.year == d.year &&
-              tx.date.month == d.month &&
-              tx.date.day == d.day) {
-            dExp += tx.consumptionExpenseAmount;
-            dInc += tx.earnedIncomeAmount;
-          }
-        }
+      // Keep every day. Sampling dates discarded transactions on skipped days;
+      // the presentation layer may aggregate these complete daily totals.
+      final totals = <DateTime, ({double expense, double income})>{};
+      for (final tx in transactions) {
+        final day = DateTime.utc(tx.date.year, tx.date.month, tx.date.day);
+        final previous = totals[day] ?? (expense: 0.0, income: 0.0);
+        totals[day] = (
+          expense: previous.expense + tx.consumptionExpenseAmount,
+          income: previous.income + tx.earnedIncomeAmount,
+        );
+      }
+      final firstDay = DateTime.utc(start.year, start.month, start.day);
+      final lastDay = DateTime.utc(end.year, end.month, end.day);
+      final totalDays = lastDay.difference(firstDay).inDays + 1;
+      for (int i = 0; i < totalDays; i++) {
+        final day = firstDay.add(Duration(days: i));
+        final d = DateTime(day.year, day.month, day.day);
+        final values = totals[day];
 
         points.add(
           TimeSeriesPoint(
             date: d,
             label: '${d.day}/${d.month}',
-            expense: dExp,
-            income: dInc,
+            expense: values?.expense ?? 0,
+            income: values?.income ?? 0,
           ),
         );
       }

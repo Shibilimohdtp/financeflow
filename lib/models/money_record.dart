@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/errors/app_error.dart';
 import '../theme/stillwater_colors.dart';
+import 'money_advance.dart';
 import 'money_repayment.dart';
 
 enum MoneyRecordType {
@@ -114,11 +115,27 @@ enum MoneyRecordStatus {
   }
 }
 
+/// Represents the repayment status of an individual advance event.
+class AdvanceAllocation {
+  final MoneyAdvance advance;
+  final double allocatedRepaid;
+  final double remainingAmount;
+  final bool isFullyPaid;
+
+  const AdvanceAllocation({
+    required this.advance,
+    required this.allocatedRepaid,
+    required this.remainingAmount,
+    required this.isFullyPaid,
+  });
+}
+
 class MoneyRecord {
   final String id;
   final String userId;
   final MoneyRecordType type;
   final String personName;
+  final String normalizedPersonName;
   final double originalAmount;
   final DateTime transactionDate;
   final DateTime dueDate;
@@ -129,12 +146,14 @@ class MoneyRecord {
   final DateTime updatedAt;
   final DateTime? settledAt;
   final String? originTransactionId;
+  final bool isCustomSeparateObligation;
 
-  const MoneyRecord({
+  MoneyRecord({
     required this.id,
     this.userId = 'local_user',
     required this.type,
     required this.personName,
+    String? normalizedPersonName,
     required this.originalAmount,
     required this.transactionDate,
     required this.dueDate,
@@ -145,13 +164,28 @@ class MoneyRecord {
     required this.updatedAt,
     this.settledAt,
     this.originTransactionId,
-  });
+    this.isCustomSeparateObligation = false,
+  }) : normalizedPersonName =
+           normalizedPersonName ??
+           (personName.isEmpty ? '' : _normalize(personName));
+
+  static String _normalize(String input) {
+    return input
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  static String normalizePersonName(String input) => _normalize(input);
 
   MoneyRecord copyWith({
     String? id,
     String? userId,
     MoneyRecordType? type,
     String? personName,
+    String? normalizedPersonName,
     double? originalAmount,
     DateTime? transactionDate,
     DateTime? dueDate,
@@ -162,18 +196,26 @@ class MoneyRecord {
     DateTime? updatedAt,
     DateTime? settledAt,
     String? originTransactionId,
+    bool? isCustomSeparateObligation,
     bool clearSettledAt = false,
     bool clearOriginTransactionId = false,
+    bool clearNotes = false,
   }) {
+    final newPersonName = personName ?? this.personName;
     return MoneyRecord(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       type: type ?? this.type,
-      personName: personName ?? this.personName,
+      personName: newPersonName,
+      normalizedPersonName:
+          normalizedPersonName ??
+          (personName != null
+              ? _normalize(newPersonName)
+              : this.normalizedPersonName),
       originalAmount: originalAmount ?? this.originalAmount,
       transactionDate: transactionDate ?? this.transactionDate,
       dueDate: dueDate ?? this.dueDate,
-      notes: notes ?? this.notes,
+      notes: clearNotes ? null : (notes ?? this.notes),
       isReminderEnabled: isReminderEnabled ?? this.isReminderEnabled,
       reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
       createdAt: createdAt ?? this.createdAt,
@@ -183,6 +225,8 @@ class MoneyRecord {
           clearOriginTransactionId
               ? null
               : originTransactionId ?? this.originTransactionId,
+      isCustomSeparateObligation:
+          isCustomSeparateObligation ?? this.isCustomSeparateObligation,
     );
   }
 
@@ -215,27 +259,122 @@ class MoneyRecord {
     }
   }
 
+  double calculateTotalAdvanced(List<MoneyAdvance>? advances) {
+    if (advances == null || advances.isEmpty) {
+      return originalAmount;
+    }
+    return advances
+        .where((a) => a.moneyRecordId == id)
+        .fold<double>(0.0, (sum, a) => sum + a.amount);
+  }
+
   double calculateTotalRepaid(List<MoneyRepayment> repayments) {
     return repayments
         .where((r) => r.moneyRecordId == id)
         .fold<double>(0.0, (sum, r) => sum + r.amount);
   }
 
-  double calculateRemainingAmount(List<MoneyRepayment> repayments) {
+  double calculateRemainingAmount(
+    List<MoneyRepayment> repayments, {
+    List<MoneyAdvance>? advances,
+  }) {
+    final totalAdv = calculateTotalAdvanced(advances);
     final repaid = calculateTotalRepaid(repayments);
-    final remaining = originalAmount - repaid;
+    final remaining = totalAdv - repaid;
     return remaining > 0.001 ? remaining : 0.0;
   }
 
-  bool isFullySettled(List<MoneyRepayment> repayments) {
+  bool isFullySettled(
+    List<MoneyRepayment> repayments, {
+    List<MoneyAdvance>? advances,
+  }) {
     if (settledAt != null) return true;
-    return calculateRemainingAmount(repayments) <= 0.001;
+    return calculateRemainingAmount(repayments, advances: advances) <= 0.001;
   }
 
-  bool isOverdue({DateTime? asOfDate, List<MoneyRepayment>? repayments}) {
-    if (repayments != null && isFullySettled(repayments)) return false;
+  /// Allocates repayments to advances on a First-In-First-Out (FIFO) basis.
+  List<AdvanceAllocation> calculateAllocatedAdvances({
+    required List<MoneyAdvance> advances,
+    required List<MoneyRepayment> repayments,
+  }) {
+    final recordAdvances =
+        advances.where((a) => a.moneyRecordId == id).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+
+    var repaymentPool = calculateTotalRepaid(repayments);
+    final allocations = <AdvanceAllocation>[];
+
+    for (final adv in recordAdvances) {
+      final allocated =
+          repaymentPool >= adv.amount ? adv.amount : repaymentPool;
+      repaymentPool = (repaymentPool - allocated).clamp(0.0, double.infinity);
+      final remaining = (adv.amount - allocated).clamp(0.0, double.infinity);
+      final isPaid = remaining <= 0.001;
+
+      allocations.add(
+        AdvanceAllocation(
+          advance: adv,
+          allocatedRepaid: allocated,
+          remainingAmount: isPaid ? 0.0 : remaining,
+          isFullyPaid: isPaid,
+        ),
+      );
+    }
+
+    return allocations;
+  }
+
+  /// Computes the effective due date based on the earliest unpaid advance,
+  /// falling back to the record's primary dueDate if no unpaid advances exist.
+  DateTime calculateEffectiveDueDate({
+    List<MoneyAdvance>? advances,
+    required List<MoneyRepayment> repayments,
+  }) {
+    if (advances == null || advances.isEmpty) return dueDate;
+
+    final allocations = calculateAllocatedAdvances(
+      advances: advances,
+      repayments: repayments,
+    );
+    final unpaidAllocations = allocations.where((a) => !a.isFullyPaid).toList();
+    if (unpaidAllocations.isEmpty) {
+      return dueDate;
+    }
+
+    // Earliest due date among unpaid advances
+    unpaidAllocations.sort(
+      (a, b) => a.advance.dueDate.compareTo(b.advance.dueDate),
+    );
+    return unpaidAllocations.first.advance.dueDate;
+  }
+
+  bool isOverdue({
+    DateTime? asOfDate,
+    List<MoneyRepayment>? repayments,
+    List<MoneyAdvance>? advances,
+  }) {
+    if (repayments != null && isFullySettled(repayments, advances: advances)) {
+      return false;
+    }
     final now = asOfDate ?? DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+
+    if (advances != null && advances.isNotEmpty && repayments != null) {
+      final allocations = calculateAllocatedAdvances(
+        advances: advances,
+        repayments: repayments,
+      );
+      final unpaid = allocations.where((a) => !a.isFullyPaid);
+      return unpaid.any((a) {
+        final dueDay = DateTime(
+          a.advance.dueDate.year,
+          a.advance.dueDate.month,
+          a.advance.dueDate.day,
+        );
+        return dueDay.isBefore(today);
+      });
+    }
+
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
     return dueDay.isBefore(today);
   }
@@ -244,10 +383,31 @@ class MoneyRecord {
     DateTime? asOfDate,
     int thresholdDays = 7,
     List<MoneyRepayment>? repayments,
+    List<MoneyAdvance>? advances,
   }) {
-    if (repayments != null && isFullySettled(repayments)) return false;
+    if (repayments != null && isFullySettled(repayments, advances: advances)) {
+      return false;
+    }
     final now = asOfDate ?? DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+
+    if (advances != null && advances.isNotEmpty && repayments != null) {
+      final allocations = calculateAllocatedAdvances(
+        advances: advances,
+        repayments: repayments,
+      );
+      final unpaid = allocations.where((a) => !a.isFullyPaid);
+      return unpaid.any((a) {
+        final dueDay = DateTime(
+          a.advance.dueDate.year,
+          a.advance.dueDate.month,
+          a.advance.dueDate.day,
+        );
+        final difference = dueDay.difference(today).inDays;
+        return difference >= 0 && difference <= thresholdDays;
+      });
+    }
+
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
     final difference = dueDay.difference(today).inDays;
     return difference >= 0 && difference <= thresholdDays;
@@ -255,19 +415,25 @@ class MoneyRecord {
 
   MoneyRecordStatus calculateStatus(
     List<MoneyRepayment> repayments, {
+    List<MoneyAdvance>? advances,
     DateTime? asOfDate,
     int dueSoonThresholdDays = 7,
   }) {
-    if (isFullySettled(repayments)) {
+    if (isFullySettled(repayments, advances: advances)) {
       return MoneyRecordStatus.settled;
     }
 
     final repaid = calculateTotalRepaid(repayments);
-    final isOver = isOverdue(asOfDate: asOfDate, repayments: repayments);
+    final isOver = isOverdue(
+      asOfDate: asOfDate,
+      repayments: repayments,
+      advances: advances,
+    );
     final isSoon = isDueSoon(
       asOfDate: asOfDate,
       thresholdDays: dueSoonThresholdDays,
       repayments: repayments,
+      advances: advances,
     );
 
     if (isOver) {
@@ -290,6 +456,7 @@ class MoneyRecord {
     'userId': userId,
     'type': type.toDbString(),
     'personName': personName,
+    'normalizedPersonName': normalizedPersonName,
     'originalAmount': originalAmount,
     'transactionDate': transactionDate.toIso8601String(),
     'dueDate': dueDate.toIso8601String(),
@@ -300,25 +467,33 @@ class MoneyRecord {
     'updatedAt': updatedAt.toIso8601String(),
     'settledAt': settledAt?.toIso8601String(),
     'originTransactionId': originTransactionId,
+    'isCustomSeparateObligation': isCustomSeparateObligation,
   };
 
-  factory MoneyRecord.fromJson(Map<String, dynamic> json) => MoneyRecord(
-    id: json['id'] as String,
-    userId: json['userId'] as String? ?? 'local_user',
-    type: MoneyRecordType.fromString(json['type'] as String? ?? 'lent'),
-    personName: json['personName'] as String,
-    originalAmount: (json['originalAmount'] as num).toDouble(),
-    transactionDate: DateTime.parse(json['transactionDate'] as String),
-    dueDate: DateTime.parse(json['dueDate'] as String),
-    notes: json['notes'] as String?,
-    isReminderEnabled: json['isReminderEnabled'] as bool? ?? true,
-    reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 1,
-    createdAt: DateTime.parse(json['createdAt'] as String),
-    updatedAt: DateTime.parse(json['updatedAt'] as String),
-    settledAt:
-        json['settledAt'] != null
-            ? DateTime.parse(json['settledAt'] as String)
-            : null,
-    originTransactionId: json['originTransactionId'] as String?,
-  );
+  factory MoneyRecord.fromJson(Map<String, dynamic> json) {
+    final person = json['personName'] as String;
+    return MoneyRecord(
+      id: json['id'] as String,
+      userId: json['userId'] as String? ?? 'local_user',
+      type: MoneyRecordType.fromString(json['type'] as String? ?? 'lent'),
+      personName: person,
+      normalizedPersonName:
+          json['normalizedPersonName'] as String? ?? _normalize(person),
+      originalAmount: (json['originalAmount'] as num).toDouble(),
+      transactionDate: DateTime.parse(json['transactionDate'] as String),
+      dueDate: DateTime.parse(json['dueDate'] as String),
+      notes: json['notes'] as String?,
+      isReminderEnabled: json['isReminderEnabled'] as bool? ?? true,
+      reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 1,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      settledAt:
+          json['settledAt'] != null
+              ? DateTime.parse(json['settledAt'] as String)
+              : null,
+      originTransactionId: json['originTransactionId'] as String?,
+      isCustomSeparateObligation:
+          json['isCustomSeparateObligation'] as bool? ?? false,
+    );
+  }
 }

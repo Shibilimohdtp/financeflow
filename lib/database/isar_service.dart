@@ -13,6 +13,7 @@ import 'schemas/goal_contribution_entity.dart';
 import 'schemas/investment_entity.dart';
 import 'schemas/loan_entity.dart';
 import 'schemas/emi_payment_entity.dart';
+import 'schemas/money_advance_entity.dart';
 import 'schemas/money_record_entity.dart';
 import 'schemas/money_repayment_entity.dart';
 import 'schemas/pending_transaction_entity.dart';
@@ -42,6 +43,7 @@ class IsarService {
     EmiPaymentEntitySchema,
     InvestmentEntitySchema,
     MoneyRecordEntitySchema,
+    MoneyAdvanceEntitySchema,
     MoneyRepaymentEntitySchema,
     AlertEntitySchema,
     AiActivityLogEntitySchema,
@@ -177,6 +179,7 @@ class IsarService {
       await isar.emiPaymentEntitys.clear();
       await isar.investmentEntitys.clear();
       await isar.moneyRecordEntitys.clear();
+      await isar.moneyAdvanceEntitys.clear();
       await isar.moneyRepaymentEntitys.clear();
       await isar.alertEntitys.clear();
       await isar.aiActivityLogEntitys.clear();

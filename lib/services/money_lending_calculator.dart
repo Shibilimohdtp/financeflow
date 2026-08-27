@@ -1,3 +1,4 @@
+import '../models/money_advance.dart';
 import '../models/money_record.dart';
 import '../models/money_repayment.dart';
 
@@ -84,6 +85,7 @@ class MoneyLendingCalculator {
   static MoneyLendingSummary calculateSummary(
     List<MoneyRecord> records,
     List<MoneyRepayment> repayments, {
+    List<MoneyAdvance> advances = const [],
     DateTime? asOfDate,
     int dueSoonDays = 7,
   }) {
@@ -107,22 +109,37 @@ class MoneyLendingCalculator {
       repaymentsByRecord.putIfAbsent(r.moneyRecordId, () => []).add(r);
     }
 
+    final advancesByRecord = <String, List<MoneyAdvance>>{};
+    for (final a in advances) {
+      advancesByRecord.putIfAbsent(a.moneyRecordId, () => []).add(a);
+    }
+
     for (final record in records) {
       final recordRepayments = repaymentsByRecord[record.id] ?? const [];
-      final remaining = record.calculateRemainingAmount(recordRepayments);
-      final isSettled = record.isFullySettled(recordRepayments);
+      final recordAdvances = advancesByRecord[record.id] ?? const [];
+      final totalAdvanced = record.calculateTotalAdvanced(recordAdvances);
+      final remaining = record.calculateRemainingAmount(
+        recordRepayments,
+        advances: recordAdvances,
+      );
+      final isSettled = record.isFullySettled(
+        recordRepayments,
+        advances: recordAdvances,
+      );
       final isOverdue = record.isOverdue(
         asOfDate: asOfDate,
         repayments: recordRepayments,
+        advances: recordAdvances,
       );
       final isDueSoon = record.isDueSoon(
         asOfDate: asOfDate,
         thresholdDays: dueSoonDays,
         repayments: recordRepayments,
+        advances: recordAdvances,
       );
 
       if (record.type == MoneyRecordType.lent) {
-        totalLent += record.originalAmount;
+        totalLent += totalAdvanced;
         if (!isSettled) {
           totalOwedToMe += remaining;
           activeLentCount++;
@@ -138,7 +155,7 @@ class MoneyLendingCalculator {
           settledCount++;
         }
       } else {
-        totalBorrowed += record.originalAmount;
+        totalBorrowed += totalAdvanced;
         if (!isSettled) {
           totalIOwe += remaining;
           activeBorrowedCount++;
@@ -182,6 +199,7 @@ class MoneyLendingCalculator {
   static List<MoneyRecord> sortRecords(
     List<MoneyRecord> records,
     List<MoneyRepayment> repayments, {
+    List<MoneyAdvance> advances = const [],
     DateTime? asOfDate,
     int dueSoonDays = 7,
   }) {
@@ -190,13 +208,20 @@ class MoneyLendingCalculator {
       repaymentsByRecord.putIfAbsent(r.moneyRecordId, () => []).add(r);
     }
 
+    final advancesByRecord = <String, List<MoneyAdvance>>{};
+    for (final a in advances) {
+      advancesByRecord.putIfAbsent(a.moneyRecordId, () => []).add(a);
+    }
+
     final list = List<MoneyRecord>.from(records);
     list.sort((a, b) {
       final aReps = repaymentsByRecord[a.id] ?? const [];
       final bReps = repaymentsByRecord[b.id] ?? const [];
+      final aAdvs = advancesByRecord[a.id] ?? const [];
+      final bAdvs = advancesByRecord[b.id] ?? const [];
 
-      final aSettled = a.isFullySettled(aReps);
-      final bSettled = b.isFullySettled(bReps);
+      final aSettled = a.isFullySettled(aReps, advances: aAdvs);
+      final bSettled = b.isFullySettled(bReps, advances: bAdvs);
 
       // Settled items go last
       if (aSettled && !bSettled) return 1;
@@ -207,15 +232,31 @@ class MoneyLendingCalculator {
         return bDate.compareTo(aDate);
       }
 
-      final aOverdue = a.isOverdue(asOfDate: asOfDate, repayments: aReps);
-      final bOverdue = b.isOverdue(asOfDate: asOfDate, repayments: bReps);
+      final aOverdue = a.isOverdue(
+        asOfDate: asOfDate,
+        repayments: aReps,
+        advances: aAdvs,
+      );
+      final bOverdue = b.isOverdue(
+        asOfDate: asOfDate,
+        repayments: bReps,
+        advances: bAdvs,
+      );
 
       // Overdue items go first
       if (aOverdue && !bOverdue) return -1;
       if (!aOverdue && bOverdue) return 1;
 
-      // Nearest due date first
-      return a.dueDate.compareTo(b.dueDate);
+      // Effective due date comparison
+      final aDue = a.calculateEffectiveDueDate(
+        advances: aAdvs,
+        repayments: aReps,
+      );
+      final bDue = b.calculateEffectiveDueDate(
+        advances: bAdvs,
+        repayments: bReps,
+      );
+      return aDue.compareTo(bDue);
     });
 
     return list;
@@ -226,6 +267,7 @@ class MoneyLendingCalculator {
     List<MoneyRecord> records,
     List<MoneyRepayment> repayments,
     MoneyRecordFilter filter, {
+    List<MoneyAdvance> advances = const [],
     DateTime? asOfDate,
     int dueSoonDays = 7,
   }) {
@@ -234,11 +276,17 @@ class MoneyLendingCalculator {
       repaymentsByRecord.putIfAbsent(r.moneyRecordId, () => []).add(r);
     }
 
+    final advancesByRecord = <String, List<MoneyAdvance>>{};
+    for (final a in advances) {
+      advancesByRecord.putIfAbsent(a.moneyRecordId, () => []).add(a);
+    }
+
     switch (filter) {
       case MoneyRecordFilter.all:
         return sortRecords(
           records,
           repayments,
+          advances: advances,
           asOfDate: asOfDate,
           dueSoonDays: dueSoonDays,
         );
@@ -249,6 +297,7 @@ class MoneyLendingCalculator {
         return sortRecords(
           filtered,
           repayments,
+          advances: advances,
           asOfDate: asOfDate,
           dueSoonDays: dueSoonDays,
         );
@@ -259,6 +308,7 @@ class MoneyLendingCalculator {
         return sortRecords(
           filtered,
           repayments,
+          advances: advances,
           asOfDate: asOfDate,
           dueSoonDays: dueSoonDays,
         );
@@ -267,12 +317,18 @@ class MoneyLendingCalculator {
         final filtered =
             records.where((r) {
               final reps = repaymentsByRecord[r.id] ?? const [];
-              return !r.isFullySettled(reps) &&
-                  r.isOverdue(asOfDate: asOfDate, repayments: reps);
+              final advs = advancesByRecord[r.id] ?? const [];
+              return !r.isFullySettled(reps, advances: advs) &&
+                  r.isOverdue(
+                    asOfDate: asOfDate,
+                    repayments: reps,
+                    advances: advs,
+                  );
             }).toList();
         return sortRecords(
           filtered,
           repayments,
+          advances: advances,
           asOfDate: asOfDate,
           dueSoonDays: dueSoonDays,
         );
@@ -281,17 +337,24 @@ class MoneyLendingCalculator {
         final filtered =
             records.where((r) {
               final reps = repaymentsByRecord[r.id] ?? const [];
-              return !r.isFullySettled(reps) &&
-                  !r.isOverdue(asOfDate: asOfDate, repayments: reps) &&
+              final advs = advancesByRecord[r.id] ?? const [];
+              return !r.isFullySettled(reps, advances: advs) &&
+                  !r.isOverdue(
+                    asOfDate: asOfDate,
+                    repayments: reps,
+                    advances: advs,
+                  ) &&
                   r.isDueSoon(
                     asOfDate: asOfDate,
                     thresholdDays: dueSoonDays,
                     repayments: reps,
+                    advances: advs,
                   );
             }).toList();
         return sortRecords(
           filtered,
           repayments,
+          advances: advances,
           asOfDate: asOfDate,
           dueSoonDays: dueSoonDays,
         );
@@ -300,11 +363,13 @@ class MoneyLendingCalculator {
         final filtered =
             records.where((r) {
               final reps = repaymentsByRecord[r.id] ?? const [];
-              return r.isFullySettled(reps);
+              final advs = advancesByRecord[r.id] ?? const [];
+              return r.isFullySettled(reps, advances: advs);
             }).toList();
         return sortRecords(
           filtered,
           repayments,
+          advances: advances,
           asOfDate: asOfDate,
           dueSoonDays: dueSoonDays,
         );

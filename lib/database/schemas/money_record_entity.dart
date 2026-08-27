@@ -18,6 +18,9 @@ class MoneyRecordEntity {
   @Index()
   late String personName;
 
+  @Index()
+  String? normalizedPersonName;
+
   late double originalAmount;
 
   @Index()
@@ -44,4 +47,7 @@ class MoneyRecordEntity {
 
   @Index()
   String? originTransactionId;
+
+  @Index()
+  bool isCustomSeparateObligation = false;
 }

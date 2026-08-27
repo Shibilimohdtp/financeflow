@@ -224,6 +224,7 @@ void main() {
         tester.getBottomRight(find.text('Save Changes')).dy,
         lessThan(390),
       );
+      tester.view.resetViewInsets();
       pending.failSaving = true;
       await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();

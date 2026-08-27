@@ -10,12 +10,13 @@ import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/loan.dart';
 import '../../models/investment.dart';
+import '../../models/money_advance.dart';
 import '../../models/money_record.dart';
+import '../../models/money_repayment.dart';
 import '../../models/transaction.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../services/categorization_service.dart';
-import '../../services/financial_operation_service.dart';
 import '../../services/merchant_normalization_service.dart';
 import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
@@ -78,6 +79,8 @@ class _AddEditTransactionSheetState
   MoneyRecord? _selectedMoneyRecord;
   Investment? _selectedInvestment;
   DateTime _selectedDate = DateTime.now();
+  DateTime? _debtDueDate;
+  bool _createAsSeparateDebt = false;
   String _selectedPaymentMethod = 'UPI';
 
   bool _moreDetailsOpen = false;
@@ -560,6 +563,76 @@ class _AddEditTransactionSheetState
         TransactionPurpose.lending,
         TransactionPurpose.borrowing,
       }.contains(_selectedPurpose);
+
+      String? debtRecordId;
+      MoneyRecord? debtDetails;
+      if (createsDebt) {
+        final counterparty = _counterpartyController.text.trim();
+        final normalizedCounterparty = MoneyRecord.normalizePersonName(
+          counterparty.isNotEmpty ? counterparty : merchant,
+        );
+        final debtType =
+            _selectedPurpose == TransactionPurpose.lending
+                ? MoneyRecordType.lent
+                : MoneyRecordType.borrowed;
+        final allDebts =
+            ref.read(allMoneyRecordsStreamProvider).valueOrNull ??
+            const <MoneyRecord>[];
+        final matchingDebt =
+            allDebts
+                .where(
+                  (d) =>
+                      d.type == debtType &&
+                      d.settledAt == null &&
+                      !d.isCustomSeparateObligation &&
+                      d.normalizedPersonName == normalizedCounterparty,
+                )
+                .firstOrNull;
+
+        if (_createAsSeparateDebt) {
+          debtRecordId =
+              widget.initialTransaction?.linkedMoneyRecordId ?? 'debt_$txId';
+          debtDetails = MoneyRecord(
+            id: debtRecordId,
+            type: debtType,
+            personName: counterparty.isNotEmpty ? counterparty : merchant,
+            originalAmount: amount,
+            transactionDate: _selectedDate,
+            dueDate:
+                _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
+            notes:
+                _notesController.text.trim().isEmpty
+                    ? null
+                    : _notesController.text.trim(),
+            createdAt: now,
+            updatedAt: now,
+            isCustomSeparateObligation: true,
+            originTransactionId: txId,
+          );
+        } else {
+          debtRecordId =
+              _selectedMoneyRecord?.id ??
+              matchingDebt?.id ??
+              widget.initialTransaction?.linkedMoneyRecordId;
+          debtDetails = MoneyRecord(
+            id: debtRecordId ?? 'debt_$txId',
+            type: debtType,
+            personName: counterparty.isNotEmpty ? counterparty : merchant,
+            originalAmount: amount,
+            transactionDate: _selectedDate,
+            dueDate:
+                _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
+            notes:
+                _notesController.text.trim().isEmpty
+                    ? null
+                    : _notesController.text.trim(),
+            createdAt: now,
+            updatedAt: now,
+            originTransactionId: txId,
+          );
+        }
+      }
+
       final tx = Transaction(
         id: txId,
         amount: amount,
@@ -592,10 +665,7 @@ class _AddEditTransactionSheetState
                 ? _selectedLoan?.id
                 : null,
         linkedMoneyRecordId:
-            createsDebt
-                ? (widget.initialTransaction?.linkedMoneyRecordId ??
-                    'debt_$txId')
-                : _selectedMoneyRecord?.id,
+            createsDebt ? debtRecordId : _selectedMoneyRecord?.id,
         linkedInvestmentId:
             <TransactionPurpose>{
                   TransactionPurpose.investmentPurchase,
@@ -638,13 +708,13 @@ class _AddEditTransactionSheetState
             widget.initialTransaction?.categorizationConfidence,
       );
 
-      FinancialOperationService.validateDraft(tx);
+      tx.validate();
       if (widget.onSave != null) {
         await widget.onSave!(tx);
       } else {
         await ref
             .read(transactionsControllerProvider.notifier)
-            .saveTransaction(tx);
+            .saveTransaction(tx, moneyRecordDetails: debtDetails);
       }
 
       if (_selectedCategory != null && _needsCategory) {
@@ -1280,9 +1350,242 @@ class _AddEditTransactionSheetState
       );
     }
 
-    if (_needsCounterparty ||
-        _selectedPurpose == TransactionPurpose.lending ||
+    if (_selectedPurpose == TransactionPurpose.lending ||
         _selectedPurpose == TransactionPurpose.borrowing) {
+      final theme = Theme.of(context);
+      final records =
+          ref.watch(allMoneyRecordsStreamProvider).valueOrNull ??
+          const <MoneyRecord>[];
+      final repayments =
+          ref.watch(allMoneyRepaymentsStreamProvider).valueOrNull ??
+          const <MoneyRepayment>[];
+      final advances =
+          ref.watch(allMoneyAdvancesStreamProvider).valueOrNull ??
+          const <MoneyAdvance>[];
+
+      final expectedType =
+          _selectedPurpose == TransactionPurpose.lending
+              ? MoneyRecordType.lent
+              : MoneyRecordType.borrowed;
+
+      final eligible =
+          records
+              .where(
+                (record) =>
+                    record.type == expectedType &&
+                    record.settledAt == null &&
+                    !record.isCustomSeparateObligation,
+              )
+              .toList();
+
+      final typedName = _counterpartyController.text.trim();
+      final normalizedTyped = MoneyRecord.normalizePersonName(typedName);
+      final matchingRecord =
+          _selectedMoneyRecord ??
+          eligible
+              .where((r) => r.normalizedPersonName == normalizedTyped)
+              .firstOrNull;
+
+      final currentAmount =
+          CurrencyFormatter.parse(_amountController.text) ?? 0.0;
+      final existingRemaining =
+          matchingRecord?.calculateRemainingAmount(
+            repayments,
+            advances: advances,
+          ) ??
+          0.0;
+      final newTotal = existingRemaining + currentAmount;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Autocomplete<String>(
+            initialValue: TextEditingValue(text: _counterpartyController.text),
+            optionsBuilder: (TextEditingValue value) {
+              if (value.text.trim().isEmpty) {
+                return eligible.map((r) => r.personName);
+              }
+              final query = MoneyRecord.normalizePersonName(value.text);
+              return eligible
+                  .where((r) => r.normalizedPersonName.contains(query))
+                  .map((r) => r.personName);
+            },
+            onSelected: (String selection) {
+              _counterpartyController.text = selection;
+              final found =
+                  eligible
+                      .where(
+                        (r) =>
+                            r.normalizedPersonName ==
+                            MoneyRecord.normalizePersonName(selection),
+                      )
+                      .firstOrNull;
+              setState(() {
+                _selectedMoneyRecord = found;
+              });
+            },
+            fieldViewBuilder: (
+              context,
+              textEditingController,
+              focusNode,
+              onFieldSubmitted,
+            ) {
+              if (_counterpartyController.text != textEditingController.text &&
+                  textEditingController.text.isEmpty) {
+                textEditingController.text = _counterpartyController.text;
+              }
+              return TextFormField(
+                controller: textEditingController,
+                focusNode: focusNode,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Person / counterparty',
+                  helperText:
+                      'Repeated advances to the same person combine into one active balance.',
+                  suffixIcon:
+                      matchingRecord != null
+                          ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: StillwaterColors.lightIncome,
+                            size: 20,
+                          )
+                          : null,
+                ),
+                onChanged: (val) {
+                  _counterpartyController.text = val;
+                  final found =
+                      eligible
+                          .where(
+                            (r) =>
+                                r.normalizedPersonName ==
+                                MoneyRecord.normalizePersonName(val),
+                          )
+                          .firstOrNull;
+                  if (found?.id != _selectedMoneyRecord?.id) {
+                    setState(() {
+                      _selectedMoneyRecord = found;
+                    });
+                  }
+                },
+              );
+            },
+          ),
+          if (matchingRecord != null) ...[
+            const SizedBox(height: StillwaterTokens.spaceSm),
+            Container(
+              padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(
+                  StillwaterTokens.radiusMd,
+                ),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 18,
+                        color: StillwaterColors.lightPrimary,
+                      ),
+                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      Expanded(
+                        child: Text(
+                          _createAsSeparateDebt
+                              ? 'Separate debt for ${matchingRecord.personName}'
+                              : 'Adding to ${matchingRecord.personName}\'s active balance',
+                          style: context.theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: StillwaterColors.lightPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _createAsSeparateDebt
+                        ? 'This advance will be tracked as its own separate obligation card.'
+                        : 'Current balance: ${CurrencyFormatter.formatINR(existingRemaining)} → New balance: ${CurrencyFormatter.formatINR(newTotal)}',
+                    style: context.theme.textTheme.bodySmall?.copyWith(
+                      color: StillwaterColors.lightTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  Row(
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          value: _createAsSeparateDebt,
+                          onChanged: (val) {
+                            setState(() {
+                              _createAsSeparateDebt = val ?? false;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _createAsSeparateDebt = !_createAsSeparateDebt;
+                          });
+                        },
+                        child: Text(
+                          'Create as separate debt record',
+                          style: context.theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: StillwaterTokens.spaceSm),
+          InkWell(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate:
+                    _debtDueDate ??
+                    _selectedDate.add(const Duration(days: 30)),
+                firstDate: _selectedDate,
+                lastDate: DateTime(2100),
+              );
+              if (picked != null) {
+                setState(() => _debtDueDate = picked);
+              }
+            },
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Expected repayment date',
+                suffixIcon: Icon(Icons.event_outlined),
+              ),
+              child: Text(
+                DateFormat.yMMMd().format(
+                  _debtDueDate ??
+                      _selectedDate.add(const Duration(days: 30)),
+                ),
+                style: context.theme.textTheme.bodyMedium,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_needsCounterparty) {
       return TextFormField(
         controller: _counterpartyController,
         textCapitalization: TextCapitalization.words,

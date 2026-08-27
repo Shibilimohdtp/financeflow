@@ -5,8 +5,6 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/transaction.dart';
 import '../../services/analytics_calculator.dart';
-import '../../shared/widgets/charts/ff_bar_chart.dart';
-import '../../shared/widgets/charts/ff_donut_chart.dart';
 import '../../shared/widgets/charts/ff_spending_heatmap.dart';
 import '../../shared/widgets/charts/ff_trend_line_chart.dart';
 import '../../shared/widgets/ff_amount_text.dart';
@@ -25,9 +23,11 @@ import '../accounts/accounts_controller.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'analytics_controller.dart';
 import 'widgets/analytics_insights_card.dart';
+import 'widgets/analytics_cash_flow_card.dart';
 import 'widgets/analytics_metrics_hero.dart';
 import 'widgets/analytics_period_comparison_card.dart';
 import 'widgets/category_transactions_sheet.dart';
+import 'widgets/expense_category_breakdown.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
@@ -231,28 +231,6 @@ class AnalyticsScreen extends ConsumerWidget {
                   );
                 }
 
-                // Prepare Bar Chart items (Income vs Expense)
-                final barItems =
-                    report.timeSeries.map((p) {
-                      return BarChartItem(
-                        label: p.label,
-                        value: p.expense,
-                        secondaryValue: p.income > 0 ? p.income : null,
-                        color: finColors.expense,
-                        secondaryColor: finColors.income,
-                      );
-                    }).toList();
-
-                // Prepare Donut Chart slices
-                final donutSlices =
-                    report.categoryBreakdown.map((c) {
-                      return DonutSlice(
-                        label: c.categoryName,
-                        value: c.amount,
-                        colorToken: c.categoryColor,
-                      );
-                    }).toList();
-
                 // Prepare Trend Points
                 final trendPoints =
                     report.timeSeries.map((p) {
@@ -273,84 +251,29 @@ class AnalyticsScreen extends ConsumerWidget {
 
                     // ── 2. Cash Flow Activity Bar Chart ───────────────────────
                     const FfSectionHeader(title: 'Cash Flow Comparison'),
-                    FfCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              _LegendPill(
-                                label: 'Expenses',
-                                color: finColors.expense,
-                              ),
-                              const SizedBox(width: StillwaterTokens.spaceMd),
-                              _LegendPill(
-                                label: 'Income',
-                                color: finColors.income,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          FfBarChart(
-                            items: barItems,
-                            height: 180,
-                            semanticsSummary:
-                                'Cash flow activity chart for selected period.',
-                          ),
-                        ],
-                      ),
+                    AnalyticsCashFlowCard(
+                      points: report.timeSeries,
+                      range: report.timeRange,
+                      start: report.startDate,
+                      end: report.endDate,
                     ),
 
                     const SizedBox(height: StillwaterTokens.space2Xl),
 
                     // ── 3. Category Breakdown & Interactive Drill-down ────────
                     const FfSectionHeader(title: 'Expense Category Breakdown'),
-                    FfCard(
-                      child: Column(
-                        children: [
-                          FfDonutChart(
-                            slices: donutSlices,
-                            centerLabel: 'Expenses',
-                            size: 190,
+                    ExpenseCategoryBreakdown(
+                      categories: report.categoryBreakdown,
+                      onOpenCategory:
+                          (category) => _openCategoryTransactions(
+                            context,
+                            category: category,
+                            periodLabel: selectedRange.displayName,
+                            transactions:
+                                report.categoryTransactions[category
+                                    .categoryId] ??
+                                [],
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceLg),
-                          FfGroupedContainer(
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerLow,
-                            children:
-                                report.categoryBreakdown.map((cat) {
-                                  final txsForCat =
-                                      report.categoryTransactions[cat
-                                          .categoryId] ??
-                                      [];
-                                  return InkWell(
-                                    onTap:
-                                        () => _openCategoryTransactions(
-                                          context,
-                                          category: cat,
-                                          periodLabel:
-                                              selectedRange.displayName,
-                                          transactions: txsForCat,
-                                        ),
-                                    child: FfListRow(
-                                      leading: FfCategoryTile(
-                                        iconIdentifier: cat.categoryIcon,
-                                        colorTokenIdentifier: cat.categoryColor,
-                                        size: 36,
-                                      ),
-                                      title: cat.categoryName,
-                                      subtitle:
-                                          '${cat.transactionCount} payments · ${(cat.percentage * 100).toStringAsFixed(1)}%',
-                                      trailingText: CurrencyFormatter.formatINR(
-                                        cat.amount,
-                                      ),
-                                      showChevron: true,
-                                    ),
-                                  );
-                                }).toList(),
-                          ),
-                        ],
-                      ),
                     ),
 
                     // ── 4. Income Sources Breakdown (if any) ──────────────────
@@ -689,36 +612,6 @@ class AnalyticsScreen extends ConsumerWidget {
               ),
             ),
           ),
-    );
-  }
-}
-
-class _LegendPill extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _LegendPill({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: StillwaterTokens.spaceXs),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.secondary,
-          ),
-        ),
-      ],
     );
   }
 }

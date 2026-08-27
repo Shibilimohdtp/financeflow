@@ -10,6 +10,7 @@ import 'package:financeflow/models/category.dart';
 import 'package:financeflow/models/goal_contribution.dart';
 import 'package:financeflow/models/investment.dart';
 import 'package:financeflow/models/loan.dart';
+import 'package:financeflow/models/money_advance.dart';
 import 'package:financeflow/models/money_record.dart';
 import 'package:financeflow/models/money_repayment.dart';
 import 'package:financeflow/models/savings_goal.dart';
@@ -1067,19 +1068,48 @@ class FakeAiActivityLogRepository implements AiActivityLogRepository {
 
 class FakeMoneyRecordRepository implements MoneyRecordRepository {
   final Map<String, MoneyRecord> _records = {};
+  final Map<String, MoneyAdvance> _advances = {};
   final Map<String, MoneyRepayment> _repayments = {};
   final StreamController<List<MoneyRecord>> _recordsController =
       StreamController<List<MoneyRecord>>.broadcast();
+  final StreamController<List<MoneyAdvance>> _advancesController =
+      StreamController<List<MoneyAdvance>>.broadcast();
   final StreamController<List<MoneyRepayment>> _repaymentsController =
       StreamController<List<MoneyRepayment>>.broadcast();
 
   FakeMoneyRecordRepository({
     List<MoneyRecord>? initialRecords,
+    List<MoneyAdvance>? initialAdvances,
     List<MoneyRepayment>? initialRepayments,
   }) {
     if (initialRecords != null) {
       for (final r in initialRecords) {
         _records[r.id] = r;
+      }
+    }
+    if (initialAdvances != null) {
+      for (final adv in initialAdvances) {
+        _advances[adv.id] = adv;
+      }
+    } else if (initialRecords != null) {
+      // Synthesize advances for initial records if not explicitly given
+      for (final r in initialRecords) {
+        final advId =
+            r.originTransactionId != null
+                ? 'adv_${r.originTransactionId}'
+                : 'adv_${r.id}';
+        _advances[advId] = MoneyAdvance(
+          id: advId,
+          moneyRecordId: r.id,
+          userId: r.userId,
+          amount: r.originalAmount,
+          date: r.transactionDate,
+          dueDate: r.dueDate,
+          notes: r.notes,
+          transactionId: r.originTransactionId,
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+        );
       }
     }
     if (initialRepayments != null) {
@@ -1088,16 +1118,104 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
       }
     }
     _recordsController.add(_records.values.toList());
+    _advancesController.add(_advances.values.toList());
     _repaymentsController.add(_repayments.values.toList());
   }
 
   @override
-  Future<List<MoneyRecord>> getAllRecords({String userId = 'local_user'}) async {
+  Future<void> migrateAdvancesAndConsolidateDuplicates({
+    String userId = 'local_user',
+  }) async {
+    // 1. Ensure advances exist for each record
+    for (final r in _records.values.where((r) => r.userId == userId).toList()) {
+      final existingAdvs =
+          _advances.values.where((a) => a.moneyRecordId == r.id).toList();
+      if (existingAdvs.isEmpty) {
+        final advId =
+            r.originTransactionId != null
+                ? 'adv_${r.originTransactionId}'
+                : 'adv_${r.id}';
+        _advances[advId] = MoneyAdvance(
+          id: advId,
+          moneyRecordId: r.id,
+          userId: r.userId,
+          amount: r.originalAmount,
+          date: r.transactionDate,
+          dueDate: r.dueDate,
+          notes: r.notes,
+          transactionId: r.originTransactionId,
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+        );
+      }
+    }
+
+    // 2. Consolidate duplicate active records
+    final active =
+        _records.values
+            .where(
+              (r) =>
+                  r.userId == userId &&
+                  r.settledAt == null &&
+                  !r.isCustomSeparateObligation,
+            )
+            .toList();
+
+    final grouped = <String, List<MoneyRecord>>{};
+    for (final r in active) {
+      final key = '${r.type.toDbString()}_${r.normalizedPersonName}';
+      grouped.putIfAbsent(key, () => []).add(r);
+    }
+
+    for (final group in grouped.values) {
+      if (group.length <= 1) continue;
+      group.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      final primary = group.first;
+      final secondaries = group.sublist(1);
+
+      for (final sec in secondaries) {
+        for (final advEntry in _advances.entries.toList()) {
+          if (advEntry.value.moneyRecordId == sec.id) {
+            _advances[advEntry.key] = advEntry.value.copyWith(
+              moneyRecordId: primary.id,
+            );
+          }
+        }
+        for (final repEntry in _repayments.entries.toList()) {
+          if (repEntry.value.moneyRecordId == sec.id) {
+            _repayments[repEntry.key] = repEntry.value.copyWith(
+              moneyRecordId: primary.id,
+            );
+          }
+        }
+        _records.remove(sec.id);
+      }
+
+      final allAdvs =
+          _advances.values.where((a) => a.moneyRecordId == primary.id).toList();
+      final total = allAdvs.fold<double>(0.0, (s, a) => s + a.amount);
+      _records[primary.id] = primary.copyWith(
+        originalAmount: total,
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    _recordsController.add(_records.values.toList());
+    _advancesController.add(_advances.values.toList());
+    _repaymentsController.add(_repayments.values.toList());
+  }
+
+  @override
+  Future<List<MoneyRecord>> getAllRecords({
+    String userId = 'local_user',
+  }) async {
     return _records.values.where((r) => r.userId == userId).toList();
   }
 
   @override
-  Stream<List<MoneyRecord>> watchAllRecords({String userId = 'local_user'}) async* {
+  Stream<List<MoneyRecord>> watchAllRecords({
+    String userId = 'local_user',
+  }) async* {
     yield await getAllRecords(userId: userId);
     yield* _recordsController.stream.map(
       (list) => list.where((r) => r.userId == userId).toList(),
@@ -1105,7 +1223,10 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
   }
 
   @override
-  Future<MoneyRecord?> getRecordById(String id, {String userId = 'local_user'}) async {
+  Future<MoneyRecord?> getRecordById(
+    String id, {
+    String userId = 'local_user',
+  }) async {
     final r = _records[id];
     if (r == null || r.userId != userId) return null;
     return r;
@@ -1121,15 +1242,98 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
   @override
   Future<void> deleteRecord(String id, {String userId = 'local_user'}) async {
     _records.remove(id);
+    _advances.removeWhere(
+      (key, adv) => adv.moneyRecordId == id && adv.userId == userId,
+    );
     _repayments.removeWhere(
       (key, rep) => rep.moneyRecordId == id && rep.userId == userId,
     );
     _recordsController.add(_records.values.toList());
+    _advancesController.add(_advances.values.toList());
     _repaymentsController.add(_repayments.values.toList());
   }
 
+  // --- Advances ---
+
   @override
-  Future<List<MoneyRepayment>> getAllRepayments({String userId = 'local_user'}) async {
+  Future<List<MoneyAdvance>> getAllAdvances({
+    String userId = 'local_user',
+  }) async {
+    return _advances.values.where((a) => a.userId == userId).toList();
+  }
+
+  @override
+  Future<List<MoneyAdvance>> getAdvancesForRecord(
+    String recordId, {
+    String userId = 'local_user',
+  }) async {
+    return _advances.values
+        .where((a) => a.moneyRecordId == recordId && a.userId == userId)
+        .toList();
+  }
+
+  @override
+  Stream<List<MoneyAdvance>> watchAdvancesForRecord(
+    String recordId, {
+    String userId = 'local_user',
+  }) async* {
+    yield await getAdvancesForRecord(recordId, userId: userId);
+    yield* _advancesController.stream.map(
+      (list) => list
+          .where((a) => a.moneyRecordId == recordId && a.userId == userId)
+          .toList(),
+    );
+  }
+
+  @override
+  Stream<List<MoneyAdvance>> watchAllAdvances({
+    String userId = 'local_user',
+  }) async* {
+    yield await getAllAdvances(userId: userId);
+    yield* _advancesController.stream.map(
+      (list) => list.where((a) => a.userId == userId).toList(),
+    );
+  }
+
+  @override
+  Future<void> saveAdvance(MoneyAdvance advance) async {
+    advance.validate();
+    _advances[advance.id] = advance;
+    _advancesController.add(_advances.values.toList());
+  }
+
+  @override
+  Future<void> saveAdvances(List<MoneyAdvance> advances) async {
+    for (final a in advances) {
+      a.validate();
+      _advances[a.id] = a;
+    }
+    _advancesController.add(_advances.values.toList());
+  }
+
+  @override
+  Future<void> deleteAdvance(String id, {String userId = 'local_user'}) async {
+    _advances.remove(id);
+    _advancesController.add(_advances.values.toList());
+  }
+
+  @override
+  Future<void> deleteAdvancesForRecord(
+    String recordId, {
+    String userId = 'local_user',
+  }) async {
+    _advances.removeWhere(
+      (key, a) => a.moneyRecordId == recordId && a.userId == userId,
+    );
+    _advancesController.add(_advances.values.toList());
+  }
+
+  // --- Repayments ---
+
+  @override
+  Future<List<MoneyRepayment>> getAllRepayments({
+    String userId = 'local_user',
+  }) async {
     return _repayments.values.where((r) => r.userId == userId).toList();
   }
 
@@ -1157,7 +1361,9 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
   }
 
   @override
-  Stream<List<MoneyRepayment>> watchAllRepayments({String userId = 'local_user'}) async* {
+  Stream<List<MoneyRepayment>> watchAllRepayments({
+    String userId = 'local_user',
+  }) async* {
     yield await getAllRepayments(userId: userId);
     yield* _repaymentsController.stream.map(
       (list) => list.where((r) => r.userId == userId).toList(),
@@ -1172,13 +1378,17 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
   }
 
   @override
-  Future<void> deleteRepayment(String id, {String userId = 'local_user'}) async {
+  Future<void> deleteRepayment(
+    String id, {
+    String userId = 'local_user',
+  }) async {
     _repayments.remove(id);
     _repaymentsController.add(_repayments.values.toList());
   }
 
   void dispose() {
     _recordsController.close();
+    _advancesController.close();
     _repaymentsController.close();
   }
 }

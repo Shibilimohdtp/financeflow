@@ -137,7 +137,6 @@ class DashboardScreen extends ConsumerWidget {
     final accounts = accountsAsync.valueOrNull ?? const [];
     final activeAccountsCount = accounts.where((a) => !a.isArchived).length;
     final totalBalance = totalBalanceAsync.valueOrNull ?? 0.0;
-    final monthlyCashFlow = cashFlowAsync.valueOrNull;
     final overBudgetCount =
         overallBudgetAsync.valueOrNull?.overBudgetCount ?? 0;
     final activeBudgetsList = activeBudgetsAsync.valueOrNull;
@@ -189,8 +188,6 @@ class DashboardScreen extends ConsumerWidget {
               TotalBalanceHero(
                 totalBalance: totalBalance,
                 activeAccountsCount: activeAccountsCount,
-                monthlyCashFlow: monthlyCashFlow,
-                trendMetric: trendMetric,
                 isPrivacyBlur: isPrivacyBlur,
                 onToggleBlur: () {
                   ref
@@ -289,6 +286,7 @@ class DashboardScreen extends ConsumerWidget {
                   data:
                       (cashFlow) => CashFlowCard(
                         cashFlow: cashFlow,
+                        trendMetric: trendMetric,
                         month: selectedMonth,
                         periodLabel: selectedPeriod.label,
                         chartItems: cashFlowChartAsync.valueOrNull,

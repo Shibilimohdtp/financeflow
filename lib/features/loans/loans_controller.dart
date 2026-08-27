@@ -190,7 +190,7 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
           loan: loan,
           installmentNumber: installmentNumber,
           accountId: payingAccountId,
-          paymentDate: paymentDate,
+          paymentDate: paymentDate ?? DateTime.now(),
         );
       } else {
         final split = LoanCalculator.calculateInstallmentSplit(
@@ -254,6 +254,7 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
           loan: loan,
           installmentNumber: targetInstallment.monthNumber,
           accountId: loan.accountId!,
+          paymentDate: DateTime.now(),
         );
         state = const AsyncValue.data(null);
         return;
@@ -309,7 +310,7 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
             loan: loan,
             installmentNumber: item.monthNumber,
             accountId: payingAccountId,
-            paymentDate: paymentDate,
+            paymentDate: paymentDate ?? now,
           );
         }
       } else {

@@ -5,6 +5,7 @@ import 'package:financeflow/features/personal_debts/add_edit_money_record_sheet.
 import 'package:financeflow/features/personal_debts/add_repayment_sheet.dart';
 import 'package:financeflow/features/personal_debts/lending_borrowing_screen.dart';
 import 'package:financeflow/features/personal_debts/money_record_detail_screen.dart';
+import 'package:financeflow/models/money_advance.dart';
 import 'package:financeflow/models/money_record.dart';
 import 'package:financeflow/models/money_repayment.dart';
 import 'package:financeflow/repositories/money_record_repository.dart';
@@ -16,6 +17,7 @@ void main() {
     id: 'rec_lent_1',
     type: MoneyRecordType.lent,
     personName: 'Ahmed',
+    normalizedPersonName: 'ahmed',
     originalAmount: 10000.0,
     transactionDate: DateTime(2026, 2, 1),
     dueDate: DateTime(2026, 3, 1), // Overdue
@@ -28,11 +30,30 @@ void main() {
     id: 'rec_borrowed_1',
     type: MoneyRecordType.borrowed,
     personName: 'Sarah',
+    normalizedPersonName: 'sarah',
     originalAmount: 5000.0,
     transactionDate: DateTime(2026, 3, 5),
     dueDate: DateTime(2026, 4, 5),
     createdAt: DateTime(2026, 3, 5),
     updatedAt: DateTime(2026, 3, 5),
+  );
+
+  final testAdvance1 = MoneyAdvance(
+    id: 'adv_1',
+    moneyRecordId: 'rec_lent_1',
+    amount: 7500.0,
+    date: DateTime(2026, 2, 1),
+    dueDate: DateTime(2026, 3, 1),
+    notes: 'Hospital bill',
+  );
+
+  final testAdvance2 = MoneyAdvance(
+    id: 'adv_2',
+    moneyRecordId: 'rec_lent_1',
+    amount: 2500.0,
+    date: DateTime(2026, 2, 10),
+    dueDate: DateTime(2026, 3, 10),
+    notes: 'Pharmacy',
   );
 
   final testRepayment1 = MoneyRepayment(
@@ -75,10 +96,11 @@ void main() {
   );
 
   testWidgets(
-    'LendingBorrowingScreen renders hero cards, filters, and records list',
+    'LendingBorrowingScreen renders hero cards, filters, and records list with advance count badge',
     (WidgetTester tester) async {
       final fakeRepo = FakeMoneyRecordRepository(
         initialRecords: [testRecord1, testRecord2],
+        initialAdvances: [testAdvance1, testAdvance2],
         initialRepayments: [testRepayment1],
       );
 
@@ -105,7 +127,7 @@ void main() {
       // Verify list items
       expect(find.text('Ahmed'), findsOneWidget);
       expect(find.text('Sarah'), findsOneWidget);
-      expect(find.text('Emergency expense'), findsOneWidget);
+      expect(find.text('2 advances'), findsOneWidget);
 
       // Test filter chip switching
       await tester.tap(find.text('Owed to Me'));
@@ -174,10 +196,16 @@ void main() {
   );
 
   testWidgets(
-    'MoneyRecordDetailScreen displays details, allows adding repayment and settling',
+    'MoneyRecordDetailScreen displays details, advances, allows adding repayment and settling',
     (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeRepo = FakeMoneyRecordRepository(
         initialRecords: [testRecord1],
+        initialAdvances: [testAdvance1, testAdvance2],
         initialRepayments: [testRepayment1],
       );
 
@@ -198,17 +226,20 @@ void main() {
       expect(find.text('Ahmed'), findsWidgets);
       expect(find.text('REMAINING BALANCE'), findsOneWidget);
       expect(find.text('₹7,000'), findsOneWidget);
-      expect(find.text('₹10,000'), findsOneWidget); // Original
+      expect(find.text('₹10,000'), findsWidgets); // Total advanced
       expect(find.text('₹3,000 (30%)'), findsOneWidget); // Repaid
       expect(find.text('Record Repayment'), findsOneWidget);
-      expect(find.text('Settle'), findsOneWidget);
+      expect(find.text('Lend More'), findsOneWidget);
+      expect(find.text('Advance History (2)'), findsOneWidget);
+      expect(find.text('Repayment History (1)'), findsOneWidget);
+      expect(find.text('Hospital bill'), findsOneWidget);
+      expect(find.text('Pharmacy'), findsOneWidget);
 
-      // Settle the record
-      await tester.tap(find.text('Settle'));
+      // Settle the record via controller
+      await fakeRepo.saveRecord(testRecord1.copyWith(settledAt: DateTime.now()));
       await tester.pumpAndSettle();
 
-      final updated = await fakeRepo.getRecordById(testRecord1.id);
-      expect(updated?.settledAt, isNotNull);
+      expect(find.text('Fully Settled · No balance remaining'), findsOneWidget);
     },
   );
 
@@ -217,6 +248,7 @@ void main() {
     (WidgetTester tester) async {
       final fakeRepo = FakeMoneyRecordRepository(
         initialRecords: [testRecord1],
+        initialAdvances: [testAdvance1, testAdvance2],
         initialRepayments: [testRepayment1],
       );
 

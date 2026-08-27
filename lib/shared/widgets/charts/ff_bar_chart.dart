@@ -2,12 +2,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
-import '../../../theme/stillwater_tokens.dart';
 
 class BarChartItem {
   final String label;
   final double value;
-  final double? secondaryValue; // e.g. income alongside expense
+  final double? secondaryValue;
   final Color? color;
   final Color? secondaryColor;
 
@@ -20,19 +19,31 @@ class BarChartItem {
   });
 }
 
-/// Stillwater accessible bar chart for financial distributions and comparison
+/// Shared linear scale with collision-free ticks and selectable date groups.
 class FfBarChart extends StatefulWidget {
   final List<BarChartItem> items;
   final double height;
   final String? semanticsSummary;
   final String? valuePrefix;
+  final bool showYAxis;
+  final bool showSelectionDetails;
+  final int? selectedIndex;
+  final ValueChanged<int>? onSelected;
+  final String primaryLabel;
+  final String secondaryLabel;
 
   const FfBarChart({
     super.key,
     required this.items,
-    this.height = 180.0,
+    this.height = 180,
     this.semanticsSummary,
     this.valuePrefix,
+    this.showYAxis = false,
+    this.showSelectionDetails = true,
+    this.selectedIndex,
+    this.onSelected,
+    this.primaryLabel = 'Expenses',
+    this.secondaryLabel = 'Income',
   });
 
   @override
@@ -40,259 +51,313 @@ class FfBarChart extends StatefulWidget {
 }
 
 class _FfBarChartState extends State<FfBarChart> {
-  int? _selectedIndex;
+  int? _localIndex;
+
+  @override
+  void didUpdateWidget(covariant FfBarChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.items != widget.items) _localIndex = null;
+  }
+
+  void _select(int index) {
+    if (widget.onSelected != null) {
+      widget.onSelected!(index);
+    } else {
+      setState(() => _localIndex = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
-
+    final theme = Theme.of(context);
+    final colors = context.finColors;
     if (widget.items.isEmpty) {
       return SizedBox(
         height: widget.height,
-        child: Center(
-          child: Text(
-            'No data available for this chart.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ),
+        child: const Center(child: Text('No data available for this chart.')),
       );
     }
-
+    final rawIndex = widget.selectedIndex ?? _localIndex;
+    final index =
+        rawIndex != null && rawIndex >= 0 && rawIndex < widget.items.length
+            ? rawIndex
+            : null;
+    final selected = index == null ? null : widget.items[index];
     final maxValue = widget.items.fold<double>(
-      0.0,
-      (maxV, item) => max(maxV, max(item.value, item.secondaryValue ?? 0.0)),
+      0,
+      (v, item) => max(
+        v,
+        max(_positive(item.value), _positive(item.secondaryValue ?? 0)),
+      ),
     );
-    final safeMax = maxValue > 0 ? maxValue : 1.0;
+    final ceiling = _axisCeiling(maxValue);
+    final textStyle = theme.textTheme.labelSmall!.copyWith(
+      fontSize: 11,
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final scaler = MediaQuery.textScalerOf(context);
+    String amount(double value) =>
+        widget.valuePrefix == null
+            ? CurrencyFormatter.format(value)
+            : '${widget.valuePrefix}${CurrencyFormatter.format(value, includeSymbol: false)}';
+
+    String describe(BarChartItem item) =>
+        '${item.label}, ${widget.primaryLabel} ${amount(item.value)}'
+        '${item.secondaryValue == null ? '' : ', ${widget.secondaryLabel} ${amount(item.secondaryValue!)}'}';
 
     return Semantics(
       container: true,
-      label:
-          widget.semanticsSummary ??
-          'Financial bar chart showing ${widget.items.length} bars.',
+      label: widget.semanticsSummary ?? 'Financial bar chart',
+      value:
+          selected == null
+              ? '${widget.items.length} periods'
+              : describe(selected),
+      increasedValue:
+          (index ?? -1) < widget.items.length - 1
+              ? describe(widget.items[(index ?? -1) + 1])
+              : null,
+      decreasedValue:
+          index != null && index > 0 ? describe(widget.items[index - 1]) : null,
+      onIncrease:
+          (index ?? -1) < widget.items.length - 1
+              ? () => _select((index ?? -1) + 1)
+              : null,
+      onDecrease: index != null && index > 0 ? () => _select(index - 1) : null,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
             height: widget.height,
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final painter = _BarChartPainter(
+                  items: widget.items,
+                  ceiling: ceiling,
+                  selectedIndex: index,
+                  primaryColor: colors.expense,
+                  secondaryColor: colors.income,
+                  gridColor: theme.dividerColor,
+                  highlightColor: theme.colorScheme.onSurface,
+                  textStyle: textStyle,
+                  textScaler: scaler,
+                  showYAxis: widget.showYAxis,
+                  valuePrefix: widget.valuePrefix,
+                );
+                final plot = painter.plotRect(
+                  Size(constraints.maxWidth, widget.height),
+                );
                 return GestureDetector(
-                  onTapDown: (details) {
-                    final widthPerItem =
-                        constraints.maxWidth / widget.items.length;
-                    final index =
-                        (details.localPosition.dx / widthPerItem).floor();
-                    if (index >= 0 && index < widget.items.length) {
-                      setState(() {
-                        _selectedIndex = _selectedIndex == index ? null : index;
-                      });
+                  key: const ValueKey('cash-flow-plot'),
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (details) {
+                    final dx = details.localPosition.dx;
+                    if (dx < plot.left || dx >= plot.right || plot.width <= 0) {
+                      return;
                     }
+                    _select(
+                      ((dx - plot.left) / plot.width * widget.items.length)
+                          .floor(),
+                    );
                   },
                   child: CustomPaint(
                     size: Size(constraints.maxWidth, widget.height),
-                    painter: _BarChartPainter(
-                      items: widget.items,
-                      maxValue: safeMax,
-                      selectedIndex: _selectedIndex,
-                      defaultPrimaryColor: finColors.expense,
-                      defaultSecondaryColor: finColors.income,
-                      gridColor: theme.dividerColor.withValues(alpha: 0.3),
-                      textColor: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.7,
-                      ),
-                      highlightColor: theme.colorScheme.primary,
-                    ),
+                    painter: painter,
                   ),
                 );
               },
             ),
           ),
-          if (_selectedIndex != null &&
-              _selectedIndex! < widget.items.length) ...[
-            const SizedBox(height: StillwaterTokens.spaceSm),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceSm,
-                vertical: StillwaterTokens.space2Xs,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+          if (widget.showSelectionDetails && selected != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 6,
                 children: [
-                  Text(
-                    '${widget.items[_selectedIndex!].label}: ',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    CurrencyFormatter.format(
-                      widget.items[_selectedIndex!].value,
-                    ),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color:
-                          widget.items[_selectedIndex!].color ??
-                          finColors.expense,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (widget.items[_selectedIndex!].secondaryValue != null) ...[
-                    const SizedBox(width: StillwaterTokens.spaceSm),
+                  Text(selected.label, style: theme.textTheme.labelMedium),
+                  Text('${widget.primaryLabel}: ${amount(selected.value)}'),
+                  if (selected.secondaryValue != null)
                     Text(
-                      'Income: ${CurrencyFormatter.format(widget.items[_selectedIndex!].secondaryValue!)}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color:
-                            widget.items[_selectedIndex!].secondaryColor ??
-                            finColors.income,
-                      ),
+                      '${widget.secondaryLabel}: ${amount(selected.secondaryValue!)}',
                     ),
-                  ],
                 ],
               ),
             ),
-          ],
         ],
       ),
     );
   }
 }
 
+double _positive(double value) => value.isFinite && value > 0 ? value : 0;
+
+double _axisCeiling(double value) {
+  if (value <= 0) return 1;
+  final magnitude = pow(10, (log(value) / ln10).floor()).toDouble();
+  return (value * 1.05 / magnitude).ceil() * magnitude;
+}
+
 class _BarChartPainter extends CustomPainter {
   final List<BarChartItem> items;
-  final double maxValue;
+  final double ceiling;
   final int? selectedIndex;
-  final Color defaultPrimaryColor;
-  final Color defaultSecondaryColor;
-  final Color gridColor;
-  final Color textColor;
-  final Color highlightColor;
+  final Color primaryColor, secondaryColor, gridColor, highlightColor;
+  final TextStyle textStyle;
+  final TextScaler textScaler;
+  final bool showYAxis;
+  final String? valuePrefix;
 
   _BarChartPainter({
     required this.items,
-    required this.maxValue,
-    this.selectedIndex,
-    required this.defaultPrimaryColor,
-    required this.defaultSecondaryColor,
+    required this.ceiling,
+    required this.selectedIndex,
+    required this.primaryColor,
+    required this.secondaryColor,
     required this.gridColor,
-    required this.textColor,
     required this.highlightColor,
+    required this.textStyle,
+    required this.textScaler,
+    required this.showYAxis,
+    required this.valuePrefix,
   });
+
+  TextPainter _text(String value, {bool selected = false}) => TextPainter(
+    text: TextSpan(
+      text: value,
+      style:
+          selected
+              ? textStyle.copyWith(
+                fontWeight: FontWeight.w700,
+                color: highlightColor,
+              )
+              : textStyle,
+    ),
+    maxLines: 1,
+    textDirection: TextDirection.ltr,
+    textScaler: textScaler,
+  )..layout();
+
+  String _tick(double value) =>
+      valuePrefix == null
+          ? CurrencyFormatter.formatCompact(value)
+          : '$valuePrefix${CurrencyFormatter.formatCompact(value, includeSymbol: false)}';
+
+  Rect plotRect(Size size) {
+    final labels = [
+      _text(_tick(ceiling)),
+      _text(_tick(ceiling / 2)),
+      _text(_tick(0)),
+    ];
+    final left = showYAxis ? labels.map((t) => t.width).reduce(max) + 10 : 0.0;
+    final labelHeight = labels.map((t) => t.height).reduce(max);
+    for (final label in labels) {
+      label.dispose();
+    }
+    return Rect.fromLTRB(
+      min(left, size.width / 2),
+      labelHeight / 2 + 4,
+      size.width,
+      max(labelHeight / 2 + 5, size.height - labelHeight - 12),
+    );
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    const double bottomLabelHeight = 24.0;
-    const double topPadding = 12.0;
-    final chartHeight = size.height - bottomLabelHeight - topPadding;
-
-    final gridPaint =
+    final plot = plotRect(size);
+    final slot = plot.width / items.length;
+    for (final fraction in [0.0, .5, 1.0]) {
+      final y = plot.bottom - plot.height * fraction;
+      canvas.drawLine(
+        Offset(plot.left, y),
+        Offset(plot.right, y),
         Paint()
           ..color = gridColor
-          ..strokeWidth = 0.8
-          ..style = PaintingStyle.stroke;
-
-    // Draw zero baseline
-    canvas.drawLine(
-      Offset(0, topPadding + chartHeight),
-      Offset(size.width, topPadding + chartHeight),
-      gridPaint,
-    );
-
-    // Draw mid grid line
-    canvas.drawLine(
-      Offset(0, topPadding + chartHeight / 2),
-      Offset(size.width, topPadding + chartHeight / 2),
-      gridPaint,
-    );
-
-    final numItems = items.length;
-    final slotWidth = size.width / numItems;
-    final maxBarWidth = min(slotWidth * 0.5, 24.0);
-
-    for (int i = 0; i < numItems; i++) {
-      final item = items[i];
-      final isSelected = selectedIndex == i;
-      final centerX = slotWidth * i + slotWidth / 2;
-
-      final hasSecondary = item.secondaryValue != null;
-      final barWidth = hasSecondary ? maxBarWidth * 0.45 : maxBarWidth;
-
-      // Primary Bar (e.g. Expense)
-      final primaryRatio = (item.value / maxValue).clamp(0.0, 1.0);
-      final primaryHeight = chartHeight * primaryRatio;
-      final primaryColor = item.color ?? defaultPrimaryColor;
-
-      final primaryPaint =
-          Paint()
-            ..color =
-                isSelected ? primaryColor : primaryColor.withValues(alpha: 0.85)
-            ..style = PaintingStyle.fill;
-
-      final primaryX =
-          hasSecondary ? centerX - barWidth - 1.5 : centerX - barWidth / 2;
-      final primaryTop = topPadding + chartHeight - primaryHeight;
-
-      final primaryRect = RRect.fromRectAndCorners(
-        Rect.fromLTWH(primaryX, primaryTop, barWidth, primaryHeight),
-        topLeft: const Radius.circular(3),
-        topRight: const Radius.circular(3),
+          ..strokeWidth = fraction == 0 ? 1 : .6,
       );
-      canvas.drawRRect(primaryRect, primaryPaint);
-
-      // Secondary Bar if exists (e.g. Income)
-      if (hasSecondary) {
-        final secRatio = (item.secondaryValue! / maxValue).clamp(0.0, 1.0);
-        final secHeight = chartHeight * secRatio;
-        final secColor = item.secondaryColor ?? defaultSecondaryColor;
-
-        final secPaint =
-            Paint()
-              ..color = isSelected ? secColor : secColor.withValues(alpha: 0.85)
-              ..style = PaintingStyle.fill;
-
-        final secX = centerX + 1.5;
-        final secTop = topPadding + chartHeight - secHeight;
-
-        final secRect = RRect.fromRectAndCorners(
-          Rect.fromLTWH(secX, secTop, barWidth, secHeight),
-          topLeft: const Radius.circular(3),
-          topRight: const Radius.circular(3),
+      if (showYAxis) {
+        final label = _text(_tick(ceiling * fraction));
+        label.paint(
+          canvas,
+          Offset(max(0, plot.left - label.width - 10), y - label.height / 2),
         );
-        canvas.drawRRect(secRect, secPaint);
+        label.dispose();
+      }
+    }
+    final hasSecondary = items.any((item) => item.secondaryValue != null);
+    final barWidth = min(18.0, slot * (hasSecondary ? .28 : .48));
+    for (var i = 0; i < items.length; i++) {
+      final centerX = plot.left + slot * (i + .5);
+      if (i == selectedIndex) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              plot.left + slot * i + 1,
+              plot.top,
+              max(0, slot - 2),
+              plot.height,
+            ),
+            const Radius.circular(4),
+          ),
+          Paint()..color = highlightColor.withValues(alpha: .055),
+        );
+      }
+      void bar(double value, Color color, double x) {
+        final height =
+            plot.height * (_positive(value) / ceiling).clamp(0.0, 1.0);
+        if (height <= 0) return;
+        canvas.drawRRect(
+          RRect.fromRectAndCorners(
+            Rect.fromLTWH(x, plot.bottom - height, barWidth, height),
+            topLeft: Radius.circular(min(3, barWidth / 2)),
+            topRight: Radius.circular(min(3, barWidth / 2)),
+          ),
+          Paint()..color = color,
+        );
       }
 
-      // Draw bottom label
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: item.label,
-          style: TextStyle(
-            color: isSelected ? highlightColor : textColor,
-            fontSize: 10,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout(maxWidth: slotWidth);
-
-      textPainter.paint(
-        canvas,
-        Offset(
-          centerX - textPainter.width / 2,
-          size.height - bottomLabelHeight + 6,
-        ),
+      bar(
+        items[i].value,
+        items[i].color ?? primaryColor,
+        hasSecondary ? centerX - barWidth - 1 : centerX - barWidth / 2,
       );
+      if (hasSecondary) {
+        bar(
+          items[i].secondaryValue ?? 0,
+          items[i].secondaryColor ?? secondaryColor,
+          centerX + 1,
+        );
+      }
+    }
+
+    // Lay out ticks unconstrained on a single line, then skip crowded ticks.
+    // Never wrap a two-digit day into two rows or force every date to fit.
+    var lastRight = double.negativeInfinity;
+    for (var i = 0; i < items.length; i++) {
+      final label = _text(items[i].label, selected: i == selectedIndex);
+      final centerX = plot.left + slot * (i + .5);
+      final x =
+          (centerX - label.width / 2)
+              .clamp(plot.left, max(plot.left, plot.right - label.width))
+              .toDouble();
+      if (label.width <= plot.width && x >= lastRight + 12) {
+        label.paint(canvas, Offset(x, plot.bottom + 8));
+        lastRight = x + label.width;
+      }
+      label.dispose();
     }
   }
 
   @override
-  bool shouldRepaint(covariant _BarChartPainter oldDelegate) {
-    return oldDelegate.items != items ||
-        oldDelegate.maxValue != maxValue ||
-        oldDelegate.selectedIndex != selectedIndex;
-  }
+  bool shouldRepaint(covariant _BarChartPainter old) =>
+      old.items != items ||
+      old.ceiling != ceiling ||
+      old.selectedIndex != selectedIndex ||
+      old.primaryColor != primaryColor ||
+      old.secondaryColor != secondaryColor ||
+      old.gridColor != gridColor ||
+      old.highlightColor != highlightColor ||
+      old.textStyle != textStyle ||
+      old.textScaler != textScaler ||
+      old.showYAxis != showYAxis ||
+      old.valuePrefix != valuePrefix;
 }

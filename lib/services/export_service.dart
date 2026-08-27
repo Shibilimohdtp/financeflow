@@ -11,6 +11,7 @@ import '../models/goal_contribution.dart';
 import '../models/ingestion/parsed_transaction.dart';
 import '../models/investment.dart';
 import '../models/loan.dart';
+import '../models/money_advance.dart';
 import '../models/money_record.dart';
 import '../models/money_repayment.dart';
 import '../models/savings_goal.dart';
@@ -178,6 +179,7 @@ class ExportService {
     List<Investment> investments = const [],
     List<AlertItem> alerts = const [],
     List<MoneyRecord> moneyRecords = const [],
+    List<MoneyAdvance> moneyAdvances = const [],
     List<MoneyRepayment> moneyRepayments = const [],
     List<ParsedTransaction> pendingTransactions = const [],
     AppSettings? appSettings,
@@ -198,6 +200,7 @@ class ExportService {
         investmentCount: investments.length,
         alertCount: alerts.length,
         moneyRecordCount: moneyRecords.length,
+        moneyAdvanceCount: moneyAdvances.length,
         moneyRepaymentCount: moneyRepayments.length,
         pendingTransactionCount: pendingTransactions.length,
         settingsIncluded: appSettings != null,
@@ -214,6 +217,7 @@ class ExportService {
       investments: investments,
       alerts: alerts,
       moneyRecords: moneyRecords,
+      moneyAdvances: moneyAdvances,
       moneyRepayments: moneyRepayments,
       pendingTransactions: pendingTransactions,
       appSettings: appSettings,
