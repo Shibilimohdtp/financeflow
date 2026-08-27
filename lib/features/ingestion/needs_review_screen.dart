@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
-import '../../models/account.dart';
-import '../../models/category.dart';
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
 import '../../repositories/pending_transaction_repository.dart';
@@ -12,14 +10,11 @@ import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_sheet_footer.dart';
-import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_source_badge.dart';
 import '../../theme/stillwater_tokens.dart';
-import '../accounts/accounts_controller.dart';
-import '../categories/categories_controller.dart';
 import 'needs_review_controller.dart';
+import '../transactions/add_edit_transaction_sheet.dart';
 
 class NeedsReviewScreen extends ConsumerStatefulWidget {
   const NeedsReviewScreen({super.key});
@@ -31,216 +26,76 @@ class NeedsReviewScreen extends ConsumerStatefulWidget {
 class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
   String _selectedFilter = 'all'; // all, duplicates, uncertain, errors
 
-  void _openEditItemSheet(
-    BuildContext context,
-    ParsedTransaction item,
-    List<Category> categories,
-    List<Account> accounts,
-  ) {
-    final amountController = TextEditingController(
-      text: item.amount.toStringAsFixed(2),
-    );
-    final merchantController = TextEditingController(
-      text: item.normalizedMerchant,
-    );
-    String selectedCategoryId = item.categoryId;
-    String selectedCategoryName = item.categoryName;
-    String selectedCategoryIcon = item.categoryIcon;
-    String selectedCategoryColor = item.categoryColor;
-    String selectedAccountId = item.accountId;
-    TransactionType selectedType = item.type;
-    DateTime selectedDate = item.date;
-
-    showModalBottomSheet(
+  void _openEditItemSheet(BuildContext context, ParsedTransaction item) {
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.theme.scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
-        ),
-      ),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder:
-          (ctx) => StatefulBuilder(
-            builder: (ctx, setModalState) {
-              return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const FfSheetHeader(
-                      title: 'Edit Pending Transaction',
-                      subtitle: 'Review and categorize before importing',
-                    ),
-                    const Divider(height: 1, thickness: 1),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.only(
-                          left: StillwaterTokens.spaceLg,
-                          right: StillwaterTokens.spaceLg,
-                          top: StillwaterTokens.spaceMd,
-                          bottom:
-                              MediaQuery.of(ctx).viewInsets.bottom +
-                              StillwaterTokens.spaceMd,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Amount
-                            TextField(
-                              controller: amountController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                labelText: 'Amount (₹)',
-                                prefixText: '₹ ',
-                              ),
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceMd),
-
-                            // Payee / Merchant
-                            TextField(
-                              controller: merchantController,
-                              decoration: const InputDecoration(
-                                labelText: 'Payee / Merchant',
-                              ),
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceMd),
-
-                            // Type
-                            DropdownButtonFormField<TransactionType>(
-                              value: selectedType,
-                              decoration: const InputDecoration(
-                                labelText: 'Type',
-                              ),
-                              items:
-                                  [
-                                        TransactionType.expense,
-                                        TransactionType.income,
-                                        TransactionType.transfer,
-                                      ]
-                                      .map(
-                                        (t) => DropdownMenuItem(
-                                          value: t,
-                                          child: Text(t.displayName),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (t) {
-                                if (t != null) {
-                                  setModalState(() => selectedType = t);
-                                }
-                              },
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceMd),
-
-                            // Category
-                            DropdownButtonFormField<String>(
-                              value:
-                                  categories.any(
-                                        (c) => c.id == selectedCategoryId,
-                                      )
-                                      ? selectedCategoryId
-                                      : null,
-                              decoration: const InputDecoration(
-                                labelText: 'Category',
-                              ),
-                              hint: Text(selectedCategoryName),
-                              items:
-                                  categories
-                                      .map(
-                                        (c) => DropdownMenuItem(
-                                          value: c.id,
-                                          child: Text(c.name),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (id) {
-                                if (id != null) {
-                                  final cat = categories.firstWhere(
-                                    (c) => c.id == id,
-                                  );
-                                  setModalState(() {
-                                    selectedCategoryId = cat.id;
-                                    selectedCategoryName = cat.name;
-                                    selectedCategoryIcon = cat.iconIdentifier;
-                                    selectedCategoryColor =
-                                        cat.colorTokenIdentifier;
-                                  });
-                                }
-                              },
-                            ),
-                            const SizedBox(height: StillwaterTokens.spaceMd),
-
-                            // Account
-                            DropdownButtonFormField<String>(
-                              value:
-                                  accounts.any((a) => a.id == selectedAccountId)
-                                      ? selectedAccountId
-                                      : (accounts.isNotEmpty
-                                          ? accounts.first.id
-                                          : null),
-                              decoration: const InputDecoration(
-                                labelText: 'Account',
-                              ),
-                              items:
-                                  accounts
-                                      .map(
-                                        (a) => DropdownMenuItem(
-                                          value: a.id,
-                                          child: Text(a.name),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (id) {
-                                if (id != null) {
-                                  setModalState(() => selectedAccountId = id);
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    FfSheetFooter(
-                      primaryLabel: 'Save Changes',
-                      onPrimaryPressed: () {
-                        final parsedAmount =
-                            double.tryParse(amountController.text) ??
-                            item.amount;
-                        final updated = item.copyWith(
-                          amount: parsedAmount,
-                          normalizedMerchant: merchantController.text.trim(),
-                          type: selectedType,
-                          categoryId: selectedCategoryId,
-                          categoryName: selectedCategoryName,
-                          categoryIcon: selectedCategoryIcon,
-                          categoryColor: selectedCategoryColor,
-                          accountId: selectedAccountId,
-                          date: selectedDate,
-                        );
-
-                        ref
-                            .read(needsReviewControllerProvider.notifier)
-                            .updateItem(updated);
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                  ],
+          (_) => AddEditTransactionSheet(
+            initialTransaction: item.toTransaction(targetId: item.tempId),
+            headerTitle: 'Edit Pending Transaction',
+            saveLabel: 'Save Changes',
+            sourceContext: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FfSourceBadge(source: item.source, sourceName: item.sourceName),
+                const SizedBox(height: StillwaterTokens.spaceXs),
+                const Text(
+                  'Review before importing. Saving keeps this item pending.',
                 ),
-              );
-            },
+                if (item.isDuplicate)
+                  const Text(
+                    'Merging retains the existing transaction’s accounts and purpose. Choose Keep Both to save a separate transaction.',
+                  ),
+                if (item.categorizationConfidence < 0.7)
+                  const Text('Category needs confirmation.'),
+                ...[...item.validationErrors, ...item.warnings].map(Text.new),
+                if (item.rawSource != null)
+                  ExpansionTile(
+                    title: const Text('Source details'),
+                    subtitle: const Text(
+                      'Private source evidence · stored on this device',
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+                        child: SelectableText(item.rawSource!),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            onSave:
+                (draft) => ref
+                    .read(needsReviewControllerProvider.notifier)
+                    .updateItem(item.withReviewEdit(draft)),
           ),
     );
   }
 
+  Future<void> _runAction(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (error) {
+      if (mounted) {
+        FfSnackbar.show(
+          context,
+          message:
+              error is StateError
+                  ? error.message.toString()
+                  : 'Could not update the review queue. Please try again.',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final items = ref.watch(pendingTransactionsStreamProvider).value ?? [];
-    final categories = ref.watch(categoriesStreamProvider).value ?? [];
-    final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
+    final pending = ref.watch(pendingTransactionsStreamProvider);
+    final items = pending.value ?? [];
+    final busy = ref.watch(needsReviewControllerProvider).isLoading;
 
     final filtered =
         items.where((i) {
@@ -248,7 +103,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
             case 'duplicates':
               return i.isDuplicate;
             case 'uncertain':
-              return i.categorizationConfidence < 0.7;
+              return i.categorizationConfidence < 0.7 || i.hasWarnings;
             case 'errors':
               return !i.isValid;
             default:
@@ -264,42 +119,60 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
             IconButton(
               icon: const Icon(Icons.playlist_add_check_rounded),
               tooltip: 'Approve All Valid',
-              onPressed: () async {
-                final count = await ref
-                    .read(needsReviewControllerProvider.notifier)
-                    .approveAllValid(items);
-                if (context.mounted) {
-                  FfSnackbar.show(
-                    context,
-                    message: 'Approved $count valid transactions.',
-                  );
-                }
-              },
+              onPressed:
+                  busy
+                      ? null
+                      : () => _runAction(() async {
+                        final count = await ref
+                            .read(needsReviewControllerProvider.notifier)
+                            .approveAllValid(items);
+                        if (context.mounted) {
+                          FfSnackbar.show(
+                            context,
+                            message: 'Approved $count valid transactions.',
+                          );
+                        }
+                      }),
             ),
             IconButton(
               icon: const Icon(Icons.delete_sweep_outlined),
               tooltip: 'Clear Queue',
-              onPressed: () async {
-                final confirmed = await FfConfirmDialog.show(
-                  context,
-                  title: 'Clear Review Queue?',
-                  message:
-                      'All unapproved pending transactions will be deleted.',
-                  confirmLabel: 'Clear All',
-                  isDestructive: true,
-                );
-                if (confirmed == true) {
-                  await ref
-                      .read(needsReviewControllerProvider.notifier)
-                      .clearAll();
-                }
-              },
+              onPressed:
+                  busy
+                      ? null
+                      : () => _runAction(() async {
+                        final confirmed = await FfConfirmDialog.show(
+                          context,
+                          title: 'Clear Review Queue?',
+                          message:
+                              'All unapproved pending transactions will be deleted.',
+                          confirmLabel: 'Clear All',
+                          isDestructive: true,
+                        );
+                        if (confirmed == true) {
+                          await ref
+                              .read(needsReviewControllerProvider.notifier)
+                              .clearAll();
+                        }
+                      }),
             ),
           ],
         ],
       ),
       body:
-          items.isEmpty
+          pending.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : pending.hasError
+              ? Center(
+                child: TextButton(
+                  onPressed:
+                      () => ref.invalidate(pendingTransactionsStreamProvider),
+                  child: const Text(
+                    'Could not load review queue. Tap to retry.',
+                  ),
+                ),
+              )
+              : items.isEmpty
               ? Padding(
                 padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
                 child: Center(
@@ -338,7 +211,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                       ),
                       FfChip(
                         label:
-                            'Uncertain (${items.where((i) => i.categorizationConfidence < 0.7).length})',
+                            'Uncertain (${items.where((i) => i.categorizationConfidence < 0.7 || i.hasWarnings).length})',
                         isSelected: _selectedFilter == 'uncertain',
                         onSelected:
                             () => setState(() => _selectedFilter = 'uncertain'),
@@ -356,7 +229,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
 
                   // Pending items list
                   for (final item in filtered)
-                    _buildPendingItemCard(context, item, categories, accounts),
+                    _buildPendingItemCard(context, item, busy),
 
                   const SizedBox(height: StillwaterTokens.space4Xl),
                 ],
@@ -367,8 +240,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
   Widget _buildPendingItemCard(
     BuildContext context,
     ParsedTransaction item,
-    List<Category> categories,
-    List<Account> accounts,
+    bool busy,
   ) {
     final theme = context.theme;
     final isExpense = item.type == TransactionType.expense;
@@ -387,8 +259,9 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: StillwaterTokens.spaceSm,
+            runSpacing: StillwaterTokens.spaceXs,
             children: [
               FfSourceBadge(source: item.source, sourceName: item.sourceName),
               Text(
@@ -408,9 +281,10 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.normalizedMerchant.isNotEmpty
-                          ? item.normalizedMerchant
-                          : item.rawMerchant,
+                      item.merchantDisplayName ??
+                          (item.normalizedMerchant.isNotEmpty
+                              ? item.normalizedMerchant
+                              : item.rawMerchant),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -488,46 +362,78 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
             const SizedBox(height: StillwaterTokens.spaceSm),
           ],
 
+          if (item.categorizationConfidence < 0.7)
+            const Text('Review reason: category needs confirmation'),
+          if (item.normalizedMerchant == 'Bank Transaction')
+            const Text('Payee not identified — please edit before approving'),
           // Action Buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          Wrap(
+            alignment: WrapAlignment.end,
             children: [
               TextButton(
-                onPressed: () {
-                  ref
-                      .read(needsReviewControllerProvider.notifier)
-                      .dismissItem(item.tempId);
-                },
+                onPressed:
+                    busy
+                        ? null
+                        : () => _runAction(
+                          () => ref
+                              .read(needsReviewControllerProvider.notifier)
+                              .dismissItem(item.tempId),
+                        ),
                 child: const Text('Dismiss'),
               ),
               TextButton(
                 onPressed:
-                    () =>
-                        _openEditItemSheet(context, item, categories, accounts),
+                    busy ? null : () => _openEditItemSheet(context, item),
                 child: const Text('Edit'),
               ),
               const SizedBox(width: StillwaterTokens.spaceXs),
-              if (item.isDuplicate && item.matchedTransaction != null)
+              if (item.isDuplicate &&
+                  (item.matchedTransaction != null ||
+                      item.matchedTransactionId != null)) ...[
+                TextButton(
+                  onPressed:
+                      busy || !item.isValid
+                          ? null
+                          : () => _runAction(
+                            () => ref
+                                .read(needsReviewControllerProvider.notifier)
+                                .approveItem(
+                                  item.copyWith(
+                                    duplicateResolution:
+                                        DuplicateResolution.keepBoth,
+                                  ),
+                                ),
+                          ),
+                  child: const Text('Keep Both'),
+                ),
                 FfButton(
                   label: 'Merge',
                   variant: FfButtonVariant.secondary,
-                  onPressed: () {
-                    final mergeItem = item.copyWith(
-                      duplicateResolution: DuplicateResolution.merge,
-                    );
-                    ref
-                        .read(needsReviewControllerProvider.notifier)
-                        .approveItem(mergeItem);
-                  },
-                )
-              else
+                  onPressed:
+                      busy || !item.isValid
+                          ? null
+                          : () {
+                            final mergeItem = item.copyWith(
+                              duplicateResolution: DuplicateResolution.merge,
+                            );
+                            _runAction(
+                              () => ref
+                                  .read(needsReviewControllerProvider.notifier)
+                                  .approveItem(mergeItem),
+                            );
+                          },
+                ),
+              ] else
                 FfButton(
                   label: 'Approve',
-                  onPressed: () {
-                    ref
-                        .read(needsReviewControllerProvider.notifier)
-                        .approveItem(item);
-                  },
+                  onPressed:
+                      busy || !item.isValid
+                          ? null
+                          : () => _runAction(
+                            () => ref
+                                .read(needsReviewControllerProvider.notifier)
+                                .approveItem(item),
+                          ),
                 ),
             ],
           ),

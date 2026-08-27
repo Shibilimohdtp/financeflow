@@ -298,7 +298,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: '100% Offline')),
+            child: Center(
+              child: FfPrivacyBadge(label: '100% Offline', iconOnly: true),
+            ),
           ),
         ],
       ),

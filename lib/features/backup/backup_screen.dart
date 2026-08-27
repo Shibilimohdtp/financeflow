@@ -136,7 +136,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'AES-256 GCM')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'AES-256 GCM', iconOnly: true),
+            ),
           ),
         ],
       ),

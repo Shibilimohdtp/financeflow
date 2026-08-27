@@ -3,6 +3,7 @@ import '../../merchant_normalization_service.dart';
 import '../../../models/ingestion/parsed_transaction.dart';
 import '../../../models/transaction.dart';
 import 'csv_parser.dart';
+import 'counterparty_extractor.dart';
 
 abstract class NotificationParser {
   String get sourceName;
@@ -56,7 +57,7 @@ class GooglePayNotificationParser implements NotificationParser {
 
     if (paidMatch != null) {
       final amount = CsvParser.parseAmountString(paidMatch.group(1)!);
-      final rawMerchant = paidMatch.group(2)!.trim();
+      final rawMerchant = CounterpartyExtractor.extract(fullText);
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -95,7 +96,9 @@ class GooglePayNotificationParser implements NotificationParser {
         payeeStr = payeeStr.substring('google pay'.length).trim();
       }
       final amount = CsvParser.parseAmountString(amtStr);
-      final rawMerchant = payeeStr.isNotEmpty ? payeeStr : 'Payer';
+      final rawMerchant =
+          CounterpartyExtractor.validate(payeeStr) ??
+          CounterpartyExtractor.unknown;
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -156,7 +159,7 @@ class PhonePeNotificationParser implements NotificationParser {
 
     if (paidMatch != null) {
       final amount = CsvParser.parseAmountString(paidMatch.group(1)!);
-      final rawMerchant = paidMatch.group(2)!.trim();
+      final rawMerchant = CounterpartyExtractor.extract(fullText);
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -244,7 +247,7 @@ class PaytmNotificationParser implements NotificationParser {
 
     if (paidMatch != null) {
       final amount = CsvParser.parseAmountString(paidMatch.group(1)!);
-      final rawMerchant = paidMatch.group(2)!.trim();
+      final rawMerchant = CounterpartyExtractor.extract(fullText);
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -334,7 +337,7 @@ class CredNotificationParser implements NotificationParser {
 
     if (paidMatch != null) {
       final amount = CsvParser.parseAmountString(paidMatch.group(1)!);
-      final rawMerchant = paidMatch.group(2)!.trim();
+      final rawMerchant = CounterpartyExtractor.extract(fullText);
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -398,7 +401,7 @@ class GenericBankNotificationParser implements NotificationParser {
     if (debitMatch != null) {
       final amtStr = debitMatch.group(1) ?? debitMatch.group(2) ?? '0';
       final amount = CsvParser.parseAmountString(amtStr);
-      final rawMerchant = _extractMerchant(fullText);
+      final rawMerchant = CounterpartyExtractor.extract(fullText);
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -427,7 +430,7 @@ class GenericBankNotificationParser implements NotificationParser {
     if (creditMatch != null) {
       final amtStr = creditMatch.group(1) ?? creditMatch.group(2) ?? '0';
       final amount = CsvParser.parseAmountString(amtStr);
-      final rawMerchant = _extractMerchant(fullText);
+      final rawMerchant = CounterpartyExtractor.extract(fullText);
       final normalizedMerchant = MerchantNormalizationService.normalize(
         rawMerchant,
       );
@@ -447,18 +450,6 @@ class GenericBankNotificationParser implements NotificationParser {
     }
 
     return null;
-  }
-
-  String _extractMerchant(String text) {
-    // Look for "at Swiggy", "to Dominos", "from Ramesh", "info: UPI/..."
-    final atMatch = RegExp(
-      r'(?:at|to|towards|from|for|info:?)\s+([A-Za-z0-9\s&]+?)(?:\s+(?:on|using|via|ref|upi|avl|bal)|[.\n]|$)',
-      caseSensitive: false,
-    ).firstMatch(text);
-    if (atMatch != null) {
-      return atMatch.group(1)!.trim();
-    }
-    return 'Bank Transaction';
   }
 
   String? _detectBankName(String text) {
@@ -483,7 +474,7 @@ String? _extractUpiRef(String text) {
     r'(?:upi ref|ref no|rrn|utr|txn id|ref)[\s:]*([A-Za-z0-9]+)',
     caseSensitive: false,
   ).firstMatch(text);
-  return match?.group(1);
+  return CounterpartyExtractor.structuredReference(text) ?? match?.group(1);
 }
 
 ParsedTransaction _createParsedTx({
@@ -547,10 +538,16 @@ ParsedTransaction _createParsedTx({
     categorizationReason: catReason,
     referenceNumber: referenceNumber,
     fingerprint: fingerprint,
+    warnings:
+        rawMerchant == CounterpartyExtractor.unknown
+            ? const ['Could not clearly identify payee from notification']
+            : const [],
     validationErrors: validationErrors,
     isIncluded: validationErrors.isEmpty,
     reviewStatus:
-        validationErrors.isEmpty && catConfidence >= 0.7
+        validationErrors.isEmpty &&
+                rawMerchant != CounterpartyExtractor.unknown &&
+                catConfidence >= 0.7
             ? ReviewStatus.confirmed
             : ReviewStatus.pending,
   );

@@ -5,6 +5,7 @@ import '../../core/extensions/context_extensions.dart';
 import '../../models/app_settings.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/financeflow_mark.dart';
@@ -29,7 +30,6 @@ import '../personal_debts/lending_borrowing_screen.dart';
 import '../savings_goals/savings_goals_screen.dart';
 import '../security/security_settings_screen.dart';
 import '../subscriptions/subscriptions_screen.dart';
-import '../transactions/transactions_controller.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
 
@@ -72,7 +72,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
-    final transactions = ref.watch(filteredTransactionsProvider).value ?? [];
     final pendingCount = ref.watch(pendingReviewCountProvider);
 
     return Scaffold(
@@ -82,10 +81,12 @@ class SettingsScreen extends ConsumerWidget {
           SliverAppBar(
             floating: true,
             title: const Text('More'),
-            actions: [
+            actions: const [
               Padding(
-                padding: const EdgeInsets.only(right: StillwaterTokens.spaceMd),
-                child: _PrivacyStrip(txCount: transactions.length),
+                padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+                child: Center(
+                  child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
+                ),
               ),
             ],
           ),
@@ -164,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
                       onTap: () => _push(context, const AlertsInboxScreen()),
                     ),
                     _NavRow(
-                      icon: Icons.auto_awesome,
+                      icon: Icons.chat_bubble_outline_rounded,
                       iconColor: context.aiColors.accent,
                       label: 'Ask Your Finances',
                       subtitle: 'Natural language queries · on-device first',
@@ -867,35 +868,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Private shared sub-widgets
 // ─────────────────────────────────────────────────────────────────────────────
-
-/// Compact privacy strip shown in the More AppBar.
-class _PrivacyStrip extends StatelessWidget {
-  final int txCount;
-  const _PrivacyStrip({required this.txCount});
-
-  @override
-  Widget build(BuildContext context) {
-    final secColors = context.secColors;
-    return Semantics(
-      label: 'Privacy: 100% on-device, $txCount transactions stored locally',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.shield_outlined, size: 14, color: secColors.verified),
-          const SizedBox(width: 4),
-          Text(
-            '100% Local',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: secColors.verified,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// All-caps section heading — consistent with loan_detail_screen redesign.
 class _SectionLabel extends StatelessWidget {

@@ -339,6 +339,40 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  /// Mark a specific installment as unpaid / remove payment record and recalculate loan state
+  Future<void> markInstallmentUnpaid({
+    required Loan loan,
+    required int installmentNumber,
+    String? paymentId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      if (paymentId != null && paymentId.isNotEmpty) {
+        if (_coordinator != null) {
+          await _coordinator.deleteEmiPayment(paymentId);
+        } else {
+          await _repository.deleteEmiPayment(paymentId);
+        }
+      } else {
+        final payments = await _repository.getPaymentsForLoan(loan.id);
+        final match = payments
+            .where((p) => p.installmentNumber == installmentNumber)
+            .firstOrNull;
+        if (match != null) {
+          if (_coordinator != null) {
+            await _coordinator.deleteEmiPayment(match.id);
+          } else {
+            await _repository.deleteEmiPayment(match.id);
+          }
+        }
+      }
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
   /// Delete a recorded EMI payment and recalculate
   Future<void> deletePayment(String paymentId) async {
     state = const AsyncValue.loading();

@@ -91,12 +91,12 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
           visualDensity: VisualDensity.compact,
           onPressed: onOpenAlerts,
         ),
-        // AI Query Shortcut
-        IconButton(
-          icon: Icon(Icons.auto_awesome, color: context.aiColors.accent),
-          tooltip: 'Ask Your Finances',
-          visualDensity: VisualDensity.compact,
-          onPressed: onOpenAi,
+        // Ask Your Finances Action Button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.space2Xs),
+          child: Center(
+            child: _AskFinanceButton(onPressed: onOpenAi),
+          ),
         ),
         // On-Device Privacy Badge
         const Padding(
@@ -104,6 +104,67 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
           child: Center(child: FfPrivacyBadge(label: 'On-device')),
         ),
       ],
+    );
+  }
+}
+
+/// Custom action button for "Ask Your Finances" natural language queries
+class _AskFinanceButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _AskFinanceButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final aiColors = context.aiColors;
+    final theme = context.theme;
+
+    return Semantics(
+      button: true,
+      label: 'Ask Your Finances',
+      child: Tooltip(
+        message: 'Ask Your Finances',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceSm,
+                vertical: StillwaterTokens.space2Xs + 1,
+              ),
+              decoration: BoxDecoration(
+                color: aiColors.surface,
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+                border: Border.all(
+                  color: aiColors.accent.withValues(alpha: 0.35),
+                  width: StillwaterTokens.borderWidthHairline,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 13,
+                    color: aiColors.accent,
+                  ),
+                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  Text(
+                    'Ask',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: aiColors.accent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -54,7 +54,7 @@ class IsarService {
       _schemas,
       directory: dir,
       name: 'financeflow_local_db',
-      inspector: kDebugMode,
+      inspector: false,
     );
   }
 

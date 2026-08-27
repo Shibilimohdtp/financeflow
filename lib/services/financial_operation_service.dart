@@ -59,8 +59,7 @@ class FinancialOperationService {
     int? preferredInstallmentNumber,
   }) async {
     final transaction = _normalized(proposed);
-    transaction.validate();
-    _validateComponents(transaction);
+    validateDraft(transaction);
 
     await isar.writeTxn(() async {
       await _validateAccounts(transaction);
@@ -397,7 +396,13 @@ class FinancialOperationService {
     _ => TransactionType.expense,
   };
 
-  void _validateComponents(Transaction transaction) {
+  /// Pure checks shared by staged editing and posting. No ledger writes.
+  static void validateDraft(Transaction transaction) {
+    transaction.validate();
+    _validateComponents(transaction);
+  }
+
+  static void _validateComponents(Transaction transaction) {
     if (transaction.effectivePurpose == TransactionPurpose.loanRepayment &&
         transaction.linkedLoanId != null) {
       final total =

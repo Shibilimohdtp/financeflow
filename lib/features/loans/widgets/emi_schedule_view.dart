@@ -4,6 +4,7 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/loan.dart';
+import '../../../repositories/loan_repository.dart';
 import '../../../services/loan_calculator.dart';
 import '../../../shared/widgets/ff_button.dart';
 import '../../../shared/widgets/ff_confirm_dialog.dart';
@@ -21,6 +22,7 @@ class EmiScheduleView extends ConsumerWidget {
   Future<void> _markInstallmentPaid(
     BuildContext context,
     WidgetRef ref,
+    Loan currentLoan,
     AmortizationScheduleItem item,
   ) async {
     final accounts =
@@ -31,7 +33,7 @@ class EmiScheduleView extends ConsumerWidget {
             : await showPaymentAccountPicker(
               context: context,
               accounts: accounts,
-              selectedAccountId: loan.accountId,
+              selectedAccountId: currentLoan.accountId,
             );
     if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
       return;
@@ -49,7 +51,7 @@ class EmiScheduleView extends ConsumerWidget {
         await ref
             .read(loansControllerProvider.notifier)
             .markInstallmentPaid(
-              loan: loan,
+              loan: currentLoan,
               installmentNumber: item.monthNumber,
               accountId: payingAccount?.id,
             );
@@ -67,9 +69,49 @@ class EmiScheduleView extends ConsumerWidget {
     }
   }
 
+  Future<void> _markInstallmentUnpaid(
+    BuildContext context,
+    WidgetRef ref,
+    Loan currentLoan,
+    AmortizationScheduleItem item,
+  ) async {
+    final confirmed = await FfConfirmDialog.show(
+      context,
+      title: 'Mark Installment #${item.monthNumber} as Unpaid?',
+      message:
+          'Remove the recorded payment of ${CurrencyFormatter.formatINR(item.emiAmount)} (due ${DateFormatter.formatFullDate(item.dueDate)})? This will update your loan balance and next due date.',
+      confirmLabel: 'Mark Unpaid',
+      cancelLabel: 'Cancel',
+      isDestructive: true,
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await ref
+            .read(loansControllerProvider.notifier)
+            .markInstallmentUnpaid(
+              loan: currentLoan,
+              installmentNumber: item.monthNumber,
+              paymentId: item.payment?.id,
+            );
+        if (context.mounted) {
+          FfSnackbar.show(
+            context,
+            message: 'Installment #${item.monthNumber} marked as unpaid.',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          FfSnackbar.show(context, message: 'Failed to unmark payment: $e');
+        }
+      }
+    }
+  }
+
   Future<void> _markAllOverduePaid(
     BuildContext context,
     WidgetRef ref,
+    Loan currentLoan,
     List<AmortizationScheduleItem> overdueItems,
   ) async {
     final accounts =
@@ -80,7 +122,7 @@ class EmiScheduleView extends ConsumerWidget {
             : await showPaymentAccountPicker(
               context: context,
               accounts: accounts,
-              selectedAccountId: loan.accountId,
+              selectedAccountId: currentLoan.accountId,
             );
     if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
       return;
@@ -102,7 +144,7 @@ class EmiScheduleView extends ConsumerWidget {
       try {
         await ref
             .read(loansControllerProvider.notifier)
-            .markAllOverduePaid(loan: loan, accountId: payingAccount?.id);
+            .markAllOverduePaid(loan: currentLoan, accountId: payingAccount?.id);
         if (context.mounted) {
           FfSnackbar.show(
             context,
@@ -123,14 +165,19 @@ class EmiScheduleView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
-    final schedule = ref.watch(loanScheduleProvider(loan));
+    final loans = ref.watch(allLoansStreamProvider).value ?? const [];
+    final currentLoan = loans.firstWhere(
+      (l) => l.id == loan.id,
+      orElse: () => loan,
+    );
+    final schedule = ref.watch(loanScheduleProvider(currentLoan));
 
     final paidItems = schedule.where((it) => it.isPaid).toList();
     final overdueItems = schedule.where((it) => it.isOverdue).toList();
     final upcomingItems = schedule.where((it) => it.isUpcoming).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text('${loan.name} Schedule')),
+      appBar: AppBar(title: Text('${currentLoan.name} Schedule')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -141,8 +188,12 @@ class EmiScheduleView extends ConsumerWidget {
               vertical: StillwaterTokens.spaceSm,
             ),
             color: theme.colorScheme.surface,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: StillwaterTokens.spaceSm,
+              runSpacing: StillwaterTokens.spaceXs,
               children: [
                 _buildStatBadge(
                   label: '${paidItems.length} Paid',
@@ -198,7 +249,12 @@ class EmiScheduleView extends ConsumerWidget {
                     label: 'Mark All Paid',
                     size: FfButtonSize.sm,
                     onPressed:
-                        () => _markAllOverduePaid(context, ref, overdueItems),
+                        () => _markAllOverduePaid(
+                          context,
+                          ref,
+                          currentLoan,
+                          overdueItems,
+                        ),
                   ),
                 ],
               ),
@@ -214,124 +270,187 @@ class EmiScheduleView extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final item = schedule[index];
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.space2Xs,
+                return InkWell(
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusMd,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Month Number Icon
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color:
-                              item.isPaid
-                                  ? context.secColors.verified.withValues(
-                                    alpha: 0.15,
-                                  )
-                                  : item.isOverdue
-                                  ? context.secColors.error.withValues(
-                                    alpha: 0.15,
-                                  )
-                                  : theme.colorScheme.primary.withValues(
-                                    alpha: 0.08,
-                                  ),
-                          shape: BoxShape.circle,
+                  onTap:
+                      item.isPaid
+                          ? () => _markInstallmentUnpaid(
+                            context,
+                            ref,
+                            currentLoan,
+                            item,
+                          )
+                          : () => _markInstallmentPaid(
+                            context,
+                            ref,
+                            currentLoan,
+                            item,
+                          ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: StillwaterTokens.space2Xs,
+                      horizontal: StillwaterTokens.space2Xs,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Month Number Icon / Checkmark
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color:
+                                item.isPaid
+                                    ? context.secColors.verified.withValues(
+                                      alpha: 0.15,
+                                    )
+                                    : item.isOverdue
+                                    ? context.secColors.error.withValues(
+                                      alpha: 0.15,
+                                    )
+                                    : theme.colorScheme.primary.withValues(
+                                      alpha: 0.08,
+                                    ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child:
+                                item.isPaid
+                                    ? Icon(
+                                      Icons.check_rounded,
+                                      size: 16,
+                                      color: context.secColors.verified,
+                                    )
+                                    : Text(
+                                      '#${item.monthNumber}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            item.isOverdue
+                                                ? context.secColors.error
+                                                : theme.colorScheme.primary,
+                                      ),
+                                    ),
+                          ),
                         ),
-                        child: Center(
-                          child:
-                              item.isPaid
-                                  ? Icon(
-                                    Icons.check_rounded,
-                                    size: 18,
-                                    color: context.secColors.verified,
-                                  )
-                                  : Text(
-                                    '#${item.monthNumber}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color:
+                        const SizedBox(width: StillwaterTokens.spaceSm),
+
+                        // Details Column (Date, Status pill, Principal & Interest breakdown)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: StillwaterTokens.spaceXs,
+                                runSpacing: 2,
+                                children: [
+                                  Text(
+                                    DateFormatter.formatFullDate(item.dueDate),
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight:
                                           item.isOverdue
-                                              ? context.secColors.error
-                                              : theme.colorScheme.primary,
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                      fontSize: 13,
                                     ),
                                   ),
-                        ),
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
-
-                      // Details Column
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  DateFormatter.formatFullDate(item.dueDate),
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight:
-                                        item.isOverdue
-                                            ? FontWeight.bold
-                                            : FontWeight.w600,
-                                  ),
+                                  if (item.isPaid || item.isOverdue)
+                                    _buildStatusPill(context, item),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'P: ${CurrencyFormatter.formatINR(item.principalPaid)} · I: ${CurrencyFormatter.formatINR(item.interestPaid)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.secondary,
                                 ),
-                                const SizedBox(width: StillwaterTokens.spaceXs),
-                                _buildStatusPill(context, item),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: StillwaterTokens.spaceXs),
+
+                        // EMI Amount & Balance
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             Text(
-                              'P: ${CurrencyFormatter.formatINR(item.principalPaid)} · I: ${CurrencyFormatter.formatINR(item.interestPaid)}',
+                              CurrencyFormatter.formatINR(item.emiAmount),
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              'Bal: ${CurrencyFormatter.formatINR(item.closingBalance)}',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 11,
+                                fontSize: 10,
                                 color: theme.colorScheme.secondary,
                               ),
                             ),
                           ],
                         ),
-                      ),
 
-                      // EMI Amount & Action
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            CurrencyFormatter.formatINR(item.emiAmount),
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Bal: ${CurrencyFormatter.formatINR(item.closingBalance)}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: 10,
-                              color: theme.colorScheme.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        const SizedBox(width: StillwaterTokens.space2Xs),
 
-                      if (!item.isPaid) ...[
-                        const SizedBox(width: StillwaterTokens.spaceSm),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.check_circle_outline_rounded,
-                            size: 20,
-                          ),
-                          tooltip: 'Mark Installment #${item.monthNumber} Paid',
-                          color:
-                              item.isOverdue
-                                  ? context.secColors.error
-                                  : theme.colorScheme.primary,
-                          onPressed:
-                              () => _markInstallmentPaid(context, ref, item),
+                        // Action button (Mark Paid / Mark Unpaid)
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child:
+                              item.isPaid
+                                  ? IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(
+                                      Icons.undo_rounded,
+                                      size: 18,
+                                    ),
+                                    tooltip:
+                                        'Mark Installment #${item.monthNumber} Unpaid',
+                                    color: theme.colorScheme.secondary,
+                                    onPressed:
+                                        () => _markInstallmentUnpaid(
+                                          context,
+                                          ref,
+                                          currentLoan,
+                                          item,
+                                        ),
+                                  )
+                                  : IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(
+                                      Icons.check_circle_outline_rounded,
+                                      size: 18,
+                                    ),
+                                    tooltip:
+                                        'Mark Installment #${item.monthNumber} Paid',
+                                    color:
+                                        item.isOverdue
+                                            ? context.secColors.error
+                                            : theme.colorScheme.primary,
+                                    onPressed:
+                                        () => _markInstallmentPaid(
+                                          context,
+                                          ref,
+                                          currentLoan,
+                                          item,
+                                        ),
+                                  ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
                 );
               },
@@ -355,6 +474,8 @@ class EmiScheduleView extends ConsumerWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
@@ -367,6 +488,13 @@ class EmiScheduleView extends ConsumerWidget {
   Widget _buildStatusPill(BuildContext context, AmortizationScheduleItem item) {
     if (item.isPaid) {
       final paymentDate = item.payment?.paymentDate;
+      final String paidText;
+      if (paymentDate != null) {
+        paidText = 'Paid ${DateFormatter.formatShortDate(paymentDate)}';
+      } else {
+        paidText = 'PAID';
+      }
+
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         decoration: BoxDecoration(
@@ -374,9 +502,9 @@ class EmiScheduleView extends ConsumerWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          paymentDate != null
-              ? 'Paid ${DateFormatter.formatTransactionDate(paymentDate)}'
-              : 'PAID',
+          paidText,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.bold,
@@ -396,6 +524,8 @@ class EmiScheduleView extends ConsumerWidget {
         ),
         child: Text(
           'OVERDUE ($days d)',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.bold,

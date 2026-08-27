@@ -90,7 +90,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: '100% Local')),
+            child: Center(
+              child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
+            ),
           ),
         ],
       ),

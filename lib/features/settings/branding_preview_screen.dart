@@ -20,7 +20,9 @@ class BrandingPreviewScreen extends StatelessWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'Design Showcase')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'Design Showcase', iconOnly: true),
+            ),
           ),
         ],
       ),

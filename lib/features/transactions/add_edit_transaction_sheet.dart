@@ -15,6 +15,7 @@ import '../../models/transaction.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../services/categorization_service.dart';
+import '../../services/financial_operation_service.dart';
 import '../../services/merchant_normalization_service.dart';
 import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
@@ -37,7 +38,20 @@ import 'transactions_controller.dart';
 class AddEditTransactionSheet extends ConsumerStatefulWidget {
   final Transaction? initialTransaction;
 
-  const AddEditTransactionSheet({super.key, this.initialTransaction});
+  /// When supplied, saves the validated draft without posting to the ledger.
+  final Future<void> Function(Transaction)? onSave;
+  final String? headerTitle;
+  final String? saveLabel;
+  final Widget? sourceContext;
+
+  const AddEditTransactionSheet({
+    super.key,
+    this.initialTransaction,
+    this.onSave,
+    this.headerTitle,
+    this.saveLabel,
+    this.sourceContext,
+  });
 
   @override
   ConsumerState<AddEditTransactionSheet> createState() =>
@@ -119,6 +133,7 @@ class _AddEditTransactionSheetState
         initial?.paymentMethod ?? _defaultPaymentFor(_selectedType);
 
     if (initial != null &&
+        widget.onSave == null &&
         (initial.notes != null ||
             initial.tags.isNotEmpty ||
             initial.paymentMethod != null)) {
@@ -623,6 +638,15 @@ class _AddEditTransactionSheetState
             widget.initialTransaction?.categorizationConfidence,
       );
 
+      FinancialOperationService.validateDraft(tx);
+      if (widget.onSave != null) {
+        await widget.onSave!(tx);
+      } else {
+        await ref
+            .read(transactionsControllerProvider.notifier)
+            .saveTransaction(tx);
+      }
+
       if (_selectedCategory != null && _needsCategory) {
         CategorizationService.recordUserChoice(
           rawMerchant: merchant,
@@ -633,16 +657,14 @@ class _AddEditTransactionSheetState
         );
       }
 
-      await ref
-          .read(transactionsControllerProvider.notifier)
-          .saveTransaction(tx);
-
       if (mounted) {
         Navigator.of(context).pop();
         FfSnackbar.show(
           context,
           message:
-              widget.initialTransaction == null
+              widget.onSave != null
+                  ? 'Pending transaction updated on this device.'
+                  : widget.initialTransaction == null
                   ? 'Saved on this device.'
                   : 'Transaction updated on this device.',
         );
@@ -721,109 +743,116 @@ class _AddEditTransactionSheetState
     final activeTypeColor = _typeColor(context, _selectedType);
 
     final saveButtonText =
-        widget.initialTransaction == null
+        widget.saveLabel ??
+        (widget.initialTransaction == null
             ? 'Save ${_selectedPurpose.displayName}'
-            : 'Update ${_selectedPurpose.displayName}';
+            : 'Update ${_selectedPurpose.displayName}');
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.92,
-      minChildSize: 0.50,
-      maxChildSize: 0.98,
-      expand: false,
-      builder:
-          (context, scrollController) => Material(
-            color: surfaceColor,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(StillwaterTokens.radius2Xl),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: SafeArea(
-              top: false,
-              child: Column(
-                children: [
-                  // 1. Drag handle & Header
-                  _buildHeader(context),
-                  const Divider(height: 1, thickness: 1),
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.92,
+        minChildSize: 0.50,
+        maxChildSize: 0.98,
+        expand: false,
+        builder:
+            (context, scrollController) => Material(
+              color: surfaceColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(StillwaterTokens.radius2Xl),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: [
+                    // 1. Drag handle & Header
+                    _buildHeader(context),
+                    const Divider(height: 1, thickness: 1),
 
-                  // 2. Scrollable Body Form
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(
-                        StillwaterTokens.spaceLg,
-                        StillwaterTokens.spaceSm,
-                        StillwaterTokens.spaceLg,
-                        StillwaterTokens.spaceXl,
-                      ),
-                      children: [
-                        // Transaction Type Selector Bar
-                        _buildTypeSelector(
-                          categories: categories,
-                          accounts: accounts,
-                          history: history,
+                    // 2. Scrollable Body Form
+                    Expanded(
+                      child: ListView(
+                        controller: scrollController,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: const EdgeInsets.fromLTRB(
+                          StillwaterTokens.spaceLg,
+                          StillwaterTokens.spaceSm,
+                          StillwaterTokens.spaceLg,
+                          StillwaterTokens.spaceXl,
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Hero Amount Input Card
-                        _buildHeroAmountField(activeTypeColor),
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Merchant / Payee Field
-                        _buildMerchantField(
-                          suggestions: payeeSuggestions,
-                          categories: categories,
-                        ),
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        _buildPurposeFields(),
-                        if (_selectedPurpose != TransactionPurpose.expense &&
-                            _selectedPurpose != TransactionPurpose.income &&
-                            _selectedPurpose !=
-                                TransactionPurpose.internalTransfer)
+                        children: [
+                          if (widget.sourceContext != null) ...[
+                            widget.sourceContext!,
+                            const SizedBox(height: StillwaterTokens.spaceMd),
+                          ],
+                          // Transaction Type Selector Bar
+                          _buildTypeSelector(
+                            categories: categories,
+                            accounts: accounts,
+                            history: history,
+                          ),
                           const SizedBox(height: StillwaterTokens.spaceLg),
 
-                        // Category Section (if applicable)
-                        if (_needsCategory) ...[
-                          _buildCategorySection(categoriesForType),
+                          // Hero Amount Input Card
+                          _buildHeroAmountField(activeTypeColor),
                           const SizedBox(height: StillwaterTokens.spaceLg),
+
+                          // Merchant / Payee Field
+                          _buildMerchantField(
+                            suggestions: payeeSuggestions,
+                            categories: categories,
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceLg),
+
+                          _buildPurposeFields(),
+                          if (_selectedPurpose != TransactionPurpose.expense &&
+                              _selectedPurpose != TransactionPurpose.income &&
+                              _selectedPurpose !=
+                                  TransactionPurpose.internalTransfer)
+                            const SizedBox(height: StillwaterTokens.spaceLg),
+
+                          // Category Section (if applicable)
+                          if (_needsCategory) ...[
+                            _buildCategorySection(categoriesForType),
+                            const SizedBox(height: StillwaterTokens.spaceLg),
+                          ],
+
+                          // Account Section (Single or Directional Transfer)
+                          _buildAccountSection(accounts),
+                          const SizedBox(height: StillwaterTokens.spaceLg),
+
+                          // Quick Date Selector
+                          _buildDateSection(),
+                          const SizedBox(height: StillwaterTokens.spaceLg),
+
+                          // Progressive Disclosure: Expandable More Details
+                          _buildMoreDetailsSection(),
+
+                          // Bottom spacing for keyboard / safe area
+                          SizedBox(height: StillwaterTokens.spaceMd),
                         ],
-
-                        // Account Section (Single or Directional Transfer)
-                        _buildAccountSection(accounts),
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Quick Date Selector
-                        _buildDateSection(),
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Progressive Disclosure: Expandable More Details
-                        _buildMoreDetailsSection(),
-
-                        // Bottom spacing for keyboard / safe area
-                        SizedBox(
-                          height: StillwaterTokens.spaceMd + bottomInset,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
 
-                  // 3. Sticky Action Bar
-                  _buildStickyActionBar(saveButtonText, bottomInset),
-                ],
+                    // 3. Sticky Action Bar
+                    _buildStickyActionBar(saveButtonText, bottomInset),
+                  ],
+                ),
               ),
             ),
-          ),
+      ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
     return FfSheetHeader(
       title:
-          widget.initialTransaction == null
+          widget.headerTitle ??
+          (widget.initialTransaction == null
               ? 'Add Transaction'
-              : 'Edit Transaction',
+              : 'Edit Transaction'),
       padding: const EdgeInsets.fromLTRB(
         StillwaterTokens.spaceLg,
         StillwaterTokens.spaceSm,
@@ -900,6 +929,7 @@ class _AddEditTransactionSheetState
               purposes.contains(_selectedPurpose)
                   ? _selectedPurpose
                   : purposes.first,
+          isExpanded: true,
           decoration: const InputDecoration(labelText: 'Purpose'),
           items:
               purposes
@@ -1138,6 +1168,7 @@ class _AddEditTransactionSheetState
         children: [
           DropdownButtonFormField<String>(
             value: _selectedInvestment?.id ?? 'unlinked',
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Investment asset'),
             items: [
               const DropdownMenuItem(
@@ -1225,6 +1256,7 @@ class _AddEditTransactionSheetState
       }
       return DropdownButtonFormField<String>(
         value: _selectedMoneyRecord?.id,
+        isExpanded: true,
         decoration: const InputDecoration(labelText: 'Debt record'),
         hint: const Text('Select person and balance'),
         items:
@@ -1465,8 +1497,9 @@ class _AddEditTransactionSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: StillwaterTokens.spaceSm,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('Category', style: theme.textTheme.labelLarge),
             TextButton.icon(
@@ -1610,7 +1643,9 @@ class _AddEditTransactionSheetState
       children: [
         Text('Date', style: theme.textTheme.labelLarge),
         const SizedBox(height: StillwaterTokens.space2Xs),
-        Row(
+        Wrap(
+          spacing: StillwaterTokens.spaceXs,
+          runSpacing: StillwaterTokens.spaceXs,
           children: [
             ChoiceChip(
               label: const Text('Today'),
@@ -1625,16 +1660,14 @@ class _AddEditTransactionSheetState
                   (_) => _setDate(now.subtract(const Duration(days: 1))),
             ),
             const SizedBox(width: StillwaterTokens.spaceXs),
-            Expanded(
-              child: ActionChip(
-                avatar: const Icon(Icons.calendar_today_outlined, size: 16),
-                label: Text(
-                  DateFormat('d MMM yyyy').format(_selectedDate),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onPressed: _pickCustomDate,
+            ActionChip(
+              avatar: const Icon(Icons.calendar_today_outlined, size: 16),
+              label: Text(
+                DateFormat('d MMM yyyy').format(_selectedDate),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+              onPressed: _pickCustomDate,
             ),
           ],
         ),
@@ -1690,16 +1723,13 @@ class _AddEditTransactionSheetState
 
             // Payment Method Selector
             DropdownButtonFormField<String>(
-              value:
-                  _paymentMethods.contains(_selectedPaymentMethod)
-                      ? _selectedPaymentMethod
-                      : _defaultPaymentFor(_selectedType),
+              value: _selectedPaymentMethod,
               decoration: const InputDecoration(
                 labelText: 'Payment method',
                 prefixIcon: Icon(Icons.payment_outlined),
               ),
               items:
-                  _paymentMethods
+                  {..._paymentMethods, _selectedPaymentMethod}
                       .map(
                         (method) => DropdownMenuItem(
                           value: method,

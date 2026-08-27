@@ -4,6 +4,48 @@ import 'package:financeflow/services/ingestion/parsers/notification_parsers.dart
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Bank notifications use structured UPI before security footer', () {
+    final parsed =
+        GenericBankNotificationParser().parse(
+          packageName: 'com.axis',
+          title: 'Axis Bank',
+          text:
+              'INR 105.40 debited\nUPI/P2M/659798667691/ZOMATO\nNot you? SMS BLOCKUPI Cust ID to\n919951860002\nAxis Bank',
+        )!;
+    expect(parsed.rawMerchant, 'ZOMATO');
+    expect(parsed.normalizedMerchant, 'Zomato');
+    expect(parsed.referenceNumber, '659798667691');
+    expect(parsed.warnings, isEmpty);
+  });
+
+  for (final text in [
+    'INR 50 debited Cust ID to 919951860002',
+    'INR 50 spent at XX5645',
+    'INR 50 debited to 412345678901',
+  ]) {
+    test('Bank notification rejects false candidate: $text', () {
+      final parsed =
+          GenericBankNotificationParser().parse(
+            packageName: 'bank',
+            title: '',
+            text: text,
+          )!;
+      expect(parsed.normalizedMerchant, 'Bank Transaction');
+      expect(parsed.warnings, isNotEmpty);
+    });
+  }
+
+  test('Payment app rejects phone payee and retains uncertainty', () {
+    final parsed =
+        GooglePayNotificationParser().parse(
+          packageName: 'gpay',
+          title: 'Google Pay',
+          text: 'Paid ₹50 to +91 99518 60002',
+        )!;
+    expect(parsed.rawMerchant, 'Bank Transaction');
+    expect(parsed.warnings, isNotEmpty);
+  });
+
   group('Notification Parsers Tests', () {
     late NotificationParserRegistry registry;
 

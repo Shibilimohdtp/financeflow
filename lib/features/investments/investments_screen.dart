@@ -49,7 +49,9 @@ class InvestmentsScreen extends ConsumerWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'Manual-First')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'Manual-First', iconOnly: true),
+            ),
           ),
         ],
       ),

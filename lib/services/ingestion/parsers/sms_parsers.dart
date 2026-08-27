@@ -3,6 +3,7 @@ import '../../merchant_normalization_service.dart';
 import '../../../models/ingestion/parsed_transaction.dart';
 import '../../../models/transaction.dart';
 import 'csv_parser.dart';
+import 'counterparty_extractor.dart';
 
 abstract class SmsParser {
   String get bankName;
@@ -313,7 +314,7 @@ ParsedTransaction? _parseIndianBankSms({
   final accSuffix = accMatch?.group(1);
 
   // Extract Merchant / Counterparty
-  final rawMerchant = _extractSmsMerchant(body, isDebit);
+  final rawMerchant = CounterpartyExtractor.extract(body);
   final normalizedMerchant = MerchantNormalizationService.normalize(
     rawMerchant,
   );
@@ -323,7 +324,8 @@ ParsedTransaction? _parseIndianBankSms({
     r'(?:upi\s*ref|ref\s*no|rrn|utr|txn\s*id|ref)[\s:]*([A-Za-z0-9]+)',
     caseSensitive: false,
   ).firstMatch(body);
-  final refNo = refMatch?.group(1);
+  final refNo =
+      CounterpartyExtractor.structuredReference(body) ?? refMatch?.group(1);
 
   // Date Parsing from SMS or fallback to timestamp
   DateTime date = timestamp ?? DateTime.now();
@@ -333,7 +335,18 @@ ParsedTransaction? _parseIndianBankSms({
   if (dateMatch != null) {
     final parsedDate = CsvParser.parseDateString(dateMatch.group(1)!);
     if (parsedDate != null) {
-      date = parsedDate;
+      final clock = RegExp(r'\b(\d{2}):(\d{2}):(\d{2})\b').firstMatch(body);
+      date =
+          clock == null
+              ? parsedDate
+              : DateTime(
+                parsedDate.year,
+                parsedDate.month,
+                parsedDate.day,
+                int.parse(clock.group(1)!),
+                int.parse(clock.group(2)!),
+                int.parse(clock.group(3)!),
+              );
     }
   }
 
@@ -396,36 +409,4 @@ ParsedTransaction? _parseIndianBankSms({
             ? ReviewStatus.confirmed
             : ReviewStatus.pending,
   );
-}
-
-String _extractSmsMerchant(String body, bool isDebit) {
-  // Try pattern 1: "to VPA/Swiggy", "to Swiggy", "at Amazon", "towards Electricity"
-  final atToMatch = RegExp(
-    r'(?:to|at|towards|for|info:?|vpa)\s+([A-Za-z0-9\s&_.-]+?)(?:\s+(?:on|using|via|ref|upi|avl|bal|not you|if not)|[.\n]|$)',
-    caseSensitive: false,
-  ).firstMatch(body);
-  if (atToMatch != null) {
-    final candidate = atToMatch.group(1)!.trim();
-    if (candidate.isNotEmpty &&
-        !candidate.toLowerCase().startsWith('a/c') &&
-        !candidate.toLowerCase().startsWith('rs')) {
-      return candidate;
-    }
-  }
-
-  // Try pattern 2: "from Rahul", "by Transfer from Ramesh"
-  final fromMatch = RegExp(
-    r'(?:from|by)\s+([A-Za-z0-9\s&_.-]+?)(?:\s+(?:on|using|via|ref|upi|avl|bal)|[.\n]|$)',
-    caseSensitive: false,
-  ).firstMatch(body);
-  if (fromMatch != null) {
-    final candidate = fromMatch.group(1)!.trim();
-    if (candidate.isNotEmpty &&
-        !candidate.toLowerCase().startsWith('a/c') &&
-        !candidate.toLowerCase().startsWith('rs')) {
-      return candidate;
-    }
-  }
-
-  return 'Bank Transaction';
 }

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:financeflow/models/ingestion/parsed_transaction.dart';
+import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/ai_activity_log.dart';
 import 'package:financeflow/models/alert_item.dart';
@@ -27,6 +29,59 @@ import 'package:financeflow/core/errors/app_error.dart';
 import 'package:financeflow/services/loan_calculator.dart';
 import 'package:financeflow/repositories/subscription_repository.dart';
 import 'package:financeflow/repositories/transaction_repository.dart';
+
+class FakePendingTransactionRepository implements PendingTransactionRepository {
+  final Map<String, ParsedTransaction> _items = {};
+  final _changes = StreamController<List<ParsedTransaction>>.broadcast();
+  bool failSaving = false;
+
+  @override
+  Future<List<ParsedTransaction>> getPendingTransactions() async =>
+      _items.values.toList();
+  @override
+  Future<ParsedTransaction?> getPendingTransactionById(String tempId) async =>
+      _items[tempId];
+  @override
+  Stream<List<ParsedTransaction>> watchPendingTransactions() async* {
+    yield _items.values.toList();
+    yield* _changes.stream;
+  }
+
+  @override
+  Future<void> savePendingTransaction(ParsedTransaction item) async {
+    if (failSaving) throw StateError('Unable to save');
+    _items[item.tempId] = item;
+    _changes.add(_items.values.toList());
+  }
+
+  @override
+  Future<void> savePendingTransactions(List<ParsedTransaction> items) async {
+    for (final item in items) {
+      await savePendingTransaction(item);
+    }
+  }
+
+  @override
+  Future<void> removePendingTransaction(String tempId) async {
+    _items.remove(tempId);
+    _changes.add(_items.values.toList());
+  }
+
+  @override
+  Future<void> removePendingTransactions(List<String> tempIds) async {
+    for (final id in tempIds) {
+      await removePendingTransaction(id);
+    }
+  }
+
+  @override
+  Future<void> clearAllPending() async {
+    _items.clear();
+    _changes.add([]);
+  }
+
+  void dispose() => _changes.close();
+}
 
 class FakeSettingsRepository implements SettingsRepository {
   AppSettings _settings;

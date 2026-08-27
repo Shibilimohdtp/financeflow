@@ -152,7 +152,9 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'AES Decryption')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'AES Decryption', iconOnly: true),
+            ),
           ),
         ],
       ),

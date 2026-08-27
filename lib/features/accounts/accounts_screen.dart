@@ -54,7 +54,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: '100% Local')),
+            child: Center(
+              child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
+            ),
           ),
         ],
       ),

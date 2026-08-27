@@ -28,7 +28,10 @@ class TransactionMergeService {
     }
 
     // 3. Merchant: Canonical normalized merchant
-    final merchant = existing.normalizedMerchant ?? incoming.normalizedMerchant;
+    final merchant =
+        incoming.merchantDisplayName != null
+            ? incoming.normalizedMerchant
+            : existing.normalizedMerchant ?? incoming.normalizedMerchant;
     final originalMerchant = existing.originalMerchant ?? existing.merchant;
 
     // 4. Reference Number: Combine/preserve non-empty
@@ -89,7 +92,9 @@ class TransactionMergeService {
 
     return existing.copyWith(
       amount: amount,
-      merchant: merchant.isNotEmpty ? merchant : existing.merchant,
+      merchant:
+          incoming.merchantDisplayName ??
+          (merchant.isNotEmpty ? merchant : existing.merchant),
       originalMerchant: originalMerchant,
       normalizedMerchant: merchant,
       date: resolvedDate,

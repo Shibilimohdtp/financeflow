@@ -4,6 +4,141 @@ import 'package:financeflow/services/ingestion/parsers/sms_parsers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('Structured UPI counterparty evidence', () {
+    for (final sample in [
+      (
+        'P2A',
+        '2500.00',
+        '412345678901',
+        'ANITHA\nMENON T',
+        'Anitha Menon T',
+      ),
+      (
+        'P2M',
+        '300.00',
+        '660563126913',
+        'ANITHA\nMENON T',
+        'Anitha Menon T',
+      ),
+      ('P2M', '105.40', '659798667691', 'ZOMATO', 'Zomato'),
+    ]) {
+      test('Axis ${sample.$1} ${sample.$2} prioritizes path over footer', () {
+        final body =
+            'INR ${sample.$2} debited\nA/c no. XX5645\n'
+            '27-08-26, 15:19:37\nUPI/${sample.$1}/${sample.$3}/${sample.$4}\n'
+            'Not you? SMS BLOCKUPI Cust ID to\n919951860002\nAxis Bank';
+        final parsed =
+            AxisSmsParser().parse(sender: 'AD-AXISBK-S', body: body)!;
+        expect(parsed.amount, double.parse(sample.$2));
+        expect(parsed.type, TransactionType.expense);
+        expect(parsed.rawMerchant, sample.$4.replaceAll('\n', ' '));
+        expect(parsed.normalizedMerchant, sample.$5);
+        expect(parsed.referenceNumber, sample.$3);
+        expect(parsed.date, DateTime(2026, 8, 27, 15, 19, 37));
+        expect(parsed.warnings, isEmpty);
+        expect(parsed.rawSource, body);
+        expect(parsed.toTransaction().merchant, sample.$5);
+      });
+    }
+
+    for (final footer in [
+      'Not you?',
+      'Cust ID',
+      'Axis Bank',
+      'Available balance',
+      'Avl Bal',
+      'Bal',
+      'Ref',
+      'UPI Ref',
+    ]) {
+      test('wrapped lowercase path stops at $footer', () {
+        final parsed =
+            AxisSmsParser().parse(
+              sender: 'AXIS',
+              body:
+                  'INR 50 debited to Incorrect Name\nupi/p2a/123456789012/Muhammed Ajinas K\nP\n$footer 99999',
+            )!;
+        expect(parsed.rawMerchant, 'Muhammed Ajinas K P');
+      });
+    }
+
+    test('optional slash fields never replace the counterparty', () {
+      final parsed =
+          AxisSmsParser().parse(
+            sender: 'AXIS',
+            body:
+                'INR 50 debited UPI/P2M/123456789012/ZOMATO/okaxis/919951860002',
+          )!;
+      expect(parsed.normalizedMerchant, 'Zomato');
+    });
+
+    for (final invalid in [
+      '919951860002',
+      '+91 99518 60002',
+      '9951860002',
+      '5645',
+      'XX5645',
+      'Card **9876',
+      'A/c no. XX5645',
+      '412345678901',
+      'UTR ABC123456789',
+      'ABC123456789',
+      '27-08-26',
+      '27 Aug 26',
+      '15:19:37',
+      'Axis Bank',
+      'Bank Transaction',
+      'Not you? SMS BLOCKUPI Cust ID to 919951860002',
+      'Cust ID to 919951860002',
+    ]) {
+      test('rejects false payee: $invalid', () {
+        final parsed =
+            AxisSmsParser().parse(
+              sender: 'AXIS',
+              body: 'INR 50 debited to $invalid',
+            )!;
+        expect(parsed.rawMerchant, 'Bank Transaction');
+        expect(
+          parsed.warnings,
+          contains('Could not clearly identify payee from SMS'),
+        );
+      });
+    }
+
+    test('legacy ICICI UPI narration and balance-only rejection', () {
+      final parser = IciciSmsParser();
+      expect(
+        parser
+            .parse(
+              sender: 'ICICI',
+              body: 'INR 50 debited. Info: UPI/SWIGGY/423524. Avl Bal INR 500',
+            )!
+            .normalizedMerchant,
+        'Swiggy',
+      );
+      expect(
+        parser.parse(
+          sender: 'ICICI',
+          body: 'Available balance INR 500 in A/c XX1234',
+        ),
+        isNull,
+      );
+    });
+    test(
+      'generic extraction never resumes after balance or reference footer',
+      () {
+        for (final footer in ['Available balance', 'Avl Bal', 'UPI Ref']) {
+          final parsed =
+              AxisSmsParser().parse(
+                sender: 'AXIS',
+                body: 'INR 50 debited. $footer info: Customer',
+              )!;
+          expect(parsed.rawMerchant, 'Bank Transaction');
+        }
+      },
+    );
+  });
+
   group('Bank SMS Parsers Tests', () {
     late SmsParserRegistry registry;
 

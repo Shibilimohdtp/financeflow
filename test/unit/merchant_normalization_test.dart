@@ -2,6 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/services/merchant_normalization_service.dart';
 
 void main() {
+  test('Brand substrings inside personal names do not replace the person', () {
+    expect(
+      MerchantNormalizationService.normalize('NICOLA THOMAS'),
+      'Nicola Thomas',
+    );
+    expect(
+      MerchantNormalizationService.normalize('ANITHA\nMENON T'),
+      'Anitha Menon T',
+    );
+  });
   group('MerchantNormalizationService Tests', () {
     test('Normalizes various Amazon aliases to canonical Amazon', () {
       expect(

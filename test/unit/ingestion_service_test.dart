@@ -131,6 +131,45 @@ class InMemoryPendingTransactionRepository
 }
 
 void main() {
+  test(
+    'Review edit preserves manual display and only clears repaired field errors',
+    () {
+      final original = ParsedTransaction(
+        amount: 0,
+        type: TransactionType.expense,
+        rawMerchant: 'Original evidence',
+        normalizedMerchant: 'Bank Transaction',
+        date: DateTime(2026, 8, 27),
+        accountId: 'bank',
+        categoryId: 'food',
+        categoryName: 'Food',
+        categoryIcon: 'restaurant',
+        categoryColor: 'clay',
+        fingerprint: 'old',
+        rawSource: 'Original SMS',
+        warnings: [
+          'Could not clearly identify payee from SMS',
+          'Other warning',
+        ],
+        validationErrors: [
+          'Could not extract positive transaction amount',
+          'Unrelated import error',
+        ],
+      );
+      final updated = original.withReviewEdit(
+        original.toTransaction().copyWith(
+          amount: 105.40,
+          merchant: 'ZOMATO dinner',
+        ),
+      );
+      expect(updated.normalizedMerchant, 'Zomato');
+      expect(updated.toTransaction().merchant, 'ZOMATO dinner');
+      expect(updated.rawMerchant, original.rawMerchant);
+      expect(updated.rawSource, original.rawSource);
+      expect(updated.validationErrors, ['Unrelated import error']);
+      expect(updated.warnings, ['Other warning']);
+    },
+  );
   group('IngestionService Pipeline Tests', () {
     late IngestionService service;
     late InMemoryTransactionRepository txRepo;

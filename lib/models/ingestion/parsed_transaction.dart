@@ -1,5 +1,9 @@
 import 'package:uuid/uuid.dart';
 import '../transaction.dart';
+import '../../services/ingestion/duplicate_matcher.dart';
+import '../../services/merchant_normalization_service.dart';
+
+const _unset = Object();
 
 enum DuplicateMatchLevel {
   none,
@@ -70,6 +74,17 @@ enum ReviewStatus {
 }
 
 class ParsedTransaction {
+  final TransactionPurpose? purpose;
+  final AccountMovementDirection? direction;
+  final String? merchantDisplayName;
+  final String? externalCounterpartyName;
+  final String? linkedLoanId;
+  final String? linkedMoneyRecordId;
+  final String? linkedInvestmentId;
+  final double? principalComponent;
+  final double? interestComponent;
+  final double? feeComponent;
+  final List<String> tags;
   final String tempId;
   final TransactionSource source;
   final String? sourceName;
@@ -107,6 +122,17 @@ class ParsedTransaction {
   final DateTime detectedAt;
 
   ParsedTransaction({
+    this.purpose,
+    this.direction,
+    this.merchantDisplayName,
+    this.externalCounterpartyName,
+    this.linkedLoanId,
+    this.linkedMoneyRecordId,
+    this.linkedInvestmentId,
+    this.principalComponent,
+    this.interestComponent,
+    this.feeComponent,
+    this.tags = const [],
     String? tempId,
     this.source = TransactionSource.csv,
     this.sourceName,
@@ -158,6 +184,17 @@ class ParsedTransaction {
       reviewStatus == ReviewStatus.pending;
 
   ParsedTransaction copyWith({
+    Object? purpose = _unset,
+    Object? direction = _unset,
+    Object? merchantDisplayName = _unset,
+    Object? externalCounterpartyName = _unset,
+    Object? linkedLoanId = _unset,
+    Object? linkedMoneyRecordId = _unset,
+    Object? linkedInvestmentId = _unset,
+    Object? principalComponent = _unset,
+    Object? interestComponent = _unset,
+    Object? feeComponent = _unset,
+    List<String>? tags,
     String? tempId,
     TransactionSource? source,
     String? sourceName,
@@ -169,9 +206,9 @@ class ParsedTransaction {
     String? normalizedMerchant,
     DateTime? date,
     DateTime? time,
-    String? notes,
+    Object? notes = _unset,
     String? accountId,
-    String? toAccountId,
+    Object? toAccountId = _unset,
     String? paymentMethod,
     String? categoryId,
     String? categoryName,
@@ -184,8 +221,8 @@ class ParsedTransaction {
     List<String>? warnings,
     List<String>? validationErrors,
     DuplicateMatchLevel? duplicateStatus,
-    String? matchedTransactionId,
-    Transaction? matchedTransaction,
+    Object? matchedTransactionId = _unset,
+    Object? matchedTransaction = _unset,
     List<String>? duplicateReasons,
     double? duplicateConfidence,
     DuplicateResolution? duplicateResolution,
@@ -195,6 +232,47 @@ class ParsedTransaction {
     DateTime? detectedAt,
   }) {
     return ParsedTransaction(
+      purpose:
+          identical(purpose, _unset)
+              ? this.purpose
+              : purpose as TransactionPurpose?,
+      direction:
+          identical(direction, _unset)
+              ? this.direction
+              : direction as AccountMovementDirection?,
+      merchantDisplayName:
+          identical(merchantDisplayName, _unset)
+              ? this.merchantDisplayName
+              : merchantDisplayName as String?,
+      externalCounterpartyName:
+          identical(externalCounterpartyName, _unset)
+              ? this.externalCounterpartyName
+              : externalCounterpartyName as String?,
+      linkedLoanId:
+          identical(linkedLoanId, _unset)
+              ? this.linkedLoanId
+              : linkedLoanId as String?,
+      linkedMoneyRecordId:
+          identical(linkedMoneyRecordId, _unset)
+              ? this.linkedMoneyRecordId
+              : linkedMoneyRecordId as String?,
+      linkedInvestmentId:
+          identical(linkedInvestmentId, _unset)
+              ? this.linkedInvestmentId
+              : linkedInvestmentId as String?,
+      principalComponent:
+          identical(principalComponent, _unset)
+              ? this.principalComponent
+              : principalComponent as double?,
+      interestComponent:
+          identical(interestComponent, _unset)
+              ? this.interestComponent
+              : interestComponent as double?,
+      feeComponent:
+          identical(feeComponent, _unset)
+              ? this.feeComponent
+              : feeComponent as double?,
+      tags: tags ?? this.tags,
       tempId: tempId ?? this.tempId,
       source: source ?? this.source,
       sourceName: sourceName ?? this.sourceName,
@@ -206,9 +284,12 @@ class ParsedTransaction {
       normalizedMerchant: normalizedMerchant ?? this.normalizedMerchant,
       date: date ?? this.date,
       time: time ?? this.time,
-      notes: notes ?? this.notes,
+      notes: identical(notes, _unset) ? this.notes : notes as String?,
       accountId: accountId ?? this.accountId,
-      toAccountId: toAccountId ?? this.toAccountId,
+      toAccountId:
+          identical(toAccountId, _unset)
+              ? this.toAccountId
+              : toAccountId as String?,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
@@ -222,8 +303,14 @@ class ParsedTransaction {
       warnings: warnings ?? this.warnings,
       validationErrors: validationErrors ?? this.validationErrors,
       duplicateStatus: duplicateStatus ?? this.duplicateStatus,
-      matchedTransactionId: matchedTransactionId ?? this.matchedTransactionId,
-      matchedTransaction: matchedTransaction ?? this.matchedTransaction,
+      matchedTransactionId:
+          identical(matchedTransactionId, _unset)
+              ? this.matchedTransactionId
+              : matchedTransactionId as String?,
+      matchedTransaction:
+          identical(matchedTransaction, _unset)
+              ? this.matchedTransaction
+              : matchedTransaction as Transaction?,
       duplicateReasons: duplicateReasons ?? this.duplicateReasons,
       duplicateConfidence: duplicateConfidence ?? this.duplicateConfidence,
       duplicateResolution: duplicateResolution ?? this.duplicateResolution,
@@ -234,10 +321,82 @@ class ParsedTransaction {
     );
   }
 
+  /// Apply only editable values; source evidence and duplicate resolution stay intact.
+  ParsedTransaction withReviewEdit(Transaction edited) {
+    edited.validate();
+    final normalized = MerchantNormalizationService.normalize(edited.merchant);
+    return copyWith(
+      amount: edited.amount,
+      type: edited.type,
+      normalizedMerchant: normalized,
+      merchantDisplayName: edited.merchant.trim(),
+      date: edited.date,
+      time: edited.date,
+      notes: edited.notes,
+      accountId: edited.accountId,
+      toAccountId: edited.toAccountId,
+      paymentMethod: edited.paymentMethod,
+      categoryId: edited.categoryId,
+      categoryName: edited.categoryName,
+      categoryIcon: edited.categoryIcon,
+      categoryColor: edited.categoryColor,
+      purpose: edited.purpose,
+      direction: edited.direction,
+      externalCounterpartyName: edited.externalCounterpartyName,
+      linkedLoanId: edited.linkedLoanId,
+      linkedMoneyRecordId: edited.linkedMoneyRecordId,
+      linkedInvestmentId: edited.linkedInvestmentId,
+      principalComponent: edited.principalComponent,
+      interestComponent: edited.interestComponent,
+      feeComponent: edited.feeComponent,
+      tags: edited.tags,
+      categorizationConfidence: 1,
+      categorizationReason: 'User reviewed category',
+      fingerprint: DuplicateMatcher.generateFingerprint(
+        amount: edited.amount,
+        date: edited.date,
+        normalizedMerchant: normalized,
+        type: edited.type,
+        referenceNumber: referenceNumber,
+        accountId: edited.accountId,
+      ),
+      warnings:
+          warnings
+              .where(
+                (warning) =>
+                    !warning.startsWith('Could not clearly identify payee') ||
+                    normalized == 'Bank Transaction',
+              )
+              .toList(),
+      // The shared form validates these editable fields. Retain unrelated
+      // import errors and all original source evidence.
+      validationErrors:
+          validationErrors
+              .where(
+                (error) =>
+                    error != 'Could not extract positive transaction amount' &&
+                    !RegExp(
+                      r'^Row \d+: (?:Non-positive or unreadable amount|Missing payee or description|Invalid or missing date)',
+                    ).hasMatch(error),
+              )
+              .toList(),
+      reviewStatus: ReviewStatus.pending,
+    );
+  }
+
   /// Converts the parsed transaction into a fully valid committed Transaction
   Transaction toTransaction({String? targetId}) {
     final now = DateTime.now();
     return Transaction(
+      purpose: purpose,
+      direction: direction,
+      externalCounterpartyName: externalCounterpartyName,
+      linkedLoanId: linkedLoanId,
+      linkedMoneyRecordId: linkedMoneyRecordId,
+      linkedInvestmentId: linkedInvestmentId,
+      principalComponent: principalComponent,
+      interestComponent: interestComponent,
+      feeComponent: feeComponent,
       id: targetId ?? const Uuid().v4(),
       amount: amount,
       type: type,
@@ -246,14 +405,15 @@ class ParsedTransaction {
       categoryIcon: categoryIcon,
       categoryColor: categoryColor,
       merchant:
-          normalizedMerchant.isNotEmpty ? normalizedMerchant : rawMerchant,
+          merchantDisplayName ??
+          (normalizedMerchant.isNotEmpty ? normalizedMerchant : rawMerchant),
       date: date,
       notes: notes,
       source: source,
       paymentMethod: paymentMethod,
       accountId: accountId,
       toAccountId: toAccountId,
-      tags: const [],
+      tags: tags,
       isReviewed: true,
       createdAt: now,
       updatedAt: now,
@@ -280,6 +440,17 @@ class ParsedTransaction {
   /// Creates a ParsedTransaction from an existing Transaction (for review editing)
   static ParsedTransaction fromTransaction(Transaction tx) {
     return ParsedTransaction(
+      purpose: tx.purpose,
+      direction: tx.direction,
+      merchantDisplayName: tx.merchant,
+      externalCounterpartyName: tx.externalCounterpartyName,
+      linkedLoanId: tx.linkedLoanId,
+      linkedMoneyRecordId: tx.linkedMoneyRecordId,
+      linkedInvestmentId: tx.linkedInvestmentId,
+      principalComponent: tx.principalComponent,
+      interestComponent: tx.interestComponent,
+      feeComponent: tx.feeComponent,
+      tags: tx.tags,
       tempId: tx.id,
       source: tx.source,
       sourceName: tx.sourceName,

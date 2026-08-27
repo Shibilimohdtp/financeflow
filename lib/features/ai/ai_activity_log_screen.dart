@@ -48,7 +48,9 @@ class AiActivityLogScreen extends ConsumerWidget {
           ),
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
-            child: Center(child: FfPrivacyBadge(label: 'On-device Audit')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'On-device Audit', iconOnly: true),
+            ),
           ),
         ],
       ),

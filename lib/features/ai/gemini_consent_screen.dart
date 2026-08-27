@@ -39,7 +39,9 @@ class GeminiConsentScreen extends ConsumerWidget {
           ),
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
-            child: Center(child: FfPrivacyBadge(label: 'Optional AI')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'Optional AI', iconOnly: true),
+            ),
           ),
         ],
       ),

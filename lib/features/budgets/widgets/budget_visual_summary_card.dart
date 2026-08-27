@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
@@ -27,13 +28,15 @@ class BudgetVisualSummaryCard extends StatelessWidget {
     final finColors = context.finColors;
 
     final isExceeded = totalSpent > totalBudgeted;
-    final percentage =
-        totalBudgeted > 0 ? (totalSpent / totalBudgeted).clamp(0.0, 1.0) : 0.0;
-    final isApproaching = !isExceeded && percentage >= 0.8;
+    final rawRatio = totalBudgeted > 0 ? (totalSpent / totalBudgeted) : 0.0;
+    final progress = rawRatio.clamp(0.0, 1.0);
+    final percentageInt = (rawRatio * 100).round();
+    final isApproaching = !isExceeded && rawRatio >= 0.8;
 
     final Color statusColor;
     final IconData statusIcon;
     final String statusMessage;
+    final String gaugeSublabel;
 
     if (isExceeded) {
       statusColor = finColors.expense;
@@ -41,23 +44,29 @@ class BudgetVisualSummaryCard extends StatelessWidget {
       final overAmount = totalSpent - totalBudgeted;
       statusMessage =
           '${CurrencyFormatter.formatINR(overAmount)} over planned limit';
+      gaugeSublabel = 'OVER';
     } else if (isApproaching) {
       statusColor = theme.colorScheme.tertiary;
       statusIcon = Icons.warning_amber_rounded;
-      statusMessage =
-          'Approaching limit (${(percentage * 100).toStringAsFixed(0)}% used)';
+      statusMessage = 'Approaching limit ($percentageInt% used)';
+      gaugeSublabel = 'USED';
     } else {
       statusColor = finColors.income;
       statusIcon = Icons.check_circle_outline_rounded;
       statusMessage = 'Healthy & within planned limit';
+      gaugeSublabel = 'USED';
     }
+
+    final double availablePercent =
+        isExceeded ? 0 : ((1.0 - progress) * 100).clamp(0.0, 100.0);
 
     return FfCard(
       variant: FfCardVariant.elevated,
+      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Label & Over-budget badge
+          // ── 1. Header: Pool Label & Over-budget badge ──────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -69,6 +78,13 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: statusColor,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: statusColor.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: StillwaterTokens.spaceXs),
@@ -94,7 +110,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                       StillwaterTokens.radiusFull,
                     ),
                     border: Border.all(
-                      color: finColors.expense.withValues(alpha: 0.3),
+                      color: finColors.expense.withValues(alpha: 0.35),
                       width: StillwaterTokens.borderWidthHairline,
                     ),
                   ),
@@ -123,6 +139,8 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                   '$totalBudgetsCount active ${totalBudgetsCount == 1 ? 'budget' : 'budgets'}',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.secondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
                   ),
                 ),
             ],
@@ -130,52 +148,11 @@ class BudgetVisualSummaryCard extends StatelessWidget {
 
           const SizedBox(height: StillwaterTokens.spaceMd),
 
-          // Main Visual: Donut Ring & Amounts
+          // ── 2. Hero Spend & Precision Radial Gauge ─────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Circular Progress Ring Indicator
-              SizedBox(
-                width: 72,
-                height: 72,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: percentage,
-                      strokeWidth: 8,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      color: statusColor,
-                      strokeCap: StrokeCap.round,
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${(percentage * 100).toStringAsFixed(0)}%',
-                          style: StillwaterTypography.numSm(
-                            color: theme.colorScheme.onSurface,
-                          ).copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          'USED',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 9,
-                            letterSpacing: 0.8,
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: StillwaterTokens.spaceLg),
-
-              // Total Spent & Limit Hero
+              // Left: Total Spent, Hero Amount, Status Line
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,6 +161,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                       'Total Spent',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.secondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -200,7 +178,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
                         Icon(statusIcon, size: 14, color: statusColor),
@@ -221,39 +199,50 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
+
+              const SizedBox(width: StillwaterTokens.spaceSm),
+
+              // Right: Precision Gauge
+              _BudgetProgressGauge(
+                progress: progress,
+                percentage: percentageInt,
+                statusColor: statusColor,
+                sublabel: gaugeSublabel,
+              ),
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
-          const Divider(height: 1),
           const SizedBox(height: StillwaterTokens.spaceMd),
 
-          // 3 Metric Pillars: Budgeted, Remaining, Active
+          // ── 3. Bottom Metric Capsules (Total Budget & Remaining) ───
           Row(
             children: [
               Expanded(
-                child: _SummaryPillar(
+                child: _MetricTile(
                   label: 'TOTAL BUDGET',
                   value: CurrencyFormatter.formatINR(totalBudgeted),
-                  color: theme.colorScheme.onSurface,
+                  caption:
+                      totalBudgetsCount > 0
+                          ? '$totalBudgetsCount ${totalBudgetsCount == 1 ? 'category' : 'categories'}'
+                          : 'Monthly limit',
+                  valueColor: theme.colorScheme.onSurface,
                 ),
               ),
-              Container(width: 1, height: 36, color: theme.dividerColor),
+              const SizedBox(width: StillwaterTokens.spaceSm),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: StillwaterTokens.spaceMd,
-                  ),
-                  child: _SummaryPillar(
-                    label: isExceeded ? 'OVER BUDGET' : 'REMAINING',
-                    value:
-                        isExceeded
-                            ? CurrencyFormatter.formatINR(
-                              totalSpent - totalBudgeted,
-                            )
-                            : CurrencyFormatter.formatINR(totalRemaining),
-                    color: isExceeded ? finColors.expense : finColors.income,
-                  ),
+                child: _MetricTile(
+                  label: isExceeded ? 'OVER BUDGET' : 'REMAINING',
+                  value:
+                      isExceeded
+                          ? CurrencyFormatter.formatINR(
+                            totalSpent - totalBudgeted,
+                          )
+                          : CurrencyFormatter.formatINR(totalRemaining),
+                  caption:
+                      isExceeded
+                          ? 'Exceeds budget'
+                          : '${availablePercent.toStringAsFixed(0)}% available',
+                  valueColor: isExceeded ? finColors.expense : finColors.income,
                 ),
               ),
             ],
@@ -264,40 +253,207 @@ class BudgetVisualSummaryCard extends StatelessWidget {
   }
 }
 
-class _SummaryPillar extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+class _BudgetProgressGauge extends StatelessWidget {
+  final double progress;
+  final int percentage;
+  final Color statusColor;
+  final String sublabel;
 
-  const _SummaryPillar({
-    required this.label,
-    required this.value,
-    required this.color,
+  const _BudgetProgressGauge({
+    required this.progress,
+    required this.percentage,
+    required this.statusColor,
+    required this.sublabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.secondary,
-            fontSize: 10,
-            letterSpacing: 0.8,
-            fontWeight: FontWeight.w700,
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: progress),
+      duration: StillwaterTokens.durationDeliberate,
+      curve: StillwaterTokens.easeEmphasized,
+      builder: (context, animatedProgress, _) {
+        return SizedBox(
+          width: 78,
+          height: 78,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Custom Circular Gauge Painter with rounded caps
+              CustomPaint(
+                size: const Size(78, 78),
+                painter: _GaugePainter(
+                  progress: animatedProgress,
+                  progressColor: statusColor,
+                  trackColor: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.7),
+                  strokeWidth: 6.5,
+                ),
+              ),
+              // Perfectly proportioned, centered label
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '$percentage%',
+                    style: StillwaterTypography.numMd(
+                      color: theme.colorScheme.onSurface,
+                    ).copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    sublabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 9,
+                      letterSpacing: 0.9,
+                      color: theme.colorScheme.secondary,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _GaugePainter extends CustomPainter {
+  final double progress;
+  final Color progressColor;
+  final Color trackColor;
+  final double strokeWidth;
+
+  const _GaugePainter({
+    required this.progress,
+    required this.progressColor,
+    required this.trackColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Track Paint
+    final trackPaint =
+        Paint()
+          ..color = trackColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Progress Arc Paint
+    if (progress > 0) {
+      final progressPaint =
+          Paint()
+            ..color = progressColor
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..strokeCap = StrokeCap.round;
+
+      const startAngle = -math.pi / 2;
+      final sweepAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        progressPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GaugePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final String caption;
+  final Color valueColor;
+
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.caption,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceSm + 2,
+        vertical: StillwaterTokens.spaceXs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.5),
+          width: StillwaterTokens.borderWidthHairline,
         ),
-        const SizedBox(height: 2),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(value, style: StillwaterTypography.numMd(color: color)),
-        ),
-      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.secondary,
+              fontSize: 10,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: StillwaterTypography.numMd(color: valueColor).copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.secondary.withValues(alpha: 0.8),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

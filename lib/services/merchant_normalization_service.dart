@@ -147,7 +147,8 @@ class MerchantNormalizationService {
 
     // 2. Substring match against canonical dictionary
     for (final entry in _canonicalMerchants.entries) {
-      if (lower.startsWith(entry.key) || lower.contains(entry.key)) {
+      if (lower.contains(entry.key) &&
+          RegExp(r'\b' + RegExp.escape(entry.key) + r'\b').hasMatch(lower)) {
         return entry.value;
       }
     }

@@ -169,7 +169,9 @@ class BudgetDetailScreen extends ConsumerWidget {
           ),
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
-            child: Center(child: FfPrivacyBadge(label: 'On-device')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
+            ),
           ),
         ],
       ),

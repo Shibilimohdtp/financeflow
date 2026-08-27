@@ -79,15 +79,24 @@ class AppShell extends ConsumerWidget {
       const SettingsScreen(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: currentIndex, children: screens),
-      bottomNavigationBar: StillwaterBottomNavigationBar(
-        selectedIndex: currentIndex,
-        pendingReviewCount: pendingCount,
-        unreadAlertsCount: unreadAlerts,
-        onDestinationSelected: (index) {
-          ref.read(currentNavIndexProvider.notifier).state = index;
-        },
+    return PopScope(
+      canPop: currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (currentIndex != 0) {
+          ref.read(currentNavIndexProvider.notifier).state = 0;
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(index: currentIndex, children: screens),
+        bottomNavigationBar: StillwaterBottomNavigationBar(
+          selectedIndex: currentIndex,
+          pendingReviewCount: pendingCount,
+          unreadAlertsCount: unreadAlerts,
+          onDestinationSelected: (index) {
+            ref.read(currentNavIndexProvider.notifier).state = index;
+          },
+        ),
       ),
     );
   }

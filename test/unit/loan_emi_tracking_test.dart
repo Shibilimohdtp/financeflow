@@ -414,5 +414,89 @@ void main() {
         expect(confirmedLoan.nextDueDate, equals(DateTime(2026, 9, 5)));
       },
     );
+
+    test(
+      '9. LoansController markInstallmentUnpaid deletes EMI payment and accurately recalculates loan balance and schedule',
+      () async {
+        final repo = FakeLoanRepository();
+        final controller = LoansController(repo);
+
+        await controller.addLoan(
+          name: 'Two-Wheeler Loan',
+          lender: 'TVS Credit',
+          principalAmount: 60000.0,
+          interestRate: 12.0,
+          interestType: InterestType.reducingBalance,
+          tenureMonths: 6,
+          startDate: DateTime(2026, 1, 1),
+          emiAmount: 10352.90,
+          paymentDay: 5,
+          markPastInstallmentsPaid: true,
+          asOfDate: asOfDate,
+        );
+
+        final allLoans = await repo.getAllLoans();
+        final loan = allLoans.first;
+        final initialPayments = await repo.getPaymentsForLoan(loan.id);
+        expect(initialPayments.length, equals(6)); // All 6 marked paid
+
+        final scheduleBefore = LoanCalculator.generateSchedule(
+          loan,
+          payments: initialPayments,
+          asOfDate: asOfDate,
+        );
+        expect(scheduleBefore.every((it) => it.isPaid), isTrue);
+
+        final initialPrincipalPaid = loan.totalPrincipalPaid;
+        expect(initialPrincipalPaid, closeTo(60000.0, 1.0));
+
+        // Mark installment #3 as unpaid
+        final payment3 = initialPayments.firstWhere(
+          (p) => p.installmentNumber == 3,
+        );
+        await controller.markInstallmentUnpaid(
+          loan: loan,
+          installmentNumber: 3,
+          paymentId: payment3.id,
+        );
+
+        final remainingPayments = await repo.getPaymentsForLoan(loan.id);
+        expect(remainingPayments.length, equals(5));
+        expect(
+          remainingPayments.any((p) => p.installmentNumber == 3),
+          isFalse,
+        );
+
+        final updatedLoans = await repo.getAllLoans();
+        final updatedLoan = updatedLoans.first;
+        expect(
+          updatedLoan.totalPrincipalPaid,
+          lessThan(initialPrincipalPaid),
+        );
+        expect(
+          updatedLoan.outstandingPrincipal,
+          greaterThan(0),
+        );
+
+        final scheduleAfter = LoanCalculator.generateSchedule(
+          updatedLoan,
+          payments: remainingPayments,
+          asOfDate: asOfDate,
+        );
+        final item3 = scheduleAfter.firstWhere((it) => it.monthNumber == 3);
+        expect(item3.isPaid, isFalse);
+        expect(item3.isOverdue, isTrue); // As of Aug 23, 2026, month 3 (April 5) is overdue
+
+        // Also test unmarking installment #2 without passing paymentId explicitly
+        await controller.markInstallmentUnpaid(
+          loan: updatedLoan,
+          installmentNumber: 2,
+        );
+
+        final finalPayments = await repo.getPaymentsForLoan(loan.id);
+        expect(finalPayments.length, equals(4));
+        expect(finalPayments.any((p) => p.installmentNumber == 2), isFalse);
+      },
+    );
   });
 }

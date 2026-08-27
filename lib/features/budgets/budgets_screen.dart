@@ -91,7 +91,9 @@ class BudgetsScreen extends ConsumerWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'On-device')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
+            ),
           ),
         ],
       ),
@@ -114,7 +116,7 @@ class BudgetsScreen extends ConsumerWidget {
             StillwaterTokens.spaceLg,
             StillwaterTokens.spaceMd,
             StillwaterTokens.spaceLg,
-            StillwaterTokens.space4Xl,
+            104,
           ),
           children: [
             // ── 1. Month Selector Header ─────────────────────────────

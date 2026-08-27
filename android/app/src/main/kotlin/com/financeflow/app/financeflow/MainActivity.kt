@@ -10,13 +10,16 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.os.UserManager
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterFragmentActivity() {
+class MainActivity : FlutterFragmentActivity(), FlutterUiDisplayListener {
+    private val startupLogTag = "FinanceFlowStartup"
     private val channelName = "com.financeflow.app/ingestion"
     private val smsRequestCode = 8841
     private var pendingSmsResult: MethodChannel.Result? = null
@@ -32,7 +35,13 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        Log.i(startupLogTag, "MainActivity.onCreate; savedInstanceState=${savedInstanceState != null}")
+        super.onCreate(savedInstanceState)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        Log.i(startupLogTag, "configureFlutterEngine entered")
         super.configureFlutterEngine(flutterEngine)
         ingestionChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
         activeChannel = ingestionChannel
@@ -70,7 +79,16 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+        Log.i(startupLogTag, "configureFlutterEngine completed")
     }
+
+    override fun onFlutterUiDisplayed() {
+        Log.i(startupLogTag, "Flutter reported its first UI frame")
+    }
+
+    // FlutterFragment forwards display events to this interface; the activity
+    // superclass has no display callback to call through to.
+    override fun onFlutterUiNoLongerDisplayed() = Unit
 
     override fun onDestroy() {
         if (::ingestionChannel.isInitialized && activeChannel === ingestionChannel) {

@@ -169,7 +169,9 @@ class _SecuritySettingsScreenState
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'Hardware Keystore')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'Hardware Keystore', iconOnly: true),
+            ),
           ),
         ],
       ),

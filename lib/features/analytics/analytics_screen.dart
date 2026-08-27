@@ -75,7 +75,9 @@ class AnalyticsScreen extends ConsumerWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'On-device')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
+            ),
           ),
         ],
       ),

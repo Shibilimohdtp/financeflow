@@ -9,6 +9,13 @@ import 'package:financeflow/database/schemas/investment_entity.dart';
 import 'package:financeflow/database/schemas/money_record_entity.dart';
 import 'package:financeflow/database/schemas/money_repayment_entity.dart';
 import 'package:financeflow/database/schemas/transaction_entity.dart';
+import 'package:financeflow/database/schemas/pending_transaction_entity.dart';
+import 'package:financeflow/models/ingestion/parsed_transaction.dart';
+import 'package:financeflow/repositories/pending_transaction_repository.dart';
+import 'package:financeflow/features/ingestion/needs_review_controller.dart';
+import 'package:financeflow/services/ingestion/parsers/sms_parsers.dart';
+import 'package:financeflow/services/payee_suggestion_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/loan.dart';
 import 'package:financeflow/models/investment.dart';
@@ -57,6 +64,7 @@ void main() {
       [
         AccountEntitySchema,
         TransactionEntitySchema,
+        PendingTransactionEntitySchema,
         LoanEntitySchema,
         InvestmentEntitySchema,
         EmiPaymentEntitySchema,
@@ -102,6 +110,193 @@ void main() {
     await isar.close(deleteFromDisk: true);
     if (await directory.exists()) await directory.delete(recursive: true);
   });
+
+  ParsedTransaction pendingSample() =>
+      AxisSmsParser().parse(
+        sender: 'AD-AXISBK-S',
+        defaultAccountId: 'bank',
+        body:
+            'INR 2500.00 debited\nA/c no. XX5645\n27-08-26, 15:19:37\n'
+            'UPI/P2A/412345678901/ANITHA\nMENON T\n'
+            'Not you? SMS BLOCKUPI Cust ID to\n919951860002\nAxis Bank',
+      )!;
+
+  ProviderContainer reviewContainer(IsarPendingTransactionRepository pending) =>
+      ProviderContainer(
+        overrides: [
+          pendingTransactionRepositoryProvider.overrideWithValue(pending),
+          transactionRepositoryProvider.overrideWithValue(transactions),
+          financialOperationServiceProvider.overrideWithValue(service),
+        ],
+      );
+
+  test(
+    'Pending edit survives Isar and creates linked debt only on approval',
+    () async {
+      final pending = IsarPendingTransactionRepository(isarInstance: isar);
+      final container = reviewContainer(pending);
+      addTearDown(container.dispose);
+      final controller = container.read(needsReviewControllerProvider.notifier);
+      final original = pendingSample();
+      await pending.savePendingTransaction(original);
+      final edited = original.withReviewEdit(
+        original
+            .toTransaction(targetId: original.tempId)
+            .copyWith(
+              merchant: 'Menon Family',
+              purpose: TransactionPurpose.lending,
+              externalCounterpartyName: 'Menon',
+              linkedMoneyRecordId: 'debt_${original.tempId}',
+              notes: 'Family support',
+              tags: ['family'],
+              paymentMethod: 'UPI',
+            ),
+      );
+      await controller.updateItem(edited);
+      final stored = (await pending.getPendingTransactions()).single;
+      expect(stored.rawSource, original.rawSource);
+      expect(stored.rawMerchant, original.rawMerchant);
+      expect(stored.source, original.source);
+      expect(stored.sourceName, original.sourceName);
+      expect(stored.sourceIdentifier, original.sourceIdentifier);
+      expect(stored.referenceNumber, original.referenceNumber);
+      expect(stored.importedAt, original.importedAt);
+      expect(stored.detectedAt, original.detectedAt);
+      expect(stored.purpose, TransactionPurpose.lending);
+      expect(stored.externalCounterpartyName, 'Menon');
+      expect(stored.tags, ['family']);
+      expect(stored.notes, 'Family support');
+      expect(await transactions.getAllTransactions(), isEmpty);
+      expect(await isar.moneyRecordEntitys.count(), 0);
+      await controller.approveItem(stored);
+      final saved = (await transactions.getAllTransactions()).single;
+      expect(saved.merchant, 'Menon Family');
+      expect(saved.normalizedMerchant, 'Menon Family');
+      expect(saved.originalMerchant, original.rawMerchant);
+      expect(saved.effectivePurpose, TransactionPurpose.lending);
+      expect(saved.consumptionExpenseAmount, 0);
+      expect(saved.tags, ['family']);
+      expect(await isar.moneyRecordEntitys.count(), 1);
+      expect(await pending.getPendingTransactions(), isEmpty);
+      expect(
+        await transactions.searchAndFilterTransactions(query: 'Menon'),
+        hasLength(1),
+      );
+      expect(
+        PayeeSuggestionService.getSuggestions(
+          transactions: [saved],
+          type: saved.type,
+          query: 'Menon',
+        ).single.displayName,
+        'Menon Family',
+      );
+    },
+  );
+
+  test(
+    'Pending purpose, links, splits and cleared nullable fields round trip',
+    () async {
+      final pending = IsarPendingTransactionRepository(isarInstance: isar);
+      final original = pendingSample().copyWith(
+        purpose: TransactionPurpose.loanRepayment,
+        direction: AccountMovementDirection.outflow,
+        linkedLoanId: 'loan',
+        linkedInvestmentId: 'investment',
+        principalComponent: 2000.0,
+        interestComponent: 450.0,
+        feeComponent: 50.0,
+        toAccountId: 'cash',
+        notes: 'original note',
+      );
+      await pending.savePendingTransaction(original);
+      final loaded = (await pending.getPendingTransactions()).single;
+      final tx = loaded.toTransaction();
+      expect(tx.linkedLoanId, 'loan');
+      expect(tx.linkedInvestmentId, 'investment');
+      expect(tx.principalComponent, 2000);
+      expect(tx.interestComponent, 450);
+      expect(tx.feeComponent, 50);
+      expect(tx.direction, AccountMovementDirection.outflow);
+      final reset = loaded.copyWith(
+        purpose: TransactionPurpose.expense,
+        linkedLoanId: null,
+        linkedInvestmentId: null,
+        principalComponent: null,
+        interestComponent: null,
+        feeComponent: null,
+        toAccountId: null,
+        notes: null,
+      );
+      await pending.savePendingTransaction(reset);
+      final cleared =
+          (await pending.getPendingTransactions()).single.toTransaction();
+      expect(cleared.linkedLoanId, isNull);
+      expect(cleared.linkedInvestmentId, isNull);
+      expect(cleared.principalComponent, isNull);
+      expect(cleared.toAccountId, isNull);
+      expect(cleared.notes, isNull);
+    },
+  );
+
+  test(
+    'Persisted duplicate resolves by ID and keeps manual merchant on merge',
+    () async {
+      final pending = IsarPendingTransactionRepository(isarInstance: isar);
+      final container = reviewContainer(pending);
+      addTearDown(container.dispose);
+      final original = pendingSample();
+      final existing = original.toTransaction(targetId: 'existing');
+      await transactions.saveTransaction(existing);
+      final edited = original
+          .withReviewEdit(existing.copyWith(merchant: 'MENON family'))
+          .copyWith(
+            duplicateStatus: DuplicateMatchLevel.exact,
+            duplicateResolution: DuplicateResolution.merge,
+            matchedTransactionId: existing.id,
+          );
+      await pending.savePendingTransaction(edited);
+      final loaded = (await pending.getPendingTransactions()).single;
+      expect(loaded.matchedTransaction, isNull);
+      await container
+          .read(needsReviewControllerProvider.notifier)
+          .approveItem(loaded);
+      final saved = (await transactions.getAllTransactions()).single;
+      expect(saved.id, existing.id);
+      expect(saved.merchant, 'MENON family');
+      expect(saved.normalizedMerchant, 'Menon Family');
+    },
+  );
+
+  test(
+    'Editing duplicate evidence does not silently replace merge resolution',
+    () async {
+      final pending = IsarPendingTransactionRepository(isarInstance: isar);
+      final container = reviewContainer(pending);
+      addTearDown(container.dispose);
+      final controller = container.read(needsReviewControllerProvider.notifier);
+      final original = pendingSample();
+      final existing = original.toTransaction(targetId: 'existing');
+      await transactions.saveTransaction(existing);
+      final duplicate = original.copyWith(
+        duplicateStatus: DuplicateMatchLevel.exact,
+        duplicateResolution: DuplicateResolution.merge,
+        matchedTransactionId: existing.id,
+      );
+      await pending.savePendingTransaction(duplicate);
+      await controller.updateItem(
+        duplicate.withReviewEdit(
+          existing.copyWith(amount: 300, merchant: 'Someone else'),
+        ),
+      );
+      final loaded = (await pending.getPendingTransactions()).single;
+      expect(loaded.duplicateResolution, DuplicateResolution.merge);
+      expect(loaded.matchedTransactionId, existing.id);
+      expect(loaded.warnings, contains(contains('duplicate match')));
+      await expectLater(controller.approveItem(loaded), throwsStateError);
+      expect(await pending.getPendingTransactions(), hasLength(1));
+      expect(await transactions.getAllTransactions(), hasLength(1));
+    },
+  );
 
   Transaction transaction({
     required String id,

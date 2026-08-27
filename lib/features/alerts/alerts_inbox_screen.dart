@@ -88,7 +88,9 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
           ),
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
-            child: Center(child: FfPrivacyBadge(label: 'Local Rules')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'Local Rules', iconOnly: true),
+            ),
           ),
         ],
       ),

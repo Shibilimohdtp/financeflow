@@ -35,6 +35,18 @@ class PendingTransactionEntity {
   @Index()
   late String accountId;
 
+  String? purpose;
+  String? direction;
+  String? merchantDisplayName;
+  String? externalCounterpartyName;
+  String? linkedLoanId;
+  String? linkedMoneyRecordId;
+  String? linkedInvestmentId;
+  double? principalComponent;
+  double? interestComponent;
+  double? feeComponent;
+  List<String> tags = [];
+
   String? toAccountId;
   String? paymentMethod;
 

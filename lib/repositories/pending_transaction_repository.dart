@@ -24,6 +24,23 @@ class IsarPendingTransactionRepository implements PendingTransactionRepository {
 
   ParsedTransaction _toDomain(PendingTransactionEntity entity) {
     return ParsedTransaction(
+      purpose:
+          TransactionPurpose.values
+              .where((value) => value.name == entity.purpose)
+              .firstOrNull,
+      direction:
+          AccountMovementDirection.values
+              .where((value) => value.name == entity.direction)
+              .firstOrNull,
+      merchantDisplayName: entity.merchantDisplayName,
+      externalCounterpartyName: entity.externalCounterpartyName,
+      linkedLoanId: entity.linkedLoanId,
+      linkedMoneyRecordId: entity.linkedMoneyRecordId,
+      linkedInvestmentId: entity.linkedInvestmentId,
+      principalComponent: entity.principalComponent,
+      interestComponent: entity.interestComponent,
+      feeComponent: entity.feeComponent,
+      tags: List<String>.from(entity.tags),
       tempId: entity.tempId,
       source: TransactionSource.fromString(entity.source),
       sourceName: entity.sourceName,
@@ -68,6 +85,17 @@ class IsarPendingTransactionRepository implements PendingTransactionRepository {
     PendingTransactionEntity? existing,
   ]) {
     final entity = existing ?? PendingTransactionEntity();
+    entity.purpose = domain.purpose?.name;
+    entity.direction = domain.direction?.name;
+    entity.merchantDisplayName = domain.merchantDisplayName;
+    entity.externalCounterpartyName = domain.externalCounterpartyName;
+    entity.linkedLoanId = domain.linkedLoanId;
+    entity.linkedMoneyRecordId = domain.linkedMoneyRecordId;
+    entity.linkedInvestmentId = domain.linkedInvestmentId;
+    entity.principalComponent = domain.principalComponent;
+    entity.interestComponent = domain.interestComponent;
+    entity.feeComponent = domain.feeComponent;
+    entity.tags = domain.tags;
     entity.tempId = domain.tempId;
     entity.source = domain.source.toDbString();
     entity.sourceName = domain.sourceName;

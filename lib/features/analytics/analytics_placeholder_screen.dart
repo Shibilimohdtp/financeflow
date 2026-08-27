@@ -17,7 +17,9 @@ class AnalyticsPlaceholderScreen extends StatelessWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(child: FfPrivacyBadge(label: 'Phase 2 Preview')),
+            child: Center(
+              child: FfPrivacyBadge(label: 'Phase 2 Preview', iconOnly: true),
+            ),
           ),
         ],
       ),
