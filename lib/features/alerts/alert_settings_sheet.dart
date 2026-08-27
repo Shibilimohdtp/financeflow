@@ -1,27 +1,71 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/extensions/context_extensions.dart';
 import '../../models/app_settings.dart';
+import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
+import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
+import '../../services/notifications/local_notification_service.dart';
+import '../../services/notifications/notification_coordinator.dart';
 
-class AlertSettingsSheet extends ConsumerWidget {
+final notificationPermissionStatusProvider =
+    FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
+  final service = ref.watch(localNotificationServiceProvider);
+  final isEnabled = await service.areNotificationsEnabled();
+  if (isEnabled) return NotificationPermissionStatus.granted;
+  return NotificationPermissionStatus.notRequested;
+});
+
+/// Bottom sheet for configuring local push notifications and alerts preferences.
+class AlertSettingsSheet extends ConsumerStatefulWidget {
   const AlertSettingsSheet({super.key});
 
+  /// Helper to open the sheet with proper safe area and top margin constraints.
+  static Future<void> show(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const AlertSettingsSheet(),
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AlertSettingsSheet> createState() => _AlertSettingsSheetState();
+}
+
+/// Backwards compatibility alias for existing references.
+typedef NotificationPreferencesScreen = AlertSettingsSheet;
+
+class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
+  bool _isRequestingPermission = false;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = context.theme;
+    final mediaQuery = MediaQuery.of(context);
     final settings =
         ref.watch(settingsStreamProvider).value ?? const AppSettings();
     final controller = ref.read(settingsControllerProvider.notifier);
+    final permissionAsync = ref.watch(notificationPermissionStatusProvider);
+    final notificationService = ref.read(localNotificationServiceProvider);
+
+    final isPermissionGranted = permissionAsync.value?.isGranted ?? false;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: mediaQuery.size.height * 0.88,
+      ),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(
@@ -29,11 +73,12 @@ class AlertSettingsSheet extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const FfSheetHeader(
-              title: 'Alert Preferences',
+              title: 'Notification Preferences',
               subtitle: 'Evaluated 100% locally on this device',
               trailing: FfPrivacyBadge(label: '100% Local'),
             ),
@@ -45,18 +90,96 @@ class AlertSettingsSheet extends ConsumerWidget {
                   vertical: StillwaterTokens.spaceMd,
                 ),
                 children: [
-                  // ── 1. Master Switch ─────────────────────────────────────────
+                  // ── 1. System Permission Banner ──────────────────────────────
+                  if (!isPermissionGranted && !kIsWeb) ...[
+                    FfCard(
+                      variant: FfCardVariant.elevated,
+                      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.notifications_off_outlined,
+                                color: context.secColors.verified,
+                                size: 22,
+                              ),
+                              const SizedBox(width: StillwaterTokens.spaceSm),
+                              Expanded(
+                                child: Text(
+                                  'System Notifications Disabled',
+                                  style: context.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceXs),
+                          Text(
+                            'Enable Android notification permissions so FinanceFlow can alert you about budget thresholds, pending transaction reviews, and upcoming EMIs.',
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: context.colorScheme.secondary,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          FfButton(
+                            label: _isRequestingPermission
+                                ? 'Checking...'
+                                : 'Enable System Notifications',
+                            size: FfButtonSize.sm,
+                            onPressed: _isRequestingPermission
+                                ? null
+                                : () async {
+                                    setState(
+                                      () => _isRequestingPermission = true,
+                                    );
+                                    try {
+                                      final status = await notificationService
+                                          .requestNotificationPermission();
+                                      ref.invalidate(
+                                        notificationPermissionStatusProvider,
+                                      );
+                                      if (status ==
+                                              NotificationPermissionStatus
+                                                  .permanentlyDenied &&
+                                          context.mounted) {
+                                        await notificationService
+                                            .openSystemNotificationSettings();
+                                      }
+                                    } finally {
+                                      if (mounted) {
+                                        setState(
+                                          () => _isRequestingPermission = false,
+                                        );
+                                      }
+                                    }
+                                  },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceLg),
+                  ],
+
+                  // ── 2. Master Switch ─────────────────────────────────────────
                   const FfSectionHeader(title: 'Master Switch'),
                   FfGroupedContainer(
                     children: [
                       FfSwitchRow(
                         icon: Icons.notifications_outlined,
-                        title: 'Local Alerts & Reminders',
+                        title: 'Local Alerts & Notifications',
                         subtitle: 'Evaluated 100% on-device using local rules',
-                        value: settings.isAlertsEnabled,
+                        value: settings.isAlertsEnabled &&
+                            settings.isLocalNotificationsEnabled,
                         onChanged: (val) {
                           controller.updateSettings(
-                            settings.copyWith(isAlertsEnabled: val),
+                            settings.copyWith(
+                              isAlertsEnabled: val,
+                              isLocalNotificationsEnabled: val,
+                            ),
                           );
                         },
                       ),
@@ -65,22 +188,43 @@ class AlertSettingsSheet extends ConsumerWidget {
 
                   const SizedBox(height: StillwaterTokens.spaceLg),
 
-                  // ── 2. Category Triggers ─────────────────────────────────────
-                  if (settings.isAlertsEnabled) ...[
+                  // ── 3. Category Triggers ─────────────────────────────────────
+                  if (settings.isAlertsEnabled &&
+                      settings.isLocalNotificationsEnabled) ...[
                     const FfSectionHeader(
-                      title: 'Active Notification Triggers',
+                      title: 'Active Notification Categories',
                     ),
                     FfGroupedContainer(
                       children: [
+                        FfSwitchRow(
+                          icon: Icons.rate_review_outlined,
+                          title: 'Needs Review Transactions',
+                          subtitle:
+                              'Remind when imported SMS / CSV items require confirmation',
+                          value: settings.isNeedsReviewNotificationsEnabled &&
+                              settings.isNeedsReviewAlertsEnabled,
+                          onChanged: (val) {
+                            controller.updateSettings(
+                              settings.copyWith(
+                                isNeedsReviewNotificationsEnabled: val,
+                                isNeedsReviewAlertsEnabled: val,
+                              ),
+                            );
+                          },
+                        ),
                         FfSwitchRow(
                           icon: Icons.pie_chart_outline_rounded,
                           title: 'Budget Limits',
                           subtitle:
                               'Alert when category spending reaches 80% or exceeds limit',
-                          value: settings.isBudgetAlertsEnabled,
+                          value: settings.isBudgetNotificationEnabled &&
+                              settings.isBudgetAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
-                              settings.copyWith(isBudgetAlertsEnabled: val),
+                              settings.copyWith(
+                                isBudgetNotificationEnabled: val,
+                                isBudgetAlertsEnabled: val,
+                              ),
                             );
                           },
                         ),
@@ -88,11 +232,13 @@ class AlertSettingsSheet extends ConsumerWidget {
                           icon: Icons.repeat_rounded,
                           title: 'Subscription Renewals',
                           subtitle:
-                              'Remind when upcoming subscriptions renew in ≤ 3 days',
-                          value: settings.isSubscriptionAlertsEnabled,
+                              'Remind before upcoming subscriptions renew',
+                          value: settings.isSubscriptionNotificationEnabled &&
+                              settings.isSubscriptionAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
                               settings.copyWith(
+                                isSubscriptionNotificationEnabled: val,
                                 isSubscriptionAlertsEnabled: val,
                               ),
                             );
@@ -102,24 +248,14 @@ class AlertSettingsSheet extends ConsumerWidget {
                           icon: Icons.account_balance_outlined,
                           title: 'Loan & EMI Due Dates',
                           subtitle:
-                              'Remind when an upcoming loan EMI is due within 3 days',
-                          value: settings.isLoanAlertsEnabled,
-                          onChanged: (val) {
-                            controller.updateSettings(
-                              settings.copyWith(isLoanAlertsEnabled: val),
-                            );
-                          },
-                        ),
-                        FfSwitchRow(
-                          icon: Icons.rate_review_outlined,
-                          title: 'Needs Review Transactions',
-                          subtitle:
-                              'Remind when imported SMS / CSV items require confirmation',
-                          value: settings.isNeedsReviewAlertsEnabled,
+                              'Remind before upcoming loan EMIs are due',
+                          value: settings.isLoanNotificationEnabled &&
+                              settings.isLoanAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
                               settings.copyWith(
-                                isNeedsReviewAlertsEnabled: val,
+                                isLoanNotificationEnabled: val,
+                                isLoanAlertsEnabled: val,
                               ),
                             );
                           },
@@ -129,19 +265,60 @@ class AlertSettingsSheet extends ConsumerWidget {
                           title: 'Encrypted Backup Reminders',
                           subtitle:
                               'Remind when 30 days have elapsed since last backup export',
-                          value: settings.isBackupReminderEnabled,
+                          value: settings.isBackupNotificationEnabled &&
+                              settings.isBackupReminderEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
-                              settings.copyWith(isBackupReminderEnabled: val),
+                              settings.copyWith(
+                                isBackupNotificationEnabled: val,
+                                isBackupReminderEnabled: val,
+                              ),
                             );
                           },
                         ),
                       ],
                     ),
                     const SizedBox(height: StillwaterTokens.spaceLg),
+
+                    // ── 4. Privacy Settings ───────────────────────────────────
+                    const FfSectionHeader(title: 'Lock Screen Privacy'),
+                    FfGroupedContainer(
+                      children: [
+                        FfSwitchRow(
+                          icon: Icons.visibility_off_outlined,
+                          title: 'Hide Financial Details',
+                          subtitle:
+                              'Show privacy-safe text instead of merchant and amounts on lock screen',
+                          value: settings.hideSensitiveNotificationContent,
+                          onChanged: (val) {
+                            controller.updateSettings(
+                              settings.copyWith(
+                                hideSensitiveNotificationContent: val,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceSm,
+                      ),
+                      child: Text(
+                        settings.hideSensitiveNotificationContent
+                            ? 'Preview: "1 imported transaction is waiting for your review."'
+                            : 'Preview: "Swiggy · ₹450 is waiting for review."',
+                        style: context.textTheme.labelSmall?.copyWith(
+                          color: context.colorScheme.outline,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceLg),
                   ],
 
-                  // ── 3. Privacy Guarantee ─────────────────────────────────────
+                  // ── 5. Privacy & Battery Guarantee ───────────────────────────
                   FfCard(
                     variant: FfCardVariant.tinted,
                     padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
@@ -158,14 +335,14 @@ class AlertSettingsSheet extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '100% On-Device Notifications',
+                                '100% Local & Battery Friendly',
                                 style: context.textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'All alert rules evaluate strictly within your phone. No tracking data or transaction logs leave your device.',
+                                'All notifications are scheduled locally without background network drain or cloud trackers. The in-app Alerts inbox always stays up to date.',
                                 style: context.textTheme.bodySmall?.copyWith(
                                   color: context.colorScheme.secondary,
                                 ),
@@ -177,7 +354,41 @@ class AlertSettingsSheet extends ConsumerWidget {
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceXl),
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // ── 6. Developer Tools (Test Notification) ───────────────────
+                  if (kDebugMode) ...[
+                    const FfSectionHeader(title: 'Diagnostics & Testing'),
+                    FfGroupedContainer(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.send_rounded),
+                          title: const Text('Send Test Notification'),
+                          subtitle: const Text(
+                            'Triggers an immediate test notification to verify delivery',
+                          ),
+                          onTap: () async {
+                            await ref
+                                .read(notificationCoordinatorProvider)
+                                .sendTestNotification(
+                                  title: 'FinanceFlow Test Notification',
+                                  body:
+                                      'Local notification pipeline is active and functioning properly.',
+                                );
+                            if (context.mounted) {
+                              FfSnackbar.show(
+                                context,
+                                message: 'Test notification sent to device.',
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: StillwaterTokens.spaceLg),
+                  ],
+
+                  const SizedBox(height: StillwaterTokens.space2Xl),
                 ],
               ),
             ),

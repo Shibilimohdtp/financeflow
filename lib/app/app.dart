@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/diagnostics/startup_trace.dart';
+import '../services/ingestion/ingestion_coordinator.dart';
+import '../shared/widgets/financeflow_mark.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/security/lock_screen.dart';
 import '../features/settings/settings_controller.dart';
 import '../models/app_settings.dart';
-import '../shared/widgets/financeflow_mark.dart';
-import '../services/ingestion/ingestion_coordinator.dart';
+import '../features/alerts/alerts_inbox_screen.dart';
+import '../features/backup/backup_screen.dart';
+import '../features/ingestion/needs_review_screen.dart';
+import '../features/loans/loans_screen.dart';
+import '../features/subscriptions/subscriptions_screen.dart';
+import '../services/notifications/notification_coordinator.dart';
 import '../theme/stillwater_theme.dart';
 import 'router.dart';
 
 final isAppUnlockedProvider = StateProvider<bool>((ref) => false);
+final appNavigatorKey = GlobalKey<NavigatorState>();
 
 class FinanceFlowApp extends ConsumerWidget {
   const FinanceFlowApp({super.key});
@@ -18,6 +26,41 @@ class FinanceFlowApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Starts the Android bridge and drains events captured before Flutter ran.
     ref.watch(ingestionCoordinatorProvider);
+    final notificationCoordinator = ref.watch(notificationCoordinatorProvider);
+
+    notificationCoordinator.onNavigate = (route, metadata) {
+      final nav = appNavigatorKey.currentState;
+      if (nav == null) return;
+
+      switch (route) {
+        case '/needs-review':
+          nav.push(
+            MaterialPageRoute(builder: (_) => const NeedsReviewScreen()),
+          );
+          break;
+        case '/budgets':
+          ref.read(currentNavIndexProvider.notifier).state = 2;
+          break;
+        case '/subscriptions':
+          nav.push(
+            MaterialPageRoute(builder: (_) => const SubscriptionsScreen()),
+          );
+          break;
+        case '/loans':
+          nav.push(MaterialPageRoute(builder: (_) => const LoansScreen()));
+          break;
+        case '/backup':
+          nav.push(MaterialPageRoute(builder: (_) => const BackupScreen()));
+          break;
+        case '/alerts-inbox':
+        default:
+          nav.push(
+            MaterialPageRoute(builder: (_) => const AlertsInboxScreen()),
+          );
+          break;
+      }
+    };
+
     final settingsAsync = ref.watch(settingsStreamProvider);
     final isUnlocked = ref.watch(isAppUnlockedProvider);
 
@@ -56,12 +99,13 @@ class FinanceFlowApp extends ConsumerWidget {
         }
 
         return MaterialApp(
+          navigatorKey: appNavigatorKey,
           title: 'FinanceFlow',
           debugShowCheckedModeBanner: false,
           theme: StillwaterTheme.daylight,
           darkTheme: StillwaterTheme.deepWater,
           themeMode: themeMode,
-          home: home,
+          home: StartupReady(child: home),
         );
       },
       loading:

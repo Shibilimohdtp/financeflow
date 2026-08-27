@@ -6,6 +6,7 @@ import '../../repositories/settings_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../services/alert_engine_service.dart';
+import '../../services/notifications/notification_coordinator.dart';
 import '../ingestion/needs_review_controller.dart';
 
 final alertEngineServiceProvider = Provider<AlertEngineService>((ref) {
@@ -43,6 +44,11 @@ class AlertsController extends StateNotifier<AsyncValue<void>> {
         pendingReviewCount: pendingCount,
       );
 
+      // Synchronize device notifications after in-app alert decisions are committed
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -64,12 +70,18 @@ class AlertsController extends StateNotifier<AsyncValue<void>> {
   Future<void> dismissAlert(String id) async {
     try {
       await _repository.dismissAlert(id);
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
     } catch (_) {}
   }
 
   Future<void> clearAll() async {
     try {
       await _repository.clearAllAlerts();
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
     } catch (_) {}
   }
 }

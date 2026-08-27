@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_settings.dart';
 import '../../repositories/settings_repository.dart';
+import '../notifications/notification_coordinator.dart';
 import 'ingestion_platform.dart';
 import 'ingestion_service.dart';
 
@@ -155,6 +156,9 @@ class IngestionCoordinator with WidgetsBindingObserver {
           break;
         }
       }
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
     } finally {
       _processing = false;
     }
@@ -170,6 +174,9 @@ class IngestionCoordinator with WidgetsBindingObserver {
           'developer-sms-${DateTime.now().microsecondsSinceEpoch}',
     );
     await _recordInjected('sms', result);
+    try {
+      await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+    } catch (_) {}
     return result;
   }
 
@@ -183,6 +190,9 @@ class IngestionCoordinator with WidgetsBindingObserver {
           'developer-notification-${DateTime.now().microsecondsSinceEpoch}',
     );
     await _recordInjected('notification', result);
+    try {
+      await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+    } catch (_) {}
     return result;
   }
 

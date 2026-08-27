@@ -32,7 +32,11 @@ const MoneyRecordEntitySchema = CollectionSchema(
       name: r'isReminderEnabled',
       type: IsarType.bool,
     ),
-    r'notes': PropertySchema(id: 3, name: r'notes', type: IsarType.string),
+    r'notes': PropertySchema(
+      id: 3,
+      name: r'notes',
+      type: IsarType.string,
+    ),
     r'originTransactionId': PropertySchema(
       id: 4,
       name: r'originTransactionId',
@@ -58,20 +62,36 @@ const MoneyRecordEntitySchema = CollectionSchema(
       name: r'settledAt',
       type: IsarType.dateTime,
     ),
-    r'status': PropertySchema(id: 9, name: r'status', type: IsarType.string),
+    r'status': PropertySchema(
+      id: 9,
+      name: r'status',
+      type: IsarType.string,
+    ),
     r'transactionDate': PropertySchema(
       id: 10,
       name: r'transactionDate',
       type: IsarType.dateTime,
     ),
-    r'type': PropertySchema(id: 11, name: r'type', type: IsarType.string),
+    r'type': PropertySchema(
+      id: 11,
+      name: r'type',
+      type: IsarType.string,
+    ),
     r'updatedAt': PropertySchema(
       id: 12,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
-    r'userId': PropertySchema(id: 13, name: r'userId', type: IsarType.string),
-    r'uuid': PropertySchema(id: 14, name: r'uuid', type: IsarType.string),
+    r'userId': PropertySchema(
+      id: 13,
+      name: r'userId',
+      type: IsarType.string,
+    ),
+    r'uuid': PropertySchema(
+      id: 14,
+      name: r'uuid',
+      type: IsarType.string,
+    )
   },
   estimateSize: _moneyRecordEntityEstimateSize,
   serialize: _moneyRecordEntitySerialize,
@@ -89,7 +109,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'uuid',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
     ),
     r'userId': IndexSchema(
@@ -102,7 +122,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'userId',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
     ),
     r'type': IndexSchema(
@@ -115,7 +135,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'type',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
     ),
     r'personName': IndexSchema(
@@ -128,7 +148,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'personName',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
     ),
     r'transactionDate': IndexSchema(
@@ -141,7 +161,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'transactionDate',
           type: IndexType.value,
           caseSensitive: false,
-        ),
+        )
       ],
     ),
     r'dueDate': IndexSchema(
@@ -154,7 +174,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'dueDate',
           type: IndexType.value,
           caseSensitive: false,
-        ),
+        )
       ],
     ),
     r'settledAt': IndexSchema(
@@ -167,7 +187,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'settledAt',
           type: IndexType.value,
           caseSensitive: false,
-        ),
+        )
       ],
     ),
     r'status': IndexSchema(
@@ -180,7 +200,7 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'status',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
     ),
     r'originTransactionId': IndexSchema(
@@ -193,9 +213,9 @@ const MoneyRecordEntitySchema = CollectionSchema(
           name: r'originTransactionId',
           type: IndexType.hash,
           caseSensitive: true,
-        ),
+        )
       ],
-    ),
+    )
   },
   links: {},
   embeddedSchemas: {},
@@ -327,16 +347,12 @@ Id _moneyRecordEntityGetId(MoneyRecordEntity object) {
 }
 
 List<IsarLinkBase<dynamic>> _moneyRecordEntityGetLinks(
-  MoneyRecordEntity object,
-) {
+    MoneyRecordEntity object) {
   return [];
 }
 
 void _moneyRecordEntityAttach(
-  IsarCollection<dynamic> col,
-  Id id,
-  MoneyRecordEntity object,
-) {
+    IsarCollection<dynamic> col, Id id, MoneyRecordEntity object) {
   object.id = id;
 }
 
@@ -389,10 +405,8 @@ extension MoneyRecordEntityByIndex on IsarCollection<MoneyRecordEntity> {
     return putAllByIndex(r'uuid', objects);
   }
 
-  List<Id> putAllByUuidSync(
-    List<MoneyRecordEntity> objects, {
-    bool saveLinks = true,
-  }) {
+  List<Id> putAllByUuidSync(List<MoneyRecordEntity> objects,
+      {bool saveLinks = true}) {
     return putAllByIndexSync(r'uuid', objects, saveLinks: saveLinks);
   }
 }
@@ -406,7 +420,7 @@ extension MoneyRecordEntityQueryWhereSort
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhere>
-  anyTransactionDate() {
+      anyTransactionDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'transactionDate'),
@@ -423,7 +437,7 @@ extension MoneyRecordEntityQueryWhereSort
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhere>
-  anySettledAt() {
+      anySettledAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'settledAt'),
@@ -435,14 +449,17 @@ extension MoneyRecordEntityQueryWhereSort
 extension MoneyRecordEntityQueryWhere
     on QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QWhereClause> {
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  idEqualTo(Id id) {
+      idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
+      return query.addWhereClause(IdWhereClause.between(
+        lower: id,
+        upper: id,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  idNotEqualTo(Id id) {
+      idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -465,7 +482,7 @@ extension MoneyRecordEntityQueryWhere
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  idGreaterThan(Id id, {bool include = false}) {
+      idGreaterThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -474,7 +491,7 @@ extension MoneyRecordEntityQueryWhere
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  idLessThan(Id id, {bool include = false}) {
+      idLessThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -483,687 +500,611 @@ extension MoneyRecordEntityQueryWhere
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  idBetween(
+      idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.between(
-          lower: lowerId,
-          includeLower: includeLower,
-          upper: upperId,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  uuidEqualTo(String uuid) {
+      uuidEqualTo(String uuid) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'uuid', value: [uuid]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'uuid',
+        value: [uuid],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  uuidNotEqualTo(String uuid) {
+      uuidNotEqualTo(String uuid) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [],
-                upper: [uuid],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [uuid],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [],
+              upper: [uuid],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [uuid],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [uuid],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'uuid',
-                lower: [],
-                upper: [uuid],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [uuid],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [],
+              upper: [uuid],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  userIdEqualTo(String userId) {
+      userIdEqualTo(String userId) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'userId', value: [userId]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'userId',
+        value: [userId],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  userIdNotEqualTo(String userId) {
+      userIdNotEqualTo(String userId) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'userId',
-                lower: [],
-                upper: [userId],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'userId',
-                lower: [userId],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [],
+              upper: [userId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [userId],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'userId',
-                lower: [userId],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'userId',
-                lower: [],
-                upper: [userId],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [userId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [],
+              upper: [userId],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  typeEqualTo(String type) {
+      typeEqualTo(String type) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'type', value: [type]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'type',
+        value: [type],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  typeNotEqualTo(String type) {
+      typeNotEqualTo(String type) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'type',
-                lower: [],
-                upper: [type],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'type',
-                lower: [type],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'type',
+              lower: [],
+              upper: [type],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'type',
+              lower: [type],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'type',
-                lower: [type],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'type',
-                lower: [],
-                upper: [type],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'type',
+              lower: [type],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'type',
+              lower: [],
+              upper: [type],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  personNameEqualTo(String personName) {
+      personNameEqualTo(String personName) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'personName', value: [personName]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'personName',
+        value: [personName],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  personNameNotEqualTo(String personName) {
+      personNameNotEqualTo(String personName) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'personName',
-                lower: [],
-                upper: [personName],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'personName',
-                lower: [personName],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'personName',
+              lower: [],
+              upper: [personName],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'personName',
+              lower: [personName],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'personName',
-                lower: [personName],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'personName',
-                lower: [],
-                upper: [personName],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'personName',
+              lower: [personName],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'personName',
+              lower: [],
+              upper: [personName],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  transactionDateEqualTo(DateTime transactionDate) {
+      transactionDateEqualTo(DateTime transactionDate) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(
-          indexName: r'transactionDate',
-          value: [transactionDate],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'transactionDate',
+        value: [transactionDate],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  transactionDateNotEqualTo(DateTime transactionDate) {
+      transactionDateNotEqualTo(DateTime transactionDate) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'transactionDate',
-                lower: [],
-                upper: [transactionDate],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'transactionDate',
-                lower: [transactionDate],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'transactionDate',
+              lower: [],
+              upper: [transactionDate],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'transactionDate',
+              lower: [transactionDate],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'transactionDate',
-                lower: [transactionDate],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'transactionDate',
-                lower: [],
-                upper: [transactionDate],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'transactionDate',
+              lower: [transactionDate],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'transactionDate',
+              lower: [],
+              upper: [transactionDate],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  transactionDateGreaterThan(DateTime transactionDate, {bool include = false}) {
+      transactionDateGreaterThan(
+    DateTime transactionDate, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'transactionDate',
-          lower: [transactionDate],
-          includeLower: include,
-          upper: [],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'transactionDate',
+        lower: [transactionDate],
+        includeLower: include,
+        upper: [],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  transactionDateLessThan(DateTime transactionDate, {bool include = false}) {
+      transactionDateLessThan(
+    DateTime transactionDate, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'transactionDate',
-          lower: [],
-          upper: [transactionDate],
-          includeUpper: include,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'transactionDate',
+        lower: [],
+        upper: [transactionDate],
+        includeUpper: include,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  transactionDateBetween(
+      transactionDateBetween(
     DateTime lowerTransactionDate,
     DateTime upperTransactionDate, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'transactionDate',
-          lower: [lowerTransactionDate],
-          includeLower: includeLower,
-          upper: [upperTransactionDate],
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'transactionDate',
+        lower: [lowerTransactionDate],
+        includeLower: includeLower,
+        upper: [upperTransactionDate],
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  dueDateEqualTo(DateTime dueDate) {
+      dueDateEqualTo(DateTime dueDate) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'dueDate', value: [dueDate]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'dueDate',
+        value: [dueDate],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  dueDateNotEqualTo(DateTime dueDate) {
+      dueDateNotEqualTo(DateTime dueDate) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'dueDate',
-                lower: [],
-                upper: [dueDate],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'dueDate',
-                lower: [dueDate],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dueDate',
+              lower: [],
+              upper: [dueDate],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dueDate',
+              lower: [dueDate],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'dueDate',
-                lower: [dueDate],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'dueDate',
-                lower: [],
-                upper: [dueDate],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dueDate',
+              lower: [dueDate],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dueDate',
+              lower: [],
+              upper: [dueDate],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  dueDateGreaterThan(DateTime dueDate, {bool include = false}) {
+      dueDateGreaterThan(
+    DateTime dueDate, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'dueDate',
-          lower: [dueDate],
-          includeLower: include,
-          upper: [],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'dueDate',
+        lower: [dueDate],
+        includeLower: include,
+        upper: [],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  dueDateLessThan(DateTime dueDate, {bool include = false}) {
+      dueDateLessThan(
+    DateTime dueDate, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'dueDate',
-          lower: [],
-          upper: [dueDate],
-          includeUpper: include,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'dueDate',
+        lower: [],
+        upper: [dueDate],
+        includeUpper: include,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  dueDateBetween(
+      dueDateBetween(
     DateTime lowerDueDate,
     DateTime upperDueDate, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'dueDate',
-          lower: [lowerDueDate],
-          includeLower: includeLower,
-          upper: [upperDueDate],
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'dueDate',
+        lower: [lowerDueDate],
+        includeLower: includeLower,
+        upper: [upperDueDate],
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtIsNull() {
+      settledAtIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'settledAt', value: [null]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'settledAt',
+        value: [null],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtIsNotNull() {
+      settledAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'settledAt',
-          lower: [null],
-          includeLower: false,
-          upper: [],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'settledAt',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtEqualTo(DateTime? settledAt) {
+      settledAtEqualTo(DateTime? settledAt) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'settledAt', value: [settledAt]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'settledAt',
+        value: [settledAt],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtNotEqualTo(DateTime? settledAt) {
+      settledAtNotEqualTo(DateTime? settledAt) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'settledAt',
-                lower: [],
-                upper: [settledAt],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'settledAt',
-                lower: [settledAt],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'settledAt',
+              lower: [],
+              upper: [settledAt],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'settledAt',
+              lower: [settledAt],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'settledAt',
-                lower: [settledAt],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'settledAt',
-                lower: [],
-                upper: [settledAt],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'settledAt',
+              lower: [settledAt],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'settledAt',
+              lower: [],
+              upper: [settledAt],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtGreaterThan(DateTime? settledAt, {bool include = false}) {
+      settledAtGreaterThan(
+    DateTime? settledAt, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'settledAt',
-          lower: [settledAt],
-          includeLower: include,
-          upper: [],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'settledAt',
+        lower: [settledAt],
+        includeLower: include,
+        upper: [],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtLessThan(DateTime? settledAt, {bool include = false}) {
+      settledAtLessThan(
+    DateTime? settledAt, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'settledAt',
-          lower: [],
-          upper: [settledAt],
-          includeUpper: include,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'settledAt',
+        lower: [],
+        upper: [settledAt],
+        includeUpper: include,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  settledAtBetween(
+      settledAtBetween(
     DateTime? lowerSettledAt,
     DateTime? upperSettledAt, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'settledAt',
-          lower: [lowerSettledAt],
-          includeLower: includeLower,
-          upper: [upperSettledAt],
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'settledAt',
+        lower: [lowerSettledAt],
+        includeLower: includeLower,
+        upper: [upperSettledAt],
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  statusEqualTo(String status) {
+      statusEqualTo(String status) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(indexName: r'status', value: [status]),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'status',
+        value: [status],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  statusNotEqualTo(String status) {
+      statusNotEqualTo(String status) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'status',
-                lower: [],
-                upper: [status],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'status',
-                lower: [status],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'status',
+              lower: [],
+              upper: [status],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'status',
+              lower: [status],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'status',
-                lower: [status],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'status',
-                lower: [],
-                upper: [status],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'status',
+              lower: [status],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'status',
+              lower: [],
+              upper: [status],
+              includeUpper: false,
+            ));
       }
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  originTransactionIdIsNull() {
+      originTransactionIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(
-          indexName: r'originTransactionId',
-          value: [null],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'originTransactionId',
+        value: [null],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  originTransactionIdIsNotNull() {
+      originTransactionIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.between(
-          indexName: r'originTransactionId',
-          lower: [null],
-          includeLower: false,
-          upper: [],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'originTransactionId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  originTransactionIdEqualTo(String? originTransactionId) {
+      originTransactionIdEqualTo(String? originTransactionId) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IndexWhereClause.equalTo(
-          indexName: r'originTransactionId',
-          value: [originTransactionId],
-        ),
-      );
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'originTransactionId',
+        value: [originTransactionId],
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterWhereClause>
-  originTransactionIdNotEqualTo(String? originTransactionId) {
+      originTransactionIdNotEqualTo(String? originTransactionId) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'originTransactionId',
-                lower: [],
-                upper: [originTransactionId],
-                includeUpper: false,
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'originTransactionId',
-                lower: [originTransactionId],
-                includeLower: false,
-                upper: [],
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'originTransactionId',
+              lower: [],
+              upper: [originTransactionId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'originTransactionId',
+              lower: [originTransactionId],
+              includeLower: false,
+              upper: [],
+            ));
       } else {
         return query
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'originTransactionId',
-                lower: [originTransactionId],
-                includeLower: false,
-                upper: [],
-              ),
-            )
-            .addWhereClause(
-              IndexWhereClause.between(
-                indexName: r'originTransactionId',
-                lower: [],
-                upper: [originTransactionId],
-                includeUpper: false,
-              ),
-            );
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'originTransactionId',
+              lower: [originTransactionId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'originTransactionId',
+              lower: [],
+              upper: [originTransactionId],
+              includeUpper: false,
+            ));
       }
     });
   }
@@ -1172,248 +1113,249 @@ extension MoneyRecordEntityQueryWhere
 extension MoneyRecordEntityQueryFilter
     on QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QFilterCondition> {
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  createdAtEqualTo(DateTime value) {
+      createdAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'createdAt', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'createdAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  createdAtGreaterThan(DateTime value, {bool include = false}) {
+      createdAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'createdAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'createdAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  createdAtLessThan(DateTime value, {bool include = false}) {
+      createdAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'createdAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'createdAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  createdAtBetween(
+      createdAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'createdAt',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'createdAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  dueDateEqualTo(DateTime value) {
+      dueDateEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'dueDate', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dueDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  dueDateGreaterThan(DateTime value, {bool include = false}) {
+      dueDateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'dueDate',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'dueDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  dueDateLessThan(DateTime value, {bool include = false}) {
+      dueDateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'dueDate',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'dueDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  dueDateBetween(
+      dueDateBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'dueDate',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'dueDate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  idEqualTo(Id value) {
+      idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'id', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  idGreaterThan(Id value, {bool include = false}) {
+      idGreaterThan(
+    Id value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'id',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  idLessThan(Id value, {bool include = false}) {
+      idLessThan(
+    Id value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'id',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  idBetween(
+      idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'id',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  isReminderEnabledEqualTo(bool value) {
+      isReminderEnabledEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'isReminderEnabled', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isReminderEnabled',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesIsNull() {
+      notesIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'notes'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'notes',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesIsNotNull() {
+      notesIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'notes'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'notes',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesEqualTo(String? value, {bool caseSensitive = true}) {
+      notesEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesGreaterThan(
+      notesGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesLessThan(
+      notesLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesBetween(
+      notesBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1421,158 +1363,153 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'notes',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'notes',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesStartsWith(String value, {bool caseSensitive = true}) {
+      notesStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesEndsWith(String value, {bool caseSensitive = true}) {
+      notesEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesContains(String value, {bool caseSensitive = true}) {
+      notesContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'notes',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesMatches(String pattern, {bool caseSensitive = true}) {
+      notesMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'notes',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'notes',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesIsEmpty() {
+      notesIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'notes', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notes',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  notesIsNotEmpty() {
+      notesIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'notes', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'notes',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdIsNull() {
+      originTransactionIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'originTransactionId'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'originTransactionId',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdIsNotNull() {
+      originTransactionIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'originTransactionId'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'originTransactionId',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdEqualTo(String? value, {bool caseSensitive = true}) {
+      originTransactionIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'originTransactionId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'originTransactionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdGreaterThan(
+      originTransactionIdGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'originTransactionId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'originTransactionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdLessThan(
+      originTransactionIdLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'originTransactionId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'originTransactionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdBetween(
+      originTransactionIdBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1580,143 +1517,135 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'originTransactionId',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'originTransactionId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdStartsWith(String value, {bool caseSensitive = true}) {
+      originTransactionIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'originTransactionId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'originTransactionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdEndsWith(String value, {bool caseSensitive = true}) {
+      originTransactionIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'originTransactionId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'originTransactionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdContains(String value, {bool caseSensitive = true}) {
+      originTransactionIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'originTransactionId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'originTransactionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdMatches(String pattern, {bool caseSensitive = true}) {
+      originTransactionIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'originTransactionId',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'originTransactionId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdIsEmpty() {
+      originTransactionIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'originTransactionId', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'originTransactionId',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originTransactionIdIsNotEmpty() {
+      originTransactionIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          property: r'originTransactionId',
-          value: '',
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'originTransactionId',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originalAmountEqualTo(double value, {double epsilon = Query.epsilon}) {
+      originalAmountEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'originalAmount',
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'originalAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originalAmountGreaterThan(
+      originalAmountGreaterThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'originalAmount',
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'originalAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originalAmountLessThan(
+      originalAmountLessThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'originalAmount',
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'originalAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  originalAmountBetween(
+      originalAmountBetween(
     double lower,
     double upper, {
     bool includeLower = true,
@@ -1724,70 +1653,65 @@ extension MoneyRecordEntityQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'originalAmount',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          epsilon: epsilon,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'originalAmount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameEqualTo(String value, {bool caseSensitive = true}) {
+      personNameEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'personName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'personName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameGreaterThan(
+      personNameGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'personName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'personName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameLessThan(
+      personNameLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'personName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'personName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameBetween(
+      personNameBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1795,268 +1719,265 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'personName',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'personName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameStartsWith(String value, {bool caseSensitive = true}) {
+      personNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'personName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'personName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameEndsWith(String value, {bool caseSensitive = true}) {
+      personNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'personName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'personName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameContains(String value, {bool caseSensitive = true}) {
+      personNameContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'personName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'personName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameMatches(String pattern, {bool caseSensitive = true}) {
+      personNameMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'personName',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'personName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameIsEmpty() {
+      personNameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'personName', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'personName',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  personNameIsNotEmpty() {
+      personNameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'personName', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'personName',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  reminderDaysBeforeEqualTo(int value) {
+      reminderDaysBeforeEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'reminderDaysBefore', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'reminderDaysBefore',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  reminderDaysBeforeGreaterThan(int value, {bool include = false}) {
+      reminderDaysBeforeGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'reminderDaysBefore',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'reminderDaysBefore',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  reminderDaysBeforeLessThan(int value, {bool include = false}) {
+      reminderDaysBeforeLessThan(
+    int value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'reminderDaysBefore',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'reminderDaysBefore',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  reminderDaysBeforeBetween(
+      reminderDaysBeforeBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'reminderDaysBefore',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'reminderDaysBefore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  settledAtIsNull() {
+      settledAtIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'settledAt'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'settledAt',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  settledAtIsNotNull() {
+      settledAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'settledAt'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'settledAt',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  settledAtEqualTo(DateTime? value) {
+      settledAtEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'settledAt', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'settledAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  settledAtGreaterThan(DateTime? value, {bool include = false}) {
+      settledAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'settledAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'settledAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  settledAtLessThan(DateTime? value, {bool include = false}) {
+      settledAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'settledAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'settledAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  settledAtBetween(
+      settledAtBetween(
     DateTime? lower,
     DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'settledAt',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'settledAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusEqualTo(String value, {bool caseSensitive = true}) {
+      statusEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'status',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'status',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusGreaterThan(
+      statusGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'status',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'status',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusLessThan(
+      statusLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'status',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'status',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusBetween(
+      statusBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -2064,195 +1985,191 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'status',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'status',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusStartsWith(String value, {bool caseSensitive = true}) {
+      statusStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'status',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'status',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusEndsWith(String value, {bool caseSensitive = true}) {
+      statusEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'status',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'status',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusContains(String value, {bool caseSensitive = true}) {
+      statusContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'status',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'status',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusMatches(String pattern, {bool caseSensitive = true}) {
+      statusMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'status',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'status',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusIsEmpty() {
+      statusIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'status', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'status',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  statusIsNotEmpty() {
+      statusIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'status', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'status',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  transactionDateEqualTo(DateTime value) {
+      transactionDateEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'transactionDate', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'transactionDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  transactionDateGreaterThan(DateTime value, {bool include = false}) {
+      transactionDateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'transactionDate',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'transactionDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  transactionDateLessThan(DateTime value, {bool include = false}) {
+      transactionDateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'transactionDate',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'transactionDate',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  transactionDateBetween(
+      transactionDateBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'transactionDate',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'transactionDate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeEqualTo(String value, {bool caseSensitive = true}) {
+      typeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'type',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'type',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeGreaterThan(
+      typeGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'type',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'type',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeLessThan(
+      typeLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'type',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'type',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeBetween(
+      typeBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -2260,195 +2177,191 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'type',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'type',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeStartsWith(String value, {bool caseSensitive = true}) {
+      typeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'type',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'type',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeEndsWith(String value, {bool caseSensitive = true}) {
+      typeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'type',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'type',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeContains(String value, {bool caseSensitive = true}) {
+      typeContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'type',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'type',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeMatches(String pattern, {bool caseSensitive = true}) {
+      typeMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'type',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'type',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeIsEmpty() {
+      typeIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'type', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'type',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  typeIsNotEmpty() {
+      typeIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'type', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'type',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  updatedAtEqualTo(DateTime value) {
+      updatedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'updatedAt', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  updatedAtGreaterThan(DateTime value, {bool include = false}) {
+      updatedAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'updatedAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  updatedAtLessThan(DateTime value, {bool include = false}) {
+      updatedAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'updatedAt',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  updatedAtBetween(
+      updatedAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'updatedAt',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdEqualTo(String value, {bool caseSensitive = true}) {
+      userIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'userId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdGreaterThan(
+      userIdGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'userId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdLessThan(
+      userIdLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'userId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdBetween(
+      userIdBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -2456,140 +2369,135 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'userId',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'userId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdStartsWith(String value, {bool caseSensitive = true}) {
+      userIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'userId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdEndsWith(String value, {bool caseSensitive = true}) {
+      userIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'userId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdContains(String value, {bool caseSensitive = true}) {
+      userIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'userId',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdMatches(String pattern, {bool caseSensitive = true}) {
+      userIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'userId',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'userId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdIsEmpty() {
+      userIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'userId', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'userId',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  userIdIsNotEmpty() {
+      userIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'userId', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'userId',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidEqualTo(String value, {bool caseSensitive = true}) {
+      uuidEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidGreaterThan(
+      uuidGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidLessThan(
+      uuidLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidBetween(
+      uuidBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -2597,86 +2505,84 @@ extension MoneyRecordEntityQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'uuid',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'uuid',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidStartsWith(String value, {bool caseSensitive = true}) {
+      uuidStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidEndsWith(String value, {bool caseSensitive = true}) {
+      uuidEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidContains(String value, {bool caseSensitive = true}) {
+      uuidContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'uuid',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidMatches(String pattern, {bool caseSensitive = true}) {
+      uuidMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'uuid',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'uuid',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidIsEmpty() {
+      uuidIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'uuid', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterFilterCondition>
-  uuidIsNotEmpty() {
+      uuidIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'uuid', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'uuid',
+        value: '',
+      ));
     });
   }
 }
@@ -2690,210 +2596,210 @@ extension MoneyRecordEntityQueryLinks
 extension MoneyRecordEntityQuerySortBy
     on QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QSortBy> {
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByCreatedAt() {
+      sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByCreatedAtDesc() {
+      sortByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByDueDate() {
+      sortByDueDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dueDate', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByDueDateDesc() {
+      sortByDueDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dueDate', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByIsReminderEnabled() {
+      sortByIsReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByIsReminderEnabledDesc() {
+      sortByIsReminderEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByNotes() {
+      sortByNotes() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByNotesDesc() {
+      sortByNotesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByOriginTransactionId() {
+      sortByOriginTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originTransactionId', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByOriginTransactionIdDesc() {
+      sortByOriginTransactionIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originTransactionId', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByOriginalAmount() {
+      sortByOriginalAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originalAmount', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByOriginalAmountDesc() {
+      sortByOriginalAmountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originalAmount', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByPersonName() {
+      sortByPersonName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'personName', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByPersonNameDesc() {
+      sortByPersonNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'personName', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByReminderDaysBefore() {
+      sortByReminderDaysBefore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderDaysBefore', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByReminderDaysBeforeDesc() {
+      sortByReminderDaysBeforeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderDaysBefore', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortBySettledAt() {
+      sortBySettledAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'settledAt', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortBySettledAtDesc() {
+      sortBySettledAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'settledAt', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByStatus() {
+      sortByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByStatusDesc() {
+      sortByStatusDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByTransactionDate() {
+      sortByTransactionDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'transactionDate', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByTransactionDateDesc() {
+      sortByTransactionDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'transactionDate', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByType() {
+      sortByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByTypeDesc() {
+      sortByTypeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByUpdatedAt() {
+      sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByUpdatedAtDesc() {
+      sortByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByUserId() {
+      sortByUserId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'userId', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByUserIdDesc() {
+      sortByUserIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'userId', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByUuid() {
+      sortByUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  sortByUuidDesc() {
+      sortByUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.desc);
     });
@@ -2903,28 +2809,28 @@ extension MoneyRecordEntityQuerySortBy
 extension MoneyRecordEntityQuerySortThenBy
     on QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QSortThenBy> {
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByCreatedAt() {
+      thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByCreatedAtDesc() {
+      thenByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByDueDate() {
+      thenByDueDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dueDate', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByDueDateDesc() {
+      thenByDueDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dueDate', Sort.desc);
     });
@@ -2937,189 +2843,189 @@ extension MoneyRecordEntityQuerySortThenBy
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByIdDesc() {
+      thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByIsReminderEnabled() {
+      thenByIsReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByIsReminderEnabledDesc() {
+      thenByIsReminderEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReminderEnabled', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByNotes() {
+      thenByNotes() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByNotesDesc() {
+      thenByNotesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notes', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByOriginTransactionId() {
+      thenByOriginTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originTransactionId', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByOriginTransactionIdDesc() {
+      thenByOriginTransactionIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originTransactionId', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByOriginalAmount() {
+      thenByOriginalAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originalAmount', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByOriginalAmountDesc() {
+      thenByOriginalAmountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'originalAmount', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByPersonName() {
+      thenByPersonName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'personName', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByPersonNameDesc() {
+      thenByPersonNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'personName', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByReminderDaysBefore() {
+      thenByReminderDaysBefore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderDaysBefore', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByReminderDaysBeforeDesc() {
+      thenByReminderDaysBeforeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderDaysBefore', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenBySettledAt() {
+      thenBySettledAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'settledAt', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenBySettledAtDesc() {
+      thenBySettledAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'settledAt', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByStatus() {
+      thenByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByStatusDesc() {
+      thenByStatusDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByTransactionDate() {
+      thenByTransactionDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'transactionDate', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByTransactionDateDesc() {
+      thenByTransactionDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'transactionDate', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByType() {
+      thenByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByTypeDesc() {
+      thenByTypeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByUpdatedAt() {
+      thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByUpdatedAtDesc() {
+      thenByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByUserId() {
+      thenByUserId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'userId', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByUserIdDesc() {
+      thenByUserIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'userId', Sort.desc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByUuid() {
+      thenByUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.asc);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QAfterSortBy>
-  thenByUuidDesc() {
+      thenByUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.desc);
     });
@@ -3129,110 +3035,106 @@ extension MoneyRecordEntityQuerySortThenBy
 extension MoneyRecordEntityQueryWhereDistinct
     on QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct> {
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByCreatedAt() {
+      distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByDueDate() {
+      distinctByDueDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'dueDate');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByIsReminderEnabled() {
+      distinctByIsReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isReminderEnabled');
     });
   }
 
-  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByNotes({bool caseSensitive = true}) {
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct> distinctByNotes(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'notes', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByOriginTransactionId({bool caseSensitive = true}) {
+      distinctByOriginTransactionId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(
-        r'originTransactionId',
-        caseSensitive: caseSensitive,
-      );
+      return query.addDistinctBy(r'originTransactionId',
+          caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByOriginalAmount() {
+      distinctByOriginalAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'originalAmount');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByPersonName({bool caseSensitive = true}) {
+      distinctByPersonName({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'personName', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByReminderDaysBefore() {
+      distinctByReminderDaysBefore() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'reminderDaysBefore');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctBySettledAt() {
+      distinctBySettledAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'settledAt');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByStatus({bool caseSensitive = true}) {
+      distinctByStatus({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'status', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByTransactionDate() {
+      distinctByTransactionDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'transactionDate');
     });
   }
 
-  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct> distinctByType({
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct> distinctByType(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'type', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByUpdatedAt() {
+      distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct>
-  distinctByUserId({bool caseSensitive = true}) {
+      distinctByUserId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'userId', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct> distinctByUuid({
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<MoneyRecordEntity, MoneyRecordEntity, QDistinct> distinctByUuid(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'uuid', caseSensitive: caseSensitive);
     });
@@ -3248,21 +3150,21 @@ extension MoneyRecordEntityQueryProperty
   }
 
   QueryBuilder<MoneyRecordEntity, DateTime, QQueryOperations>
-  createdAtProperty() {
+      createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, DateTime, QQueryOperations>
-  dueDateProperty() {
+      dueDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dueDate');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, bool, QQueryOperations>
-  isReminderEnabledProperty() {
+      isReminderEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isReminderEnabled');
     });
@@ -3275,35 +3177,35 @@ extension MoneyRecordEntityQueryProperty
   }
 
   QueryBuilder<MoneyRecordEntity, String?, QQueryOperations>
-  originTransactionIdProperty() {
+      originTransactionIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'originTransactionId');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, double, QQueryOperations>
-  originalAmountProperty() {
+      originalAmountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'originalAmount');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, String, QQueryOperations>
-  personNameProperty() {
+      personNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'personName');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, int, QQueryOperations>
-  reminderDaysBeforeProperty() {
+      reminderDaysBeforeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'reminderDaysBefore');
     });
   }
 
   QueryBuilder<MoneyRecordEntity, DateTime?, QQueryOperations>
-  settledAtProperty() {
+      settledAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'settledAt');
     });
@@ -3316,7 +3218,7 @@ extension MoneyRecordEntityQueryProperty
   }
 
   QueryBuilder<MoneyRecordEntity, DateTime, QQueryOperations>
-  transactionDateProperty() {
+      transactionDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'transactionDate');
     });
@@ -3329,7 +3231,7 @@ extension MoneyRecordEntityQueryProperty
   }
 
   QueryBuilder<MoneyRecordEntity, DateTime, QQueryOperations>
-  updatedAtProperty() {
+      updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
     });

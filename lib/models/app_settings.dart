@@ -79,6 +79,15 @@ class AppSettings {
   final int autoLockTimeoutMinutes;
   final List<String> dismissedInsightIds;
 
+  // Local Push Notification Preferences
+  final bool isLocalNotificationsEnabled;
+  final bool isNeedsReviewNotificationsEnabled;
+  final bool isBudgetNotificationEnabled;
+  final bool isSubscriptionNotificationEnabled;
+  final bool isLoanNotificationEnabled;
+  final bool isBackupNotificationEnabled;
+  final bool hideSensitiveNotificationContent;
+
   const AppSettings({
     this.hasCompletedOnboarding = false,
     this.themePreference = AppThemePreference.system,
@@ -127,6 +136,13 @@ class AppSettings {
     this.lastAlertScan,
     this.autoLockTimeoutMinutes = 0,
     this.dismissedInsightIds = const [],
+    this.isLocalNotificationsEnabled = true,
+    this.isNeedsReviewNotificationsEnabled = true,
+    this.isBudgetNotificationEnabled = true,
+    this.isSubscriptionNotificationEnabled = true,
+    this.isLoanNotificationEnabled = true,
+    this.isBackupNotificationEnabled = true,
+    this.hideSensitiveNotificationContent = false,
   });
 
   AppSettings copyWith({
@@ -163,6 +179,13 @@ class AppSettings {
     DateTime? lastAlertScan,
     int? autoLockTimeoutMinutes,
     List<String>? dismissedInsightIds,
+    bool? isLocalNotificationsEnabled,
+    bool? isNeedsReviewNotificationsEnabled,
+    bool? isBudgetNotificationEnabled,
+    bool? isSubscriptionNotificationEnabled,
+    bool? isLoanNotificationEnabled,
+    bool? isBackupNotificationEnabled,
+    bool? hideSensitiveNotificationContent,
   }) {
     return AppSettings(
       hasCompletedOnboarding:
@@ -213,6 +236,23 @@ class AppSettings {
       autoLockTimeoutMinutes:
           autoLockTimeoutMinutes ?? this.autoLockTimeoutMinutes,
       dismissedInsightIds: dismissedInsightIds ?? this.dismissedInsightIds,
+      isLocalNotificationsEnabled:
+          isLocalNotificationsEnabled ?? this.isLocalNotificationsEnabled,
+      isNeedsReviewNotificationsEnabled:
+          isNeedsReviewNotificationsEnabled ??
+          this.isNeedsReviewNotificationsEnabled,
+      isBudgetNotificationEnabled:
+          isBudgetNotificationEnabled ?? this.isBudgetNotificationEnabled,
+      isSubscriptionNotificationEnabled:
+          isSubscriptionNotificationEnabled ??
+          this.isSubscriptionNotificationEnabled,
+      isLoanNotificationEnabled:
+          isLoanNotificationEnabled ?? this.isLoanNotificationEnabled,
+      isBackupNotificationEnabled:
+          isBackupNotificationEnabled ?? this.isBackupNotificationEnabled,
+      hideSensitiveNotificationContent:
+          hideSensitiveNotificationContent ??
+          this.hideSensitiveNotificationContent,
     );
   }
 }

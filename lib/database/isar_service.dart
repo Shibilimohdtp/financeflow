@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -26,6 +23,7 @@ import 'schemas/transaction_entity.dart';
 /// Database Persistence Service managing the local-first Isar database
 class IsarService {
   static IsarService? _instance;
+  static Future<IsarService>? _initialization;
   late final Isar isar;
 
   IsarService._(this.isar);
@@ -74,9 +72,22 @@ class IsarService {
   static Future<IsarService> initialize({
     String? directoryPath,
     bool isTest = false,
-  }) async {
-    if (_instance != null) return _instance!;
+  }) {
+    if (_instance != null) return Future.value(_instance!);
+    // A UI timeout does not cancel Isar.open. Retrying must join that attempt,
+    // not open/seed the same database concurrently.
+    return _initialization ??= _initialize(directoryPath, isTest).whenComplete(
+      () {
+        _initialization = null;
+      },
+    );
+  }
 
+  static Future<IsarService> _initialize(
+    String? directoryPath,
+    bool isTest,
+  ) async {
+    Isar? opened;
     try {
       String dir;
       if (directoryPath != null) {
@@ -88,37 +99,15 @@ class IsarService {
         dir = appDocDir.path;
       }
 
-      Isar isarInstance;
-      try {
-        isarInstance = await _openIsar(dir);
-      } catch (e) {
-        // If an outdated development/corrupted database file throws RangeError or schema mismatch,
-        // safely delete the stale .isar file and re-open cleanly.
-        debugPrint(
-          'Warning: Isar database open failed with ($e). Attempting recovery by recreating local database...',
-        );
-        if (dir.isNotEmpty) {
-          try {
-            final isarFile = File('$dir/financeflow_local_db.isar');
-            if (await isarFile.exists()) {
-              await isarFile.delete();
-            }
-            final lockFile = File('$dir/financeflow_local_db.isar.lock');
-            if (await lockFile.exists()) {
-              await lockFile.delete();
-            }
-          } catch (delError) {
-            debugPrint('Failed to delete corrupted isar file: $delError');
-          }
-        }
-        isarInstance = await _openIsar(dir);
-      }
-
-      final service = IsarService._(isarInstance);
+      // An open/schema error is not permission to destroy financial records.
+      // Surface the failure to the retry UI and leave the files untouched.
+      opened = await _openIsar(dir);
+      final service = IsarService._(opened);
       await service._seedInitialDataIfNeeded();
       _instance = service;
       return service;
     } catch (e) {
+      if (opened != null) await opened.close();
       throw DatabaseError(message: 'Failed to initialize local database: $e');
     }
   }

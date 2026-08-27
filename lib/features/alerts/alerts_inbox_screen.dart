@@ -80,11 +80,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
           IconButton(
             icon: const Icon(Icons.tune_rounded),
             tooltip: 'Alert Settings',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AlertSettingsSheet()),
-              );
-            },
+            onPressed: () => AlertSettingsSheet.show(context),
           ),
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),

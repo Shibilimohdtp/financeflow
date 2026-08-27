@@ -15,6 +15,7 @@ import '../../services/ingestion/ingestion_platform.dart';
 import '../accounts/accounts_screen.dart';
 import '../ai/ai_query_sheet.dart';
 import '../ai/gemini_consent_screen.dart';
+import '../alerts/alert_settings_sheet.dart';
 import '../alerts/alerts_inbox_screen.dart';
 import '../backup/backup_screen.dart';
 import '../export/export_screen.dart';
@@ -99,7 +100,7 @@ class SettingsScreen extends ConsumerWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Finance Modules ────────────────────────────────────────
-                _SectionLabel(label: 'Finance Modules'),
+                const _SectionLabel(label: 'Finance Modules'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 _NavGroup(
                   children: [
@@ -154,7 +155,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: StillwaterTokens.space2Xl),
 
                 // ── Tools & Insights ───────────────────────────────────────
-                _SectionLabel(label: 'Tools & Insights'),
+                const _SectionLabel(label: 'Tools & Insights'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 _NavGroup(
                   children: [
@@ -203,7 +204,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: StillwaterTokens.space2Xl),
 
                 // ── Data & Backup ──────────────────────────────────────────
-                _SectionLabel(label: 'Data & Backup'),
+                const _SectionLabel(label: 'Data & Backup'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 _NavGroup(
                   children: [
@@ -226,7 +227,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: StillwaterTokens.space2Xl),
 
                 // ── App settings ───────────────────────────────────────────
-                _SectionLabel(label: 'App'),
+                const _SectionLabel(label: 'App'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 _NavGroup(
                   children: [
@@ -324,7 +325,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
         ),
         children: [
           // ── 1. Appearance ────────────────────────────────────────────────
-          _SectionLabel(label: 'Appearance'),
+          const _SectionLabel(label: 'Appearance'),
           const SizedBox(height: StillwaterTokens.spaceXs),
           _SettingsGroup(
             children: [
@@ -348,7 +349,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 },
               ),
               // Currency — informational
-              _SettingsRow(
+              const _SettingsRow(
                 icon: Icons.currency_rupee_rounded,
                 label: 'Currency',
                 value: '₹ INR',
@@ -361,32 +362,68 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           const SizedBox(height: StillwaterTokens.space2Xl),
 
           // ── 2. Alerts & Notifications ────────────────────────────────────
-          _SectionLabel(label: 'Alerts & Notifications'),
+          const _SectionLabel(label: 'Alerts & Notifications'),
           const SizedBox(height: StillwaterTokens.spaceXs),
           _SettingsGroup(
             children: [
               _SettingsSwitchRow(
                 icon: Icons.notifications_outlined,
-                label: 'All Alerts',
-                subtitle: 'Master switch for all local notifications',
-                value: settings.isAlertsEnabled,
+                label: 'All Alerts & Notifications',
+                subtitle: 'Master switch for local alerts and notifications',
+                value: settings.isAlertsEnabled &&
+                    settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
                       .read(settingsControllerProvider.notifier)
-                      .updateSettings(settings.copyWith(isAlertsEnabled: val));
+                      .updateSettings(
+                        settings.copyWith(
+                          isAlertsEnabled: val,
+                          isLocalNotificationsEnabled: val,
+                        ),
+                      );
+                },
+              ),
+              _SettingsRow(
+                icon: Icons.tune_rounded,
+                label: 'Notification & Alert Preferences',
+                subtitle: 'Categories, lock screen privacy & permissions',
+                onTap: () => AlertSettingsSheet.show(context),
+              ),
+              _SettingsSwitchRow(
+                icon: Icons.rate_review_outlined,
+                label: 'Needs Review Alerts',
+                subtitle: 'Remind when imported transactions need confirmation',
+                value: settings.isNeedsReviewNotificationsEnabled &&
+                    settings.isNeedsReviewAlertsEnabled,
+                enabled: settings.isAlertsEnabled &&
+                    settings.isLocalNotificationsEnabled,
+                onChanged: (val) {
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .updateSettings(
+                        settings.copyWith(
+                          isNeedsReviewNotificationsEnabled: val,
+                          isNeedsReviewAlertsEnabled: val,
+                        ),
+                      );
                 },
               ),
               _SettingsSwitchRow(
                 icon: Icons.pie_chart_outline_rounded,
                 label: 'Budget Alerts',
                 subtitle: 'Notify when spending approaches limit',
-                value: settings.isBudgetAlertsEnabled,
-                enabled: settings.isAlertsEnabled,
+                value: settings.isBudgetNotificationEnabled &&
+                    settings.isBudgetAlertsEnabled,
+                enabled: settings.isAlertsEnabled &&
+                    settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
                       .read(settingsControllerProvider.notifier)
                       .updateSettings(
-                        settings.copyWith(isBudgetAlertsEnabled: val),
+                        settings.copyWith(
+                          isBudgetNotificationEnabled: val,
+                          isBudgetAlertsEnabled: val,
+                        ),
                       );
                 },
               ),
@@ -394,13 +431,18 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.repeat_rounded,
                 label: 'Subscription Alerts',
                 subtitle: 'Notify before renewal dates',
-                value: settings.isSubscriptionAlertsEnabled,
-                enabled: settings.isAlertsEnabled,
+                value: settings.isSubscriptionNotificationEnabled &&
+                    settings.isSubscriptionAlertsEnabled,
+                enabled: settings.isAlertsEnabled &&
+                    settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
                       .read(settingsControllerProvider.notifier)
                       .updateSettings(
-                        settings.copyWith(isSubscriptionAlertsEnabled: val),
+                        settings.copyWith(
+                          isSubscriptionNotificationEnabled: val,
+                          isSubscriptionAlertsEnabled: val,
+                        ),
                       );
                 },
               ),
@@ -408,13 +450,18 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.account_balance_outlined,
                 label: 'Loan & EMI Alerts',
                 subtitle: 'Remind before EMI due dates',
-                value: settings.isLoanAlertsEnabled,
-                enabled: settings.isAlertsEnabled,
+                value: settings.isLoanNotificationEnabled &&
+                    settings.isLoanAlertsEnabled,
+                enabled: settings.isAlertsEnabled &&
+                    settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
                       .read(settingsControllerProvider.notifier)
                       .updateSettings(
-                        settings.copyWith(isLoanAlertsEnabled: val),
+                        settings.copyWith(
+                          isLoanNotificationEnabled: val,
+                          isLoanAlertsEnabled: val,
+                        ),
                       );
                 },
               ),
@@ -422,14 +469,19 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.backup_outlined,
                 label: 'Backup Reminder',
                 subtitle: 'Periodic reminder to create a backup',
-                value: settings.isBackupReminderEnabled,
-                enabled: settings.isAlertsEnabled,
+                value: settings.isBackupNotificationEnabled &&
+                    settings.isBackupReminderEnabled,
+                enabled: settings.isAlertsEnabled &&
+                    settings.isLocalNotificationsEnabled,
                 isLast: true,
                 onChanged: (val) {
                   ref
                       .read(settingsControllerProvider.notifier)
                       .updateSettings(
-                        settings.copyWith(isBackupReminderEnabled: val),
+                        settings.copyWith(
+                          isBackupNotificationEnabled: val,
+                          isBackupReminderEnabled: val,
+                        ),
                       );
                 },
               ),
@@ -439,7 +491,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           const SizedBox(height: StillwaterTokens.space2Xl),
 
           // ── 3. Privacy & Security ────────────────────────────────────────
-          _SectionLabel(label: 'Privacy & Security'),
+          const _SectionLabel(label: 'Privacy & Security'),
           const SizedBox(height: StillwaterTokens.spaceXs),
           _SettingsGroup(
             children: [
@@ -456,7 +508,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           const SizedBox(height: StillwaterTokens.space2Xl),
 
           // ── 4. Transaction Ingestion ─────────────────────────────────────
-          _SectionLabel(label: 'Transaction Ingestion'),
+          const _SectionLabel(label: 'Transaction Ingestion'),
           const SizedBox(height: StillwaterTokens.spaceXs),
           _SettingsGroup(
             children: [
@@ -512,7 +564,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                   }
                 },
               ),
-              _SettingsRow(
+              const _SettingsRow(
                 icon: Icons.email_outlined,
                 label: 'Bank Email Detection',
                 subtitle:
@@ -572,7 +624,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           const SizedBox(height: StillwaterTokens.space2Xl),
 
           // ── 5. Intelligence ──────────────────────────────────────────────
-          _SectionLabel(label: 'Intelligence'),
+          const _SectionLabel(label: 'Intelligence'),
           const SizedBox(height: StillwaterTokens.spaceXs),
           _SettingsGroup(
             children: [
@@ -706,7 +758,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           const SizedBox(height: StillwaterTokens.space2Xl),
 
           // ── 7. Data Reset ────────────────────────────────────────────────
-          _SectionLabel(label: 'Data Reset'),
+          const _SectionLabel(label: 'Data Reset'),
           const SizedBox(height: StillwaterTokens.spaceXs),
 
           // Danger zone — deliberately styled differently (no icon tint, no chip)

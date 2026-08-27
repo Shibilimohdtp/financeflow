@@ -59,6 +59,15 @@ class AppSettingsEntity {
   /// generated insights stay dismissed after a process/device restart.
   List<String> dismissedInsightIds = [];
 
+  // Local Push Notification Preferences
+  bool isLocalNotificationsEnabled = true;
+  bool isNeedsReviewNotificationsEnabled = true;
+  bool isBudgetNotificationEnabled = true;
+  bool isSubscriptionNotificationEnabled = true;
+  bool isLoanNotificationEnabled = true;
+  bool isBackupNotificationEnabled = true;
+  bool hideSensitiveNotificationContent = false;
+
   late DateTime createdAt;
 
   late DateTime updatedAt;

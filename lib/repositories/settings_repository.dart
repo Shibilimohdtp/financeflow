@@ -85,6 +85,15 @@ class IsarSettingsRepository implements SettingsRepository {
       lastAlertScan: entity.lastAlertScan,
       autoLockTimeoutMinutes: entity.autoLockTimeoutMinutes,
       dismissedInsightIds: List<String>.from(entity.dismissedInsightIds),
+      isLocalNotificationsEnabled: entity.isLocalNotificationsEnabled,
+      isNeedsReviewNotificationsEnabled:
+          entity.isNeedsReviewNotificationsEnabled,
+      isBudgetNotificationEnabled: entity.isBudgetNotificationEnabled,
+      isSubscriptionNotificationEnabled:
+          entity.isSubscriptionNotificationEnabled,
+      isLoanNotificationEnabled: entity.isLoanNotificationEnabled,
+      isBackupNotificationEnabled: entity.isBackupNotificationEnabled,
+      hideSensitiveNotificationContent: entity.hideSensitiveNotificationContent,
     );
   }
 
@@ -158,6 +167,18 @@ class IsarSettingsRepository implements SettingsRepository {
       entity.dismissedInsightIds = List<String>.from(
         settings.dismissedInsightIds,
       );
+
+      // Local Push Notification Preferences
+      entity.isLocalNotificationsEnabled = settings.isLocalNotificationsEnabled;
+      entity.isNeedsReviewNotificationsEnabled =
+          settings.isNeedsReviewNotificationsEnabled;
+      entity.isBudgetNotificationEnabled = settings.isBudgetNotificationEnabled;
+      entity.isSubscriptionNotificationEnabled =
+          settings.isSubscriptionNotificationEnabled;
+      entity.isLoanNotificationEnabled = settings.isLoanNotificationEnabled;
+      entity.isBackupNotificationEnabled = settings.isBackupNotificationEnabled;
+      entity.hideSensitiveNotificationContent =
+          settings.hideSensitiveNotificationContent;
 
       entity.updatedAt = DateTime.now();
 

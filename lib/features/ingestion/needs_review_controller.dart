@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
 import '../../repositories/pending_transaction_repository.dart';
-import '../../services/ingestion/transaction_merge_service.dart';
-import '../settings/settings_controller.dart';
 import '../../services/financial_operation_service.dart';
 import '../../services/ingestion/duplicate_matcher.dart';
+import '../../services/ingestion/transaction_merge_service.dart';
+import '../../services/notifications/notification_coordinator.dart';
+import '../settings/settings_controller.dart';
 
 class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
@@ -17,6 +19,9 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _commitItem(item);
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -39,6 +44,9 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
         await _commitItem(item);
         count++;
       }
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
       state = const AsyncValue.data(null);
       return count;
     } catch (e, st) {
@@ -103,6 +111,9 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
     try {
       final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
       await pendingRepo.removePendingTransaction(tempId);
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -152,6 +163,9 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
         }
       }
       await pendingRepo.savePendingTransaction(updated);
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -165,6 +179,9 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
     try {
       final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
       await pendingRepo.clearAllPending();
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
