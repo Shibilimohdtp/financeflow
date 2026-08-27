@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../services/export_service.dart';
@@ -11,6 +12,7 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../backup/backup_screen.dart';
 import '../transactions/transactions_controller.dart';
 import 'export_controller.dart';
 
@@ -86,7 +88,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Export Data'),
+        title: const Text('Export Reports'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -102,6 +104,83 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           vertical: StillwaterTokens.spaceMd,
         ),
         children: [
+          // ── Device Migration & Disaster Recovery Notice ───────────────
+          Container(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                width: StillwaterTokens.borderWidthHairline,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.phonelink_setup_rounded,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: StillwaterTokens.spaceSm),
+                    Text(
+                      'Migrating to a New Phone?',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: StillwaterTokens.spaceXs),
+                Text(
+                  'Exports below are designed for external spreadsheets and reports. To transfer 100% of your data (all accounts, loans, settings, and histories) to another device, use Encrypted Backup & Restore.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: StillwaterTokens.spaceSm),
+                InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const BackupScreen(),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Open Backup & Restore',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceLg),
+
           // ── 1. Local Processing Guarantee ─────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
@@ -129,7 +208,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'On-Device Export Architecture',
+                        'On-Device Report Generator',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: context.secColors.verified,
@@ -137,7 +216,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Exports are created strictly on this device without uploading to any remote server or third-party cloud.',
+                        'Spreadsheets and summaries are compiled strictly on this device without uploading to remote servers.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.secondary,
                         ),
@@ -148,6 +227,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               ],
             ),
           ),
+
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 
@@ -252,21 +332,43 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                         size: 20,
                       ),
                       const SizedBox(width: StillwaterTokens.spaceSm),
-                      Text(
-                        'Export Ready',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.finColors.income,
+                      Expanded(
+                        child: Text(
+                          'Export Report Generated',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: context.finColors.income,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: StillwaterTokens.spaceSm),
                   Text(
-                    _exportedPath!,
+                    'File: ${_exportedPath!.split(RegExp(r'[/\\]')).last}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Reports are for external analysis (Excel/Sheets/Tax). To move all data to a new device, use Full Backup & Migration.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.secondary,
                     ),
+                  ),
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  FfButton(
+                    label: 'Share / Save to Downloads',
+                    leadingIcon: const Icon(Icons.share_rounded, size: 16),
+                    onPressed: () {
+                      SharePlus.instance.share(
+                        ShareParams(
+                          files: [XFile(_exportedPath!)],
+                          subject: 'FinanceFlow Financial Report',
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

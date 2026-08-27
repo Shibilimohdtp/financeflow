@@ -2,10 +2,15 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../repositories/account_repository.dart';
+import '../../repositories/alert_repository.dart';
 import '../../repositories/budget_repository.dart';
+import '../../repositories/category_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../repositories/loan_repository.dart';
+import '../../repositories/money_record_repository.dart';
+import '../../repositories/pending_transaction_repository.dart';
 import '../../repositories/savings_goal_repository.dart';
+import '../../repositories/settings_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../services/export_service.dart';
@@ -25,6 +30,11 @@ class ExportController extends StateNotifier<AsyncValue<String?>> {
       final subRepo = _ref.read(subscriptionRepositoryProvider);
       final loanRepo = _ref.read(loanRepositoryProvider);
       final invRepo = _ref.read(investmentRepositoryProvider);
+      final catRepo = _ref.read(categoryRepositoryProvider);
+      final alertRepo = _ref.read(alertRepositoryProvider);
+      final moneyRepo = _ref.read(moneyRecordRepositoryProvider);
+      final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
+      final settingsRepo = _ref.read(settingsRepositoryProvider);
 
       final accounts = await accRepo.getAllAccounts();
       final allTransactions = await txRepo.getAllTransactions();
@@ -61,14 +71,33 @@ class ExportController extends StateNotifier<AsyncValue<String?>> {
           );
           break;
         case ExportFormat.json:
+          final categories = await catRepo.getAllCategories(
+            includeArchived: true,
+          );
+          final contributions = await goalRepo.getAllContributions();
+          final emiPayments = await loanRepo.getAllPayments();
+          final alerts = await alertRepo.getAllAlerts();
+          final moneyRecords = await moneyRepo.getAllRecords();
+          final moneyRepayments = await moneyRepo.getAllRepayments();
+          final pendingTxs = await pendingRepo.getPendingTransactions();
+          final appSettings = await settingsRepo.getSettings();
+
           fileContent = ExportService.generateJson(
             transactions: filteredTxs,
             accounts: accounts,
+            categories: categories,
             budgets: budgets,
             savingsGoals: goals,
+            goalContributions: contributions,
             subscriptions: subscriptions,
             loans: loans,
+            emiPayments: emiPayments,
             investments: investments,
+            alerts: alerts,
+            moneyRecords: moneyRecords,
+            moneyRepayments: moneyRepayments,
+            pendingTransactions: pendingTxs,
+            appSettings: appSettings,
             maskSensitive: !request.includeSensitiveFields,
           );
           break;

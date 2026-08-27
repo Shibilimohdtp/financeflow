@@ -99,28 +99,90 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
       ref.invalidate(filteredTransactionsProvider);
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder:
             (ctx) => AlertDialog(
-              title: const Text('Restore Complete'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              title: const Row(
                 children: [
-                  Text(
-                    '• Restored ${result.restoredTransactions} transactions',
-                  ),
-                  Text('• Restored ${result.restoredAccounts} accounts'),
-                  Text('• Restored ${result.restoredBudgets} budgets'),
-                  Text(
-                    '• Restored ${result.restoredSubscriptions} subscriptions',
-                  ),
-                  Text('• Restored ${result.restoredLoans} loans'),
-                  Text('• Restored ${result.restoredInvestments} investments'),
-                  if (result.skippedDuplicates > 0)
-                    Text(
-                      '• Skipped ${result.skippedDuplicates} duplicate transactions',
-                    ),
+                  Icon(Icons.check_circle_outline, color: Color(0xFF10B981)),
+                  SizedBox(width: 8),
+                  Text('Restore Complete'),
                 ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• Restored ${result.restoredTransactions} transactions',
+                    ),
+                    Text('• Restored ${result.restoredAccounts} accounts'),
+                    Text('• Restored ${result.restoredCategories} categories'),
+                    Text('• Restored ${result.restoredBudgets} budgets'),
+                    Text(
+                      '• Restored ${result.restoredGoals} goals (${result.restoredGoalContributions} contributions)',
+                    ),
+                    Text(
+                      '• Restored ${result.restoredSubscriptions} subscriptions',
+                    ),
+                    Text(
+                      '• Restored ${result.restoredLoans} loans (${result.restoredEmiPayments} EMI records)',
+                    ),
+                    Text(
+                      '• Restored ${result.restoredMoneyRecords} lending/borrowing records (${result.restoredMoneyRepayments} repayments)',
+                    ),
+                    Text(
+                      '• Restored ${result.restoredInvestments} investments',
+                    ),
+                    if (result.restoredPendingTransactions > 0)
+                      Text(
+                        '• Restored ${result.restoredPendingTransactions} inbox transactions',
+                      ),
+                    if (result.restoredSettings)
+                      const Text('• Restored application settings & preferences'),
+                    if (result.skippedDuplicates > 0)
+                      Text(
+                        '• Skipped ${result.skippedDuplicates} duplicate records',
+                      ),
+                    if (result.hadSecurityLockConfigured) ...[
+                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      Container(
+                        padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusSm,
+                          ),
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B),
+                            width: StillwaterTokens.borderWidthHairline,
+                          ),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.lock_reset_rounded,
+                              size: 18,
+                              color: Color(0xFFB45309),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Security Notice: For safety across devices, PIN/Biometrics must be re-enabled in Settings.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF92400E),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               actions: [
                 FilledButton(
@@ -307,16 +369,39 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                     count: _decryptedPayload!.budgets.length,
                   ),
                   _MetricRow(
+                    label: 'Savings Goals & Contributions',
+                    count:
+                        _decryptedPayload!.savingsGoals.length +
+                        _decryptedPayload!.goalContributions.length,
+                  ),
+                  _MetricRow(
                     label: 'Subscriptions',
                     count: _decryptedPayload!.subscriptions.length,
                   ),
                   _MetricRow(
-                    label: 'Loans & EMIs',
-                    count: _decryptedPayload!.loans.length,
+                    label: 'Loans & EMI History',
+                    count:
+                        _decryptedPayload!.loans.length +
+                        _decryptedPayload!.emiPayments.length,
+                  ),
+                  _MetricRow(
+                    label: 'Lending & Borrowing Records',
+                    count:
+                        _decryptedPayload!.moneyRecords.length +
+                        _decryptedPayload!.moneyRepayments.length,
                   ),
                   _MetricRow(
                     label: 'Investments',
                     count: _decryptedPayload!.investments.length,
+                  ),
+                  if (_decryptedPayload!.pendingTransactions.isNotEmpty)
+                    _MetricRow(
+                      label: 'Inbox / Pending Queue',
+                      count: _decryptedPayload!.pendingTransactions.length,
+                    ),
+                  _MetricRow(
+                    label: 'Application Settings',
+                    count: _decryptedPayload!.appSettings != null ? 1 : 0,
                   ),
                   const SizedBox(height: StillwaterTokens.spaceSm),
                   Text(
@@ -329,6 +414,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                 ],
               ),
             ),
+
 
             const SizedBox(height: StillwaterTokens.space2Xl),
 

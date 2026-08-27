@@ -8,6 +8,8 @@ import '../../repositories/budget_repository.dart';
 import '../../repositories/category_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../repositories/loan_repository.dart';
+import '../../repositories/money_record_repository.dart';
+import '../../repositories/pending_transaction_repository.dart';
 import '../../repositories/savings_goal_repository.dart';
 import '../../repositories/settings_repository.dart';
 import '../../repositories/subscription_repository.dart';
@@ -25,6 +27,9 @@ final backupServiceProvider = Provider<BackupService>((ref) {
     loanRepo: ref.watch(loanRepositoryProvider),
     investmentRepo: ref.watch(investmentRepositoryProvider),
     alertRepo: ref.watch(alertRepositoryProvider),
+    moneyRecordRepo: ref.watch(moneyRecordRepositoryProvider),
+    pendingTxRepo: ref.watch(pendingTransactionRepositoryProvider),
+    settingsRepo: ref.watch(settingsRepositoryProvider),
   );
 });
 

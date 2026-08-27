@@ -372,7 +372,7 @@ void main() {
 
         final backupEnvelope =
             jsonDecode(encryptedBackup) as Map<String, dynamic>;
-        expect(backupEnvelope['formatVersion'], 1);
+        expect(backupEnvelope['formatVersion'], 2);
         expect(backupEnvelope['app'], 'FinanceFlow');
         expect(backupEnvelope['salt'], isNotNull);
         expect(backupEnvelope['iv'], isNotNull);

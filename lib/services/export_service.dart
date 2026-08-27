@@ -2,10 +2,17 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../core/formatting/currency_formatter.dart';
 import '../models/account.dart';
+import '../models/alert_item.dart';
+import '../models/app_settings.dart';
 import '../models/backup_payload.dart';
 import '../models/budget.dart';
+import '../models/category.dart';
+import '../models/goal_contribution.dart';
+import '../models/ingestion/parsed_transaction.dart';
 import '../models/investment.dart';
 import '../models/loan.dart';
+import '../models/money_record.dart';
+import '../models/money_repayment.dart';
 import '../models/savings_goal.dart';
 import '../models/subscription.dart';
 import '../models/transaction.dart';
@@ -38,7 +45,7 @@ enum ExportFormat {
       case ExportFormat.excel:
         return 'xls';
       case ExportFormat.pdf:
-        return 'pdf';
+        return 'txt';
     }
   }
 
@@ -157,15 +164,23 @@ class ExportService {
     return buffer.toString();
   }
 
-  /// Generate JSON String
+  /// Generate JSON String with complete entity representation
   static String generateJson({
     List<Transaction> transactions = const [],
     List<Account> accounts = const [],
+    List<Category> categories = const [],
     List<Budget> budgets = const [],
     List<SavingsGoal> savingsGoals = const [],
+    List<GoalContribution> goalContributions = const [],
     List<Subscription> subscriptions = const [],
     List<Loan> loans = const [],
+    List<EmiPayment> emiPayments = const [],
     List<Investment> investments = const [],
+    List<AlertItem> alerts = const [],
+    List<MoneyRecord> moneyRecords = const [],
+    List<MoneyRepayment> moneyRepayments = const [],
+    List<ParsedTransaction> pendingTransactions = const [],
+    AppSettings? appSettings,
     bool maskSensitive = true,
   }) {
     final payload = BackupDataPayload(
@@ -173,19 +188,35 @@ class ExportService {
         createdAt: DateTime.now(),
         transactionCount: transactions.length,
         accountCount: accounts.length,
+        categoryCount: categories.length,
         budgetCount: budgets.length,
         goalCount: savingsGoals.length,
+        goalContributionCount: goalContributions.length,
         subscriptionCount: subscriptions.length,
         loanCount: loans.length,
+        emiPaymentCount: emiPayments.length,
         investmentCount: investments.length,
+        alertCount: alerts.length,
+        moneyRecordCount: moneyRecords.length,
+        moneyRepaymentCount: moneyRepayments.length,
+        pendingTransactionCount: pendingTransactions.length,
+        settingsIncluded: appSettings != null,
       ),
       transactions: transactions,
       accounts: accounts,
+      categories: categories,
       budgets: budgets,
       savingsGoals: savingsGoals,
+      goalContributions: goalContributions,
       subscriptions: subscriptions,
       loans: loans,
+      emiPayments: emiPayments,
       investments: investments,
+      alerts: alerts,
+      moneyRecords: moneyRecords,
+      moneyRepayments: moneyRepayments,
+      pendingTransactions: pendingTransactions,
+      appSettings: appSettings,
     );
 
     return const JsonEncoder.withIndent('  ').convert(payload.toJson());

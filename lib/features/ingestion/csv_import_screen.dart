@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
@@ -31,6 +34,40 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   void dispose() {
     _pasteController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickCsvFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        dialogTitle: 'Select Bank Statement CSV',
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'txt'],
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        String content = '';
+        if (file.bytes != null) {
+          content = utf8.decode(file.bytes!);
+        } else if (file.path != null) {
+          content = await File(file.path!).readAsString();
+        }
+
+        if (content.trim().isNotEmpty) {
+          ref
+              .read(csvImportControllerProvider.notifier)
+              .loadCsvContent(content, fileName: file.name);
+        } else {
+          if (mounted) {
+            FfSnackbar.show(context, message: 'The selected file is empty.');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        FfSnackbar.show(context, message: 'Could not open CSV file: $e');
+      }
+    }
   }
 
   void _loadSampleData(String sampleType) {
@@ -456,9 +493,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               FfButton(
                 label: 'Choose CSV File',
                 leadingIcon: const Icon(Icons.folder_open_rounded, size: 18),
-                onPressed: () {
-                  _loadSampleData('hdfc');
-                },
+                onPressed: _pickCsvFile,
               ),
             ],
           ),

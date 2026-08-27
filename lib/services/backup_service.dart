@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import '../database/isar_service.dart';
 import '../models/backup_payload.dart';
 import '../models/transaction.dart';
 import '../repositories/account_repository.dart';
@@ -11,7 +12,9 @@ import '../repositories/category_repository.dart';
 import '../repositories/investment_repository.dart';
 import '../repositories/loan_repository.dart';
 import '../repositories/money_record_repository.dart';
+import '../repositories/pending_transaction_repository.dart';
 import '../repositories/savings_goal_repository.dart';
+import '../repositories/settings_repository.dart';
 import '../repositories/subscription_repository.dart';
 import '../repositories/transaction_repository.dart';
 
@@ -35,6 +38,8 @@ class BackupService {
   final InvestmentRepository _investmentRepo;
   final AlertRepository _alertRepo;
   final MoneyRecordRepository? _moneyRecordRepo;
+  final PendingTransactionRepository? _pendingTxRepo;
+  final SettingsRepository? _settingsRepo;
 
   BackupService({
     required AccountRepository accountRepo,
@@ -47,6 +52,8 @@ class BackupService {
     required InvestmentRepository investmentRepo,
     required AlertRepository alertRepo,
     MoneyRecordRepository? moneyRecordRepo,
+    PendingTransactionRepository? pendingTxRepo,
+    SettingsRepository? settingsRepo,
   }) : _accountRepo = accountRepo,
        _transactionRepo = transactionRepo,
        _categoryRepo = categoryRepo,
@@ -56,7 +63,9 @@ class BackupService {
        _loanRepo = loanRepo,
        _investmentRepo = investmentRepo,
        _alertRepo = alertRepo,
-       _moneyRecordRepo = moneyRecordRepo;
+       _moneyRecordRepo = moneyRecordRepo,
+       _pendingTxRepo = pendingTxRepo,
+       _settingsRepo = settingsRepo;
 
   // ==================== Cryptographic Utilities ====================
 
@@ -133,9 +142,11 @@ class BackupService {
 
   /// Export complete on-device dataset as encrypted JSON string
   Future<String> createEncryptedBackup({required String passphrase}) async {
-    final accounts = await _accountRepo.getAllAccounts();
+    final accounts = await _accountRepo.getAllAccounts(includeArchived: true);
     final transactions = await _transactionRepo.getAllTransactions();
-    final categories = await _categoryRepo.getAllCategories();
+    final categories = await _categoryRepo.getAllCategories(
+      includeArchived: true,
+    );
     final budgets = await _budgetRepo.getAllBudgets();
     final goals = await _goalRepo.getAllGoals();
     final contributions = await _goalRepo.getAllContributions();
@@ -147,19 +158,27 @@ class BackupService {
     final moneyRecords = await _moneyRecordRepo?.getAllRecords() ?? const [];
     final moneyRepayments =
         await _moneyRecordRepo?.getAllRepayments() ?? const [];
+    final pendingTransactions =
+        await _pendingTxRepo?.getPendingTransactions() ?? const [];
+    final settings = await _settingsRepo?.getSettings();
 
     final metadata = BackupMetadata(
       createdAt: DateTime.now(),
       transactionCount: transactions.length,
       accountCount: accounts.length,
+      categoryCount: categories.length,
       budgetCount: budgets.length,
       goalCount: goals.length,
+      goalContributionCount: contributions.length,
       subscriptionCount: subscriptions.length,
       loanCount: loans.length,
+      emiPaymentCount: emiPayments.length,
       investmentCount: investments.length,
       alertCount: alerts.length,
       moneyRecordCount: moneyRecords.length,
       moneyRepaymentCount: moneyRepayments.length,
+      pendingTransactionCount: pendingTransactions.length,
+      settingsIncluded: settings != null,
     );
 
     final payload = BackupDataPayload(
@@ -177,6 +196,8 @@ class BackupService {
       alerts: alerts,
       moneyRecords: moneyRecords,
       moneyRepayments: moneyRepayments,
+      pendingTransactions: pendingTransactions,
+      appSettings: settings,
     );
 
     final rawJson = jsonEncode(payload.toJson());
@@ -212,7 +233,7 @@ class BackupService {
     final macTag = hmac.convert([...iv, ...ciphertext]).bytes;
 
     final backupEnvelope = {
-      'formatVersion': 1,
+      'formatVersion': 2,
       'app': 'FinanceFlow',
       'createdAt': metadata.createdAt.toIso8601String(),
       'salt': base64Encode(salt),
@@ -234,7 +255,7 @@ class BackupService {
   }) {
     try {
       final Map<String, dynamic> envelope = jsonDecode(backupFileContent);
-      if (envelope['formatVersion'] == null || envelope['ciphertext'] == null) {
+      if (envelope['ciphertext'] == null) {
         throw const DecryptionException('Invalid backup file format.');
       }
 
@@ -299,8 +320,14 @@ class BackupService {
     required RestoreMode mode,
   }) async {
     try {
+      bool hadSecurityLock = false;
+
       if (mode == RestoreMode.replace) {
-        // REPLACE MODE: Overwrite existing records
+        // REPLACE MODE: Clean pre-wipe of all database collections to prevent stale or orphaned records
+        if (IsarService.isInitialized) {
+          await IsarService.instance.clearAllData();
+        }
+
         for (final a in payload.accounts) {
           await _accountRepo.saveAccount(a);
         }
@@ -328,8 +355,8 @@ class BackupService {
         for (final inv in payload.investments) {
           await _investmentRepo.saveInvestment(inv);
         }
-        for (final tx in payload.transactions) {
-          await _transactionRepo.saveTransaction(tx);
+        if (payload.transactions.isNotEmpty) {
+          await _transactionRepo.saveTransactions(payload.transactions);
         }
         for (final alt in payload.alerts) {
           await _alertRepo.saveAlert(alt);
@@ -342,21 +369,50 @@ class BackupService {
             await _moneyRecordRepo.addRepayment(rep);
           }
         }
+        if (_pendingTxRepo != null && payload.pendingTransactions.isNotEmpty) {
+          await _pendingTxRepo.savePendingTransactions(
+            payload.pendingTransactions,
+          );
+        }
+
+        // Restore settings with safety for PIN/Biometric hardware changes
+        if (_settingsRepo != null && payload.appSettings != null) {
+          final s = payload.appSettings!;
+          if (s.isPinEnabled || s.isBiometricEnabled) {
+            hadSecurityLock = true;
+          }
+          // Disarm PIN/biometrics on restored device to avoid keystore lockout
+          final safeSettings = s.copyWith(
+            isPinEnabled: false,
+            isBiometricEnabled: false,
+          );
+          await _settingsRepo.updateSettings(safeSettings);
+        }
 
         return RestoreResult(
           isSuccess: true,
           mode: RestoreMode.replace,
           restoredTransactions: payload.transactions.length,
           restoredAccounts: payload.accounts.length,
+          restoredCategories: payload.categories.length,
           restoredBudgets: payload.budgets.length,
           restoredGoals: payload.savingsGoals.length,
+          restoredGoalContributions: payload.goalContributions.length,
           restoredSubscriptions: payload.subscriptions.length,
           restoredLoans: payload.loans.length,
+          restoredEmiPayments: payload.emiPayments.length,
           restoredInvestments: payload.investments.length,
+          restoredMoneyRecords: payload.moneyRecords.length,
+          restoredMoneyRepayments: payload.moneyRepayments.length,
+          restoredAlerts: payload.alerts.length,
+          restoredPendingTransactions: payload.pendingTransactions.length,
+          restoredSettings: payload.appSettings != null,
+          hadSecurityLockConfigured: hadSecurityLock,
         );
       } else {
         // MERGE MODE: Check for existing records & duplicate transactions
         final existingTxs = await _transactionRepo.getAllTransactions();
+        final existingTxIds = existingTxs.map((t) => t.id).toSet();
         final existingTxFingerprints =
             existingTxs.map((t) => _computeFingerprint(t)).toSet();
 
@@ -365,12 +421,32 @@ class BackupService {
 
         for (final tx in payload.transactions) {
           final fp = _computeFingerprint(tx);
-          if (!existingTxFingerprints.contains(fp)) {
+          if (!existingTxIds.contains(tx.id) &&
+              !existingTxFingerprints.contains(fp)) {
             await _transactionRepo.saveTransaction(tx);
+            existingTxIds.add(tx.id);
             existingTxFingerprints.add(fp);
             restoredTxCount++;
           } else {
             skippedTxCount++;
+          }
+        }
+
+        // Merge Categories
+        final existingCats = await _categoryRepo.getAllCategories(
+          includeArchived: true,
+        );
+        final existingCatIds = existingCats.map((c) => c.id).toSet();
+        final existingCatNames =
+            existingCats.map((c) => c.name.toLowerCase().trim()).toSet();
+        int restoredCatCount = 0;
+        for (final c in payload.categories) {
+          if (!existingCatIds.contains(c.id) &&
+              !existingCatNames.contains(c.name.toLowerCase().trim())) {
+            await _categoryRepo.saveCategory(c);
+            existingCatIds.add(c.id);
+            existingCatNames.add(c.name.toLowerCase().trim());
+            restoredCatCount++;
           }
         }
 
@@ -398,6 +474,9 @@ class BackupService {
         for (final inv in payload.investments) {
           await _investmentRepo.saveInvestment(inv);
         }
+        for (final alt in payload.alerts) {
+          await _alertRepo.saveAlert(alt);
+        }
         if (_moneyRecordRepo != null) {
           for (final r in payload.moneyRecords) {
             await _moneyRecordRepo.saveRecord(r);
@@ -406,6 +485,12 @@ class BackupService {
             await _moneyRecordRepo.addRepayment(rep);
           }
         }
+        if (_pendingTxRepo != null && payload.pendingTransactions.isNotEmpty) {
+          await _pendingTxRepo.savePendingTransactions(
+            payload.pendingTransactions,
+          );
+        }
+
 
         return RestoreResult(
           isSuccess: true,
@@ -413,11 +498,20 @@ class BackupService {
           restoredTransactions: restoredTxCount,
           skippedDuplicates: skippedTxCount,
           restoredAccounts: payload.accounts.length,
+          restoredCategories: restoredCatCount,
           restoredBudgets: payload.budgets.length,
           restoredGoals: payload.savingsGoals.length,
+          restoredGoalContributions: payload.goalContributions.length,
           restoredSubscriptions: payload.subscriptions.length,
           restoredLoans: payload.loans.length,
+          restoredEmiPayments: payload.emiPayments.length,
           restoredInvestments: payload.investments.length,
+          restoredMoneyRecords: payload.moneyRecords.length,
+          restoredMoneyRepayments: payload.moneyRepayments.length,
+          restoredAlerts: payload.alerts.length,
+          restoredPendingTransactions: payload.pendingTransactions.length,
+          restoredSettings: false,
+          hadSecurityLockConfigured: false,
         );
       }
     } catch (e) {
@@ -429,7 +523,9 @@ class BackupService {
     }
   }
 
+  /// High-precision transaction fingerprinting preventing false-positive duplicate drops on same-day transactions
   static String _computeFingerprint(Transaction tx) {
-    return '${tx.date.year}-${tx.date.month}-${tx.date.day}_${tx.amount.toStringAsFixed(2)}_${tx.merchant.toLowerCase()}';
+    final ref = tx.sourceReference ?? '';
+    return '${tx.date.toIso8601String()}_${tx.accountId}_${tx.amount.toStringAsFixed(2)}_${tx.merchant.toLowerCase().trim()}_$ref';
   }
 }
