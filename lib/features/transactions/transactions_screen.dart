@@ -24,7 +24,7 @@ import '../categories/categories_controller.dart';
 import '../ingestion/needs_review_controller.dart';
 import '../ingestion/needs_review_screen.dart';
 import '../settings/settings_controller.dart';
-import 'add_edit_transaction_sheet.dart';
+import 'add_edit_transaction_screen.dart';
 import 'transaction_list_utils.dart';
 import 'transactions_controller.dart';
 
@@ -90,12 +90,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     }
   }
 
-  Future<void> _edit(Transaction transaction) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => AddEditTransactionSheet(initialTransaction: transaction),
-  );
+  Future<void> _edit(Transaction transaction) =>
+      AddEditTransactionScreen.push<void>(
+        context,
+        initialTransaction: transaction,
+      );
 
   Future<void> _delete(Transaction transaction) async {
     await ref
@@ -213,10 +212,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   const Padding(
                     padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
                     child: Center(
-                      child: FfPrivacyBadge(
-                        label: 'On-device',
-                        iconOnly: true,
-                      ),
+                      child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
                     ),
                   ),
                 ],

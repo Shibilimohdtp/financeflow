@@ -410,7 +410,9 @@ class _MetricTile extends StatelessWidget {
         vertical: StillwaterTokens.spaceXs + 2,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
         borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
         border: Border.all(
           color: theme.dividerColor.withValues(alpha: 0.5),
@@ -435,10 +437,9 @@ class _MetricTile extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: StillwaterTypography.numMd(color: valueColor).copyWith(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: StillwaterTypography.numMd(
+                color: valueColor,
+              ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(height: 1),

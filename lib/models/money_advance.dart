@@ -64,7 +64,8 @@ class MoneyAdvance {
     if (moneyRecordId.trim().isEmpty) {
       throw const ValidationError(
         message: 'Relationship record ID is required.',
-        actionableStep: 'Associate this advance with a valid debt relationship.',
+        actionableStep:
+            'Associate this advance with a valid debt relationship.',
       );
     }
     if (amount <= 0) {

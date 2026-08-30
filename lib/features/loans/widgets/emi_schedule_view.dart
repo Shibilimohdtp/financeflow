@@ -144,7 +144,10 @@ class EmiScheduleView extends ConsumerWidget {
       try {
         await ref
             .read(loansControllerProvider.notifier)
-            .markAllOverduePaid(loan: currentLoan, accountId: payingAccount?.id);
+            .markAllOverduePaid(
+              loan: currentLoan,
+              accountId: payingAccount?.id,
+            );
         if (context.mounted) {
           FfSnackbar.show(
             context,

@@ -20,7 +20,7 @@ import '../loans/loans_screen.dart';
 import '../savings_goals/savings_goals_controller.dart';
 import '../settings/settings_controller.dart';
 import '../subscriptions/subscriptions_screen.dart';
-import '../transactions/add_edit_transaction_sheet.dart';
+import '../transactions/add_edit_transaction_screen.dart';
 import 'dashboard_controller.dart';
 import 'insights_controller.dart';
 import 'widgets/account_summary_strip.dart';
@@ -68,12 +68,7 @@ class DashboardScreen extends ConsumerWidget {
   });
 
   void _openTransfer(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const AddEditTransactionSheet(),
-    );
+    AddEditTransactionScreen.push(context);
   }
 
   void _push(BuildContext context, Widget screen) {

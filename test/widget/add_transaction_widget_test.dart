@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
+import 'package:financeflow/features/personal_debts/money_records_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
-import 'package:financeflow/features/transactions/add_edit_transaction_sheet.dart';
+import 'package:financeflow/features/transactions/add_edit_transaction_screen.dart';
 import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/category.dart';
+import 'package:financeflow/models/money_advance.dart';
+import 'package:financeflow/models/money_record.dart';
+import 'package:financeflow/models/money_repayment.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/shared/widgets/ff_button.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
@@ -20,6 +24,36 @@ void main() {
     name: 'Food & Dining',
     iconIdentifier: 'restaurant',
     colorTokenIdentifier: 'clay',
+    typeCompatibility: const ['expense', 'cash'],
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  final testGroceriesCategory = Category(
+    id: 'cat_groceries',
+    name: 'Groceries',
+    iconIdentifier: 'shopping_cart',
+    colorTokenIdentifier: 'leaf',
+    typeCompatibility: const ['expense', 'cash'],
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  final testShoppingCategory = Category(
+    id: 'cat_shopping',
+    name: 'Shopping',
+    iconIdentifier: 'storefront',
+    colorTokenIdentifier: 'slate',
+    typeCompatibility: const ['expense', 'cash'],
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  final testTransportCategory = Category(
+    id: 'cat_transport',
+    name: 'Transport',
+    iconIdentifier: 'directions_car',
+    colorTokenIdentifier: 'indigo',
     typeCompatibility: const ['expense', 'cash'],
     createdAt: now,
     updatedAt: now,
@@ -55,30 +89,57 @@ void main() {
     updatedAt: now,
   );
 
-  Widget createTestWidget({Transaction? initialTransaction}) {
+  Widget createTestWidget({
+    Transaction? initialTransaction,
+    List<Category>? categories,
+    List<Transaction>? history,
+    List<MoneyRecord>? moneyRecords,
+    Future<void> Function(Transaction)? onSave,
+  }) {
     return ProviderScope(
       overrides: [
         settingsStreamProvider.overrideWith(
           (ref) => Stream.value(const AppSettings()),
         ),
         categoriesStreamProvider.overrideWith(
-          (ref) => Stream.value([testFoodCategory, testSalaryCategory]),
+          (ref) => Stream.value(
+            categories ??
+                [
+                  testFoodCategory,
+                  testGroceriesCategory,
+                  testShoppingCategory,
+                  testTransportCategory,
+                  testSalaryCategory,
+                ],
+          ),
         ),
         rawAccountsStreamProvider.overrideWith(
           (ref) => Stream.value([testAccount1, testAccount2]),
         ),
-        allTransactionsStreamProvider.overrideWith((ref) => Stream.value([])),
+        allTransactionsStreamProvider.overrideWith(
+          (ref) => Stream.value(history ?? []),
+        ),
+        allMoneyRecordsStreamProvider.overrideWith(
+          (ref) => Stream.value(moneyRecords ?? []),
+        ),
+        allMoneyRepaymentsStreamProvider.overrideWith(
+          (ref) => Stream.value(const <MoneyRepayment>[]),
+        ),
+        allMoneyAdvancesStreamProvider.overrideWith(
+          (ref) => Stream.value(const <MoneyAdvance>[]),
+        ),
       ],
       child: MaterialApp(
         theme: StillwaterTheme.daylight,
-        home: Scaffold(
-          body: AddEditTransactionSheet(initialTransaction: initialTransaction),
+        home: AddEditTransactionScreen(
+          initialTransaction: initialTransaction,
+          onSave: onSave,
         ),
       ),
     );
   }
 
-  testWidgets('AddEditTransactionSheet validates amount and renders fields', (
+  testWidgets('AddEditTransactionScreen validates amount and renders fields', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(800, 2000);
@@ -150,212 +211,472 @@ void main() {
     expect(find.widgetWithText(FfButton, 'Save Invest'), findsOneWidget);
   });
 
-  testWidgets('Quick date chips allow switching between Today and Yesterday', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(800, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    await tester.pumpWidget(createTestWidget());
-    await tester.pumpAndSettle();
-
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('Yesterday'), findsOneWidget);
-
-    await tester.tap(find.text('Yesterday'));
-    await tester.pumpAndSettle();
-
-    final yesterdayChoiceChip = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, 'Yesterday'),
-    );
-    expect(yesterdayChoiceChip.selected, isTrue);
-  });
-
-  testWidgets('More details expansion tile toggles optional fields', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(800, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    await tester.pumpWidget(createTestWidget());
-    await tester.pumpAndSettle();
-
-    expect(find.text('More details'), findsOneWidget);
-    expect(find.text('Notes'), findsNothing);
-
-    // Expand More details
-    await tester.tap(find.text('More details'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Notes'), findsOneWidget);
-    expect(find.text('Tags'), findsOneWidget);
-    expect(find.text('Payment method'), findsOneWidget);
-  });
-
-  testWidgets('Edit mode loads initial transaction details accurately', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(800, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    final existingTx = Transaction(
-      id: 'tx_123',
-      amount: 1450.0,
-      type: TransactionType.expense,
-      categoryId: 'cat_food',
-      categoryName: 'Food & Dining',
-      categoryIcon: 'restaurant',
-      categoryColor: 'clay',
-      merchant: 'Blue Tokai Coffee',
-      date: now,
-      notes: 'Meeting coffee',
-      paymentMethod: 'Credit Card',
-      accountId: 'acc_1',
-      tags: const ['work', 'coffee'],
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    await tester.pumpWidget(createTestWidget(initialTransaction: existingTx));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Edit Transaction'), findsOneWidget);
-    expect(find.text('1450'), findsOneWidget);
-    expect(find.text('Blue Tokai Coffee'), findsOneWidget);
-    expect(find.widgetWithText(FfButton, 'Update Expense'), findsOneWidget);
-  });
-
   testWidgets(
-    'Category-aware Payee suggestions update dynamically on category change',
+    '1. Only top 3 quick categories plus All Categories are visible in base screen',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(800, 2000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final testGroceriesCategory = Category(
-        id: 'cat_groceries',
-        name: 'Groceries',
-        iconIdentifier: 'shopping_cart',
-        colorTokenIdentifier: 'leaf',
-        typeCompatibility: const ['expense', 'cash'],
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // In expense mode with 4 expense categories (Food, Groceries, Shopping, Transport):
+      // Only top 3 (Food, Groceries, Shopping) + 'All Categories' should be rendered on quick bar.
+      expect(find.text('Food & Dining'), findsOneWidget);
+      expect(find.text('Groceries'), findsOneWidget);
+      expect(find.text('Shopping'), findsOneWidget);
+      expect(find.text('All Categories'), findsOneWidget);
+      // 4th category (Transport) is not shown on the quick bar
+      expect(find.text('Transport'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '2 & 3. All Categories opens searchable multi-column grid picker and selecting updates compact selection',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Tap All Categories button
+      await tester.tap(find.text('All Categories'));
+      await tester.pumpAndSettle();
+
+      // Picker title and search field are visible
+      expect(find.text('Choose Category'), findsOneWidget);
+      expect(find.text('Search categories...'), findsOneWidget);
+
+      // All compatible categories are visible in the full grid
+      expect(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text('Transport'),
+        ),
+        findsOneWidget,
+      );
+
+      // Test search filtering inside picker
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Search categories...'),
+        'Trans',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text('Transport'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text('Groceries'),
+        ),
+        findsNothing,
+      );
+
+      // Select Transport from grid
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text('Transport'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Picker closed, Transport is now selected and visible on the quick bar
+      expect(find.text('Choose Category'), findsNothing);
+      expect(find.text('Transport'), findsOneWidget);
+    },
+  );
+
+  testWidgets('4. Recent payees are hidden until payee field is focused', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final history = [
+      Transaction(
+        id: 'tx_1',
+        amount: 250,
+        type: TransactionType.expense,
+        categoryId: 'cat_food',
+        categoryName: 'Food & Dining',
+        categoryIcon: 'restaurant',
+        categoryColor: 'clay',
+        merchant: 'Zomato',
+        date: now.subtract(const Duration(days: 1)),
+        accountId: 'acc_1',
         createdAt: now,
         updatedAt: now,
-      );
+      ),
+      Transaction(
+        id: 'tx_2',
+        amount: 400,
+        type: TransactionType.expense,
+        categoryId: 'cat_groceries',
+        categoryName: 'Groceries',
+        categoryIcon: 'shopping_cart',
+        categoryColor: 'leaf',
+        merchant: 'Lulu Hypermarket',
+        date: now.subtract(const Duration(days: 2)),
+        accountId: 'acc_1',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+
+    await tester.pumpWidget(createTestWidget(history: history));
+    await tester.pumpAndSettle();
+
+    // Payee suggestions are NOT visible while the field is unfocused
+    expect(find.text('Recent payees'), findsNothing);
+    expect(find.text('Zomato'), findsNothing);
+    expect(find.text('Lulu Hypermarket'), findsNothing);
+
+    // Focus payee field
+    final payeeField = find.byWidgetPredicate(
+      (w) => w is TextField && w.decoration?.labelText == 'Payee / Merchant',
+    );
+    await tester.tap(payeeField);
+    await tester.pumpAndSettle();
+
+    // Suggestions now appear in the dynamic panel
+    expect(find.text('Zomato'), findsOneWidget);
+    expect(find.text('Lulu Hypermarket'), findsOneWidget);
+
+    // Scrolling/dragging inside suggestions list isolates events
+    await tester.drag(find.text('Zomato'), const Offset(0, -30));
+    await tester.pumpAndSettle();
+    expect(find.text('Zomato'), findsOneWidget);
+    expect(find.text('Lulu Hypermarket'), findsOneWidget);
+  });
+
+  testWidgets(
+    '5. Selecting and filtering payee suggestion works, arbitrary text remains valid',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
       final history = [
         Transaction(
-          id: 'tx_g1',
-          amount: 500,
-          type: TransactionType.expense,
-          categoryId: 'cat_groceries',
-          categoryName: 'Groceries',
-          categoryIcon: 'shopping_cart',
-          categoryColor: 'leaf',
-          merchant: 'Lulu Hypermarket',
-          date: now.subtract(const Duration(days: 1)),
-          accountId: 'acc_1',
-          createdAt: now,
-          updatedAt: now,
-        ),
-        Transaction(
-          id: 'tx_f1',
+          id: 'tx_1',
           amount: 300,
           type: TransactionType.expense,
           categoryId: 'cat_food',
           categoryName: 'Food & Dining',
           categoryIcon: 'restaurant',
           categoryColor: 'clay',
-          merchant: 'Zomato',
-          date: now.subtract(const Duration(days: 2)),
-          accountId: 'acc_1',
-          createdAt: now,
-          updatedAt: now,
-        ),
-        Transaction(
-          id: 'tx_i1',
-          amount: 50000,
-          type: TransactionType.income,
-          categoryId: 'cat_salary',
-          categoryName: 'Salary',
-          categoryIcon: 'payments',
-          categoryColor: 'grove',
-          merchant: 'Tech Corp Salary',
-          date: now.subtract(const Duration(days: 5)),
+          merchant: 'Swiggy',
+          date: now.subtract(const Duration(days: 1)),
           accountId: 'acc_1',
           createdAt: now,
           updatedAt: now,
         ),
       ];
 
-      Widget buildWithHistory() {
-        return ProviderScope(
+      await tester.pumpWidget(createTestWidget(history: history));
+      await tester.pumpAndSettle();
+
+      final payeeField = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == 'Payee / Merchant',
+      );
+      await tester.tap(payeeField);
+      await tester.pumpAndSettle();
+
+      // Tap suggestion 'Swiggy'
+      await tester.tap(find.text('Swiggy'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextField, 'Swiggy'), findsOneWidget);
+
+      // Enter arbitrary new payee name
+      await tester.enterText(payeeField, 'Brand New Boutique');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Use "Brand New Boutique"'), findsOneWidget);
+      await tester.tap(find.text('Use "Brand New Boutique"'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(TextField, 'Brand New Boutique'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    '6. Today, Yesterday, and calendar/date are presented in a single responsive row',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Yesterday'), findsOneWidget);
+
+      // Switch to Yesterday
+      await tester.tap(find.text('Yesterday'));
+      await tester.pumpAndSettle();
+
+      final yesterdayChoiceChip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Yesterday'),
+      );
+      expect(yesterdayChoiceChip.selected, isTrue);
+
+      // Switch back to Today
+      await tester.tap(find.text('Today'));
+      await tester.pumpAndSettle();
+
+      final todayChoiceChip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Today'),
+      );
+      expect(todayChoiceChip.selected, isTrue);
+    },
+  );
+
+  testWidgets(
+    '7. Edit mode loads initial transaction and expands advanced details',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final existingTx = Transaction(
+        id: 'tx_123',
+        amount: 1450.0,
+        type: TransactionType.expense,
+        categoryId: 'cat_food',
+        categoryName: 'Food & Dining',
+        categoryIcon: 'restaurant',
+        categoryColor: 'clay',
+        merchant: 'Blue Tokai Coffee',
+        date: now,
+        notes: 'Meeting coffee',
+        paymentMethod: 'Credit Card',
+        accountId: 'acc_1',
+        tags: const ['work', 'coffee'],
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(createTestWidget(initialTransaction: existingTx));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Transaction'), findsOneWidget);
+      expect(find.text('1450'), findsOneWidget);
+      expect(find.text('Blue Tokai Coffee'), findsOneWidget);
+      expect(find.widgetWithText(FfButton, 'Update Expense'), findsOneWidget);
+
+      // More details auto-expanded because notes/tags/paymentMethod exist
+      expect(find.widgetWithText(TextField, 'Meeting coffee'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'work, coffee'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '8. Special transaction flow (Transfer) saves successfully with distinct accounts',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      Transaction? savedTransaction;
+
+      await tester.pumpWidget(
+        createTestWidget(
+          onSave: (tx) async {
+            savedTransaction = tx;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Switch to Move Money
+      await tester.tap(find.text('Move Money'));
+      await tester.pumpAndSettle();
+
+      // Enter Amount
+      final amountField = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.hintText == '0',
+      );
+      await tester.enterText(amountField, '5000');
+
+      // Enter Transfer reference
+      final merchantField = find.byWidgetPredicate(
+        (w) =>
+            w is TextField &&
+            w.decoration?.labelText == 'Transfer Reference / Recipient',
+      );
+      await tester.enterText(merchantField, 'Transfer to Cash');
+
+      // Choose destination account (Cash Wallet)
+      await tester.tap(find.text('Select To Account'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cash Wallet').last);
+      await tester.pumpAndSettle();
+
+      // Tap Save
+      final saveButton = find.widgetWithText(
+        FfButton,
+        'Save Between owned accounts',
+      );
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(savedTransaction, isNotNull);
+      expect(savedTransaction!.amount, 5000.0);
+      expect(savedTransaction!.type, TransactionType.transfer);
+      expect(savedTransaction!.accountId, 'acc_1');
+      expect(savedTransaction!.toAccountId, 'acc_2');
+      expect(savedTransaction!.merchant, 'Transfer to Cash');
+    },
+  );
+
+  testWidgets(
+    '9. Full-screen route push and back navigation pops untouched form cleanly',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
           overrides: [
             settingsStreamProvider.overrideWith(
               (ref) => Stream.value(const AppSettings()),
             ),
             categoriesStreamProvider.overrideWith(
-              (ref) => Stream.value([
-                testFoodCategory,
-                testGroceriesCategory,
-                testSalaryCategory,
-              ]),
+              (ref) => Stream.value([testFoodCategory]),
             ),
             rawAccountsStreamProvider.overrideWith(
-              (ref) => Stream.value([testAccount1, testAccount2]),
+              (ref) => Stream.value([testAccount1]),
             ),
             allTransactionsStreamProvider.overrideWith(
-              (ref) => Stream.value(history),
+              (ref) => Stream.value([]),
             ),
           ],
           child: MaterialApp(
             theme: StillwaterTheme.daylight,
-            home: const Scaffold(body: AddEditTransactionSheet()),
+            home: Builder(
+              builder:
+                  (context) => Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        onPressed: () => AddEditTransactionScreen.push(context),
+                        child: const Text('Open Form'),
+                      ),
+                    ),
+                  ),
+            ),
           ),
-        );
-      }
-
-      await tester.pumpWidget(buildWithHistory());
-      await tester.pumpAndSettle();
-
-      // Default category selected is Food & Dining -> Zomato is top suggestion
-      expect(find.text('Zomato'), findsOneWidget);
-
-      // Switch category to Groceries
-      await tester.tap(find.text('Groceries'));
-      await tester.pumpAndSettle();
-
-      // Groceries payees prioritized -> Lulu Hypermarket is visible
-      expect(find.text('Lulu Hypermarket'), findsOneWidget);
-
-      // Tap on suggestion chip 'Lulu Hypermarket' to fill payee field
-      await tester.tap(find.text('Lulu Hypermarket'));
-      await tester.pumpAndSettle();
-
-      // Payee field now contains Lulu Hypermarket
-      expect(
-        find.widgetWithText(TextField, 'Lulu Hypermarket'),
-        findsOneWidget,
+        ),
       );
-
-      // Changing category to Food & Dining after entering payee does NOT erase the entered payee
-      await tester.tap(find.text('Food & Dining'));
       await tester.pumpAndSettle();
-      expect(
-        find.widgetWithText(TextField, 'Lulu Hypermarket'),
-        findsOneWidget,
+
+      // Tap to open full-screen route
+      await tester.tap(find.text('Open Form'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditTransactionScreen), findsOneWidget);
+      expect(find.text('Add Transaction'), findsOneWidget);
+
+      // Tap Close button without editing anything -> pops immediately
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditTransactionScreen), findsNothing);
+      expect(find.text('Open Form'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '10. Modified form prompts with discard confirmation dialog on close',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            categoriesStreamProvider.overrideWith(
+              (ref) => Stream.value([testFoodCategory]),
+            ),
+            rawAccountsStreamProvider.overrideWith(
+              (ref) => Stream.value([testAccount1]),
+            ),
+            allTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: Builder(
+              builder:
+                  (context) => Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        onPressed: () => AddEditTransactionScreen.push(context),
+                        child: const Text('Open Form'),
+                      ),
+                    ),
+                  ),
+            ),
+          ),
+        ),
       );
-
-      // Clear payee field
-      await tester.tap(find.byIcon(Icons.clear_rounded));
       await tester.pumpAndSettle();
 
-      // Switch type to Income -> shows income payer Tech Corp Salary
-      await tester.tap(find.text('Money In'));
+      await tester.tap(find.text('Open Form'));
       await tester.pumpAndSettle();
-      expect(find.text('Tech Corp Salary'), findsOneWidget);
+
+      // Enter an amount to dirty the form
+      final amountField = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.hintText == '0',
+      );
+      await tester.enterText(amountField, '999');
+      await tester.pumpAndSettle();
+
+      // Tap Close button -> discard dialog should appear
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Discard Changes?'), findsOneWidget);
+      expect(find.text('Discard'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+
+      // Tap Cancel -> stays on form
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditTransactionScreen), findsOneWidget);
+
+      // Tap Close again and confirm Discard -> pops screen
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditTransactionScreen), findsNothing);
+      expect(find.text('Open Form'), findsOneWidget);
     },
   );
 }

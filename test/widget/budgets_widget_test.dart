@@ -110,9 +110,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          budgetSummariesProvider.overrideWithValue(
-            const AsyncValue.data([]),
-          ),
+          budgetSummariesProvider.overrideWithValue(const AsyncValue.data([])),
           overallBudgetSummaryProvider.overrideWithValue(
             const AsyncValue.data((
               totalBudgeted: 0.0,
@@ -166,65 +164,65 @@ void main() {
     expect(find.text('Food & Dining'), findsOneWidget);
   });
 
-  testWidgets('BudgetDetailScreen renders hero metrics, pace and transactions', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          selectedDashboardMonthProvider.overrideWith(
-            (ref) => DateTime(2026, 8, 1),
-          ),
-          filteredTransactionsProvider.overrideWith(
-            (ref) => Stream.value([testTransaction]),
-          ),
-        ],
-        child: MaterialApp(
-          theme: StillwaterTheme.daylight,
-          home: BudgetDetailScreen(budget: testBudget),
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    expect(find.text('Food & Dining'), findsWidgets);
-    expect(find.text('DAILY ALLOWANCE'), findsOneWidget);
-    expect(find.text('PROJECTED SPEND'), findsOneWidget);
-    expect(find.text('Budget Settings'), findsOneWidget);
-
-    await tester.drag(find.byType(ListView), const Offset(0, -300));
-    await tester.pumpAndSettle();
-    expect(find.text('Cafe Delight'), findsOneWidget);
-  });
-
-  testWidgets('AddEditBudgetSheet renders fields, category selection and slider', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          categoriesStreamProvider.overrideWith(
-            (ref) => Stream.value([testCategory]),
-          ),
-        ],
-        child: MaterialApp(
-          theme: StillwaterTheme.daylight,
-          home: const Scaffold(
-            body: AddEditBudgetSheet(),
+  testWidgets(
+    'BudgetDetailScreen renders hero metrics, pace and transactions',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            selectedDashboardMonthProvider.overrideWith(
+              (ref) => DateTime(2026, 8, 1),
+            ),
+            filteredTransactionsProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: BudgetDetailScreen(budget: testBudget),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('New Budget Plan'), findsOneWidget);
-    expect(find.text('PLANNED SPENDING LIMIT'), findsOneWidget);
-    expect(find.text('Dining'), findsOneWidget);
-    expect(find.text('Budget Name'), findsOneWidget);
-    expect(find.text('Period Cycle'), findsOneWidget);
-    expect(find.text('Alert Threshold'), findsOneWidget);
-    expect(find.text('Save Budget'), findsOneWidget);
-  });
+      expect(find.text('Food & Dining'), findsWidgets);
+      expect(find.text('DAILY ALLOWANCE'), findsOneWidget);
+      expect(find.text('PROJECTED SPEND'), findsOneWidget);
+      expect(find.text('Budget Settings'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('Cafe Delight'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'AddEditBudgetSheet renders fields, category selection and slider',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            categoriesStreamProvider.overrideWith(
+              (ref) => Stream.value([testCategory]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: const Scaffold(body: AddEditBudgetSheet()),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Budget Plan'), findsOneWidget);
+      expect(find.text('PLANNED SPENDING LIMIT'), findsOneWidget);
+      expect(find.text('Dining'), findsOneWidget);
+      expect(find.text('Budget Name'), findsOneWidget);
+      expect(find.text('Period Cycle'), findsOneWidget);
+      expect(find.text('Alert Threshold'), findsOneWidget);
+      expect(find.text('Save Budget'), findsOneWidget);
+    },
+  );
 }

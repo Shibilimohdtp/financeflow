@@ -140,7 +140,9 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                         '• Restored ${result.restoredPendingTransactions} inbox transactions',
                       ),
                     if (result.restoredSettings)
-                      const Text('• Restored application settings & preferences'),
+                      const Text(
+                        '• Restored application settings & preferences',
+                      ),
                     if (result.skippedDuplicates > 0)
                       Text(
                         '• Skipped ${result.skippedDuplicates} duplicate records',
@@ -150,7 +152,9 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                       Container(
                         padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          color: const Color(
+                            0xFFF59E0B,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(
                             StillwaterTokens.radiusSm,
                           ),
@@ -414,7 +418,6 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                 ],
               ),
             ),
-
 
             const SizedBox(height: StillwaterTokens.space2Xl),
 

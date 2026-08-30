@@ -267,7 +267,8 @@ class IngestionService {
       r'\b(upi|card|account|acct|bank|wallet|mandate|merchant|pos)\b',
       caseSensitive: false,
     ).hasMatch(rawContent);
-    final amountText = money?.group(1) ??
+    final amountText =
+        money?.group(1) ??
         (hasFinancialContext ? labelledMoney?.group(1) : null);
     if (!hasAction || amountText == null) return null;
 
@@ -279,9 +280,8 @@ class IngestionService {
     final date = timestamp ?? DateTime.now();
     final dateKey =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    final sourceKey = sourceIdentifier?.isNotEmpty == true
-        ? sourceIdentifier!
-        : sourceName;
+    final sourceKey =
+        sourceIdentifier?.isNotEmpty == true ? sourceIdentifier! : sourceName;
     final errors = <String>[
       if (amount <= 0) 'Could not extract positive transaction amount',
     ];

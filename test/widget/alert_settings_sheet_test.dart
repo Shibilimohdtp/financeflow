@@ -16,29 +16,31 @@ void main() {
 
   setUp(() {
     fakeNotificationService = FakeLocalNotificationService();
-    fakeSettingsRepo = FakeSettingsRepository(const AppSettings(
-      isAlertsEnabled: true,
-      isLocalNotificationsEnabled: true,
-      isNeedsReviewNotificationsEnabled: true,
-      isBudgetNotificationEnabled: true,
-      isSubscriptionNotificationEnabled: true,
-      isLoanNotificationEnabled: true,
-      isBackupNotificationEnabled: true,
-      hideSensitiveNotificationContent: false,
-    ));
+    fakeSettingsRepo = FakeSettingsRepository(
+      const AppSettings(
+        isAlertsEnabled: true,
+        isLocalNotificationsEnabled: true,
+        isNeedsReviewNotificationsEnabled: true,
+        isBudgetNotificationEnabled: true,
+        isSubscriptionNotificationEnabled: true,
+        isLoanNotificationEnabled: true,
+        isBackupNotificationEnabled: true,
+        hideSensitiveNotificationContent: false,
+      ),
+    );
   });
 
   Widget createWidgetUnderTest() {
     return ProviderScope(
       overrides: [
-        localNotificationServiceProvider.overrideWithValue(fakeNotificationService),
+        localNotificationServiceProvider.overrideWithValue(
+          fakeNotificationService,
+        ),
         settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
       ],
       child: MaterialApp(
         theme: StillwaterTheme.daylight,
-        home: const Scaffold(
-          body: AlertSettingsSheet(),
-        ),
+        home: const Scaffold(body: AlertSettingsSheet()),
       ),
     );
   }
@@ -112,7 +114,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('1 imported transaction is waiting for your review.'), findsOneWidget);
+      expect(
+        find.textContaining(
+          '1 imported transaction is waiting for your review.',
+        ),
+        findsOneWidget,
+      );
     });
   });
 }

@@ -23,7 +23,8 @@ const _legacyDefaultSmsSenders = {
 /// exact list as the new broad, financial-only default; an actual custom list
 /// remains an explicit allow-list.
 List<String> restoreSmsSenderPolicy(List<String> stored) {
-  final normalized = stored.map((sender) => sender.trim().toUpperCase()).toSet();
+  final normalized =
+      stored.map((sender) => sender.trim().toUpperCase()).toSet();
   if (stored.isEmpty ||
       (normalized.length == _legacyDefaultSmsSenders.length &&
           normalized.containsAll(_legacyDefaultSmsSenders))) {
@@ -120,8 +121,12 @@ class IsarSettingsRepository implements SettingsRepository {
   }
 
   @override
-  Stream<AppSettings> watchSettings() {
-    return isar.appSettingsEntitys.watchObject(1, fireImmediately: true).map((
+  Stream<AppSettings> watchSettings() async* {
+    // A direct read makes the first application route independent of the
+    // native watcher callback. This prevents a completed database open from
+    // looking like an endless startup splash after an app update.
+    yield await getSettings();
+    yield* isar.appSettingsEntitys.watchObject(1, fireImmediately: true).map((
       entity,
     ) {
       if (entity != null) {

@@ -5,6 +5,7 @@ import 'package:financeflow/core/errors/app_error.dart';
 import 'package:financeflow/database/isar_service.dart';
 import 'package:financeflow/database/schemas/account_entity.dart';
 import 'package:financeflow/database/schemas/app_settings_entity.dart';
+import 'package:financeflow/repositories/settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 
@@ -74,6 +75,11 @@ void main() {
           await IsarService.initialize(directoryPath: directory.path),
           services.first,
         );
+        final settingsRepository = IsarSettingsRepository(
+          isarInstance: database,
+        );
+        // The first app route must not wait on the native watch callback.
+        expect(await settingsRepository.watchSettings().first, isNotNull);
       } finally {
         await database?.close();
         await directory.delete(recursive: true);

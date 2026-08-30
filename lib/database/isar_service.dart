@@ -122,6 +122,18 @@ class IsarService {
       if (categoryCount == 0) {
         final defaults = DefaultCategories.list;
         await isar.categoryEntitys.putAll(defaults);
+      } else {
+        final existingTransaction =
+            await isar.categoryEntitys
+                .where()
+                .uuidEqualTo('cat_transaction')
+                .findFirst();
+        if (existingTransaction == null) {
+          final transactionCat = DefaultCategories.list.firstWhere(
+            (c) => c.uuid == 'cat_transaction',
+          );
+          await isar.categoryEntitys.put(transactionCat);
+        }
       }
 
       // 2. Check App Settings

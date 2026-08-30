@@ -17,12 +17,13 @@ class FfPrivacyBadge extends StatelessWidget {
     final secColors = context.secColors;
 
     final badge = Container(
-      padding: iconOnly
-          ? const EdgeInsets.all(StillwaterTokens.space2Xs + 2)
-          : const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceSm,
-              vertical: StillwaterTokens.space2Xs,
-            ),
+      padding:
+          iconOnly
+              ? const EdgeInsets.all(StillwaterTokens.space2Xs + 2)
+              : const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceSm,
+                vertical: StillwaterTokens.space2Xs,
+              ),
       decoration: BoxDecoration(
         color: secColors.surface,
         borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
@@ -31,33 +32,33 @@ class FfPrivacyBadge extends StatelessWidget {
           width: StillwaterTokens.borderWidthHairline,
         ),
       ),
-      child: iconOnly
-          ? Icon(Icons.shield_outlined, size: 14, color: secColors.verified)
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.shield_outlined, size: 14, color: secColors.verified),
-                const SizedBox(width: StillwaterTokens.space2Xs),
-                Text(
-                  label,
-                  style: context.textTheme.labelSmall?.copyWith(
+      child:
+          iconOnly
+              ? Icon(Icons.shield_outlined, size: 14, color: secColors.verified)
+              : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 14,
                     color: secColors.verified,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  Text(
+                    label,
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: secColors.verified,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
     );
 
     return Semantics(
       label: 'Privacy indicator: $label',
-      child: iconOnly
-          ? Tooltip(
-              message: label,
-              child: badge,
-            )
-          : badge,
+      child: iconOnly ? Tooltip(message: label, child: badge) : badge,
     );
   }
 }

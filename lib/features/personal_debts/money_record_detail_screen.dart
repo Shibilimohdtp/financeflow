@@ -128,9 +128,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       orElse: () => record,
     );
 
-    final advancesAsync = ref.watch(
-      moneyRecordAdvancesProvider(liveRecord.id),
-    );
+    final advancesAsync = ref.watch(moneyRecordAdvancesProvider(liveRecord.id));
     final advances = advancesAsync.value ?? [];
 
     final repaymentsAsync = ref.watch(
@@ -148,10 +146,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       repayments,
       advances: advances,
     );
-    final isSettled = liveRecord.isFullySettled(
-      repayments,
-      advances: advances,
-    );
+    final isSettled = liveRecord.isFullySettled(repayments, advances: advances);
     final isOverdue = liveRecord.isOverdue(
       repayments: repayments,
       advances: advances,
@@ -160,18 +155,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       repayments: repayments,
       advances: advances,
     );
-    final status = liveRecord.calculateStatus(
-      repayments,
-      advances: advances,
-    );
+    final status = liveRecord.calculateStatus(repayments, advances: advances);
     final effectiveDueDate = liveRecord.calculateEffectiveDueDate(
       advances: advances,
       repayments: repayments,
     );
     final progress =
-        totalAdvanced > 0
-            ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0)
-            : 0.0;
+        totalAdvanced > 0 ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0) : 0.0;
 
     final allocations = liveRecord.calculateAllocatedAdvances(
       advances: advances,
@@ -509,7 +499,8 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
             trailing:
                 !isSettled
                     ? TextButton.icon(
-                      onPressed: () => _openAddAdvanceSheet(context, liveRecord),
+                      onPressed:
+                          () => _openAddAdvanceSheet(context, liveRecord),
                       icon: const Icon(Icons.add_rounded, size: 16),
                       label: const Text('Add Advance'),
                     )
@@ -532,7 +523,11 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                         StillwaterTokens.radiusSm,
                       ),
                     ),
-                    child: Icon(liveRecord.type.icon, color: typeColor, size: 20),
+                    child: Icon(
+                      liveRecord.type.icon,
+                      color: typeColor,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: StillwaterTokens.spaceMd),
                   Expanded(

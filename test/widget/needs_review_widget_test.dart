@@ -1,7 +1,7 @@
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/ingestion/needs_review_screen.dart';
-import 'package:financeflow/features/transactions/add_edit_transaction_sheet.dart';
+import 'package:financeflow/features/transactions/add_edit_transaction_screen.dart';
 import 'package:financeflow/models/money_record.dart';
 import 'package:financeflow/services/financial_operation_service.dart';
 import 'package:financeflow/services/ingestion/parsers/sms_parsers.dart';
@@ -125,7 +125,7 @@ void main() {
       expect(find.text(_axisSms), findsNothing);
       await tester.tap(find.text('Edit'));
       await tester.pumpAndSettle();
-      expect(find.byType(AddEditTransactionSheet), findsOneWidget);
+      expect(find.byType(AddEditTransactionScreen), findsOneWidget);
       expect(find.text('Purpose'), findsOneWidget);
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('More details'), findsOneWidget);
@@ -138,7 +138,7 @@ void main() {
       expect(find.text('Tags'), findsOneWidget);
       await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();
-      expect(find.byType(AddEditTransactionSheet), findsNothing);
+      expect(find.byType(AddEditTransactionScreen), findsNothing);
       final updated = (await pending.getPendingTransactions()).single;
       expect(updated.toTransaction().merchant, 'MENON — Family');
       expect(updated.rawMerchant, original.rawMerchant);
@@ -208,7 +208,7 @@ void main() {
         scrollable:
             find
                 .descendant(
-                  of: find.byType(AddEditTransactionSheet),
+                  of: find.byType(AddEditTransactionScreen),
                   matching: find.byType(Scrollable),
                 )
                 .first,
@@ -228,7 +228,7 @@ void main() {
       pending.failSaving = true;
       await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();
-      expect(find.byType(AddEditTransactionSheet), findsOneWidget);
+      expect(find.byType(AddEditTransactionScreen), findsOneWidget);
       expect(find.textContaining('Could not save transaction'), findsOneWidget);
       expect(
         (await pending.getPendingTransactions()).single.normalizedMerchant,

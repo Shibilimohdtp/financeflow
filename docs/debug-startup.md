@@ -39,7 +39,8 @@ logcat even without a Dart VM connection:
 
 No first Flutter frame means investigate native/engine startup. A database
 timeout shows a retry screen. Retrying joins an outstanding open rather than
-opening Isar twice. Failed opens **never delete the existing database**; schema
+opening Isar twice, and a delayed successful open resumes the app
+automatically. Failed opens **never delete the existing database**; schema
 or storage problems must be repaired explicitly, with the user's data preserved.
 An application-route marker is stronger than a splash-frame marker, but does
 not certify every screen or background feature.

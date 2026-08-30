@@ -61,16 +61,18 @@ void main() {
 
   setUp(() {
     fakeNotificationService = FakeLocalNotificationService();
-    fakeSettingsRepo = FakeSettingsRepository(const AppSettings(
-      isAlertsEnabled: true,
-      isLocalNotificationsEnabled: true,
-      isNeedsReviewNotificationsEnabled: true,
-      isBudgetNotificationEnabled: true,
-      isSubscriptionNotificationEnabled: true,
-      isLoanNotificationEnabled: true,
-      isBackupNotificationEnabled: true,
-      hideSensitiveNotificationContent: false,
-    ));
+    fakeSettingsRepo = FakeSettingsRepository(
+      const AppSettings(
+        isAlertsEnabled: true,
+        isLocalNotificationsEnabled: true,
+        isNeedsReviewNotificationsEnabled: true,
+        isBudgetNotificationEnabled: true,
+        isSubscriptionNotificationEnabled: true,
+        isLoanNotificationEnabled: true,
+        isBackupNotificationEnabled: true,
+        hideSensitiveNotificationContent: false,
+      ),
+    );
     fakePendingRepo = FakePendingTransactionRepository();
     fakeAlertRepo = FakeAlertRepository();
     fakeSubRepo = FakeSubscriptionRepository();
@@ -80,7 +82,9 @@ void main() {
 
     container = ProviderContainer(
       overrides: [
-        localNotificationServiceProvider.overrideWithValue(fakeNotificationService),
+        localNotificationServiceProvider.overrideWithValue(
+          fakeNotificationService,
+        ),
         settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
         pendingTransactionRepositoryProvider.overrideWithValue(fakePendingRepo),
         alertRepositoryProvider.overrideWithValue(fakeAlertRepo),
@@ -121,88 +125,105 @@ void main() {
       expect(fakeNotificationService.allCancelled, isTrue);
     });
 
-    test('shows aggregated review notification when pending transactions exist', () async {
-      final coordinator = container.read(notificationCoordinatorProvider);
-      await coordinator.start();
+    test(
+      'shows aggregated review notification when pending transactions exist',
+      () async {
+        final coordinator = container.read(notificationCoordinatorProvider);
+        await coordinator.start();
 
-      await fakePendingRepo.savePendingTransaction(
-        _buildTestPending(
-          tempId: 'temp_1',
-          amount: 450.0,
-          rawMerchant: 'SWIGGY',
-          merchantDisplayName: 'Swiggy',
-        ),
-      );
+        await fakePendingRepo.savePendingTransaction(
+          _buildTestPending(
+            tempId: 'temp_1',
+            amount: 450.0,
+            rawMerchant: 'SWIGGY',
+            merchantDisplayName: 'Swiggy',
+          ),
+        );
 
-      await coordinator.syncFromLocalState();
+        await coordinator.syncFromLocalState();
 
-      final displayed = fakeNotificationService.displayedNotifications
-          .where((n) => n.id == NotificationId.needsReviewBatch)
-          .toList();
+        final displayed =
+            fakeNotificationService.displayedNotifications
+                .where((n) => n.id == NotificationId.needsReviewBatch)
+                .toList();
 
-      expect(displayed.length, equals(1));
-      expect(displayed.first.title, equals('Transaction needs review'));
-      expect(displayed.first.body, contains('Swiggy'));
-      expect(displayed.first.body, contains('450'));
-    });
+        expect(displayed.length, equals(1));
+        expect(displayed.first.title, equals('Transaction needs review'));
+        expect(displayed.first.body, contains('Swiggy'));
+        expect(displayed.first.body, contains('450'));
+      },
+    );
 
-    test('cancels review notification when pending transactions are cleared', () async {
-      final coordinator = container.read(notificationCoordinatorProvider);
-      await coordinator.start();
+    test(
+      'cancels review notification when pending transactions are cleared',
+      () async {
+        final coordinator = container.read(notificationCoordinatorProvider);
+        await coordinator.start();
 
-      // 1. Stage item
-      await fakePendingRepo.savePendingTransaction(
-        _buildTestPending(
-          tempId: 'temp_1',
-          amount: 450.0,
-          rawMerchant: 'SWIGGY',
-        ),
-      );
-      await coordinator.syncFromLocalState();
-      expect(fakeNotificationService.displayedNotifications.length, equals(1));
+        // 1. Stage item
+        await fakePendingRepo.savePendingTransaction(
+          _buildTestPending(
+            tempId: 'temp_1',
+            amount: 450.0,
+            rawMerchant: 'SWIGGY',
+          ),
+        );
+        await coordinator.syncFromLocalState();
+        expect(
+          fakeNotificationService.displayedNotifications.length,
+          equals(1),
+        );
 
-      // 2. Clear item
-      await fakePendingRepo.clearAllPending();
-      await coordinator.syncFromLocalState();
+        // 2. Clear item
+        await fakePendingRepo.clearAllPending();
+        await coordinator.syncFromLocalState();
 
-      expect(
-        fakeNotificationService.cancelledNotificationIds,
-        contains(NotificationId.needsReviewBatch),
-      );
-      expect(fakeNotificationService.displayedNotifications.isEmpty, isTrue);
-    });
+        expect(
+          fakeNotificationService.cancelledNotificationIds,
+          contains(NotificationId.needsReviewBatch),
+        );
+        expect(fakeNotificationService.displayedNotifications.isEmpty, isTrue);
+      },
+    );
 
-    test('formats privacy-safe review copy when hideSensitiveNotificationContent is true', () async {
-      final coordinator = container.read(notificationCoordinatorProvider);
-      await coordinator.start();
+    test(
+      'formats privacy-safe review copy when hideSensitiveNotificationContent is true',
+      () async {
+        final coordinator = container.read(notificationCoordinatorProvider);
+        await coordinator.start();
 
-      await fakeSettingsRepo.updateSettings(
-        const AppSettings(
-          isAlertsEnabled: true,
-          isLocalNotificationsEnabled: true,
-          isNeedsReviewNotificationsEnabled: true,
-          hideSensitiveNotificationContent: true,
-        ),
-      );
+        await fakeSettingsRepo.updateSettings(
+          const AppSettings(
+            isAlertsEnabled: true,
+            isLocalNotificationsEnabled: true,
+            isNeedsReviewNotificationsEnabled: true,
+            hideSensitiveNotificationContent: true,
+          ),
+        );
 
-      await fakePendingRepo.savePendingTransaction(
-        _buildTestPending(
-          tempId: 'temp_secret',
-          amount: 25000.0,
-          rawMerchant: 'CONFIDENTIAL MERCHANT',
-        ),
-      );
+        await fakePendingRepo.savePendingTransaction(
+          _buildTestPending(
+            tempId: 'temp_secret',
+            amount: 25000.0,
+            rawMerchant: 'CONFIDENTIAL MERCHANT',
+          ),
+        );
 
-      await coordinator.syncFromLocalState();
+        await coordinator.syncFromLocalState();
 
-      final displayed = fakeNotificationService.displayedNotifications
-          .where((n) => n.id == NotificationId.needsReviewBatch)
-          .first;
+        final displayed =
+            fakeNotificationService.displayedNotifications
+                .where((n) => n.id == NotificationId.needsReviewBatch)
+                .first;
 
-      expect(displayed.body, equals('1 imported transaction is waiting for your review.'));
-      expect(displayed.body, isNot(contains('CONFIDENTIAL MERCHANT')));
-      expect(displayed.body, isNot(contains('25,000')));
-    });
+        expect(
+          displayed.body,
+          equals('1 imported transaction is waiting for your review.'),
+        );
+        expect(displayed.body, isNot(contains('CONFIDENTIAL MERCHANT')));
+        expect(displayed.body, isNot(contains('25,000')));
+      },
+    );
 
     test('syncs active budget in-app alerts correctly', () async {
       final coordinator = container.read(notificationCoordinatorProvider);
@@ -224,9 +245,10 @@ void main() {
       await coordinator.syncFromLocalState();
 
       final alertNotifId = NotificationId.forAlertItem('alt_b1');
-      final notif = fakeNotificationService.displayedNotifications
-          .where((n) => n.id == alertNotifId)
-          .toList();
+      final notif =
+          fakeNotificationService.displayedNotifications
+              .where((n) => n.id == alertNotifId)
+              .toList();
 
       expect(notif.length, equals(1));
       expect(notif.first.title, contains('Dining'));
@@ -265,30 +287,34 @@ void main() {
       );
     });
 
-    test('idempotency: multiple sync passes do not multiply notifications', () async {
-      final coordinator = container.read(notificationCoordinatorProvider);
-      await coordinator.start();
+    test(
+      'idempotency: multiple sync passes do not multiply notifications',
+      () async {
+        final coordinator = container.read(notificationCoordinatorProvider);
+        await coordinator.start();
 
-      await fakePendingRepo.savePendingTransaction(
-        _buildTestPending(
-          tempId: 'temp_1',
-          amount: 500.0,
-          rawMerchant: 'UBER',
-        ),
-      );
+        await fakePendingRepo.savePendingTransaction(
+          _buildTestPending(
+            tempId: 'temp_1',
+            amount: 500.0,
+            rawMerchant: 'UBER',
+          ),
+        );
 
-      // Call sync multiple times
-      await coordinator.syncFromLocalState();
-      await coordinator.syncFromLocalState();
-      await coordinator.syncFromLocalState();
+        // Call sync multiple times
+        await coordinator.syncFromLocalState();
+        await coordinator.syncFromLocalState();
+        await coordinator.syncFromLocalState();
 
-      final displayed = fakeNotificationService.displayedNotifications
-          .where((n) => n.id == NotificationId.needsReviewBatch)
-          .toList();
+        final displayed =
+            fakeNotificationService.displayedNotifications
+                .where((n) => n.id == NotificationId.needsReviewBatch)
+                .toList();
 
-      // Should only have 1 active record with ID 10001
-      expect(displayed.length, equals(1));
-    });
+        // Should only have 1 active record with ID 10001
+        expect(displayed.length, equals(1));
+      },
+    );
 
     test('notification tap invokes onNavigate callback', () async {
       final coordinator = container.read(notificationCoordinatorProvider);
@@ -299,9 +325,7 @@ void main() {
         navigatedRoute = route;
       };
 
-      coordinator.handleNotificationTap(
-        NotificationPayload.needsReview(),
-      );
+      coordinator.handleNotificationTap(NotificationPayload.needsReview());
 
       expect(navigatedRoute, equals('/needs-review'));
     });

@@ -42,7 +42,8 @@ class NotificationChannels {
   static const transactionReview = NotificationChannelConfig(
     id: 'transaction_review',
     name: 'Transaction Review',
-    description: 'Notifications for imported transactions waiting for your review.',
+    description:
+        'Notifications for imported transactions waiting for your review.',
     importance: Importance.high,
     priority: Priority.high,
     playSound: true,
@@ -53,7 +54,8 @@ class NotificationChannels {
   static const budgetAlerts = NotificationChannelConfig(
     id: 'budget_alerts',
     name: 'Budget Limits',
-    description: 'Alerts when category spending approaches limits or exceeds budgets.',
+    description:
+        'Alerts when category spending approaches limits or exceeds budgets.',
     importance: Importance.defaultImportance,
     priority: Priority.defaultPriority,
     playSound: true,
@@ -64,7 +66,8 @@ class NotificationChannels {
   static const paymentReminders = NotificationChannelConfig(
     id: 'payment_reminders',
     name: 'Payment Reminders',
-    description: 'Reminders for upcoming EMI payments and subscription renewals.',
+    description:
+        'Reminders for upcoming EMI payments and subscription renewals.',
     importance: Importance.defaultImportance,
     priority: Priority.defaultPriority,
     playSound: true,

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
-import 'package:financeflow/features/transactions/add_edit_transaction_sheet.dart';
+import 'package:financeflow/features/transactions/add_edit_transaction_screen.dart';
 import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/category.dart';
@@ -17,7 +17,7 @@ void main() {
   });
 
   testWidgets(
-    'AddEditTransactionSheet shows category suggestion when typing merchant',
+    'AddEditTransactionScreen shows category suggestion when typing merchant',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(800, 2000);
       tester.view.devicePixelRatio = 1.0;
@@ -69,13 +69,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: StillwaterTheme.daylight,
-            home: const Scaffold(
-              body: SizedBox(
-                height: 900,
-                width: 500,
-                child: AddEditTransactionSheet(),
-              ),
-            ),
+            home: const AddEditTransactionScreen(),
           ),
         ),
       );

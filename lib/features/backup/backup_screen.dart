@@ -106,10 +106,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               (ctx) => AlertDialog(
                 title: const Row(
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: Color(0xFF10B981),
-                    ),
+                    Icon(Icons.check_circle_outline, color: Color(0xFF10B981)),
                     SizedBox(width: 8),
                     Text('Backup Created'),
                   ],
@@ -284,10 +281,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 FfButton(
                   label: 'Browse & Select Backup File',
                   variant: FfButtonVariant.secondary,
-                  leadingIcon: const Icon(
-                    Icons.folder_open_rounded,
-                    size: 18,
-                  ),
+                  leadingIcon: const Icon(Icons.folder_open_rounded, size: 18),
                   onPressed: _pickBackupFromDevice,
                 ),
               ],

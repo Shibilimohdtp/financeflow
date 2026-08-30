@@ -6,35 +6,39 @@ import 'package:financeflow/models/category_icons.dart';
 
 void main() {
   group('Default Categories & Mappings Tests', () {
-    test('Contains exactly 23 default categories from PRD', () {
-      final list = DefaultCategories.list;
-      expect(list.length, 23);
+    test(
+      'Contains exactly 24 default categories from PRD and enhancements',
+      () {
+        final list = DefaultCategories.list;
+        expect(list.length, 24);
 
-      final names = list.map((c) => c.name).toSet();
-      expect(names.contains('Food'), isTrue);
-      expect(names.contains('Dining'), isTrue);
-      expect(names.contains('Groceries'), isTrue);
-      expect(names.contains('Transport'), isTrue);
-      expect(names.contains('Fuel'), isTrue);
-      expect(names.contains('Shopping'), isTrue);
-      expect(names.contains('Bills'), isTrue);
-      expect(names.contains('Utilities'), isTrue);
-      expect(names.contains('Healthcare'), isTrue);
-      expect(names.contains('Insurance'), isTrue);
-      expect(names.contains('Education'), isTrue);
-      expect(names.contains('Travel'), isTrue);
-      expect(names.contains('Entertainment'), isTrue);
-      expect(names.contains('Subscriptions'), isTrue);
-      expect(names.contains('Investments'), isTrue);
-      expect(names.contains('Salary'), isTrue);
-      expect(names.contains('Freelance'), isTrue);
-      expect(names.contains('Business'), isTrue);
-      expect(names.contains('Loans'), isTrue);
-      expect(names.contains('EMI'), isTrue);
-      expect(names.contains('Taxes'), isTrue);
-      expect(names.contains('Savings'), isTrue);
-      expect(names.contains('Miscellaneous'), isTrue);
-    });
+        final names = list.map((c) => c.name).toSet();
+        expect(names.contains('Food'), isTrue);
+        expect(names.contains('Dining'), isTrue);
+        expect(names.contains('Groceries'), isTrue);
+        expect(names.contains('Transport'), isTrue);
+        expect(names.contains('Fuel'), isTrue);
+        expect(names.contains('Shopping'), isTrue);
+        expect(names.contains('Bills'), isTrue);
+        expect(names.contains('Utilities'), isTrue);
+        expect(names.contains('Healthcare'), isTrue);
+        expect(names.contains('Insurance'), isTrue);
+        expect(names.contains('Education'), isTrue);
+        expect(names.contains('Travel'), isTrue);
+        expect(names.contains('Entertainment'), isTrue);
+        expect(names.contains('Subscriptions'), isTrue);
+        expect(names.contains('Investments'), isTrue);
+        expect(names.contains('Salary'), isTrue);
+        expect(names.contains('Freelance'), isTrue);
+        expect(names.contains('Business'), isTrue);
+        expect(names.contains('Loans'), isTrue);
+        expect(names.contains('EMI'), isTrue);
+        expect(names.contains('Taxes'), isTrue);
+        expect(names.contains('Savings'), isTrue);
+        expect(names.contains('Transaction'), isTrue);
+        expect(names.contains('Miscellaneous'), isTrue);
+      },
+    );
 
     test('All categories have valid icon mappings', () {
       final list = DefaultCategories.list;

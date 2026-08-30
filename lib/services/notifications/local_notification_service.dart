@@ -63,9 +63,8 @@ class FlutterLocalNotificationService implements LocalNotificationService {
   bool _isInitialized = false;
   void Function(NotificationPayload payload)? _onNotificationTapped;
 
-  FlutterLocalNotificationService({
-    FlutterLocalNotificationsPlugin? plugin,
-  }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   @override
   Future<void> initialize({
@@ -77,7 +76,9 @@ class FlutterLocalNotificationService implements LocalNotificationService {
     try {
       await NotificationScheduler.initializeTimezone();
 
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const darwinSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
@@ -101,8 +102,11 @@ class FlutterLocalNotificationService implements LocalNotificationService {
 
       // Create stable Android notification channels
       if (!kIsWeb && Platform.isAndroid) {
-        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        final androidImpl =
+            _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
         if (androidImpl != null) {
           for (final channel in NotificationChannels.all) {
             await androidImpl.createNotificationChannel(
@@ -113,7 +117,10 @@ class FlutterLocalNotificationService implements LocalNotificationService {
       }
 
       _isInitialized = true;
-      developer.log('LocalNotificationService initialized successfully', name: 'NotificationService');
+      developer.log(
+        'LocalNotificationService initialized successfully',
+        name: 'NotificationService',
+      );
     } catch (e, st) {
       developer.log(
         'Failed to initialize LocalNotificationService: $e',
@@ -140,8 +147,11 @@ class FlutterLocalNotificationService implements LocalNotificationService {
       if (kIsWeb) return NotificationPermissionStatus.unsupported;
 
       if (Platform.isAndroid) {
-        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        final androidImpl =
+            _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
         if (androidImpl != null) {
           final granted = await androidImpl.requestNotificationsPermission();
           if (granted == true) {
@@ -154,8 +164,11 @@ class FlutterLocalNotificationService implements LocalNotificationService {
           return NotificationPermissionStatus.denied;
         }
       } else if (Platform.isIOS || Platform.isMacOS) {
-        final darwinImpl = _plugin.resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
+        final darwinImpl =
+            _plugin
+                .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin
+                >();
         if (darwinImpl != null) {
           final granted = await darwinImpl.requestPermissions(
             alert: true,
@@ -184,15 +197,21 @@ class FlutterLocalNotificationService implements LocalNotificationService {
     try {
       if (kIsWeb) return false;
       if (Platform.isAndroid) {
-        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        final androidImpl =
+            _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
         if (androidImpl != null) {
           return await androidImpl.areNotificationsEnabled() ?? false;
         }
       }
       return true;
     } catch (e) {
-      developer.log('Error checking if notifications are enabled: $e', name: 'NotificationService');
+      developer.log(
+        'Error checking if notifications are enabled: $e',
+        name: 'NotificationService',
+      );
       return false;
     }
   }
@@ -201,15 +220,21 @@ class FlutterLocalNotificationService implements LocalNotificationService {
   Future<bool> canScheduleExactNotifications() async {
     try {
       if (!kIsWeb && Platform.isAndroid) {
-        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        final androidImpl =
+            _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
         if (androidImpl != null) {
           return await androidImpl.canScheduleExactNotifications() ?? false;
         }
       }
       return true;
     } catch (e) {
-      developer.log('Error checking exact notification capability: $e', name: 'NotificationService');
+      developer.log(
+        'Error checking exact notification capability: $e',
+        name: 'NotificationService',
+      );
       return false;
     }
   }
@@ -246,13 +271,7 @@ class FlutterLocalNotificationService implements LocalNotificationService {
         macOS: darwinDetails,
       );
 
-      await _plugin.show(
-        id,
-        title,
-        body,
-        details,
-        payload: payload?.encode(),
-      );
+      await _plugin.show(id, title, body, details, payload: payload?.encode());
     } catch (e, st) {
       developer.log(
         'Failed to show immediate notification (id: $id): $e',
@@ -279,9 +298,10 @@ class FlutterLocalNotificationService implements LocalNotificationService {
         return; // Skip past reminders safely
       }
 
-      final androidScheduleMode = exact
-          ? AndroidScheduleMode.exactAllowWhileIdle
-          : AndroidScheduleMode.inexactAllowWhileIdle;
+      final androidScheduleMode =
+          exact
+              ? AndroidScheduleMode.exactAllowWhileIdle
+              : AndroidScheduleMode.inexactAllowWhileIdle;
 
       final androidDetails = AndroidNotificationDetails(
         channel.id,
@@ -330,7 +350,10 @@ class FlutterLocalNotificationService implements LocalNotificationService {
     try {
       await _plugin.cancel(id);
     } catch (e) {
-      developer.log('Failed to cancel notification (id: $id): $e', name: 'NotificationService');
+      developer.log(
+        'Failed to cancel notification (id: $id): $e',
+        name: 'NotificationService',
+      );
     }
   }
 
@@ -339,7 +362,10 @@ class FlutterLocalNotificationService implements LocalNotificationService {
     try {
       await _plugin.cancelAll();
     } catch (e) {
-      developer.log('Failed to cancel all notifications: $e', name: 'NotificationService');
+      developer.log(
+        'Failed to cancel all notifications: $e',
+        name: 'NotificationService',
+      );
     }
   }
 
@@ -353,7 +379,10 @@ class FlutterLocalNotificationService implements LocalNotificationService {
       }
       return null;
     } catch (e) {
-      developer.log('Error getting notification launch details: $e', name: 'NotificationService');
+      developer.log(
+        'Error getting notification launch details: $e',
+        name: 'NotificationService',
+      );
       return null;
     }
   }
@@ -369,7 +398,8 @@ class FlutterLocalNotificationService implements LocalNotificationService {
   }
 }
 
-final localNotificationServiceProvider =
-    Provider<LocalNotificationService>((ref) {
+final localNotificationServiceProvider = Provider<LocalNotificationService>((
+  ref,
+) {
   return FlutterLocalNotificationService();
 });

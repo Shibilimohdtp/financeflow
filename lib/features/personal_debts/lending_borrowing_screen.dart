@@ -312,9 +312,7 @@ class _SummaryBox extends StatelessWidget {
               ),
               InkWell(
                 onTap: onAddTap,
-                borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusSm,
-                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
                 child: Padding(
                   padding: const EdgeInsets.all(StillwaterTokens.space2Xs),
                   child: Icon(
@@ -474,9 +472,7 @@ class _MoneyRecordCard extends StatelessWidget {
       repayments: repayments,
     );
     final progress =
-        totalAdvanced > 0
-            ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0)
-            : 0.0;
+        totalAdvanced > 0 ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0) : 0.0;
     final advanceCount = advances.isNotEmpty ? advances.length : 1;
 
     return FfCard(

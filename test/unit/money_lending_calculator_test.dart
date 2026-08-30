@@ -83,11 +83,34 @@ void main() {
     });
 
     test('detects overdue and due soon statuses correctly', () {
-      expect(record1Lent.isOverdue(asOfDate: now, repayments: repayments), true);
-      expect(record2Lent.isOverdue(asOfDate: now, repayments: repayments), false);
-      expect(record2Lent.isDueSoon(asOfDate: now, thresholdDays: 7, repayments: repayments), true);
-      expect(record3Borrowed.isDueSoon(asOfDate: now, thresholdDays: 7, repayments: repayments), false);
-      expect(record4Settled.isOverdue(asOfDate: now, repayments: repayments), false);
+      expect(
+        record1Lent.isOverdue(asOfDate: now, repayments: repayments),
+        true,
+      );
+      expect(
+        record2Lent.isOverdue(asOfDate: now, repayments: repayments),
+        false,
+      );
+      expect(
+        record2Lent.isDueSoon(
+          asOfDate: now,
+          thresholdDays: 7,
+          repayments: repayments,
+        ),
+        true,
+      );
+      expect(
+        record3Borrowed.isDueSoon(
+          asOfDate: now,
+          thresholdDays: 7,
+          repayments: repayments,
+        ),
+        false,
+      );
+      expect(
+        record4Settled.isOverdue(asOfDate: now, repayments: repayments),
+        false,
+      );
     });
 
     test('calculates status enum correctly', () {
@@ -132,19 +155,27 @@ void main() {
       expect(summary.dueSoonCount, 1);
     });
 
-    test('sorts records with overdue first, then nearest due date, settled last', () {
-      final records = [record4Settled, record3Borrowed, record2Lent, record1Lent];
-      final sorted = MoneyLendingCalculator.sortRecords(
-        records,
-        repayments,
-        asOfDate: now,
-      );
+    test(
+      'sorts records with overdue first, then nearest due date, settled last',
+      () {
+        final records = [
+          record4Settled,
+          record3Borrowed,
+          record2Lent,
+          record1Lent,
+        ];
+        final sorted = MoneyLendingCalculator.sortRecords(
+          records,
+          repayments,
+          asOfDate: now,
+        );
 
-      expect(sorted[0].id, 'rec_1'); // Overdue
-      expect(sorted[1].id, 'rec_2'); // Due 20 Mar
-      expect(sorted[2].id, 'rec_3'); // Due 15 Apr
-      expect(sorted[3].id, 'rec_4'); // Settled
-    });
+        expect(sorted[0].id, 'rec_1'); // Overdue
+        expect(sorted[1].id, 'rec_2'); // Due 20 Mar
+        expect(sorted[2].id, 'rec_3'); // Due 15 Apr
+        expect(sorted[3].id, 'rec_4'); // Settled
+      },
+    );
 
     test('filters records by tab filters', () {
       final all = [record1Lent, record2Lent, record3Borrowed, record4Settled];

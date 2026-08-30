@@ -6,7 +6,7 @@ import '../features/budgets/budgets_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/savings_goals/savings_goals_screen.dart';
 import '../features/settings/settings_screen.dart';
-import '../features/transactions/add_edit_transaction_sheet.dart';
+import '../features/transactions/add_edit_transaction_screen.dart';
 import '../features/transactions/transaction_detail_screen.dart';
 import '../features/transactions/transactions_screen.dart';
 import '../features/ingestion/needs_review_controller.dart';
@@ -19,12 +19,8 @@ final currentNavIndexProvider = StateProvider<int>((ref) => 0);
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
-  void _openAddTransactionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => const AddEditTransactionSheet(),
-    );
+  void _openAddTransactionScreen(BuildContext context) {
+    AddEditTransactionScreen.push(context);
   }
 
   void _openTransactionDetail(BuildContext context, Transaction transaction) {
@@ -55,7 +51,7 @@ class AppShell extends ConsumerWidget {
 
     final screens = [
       DashboardScreen(
-        onAddTransaction: () => _openAddTransactionSheet(context),
+        onAddTransaction: () => _openAddTransactionScreen(context),
         onViewAllTransactions: () {
           ref.read(currentNavIndexProvider.notifier).state = 1;
         },
@@ -72,7 +68,7 @@ class AppShell extends ConsumerWidget {
       ),
       TransactionsScreen(
         onOpenDetail: (tx) => _openTransactionDetail(context, tx),
-        onAddTransaction: () => _openAddTransactionSheet(context),
+        onAddTransaction: () => _openAddTransactionScreen(context),
       ),
       const BudgetsScreen(),
       const AnalyticsScreen(),

@@ -109,6 +109,17 @@ void main() {
       },
     );
 
+    test('Suggests Transaction for peer-to-peer, transfers, and advances', () {
+      final s1 = CategorizationService.suggestCategory('P2P UPI Transfer');
+      expect(s1, isNotNull);
+      expect(s1!.categoryId, equals('cat_transaction'));
+      expect(s1.categoryName, equals('Transaction'));
+
+      final s2 = CategorizationService.suggestCategory('Friend advance');
+      expect(s2, isNotNull);
+      expect(s2!.categoryId, equals('cat_transaction'));
+    });
+
     test('Returns null for unknown merchants with zero match', () {
       final s = CategorizationService.suggestCategory('XYZ98765RANDOM');
       expect(s, isNull);

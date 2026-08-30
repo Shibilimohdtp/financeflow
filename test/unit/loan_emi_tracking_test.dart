@@ -462,21 +462,12 @@ void main() {
 
         final remainingPayments = await repo.getPaymentsForLoan(loan.id);
         expect(remainingPayments.length, equals(5));
-        expect(
-          remainingPayments.any((p) => p.installmentNumber == 3),
-          isFalse,
-        );
+        expect(remainingPayments.any((p) => p.installmentNumber == 3), isFalse);
 
         final updatedLoans = await repo.getAllLoans();
         final updatedLoan = updatedLoans.first;
-        expect(
-          updatedLoan.totalPrincipalPaid,
-          lessThan(initialPrincipalPaid),
-        );
-        expect(
-          updatedLoan.outstandingPrincipal,
-          greaterThan(0),
-        );
+        expect(updatedLoan.totalPrincipalPaid, lessThan(initialPrincipalPaid));
+        expect(updatedLoan.outstandingPrincipal, greaterThan(0));
 
         final scheduleAfter = LoanCalculator.generateSchedule(
           updatedLoan,
@@ -485,7 +476,10 @@ void main() {
         );
         final item3 = scheduleAfter.firstWhere((it) => it.monthNumber == 3);
         expect(item3.isPaid, isFalse);
-        expect(item3.isOverdue, isTrue); // As of Aug 23, 2026, month 3 (April 5) is overdue
+        expect(
+          item3.isOverdue,
+          isTrue,
+        ); // As of Aug 23, 2026, month 3 (April 5) is overdue
 
         // Also test unmarking installment #2 without passing paymentId explicitly
         await controller.markInstallmentUnpaid(

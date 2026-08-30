@@ -139,6 +139,20 @@ class IsarCategoryRepository implements CategoryRepository {
       await isar.writeTxn(() async {
         await isar.categoryEntitys.putAll(DefaultCategories.list);
       });
+    } else {
+      final existingTransaction =
+          await isar.categoryEntitys
+              .where()
+              .uuidEqualTo('cat_transaction')
+              .findFirst();
+      if (existingTransaction == null) {
+        final transactionCat = DefaultCategories.list.firstWhere(
+          (c) => c.uuid == 'cat_transaction',
+        );
+        await isar.writeTxn(() async {
+          await isar.categoryEntitys.put(transactionCat);
+        });
+      }
     }
   }
 }

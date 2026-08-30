@@ -309,14 +309,12 @@ void main() {
         ),
         (
           sender: 'VM-KOTAKB',
-          body:
-              'Payment of INR 899 made using card ending 1234 at NETFLIX.',
+          body: 'Payment of INR 899 made using card ending 1234 at NETFLIX.',
           bank: 'Bank SMS',
         ),
         (
           sender: 'UPI-ALERT',
-          body:
-              'UPI mandate executed. Amount: 799 from account XX1001.',
+          body: 'UPI mandate executed. Amount: 799 from account XX1001.',
           bank: 'Bank SMS',
         ),
       ];

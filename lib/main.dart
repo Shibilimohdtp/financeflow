@@ -42,6 +42,8 @@ class StartupApp extends StatefulWidget {
 class _StartupAppState extends State<StartupApp> {
   Future<Object?>? _startup;
   Future<void>? _attempt;
+  Future<void>? _observedAttempt;
+  bool _timedOut = false;
 
   @override
   void initState() {
@@ -60,16 +62,43 @@ class _StartupAppState extends State<StartupApp> {
           _attempt ??= Future<void>.sync(
             widget.initialize,
           ).whenComplete(() => _attempt = null);
+      _resumeWhenAttemptCompletes(attempt);
       await attempt.timeout(widget.timeout);
+      _timedOut = false;
       startupTrace('Local database ready');
       return null;
     } catch (error) {
+      _timedOut = error is TimeoutException;
       startupTrace('Local database unavailable');
       // The next frame may not have subscribed to FutureBuilder yet. Carry
       // failures as data so fast failures/retries cannot become unhandled
       // asynchronous errors before that frame (or after this widget is gone).
       return error;
     }
+  }
+
+  /// A timeout only stops waiting in the UI; it cannot cancel a native Isar
+  /// open. If that open eventually succeeds, resume automatically instead of
+  /// leaving the cold-start screen waiting for the user to press Retry again.
+  void _resumeWhenAttemptCompletes(Future<void> attempt) {
+    if (identical(_observedAttempt, attempt)) return;
+    _observedAttempt = attempt;
+    unawaited(
+      attempt.then(
+        (_) {
+          if (!mounted || !_timedOut) return;
+          startupTrace('Local database completed after wait');
+          setState(() {
+            _timedOut = false;
+            _startup = Future<Object?>.value(null);
+          });
+        },
+        onError: (_, __) {
+          // _waitForDatabase presents completed failures to the user. Keeping
+          // this handler prevents a late failed attempt from becoming unhandled.
+        },
+      ),
+    );
   }
 
   void _retry() {
@@ -94,9 +123,10 @@ class _StartupAppState extends State<StartupApp> {
           theme: StillwaterTheme.daylight,
           darkTheme: StillwaterTheme.deepWater,
           home: _StartupScreen(
-            error: snapshot.connectionState == ConnectionState.done
-                ? snapshot.data
-                : null,
+            error:
+                snapshot.connectionState == ConnectionState.done
+                    ? snapshot.data
+                    : null,
             onRetry: _retry,
           ),
         );

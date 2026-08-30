@@ -14,7 +14,7 @@ import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_source_badge.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'needs_review_controller.dart';
-import '../transactions/add_edit_transaction_sheet.dart';
+import '../transactions/add_edit_transaction_screen.dart';
 
 class NeedsReviewScreen extends ConsumerStatefulWidget {
   const NeedsReviewScreen({super.key});
@@ -27,51 +27,45 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
   String _selectedFilter = 'all'; // all, duplicates, uncertain, errors
 
   void _openEditItemSheet(BuildContext context, ParsedTransaction item) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (_) => AddEditTransactionSheet(
-            initialTransaction: item.toTransaction(targetId: item.tempId),
-            headerTitle: 'Edit Pending Transaction',
-            saveLabel: 'Save Changes',
-            sourceContext: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    AddEditTransactionScreen.push<void>(
+      context,
+      initialTransaction: item.toTransaction(targetId: item.tempId),
+      headerTitle: 'Edit Pending Transaction',
+      saveLabel: 'Save Changes',
+      sourceContext: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FfSourceBadge(source: item.source, sourceName: item.sourceName),
+          const SizedBox(height: StillwaterTokens.spaceXs),
+          const Text(
+            'Review before importing. Saving keeps this item pending.',
+          ),
+          if (item.isDuplicate)
+            const Text(
+              'Merging retains the existing transaction’s accounts and purpose. Choose Keep Both to save a separate transaction.',
+            ),
+          if (item.categorizationConfidence < 0.7)
+            const Text('Category needs confirmation.'),
+          ...[...item.validationErrors, ...item.warnings].map(Text.new),
+          if (item.rawSource != null)
+            ExpansionTile(
+              title: const Text('Source details'),
+              subtitle: const Text(
+                'Private source evidence · stored on this device',
+              ),
               children: [
-                FfSourceBadge(source: item.source, sourceName: item.sourceName),
-                const SizedBox(height: StillwaterTokens.spaceXs),
-                const Text(
-                  'Review before importing. Saving keeps this item pending.',
+                Padding(
+                  padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+                  child: SelectableText(item.rawSource!),
                 ),
-                if (item.isDuplicate)
-                  const Text(
-                    'Merging retains the existing transaction’s accounts and purpose. Choose Keep Both to save a separate transaction.',
-                  ),
-                if (item.categorizationConfidence < 0.7)
-                  const Text('Category needs confirmation.'),
-                ...[...item.validationErrors, ...item.warnings].map(Text.new),
-                if (item.rawSource != null)
-                  ExpansionTile(
-                    title: const Text('Source details'),
-                    subtitle: const Text(
-                      'Private source evidence · stored on this device',
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-                        child: SelectableText(item.rawSource!),
-                      ),
-                    ],
-                  ),
               ],
             ),
-            onSave:
-                (draft) => ref
-                    .read(needsReviewControllerProvider.notifier)
-                    .updateItem(item.withReviewEdit(draft)),
-          ),
+        ],
+      ),
+      onSave:
+          (draft) => ref
+              .read(needsReviewControllerProvider.notifier)
+              .updateItem(item.withReviewEdit(draft)),
     );
   }
 

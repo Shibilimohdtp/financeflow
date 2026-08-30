@@ -994,7 +994,8 @@ class FakeAlertRepository implements AlertRepository {
     for (final alert in _alerts.values) {
       final day =
           '${alert.createdAt.year}-${alert.createdAt.month}-${alert.createdAt.day}';
-      final identity = alert.relatedEntityId ?? '${alert.title}\u0000${alert.message}';
+      final identity =
+          alert.relatedEntityId ?? '${alert.title}\u0000${alert.message}';
       final key = '${alert.type}\u0000$identity\u0000$day';
       final current = newestByKey[key];
       if (current == null || alert.createdAt.isAfter(current.createdAt)) {
@@ -1003,7 +1004,9 @@ class FakeAlertRepository implements AlertRepository {
     }
     _alerts
       ..clear()
-      ..addEntries(newestByKey.values.map((alert) => MapEntry(alert.id, alert)));
+      ..addEntries(
+        newestByKey.values.map((alert) => MapEntry(alert.id, alert)),
+      );
     _controller.add(_alerts.values.toList());
   }
 
@@ -1279,9 +1282,10 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
   }) async* {
     yield await getAdvancesForRecord(recordId, userId: userId);
     yield* _advancesController.stream.map(
-      (list) => list
-          .where((a) => a.moneyRecordId == recordId && a.userId == userId)
-          .toList(),
+      (list) =>
+          list
+              .where((a) => a.moneyRecordId == recordId && a.userId == userId)
+              .toList(),
     );
   }
 
@@ -1354,9 +1358,10 @@ class FakeMoneyRecordRepository implements MoneyRecordRepository {
   }) async* {
     yield await getRepaymentsForRecord(recordId, userId: userId);
     yield* _repaymentsController.stream.map(
-      (list) => list
-          .where((r) => r.moneyRecordId == recordId && r.userId == userId)
-          .toList(),
+      (list) =>
+          list
+              .where((r) => r.moneyRecordId == recordId && r.userId == userId)
+              .toList(),
     );
   }
 

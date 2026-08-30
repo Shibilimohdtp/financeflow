@@ -21,15 +21,26 @@ class NotificationId {
     return positive == 0 ? 1 : positive;
   }
 
-  static int forBudgetApproaching(String budgetId, {required int year, required int month}) {
+  static int forBudgetApproaching(
+    String budgetId, {
+    required int year,
+    required int month,
+  }) {
     return fromKey('budget:$budgetId:approaching:$year-$month');
   }
 
-  static int forBudgetExceeded(String budgetId, {required int year, required int month}) {
+  static int forBudgetExceeded(
+    String budgetId, {
+    required int year,
+    required int month,
+  }) {
     return fromKey('budget:$budgetId:exceeded:$year-$month');
   }
 
-  static int forSubscriptionRenewal(String subscriptionId, DateTime renewalDate) {
+  static int forSubscriptionRenewal(
+    String subscriptionId,
+    DateTime renewalDate,
+  ) {
     final y = renewalDate.year;
     final m = renewalDate.month.toString().padLeft(2, '0');
     final d = renewalDate.day.toString().padLeft(2, '0');

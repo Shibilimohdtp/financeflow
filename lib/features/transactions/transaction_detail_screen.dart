@@ -14,7 +14,7 @@ import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
-import 'add_edit_transaction_sheet.dart';
+import 'add_edit_transaction_screen.dart';
 import 'transactions_controller.dart';
 
 class TransactionDetailScreen extends ConsumerWidget {
@@ -41,14 +41,9 @@ class TransactionDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Edit transaction',
             onPressed: () {
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder:
-                    (ctx) => AddEditTransactionSheet(
-                      initialTransaction: transaction,
-                    ),
+              AddEditTransactionScreen.push<void>(
+                context,
+                initialTransaction: transaction,
               );
             },
           ),
@@ -96,10 +91,7 @@ class TransactionDetailScreen extends ConsumerWidget {
           const Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
             child: Center(
-              child: FfPrivacyBadge(
-                label: 'On-device',
-                iconOnly: true,
-              ),
+              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
           ),
         ],
@@ -354,14 +346,9 @@ class TransactionDetailScreen extends ConsumerWidget {
                     variant: FfButtonVariant.primary,
                     leadingIcon: const Icon(Icons.edit_outlined, size: 18),
                     onPressed: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder:
-                            (ctx) => AddEditTransactionSheet(
-                              initialTransaction: transaction,
-                            ),
+                      AddEditTransactionScreen.push<void>(
+                        context,
+                        initialTransaction: transaction,
                       );
                     },
                   ),

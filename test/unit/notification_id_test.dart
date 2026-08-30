@@ -24,14 +24,30 @@ void main() {
       for (final key in keys) {
         final id = NotificationId.fromKey(key);
         expect(id, isPositive, reason: 'ID for "$key" must be positive');
-        expect(id, lessThanOrEqualTo(0x7FFFFFFF), reason: 'ID must fit within 31-bit signed range');
+        expect(
+          id,
+          lessThanOrEqualTo(0x7FFFFFFF),
+          reason: 'ID must fit within 31-bit signed range',
+        );
       }
     });
 
     test('different keys produce different deterministic IDs', () {
-      final idBudget1 = NotificationId.forBudgetApproaching('groceries', year: 2026, month: 8);
-      final idBudget2 = NotificationId.forBudgetExceeded('groceries', year: 2026, month: 8);
-      final idBudget3 = NotificationId.forBudgetApproaching('dining', year: 2026, month: 8);
+      final idBudget1 = NotificationId.forBudgetApproaching(
+        'groceries',
+        year: 2026,
+        month: 8,
+      );
+      final idBudget2 = NotificationId.forBudgetExceeded(
+        'groceries',
+        year: 2026,
+        month: 8,
+      );
+      final idBudget3 = NotificationId.forBudgetApproaching(
+        'dining',
+        year: 2026,
+        month: 8,
+      );
 
       expect(idBudget1, isNot(equals(idBudget2)));
       expect(idBudget1, isNot(equals(idBudget3)));
@@ -49,17 +65,20 @@ void main() {
       expect(id1, isNot(equals(id3)));
     });
 
-    test('forLoanEmi produces unique IDs for different loans and due dates', () {
-      final date1 = DateTime(2026, 9, 5);
-      final date2 = DateTime(2026, 10, 5);
+    test(
+      'forLoanEmi produces unique IDs for different loans and due dates',
+      () {
+        final date1 = DateTime(2026, 9, 5);
+        final date2 = DateTime(2026, 10, 5);
 
-      final id1 = NotificationId.forLoanEmi('loan_hdfc', date1);
-      final id2 = NotificationId.forLoanEmi('loan_hdfc', date2);
-      final id3 = NotificationId.forLoanEmi('loan_icici', date1);
+        final id1 = NotificationId.forLoanEmi('loan_hdfc', date1);
+        final id2 = NotificationId.forLoanEmi('loan_hdfc', date2);
+        final id3 = NotificationId.forLoanEmi('loan_icici', date1);
 
-      expect(id1, isNot(equals(id2)));
-      expect(id1, isNot(equals(id3)));
-    });
+        expect(id1, isNot(equals(id2)));
+        expect(id1, isNot(equals(id3)));
+      },
+    );
 
     test('static constants have stable assigned values', () {
       expect(NotificationId.needsReviewBatch, equals(10001));

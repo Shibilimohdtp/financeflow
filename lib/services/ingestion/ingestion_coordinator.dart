@@ -136,8 +136,9 @@ class IngestionCoordinator with WidgetsBindingObserver {
     try {
       await _configurationBarrier;
     } catch (error, stack) {
-      _ref.read(ingestionPlatformStatusProvider.notifier).state =
-          AsyncValue.error(error, stack);
+      _ref
+          .read(ingestionPlatformStatusProvider.notifier)
+          .state = AsyncValue.error(error, stack);
     }
     await processPendingNativeEvents();
   }

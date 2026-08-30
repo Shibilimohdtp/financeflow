@@ -19,8 +19,9 @@ import 'notification_id.dart';
 import 'notification_payload.dart';
 import 'notification_scheduler.dart';
 
-final notificationCoordinatorProvider =
-    Provider<NotificationCoordinator>((ref) {
+final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
+  ref,
+) {
   final notificationService = ref.watch(localNotificationServiceProvider);
   final coordinator = NotificationCoordinator(
     ref: ref,
@@ -48,8 +49,8 @@ class NotificationCoordinator with WidgetsBindingObserver {
   NotificationCoordinator({
     required Ref ref,
     required LocalNotificationService notificationService,
-  })  : _ref = ref,
-        _notificationService = notificationService;
+  }) : _ref = ref,
+       _notificationService = notificationService;
 
   Future<void> start() {
     return _startFuture ??= _doStart();
@@ -108,7 +109,8 @@ class NotificationCoordinator with WidgetsBindingObserver {
     _activeSyncFuture = completer.future;
 
     try {
-      final settings = settingsOverride ??
+      final settings =
+          settingsOverride ??
           await _ref.read(settingsRepositoryProvider).getSettings();
 
       // Master switch disabled
@@ -138,7 +140,8 @@ class NotificationCoordinator with WidgetsBindingObserver {
 
   Future<void> _syncNeedsReviewNotifications(AppSettings settings) async {
     try {
-      final isEnabled = settings.isNeedsReviewNotificationsEnabled &&
+      final isEnabled =
+          settings.isNeedsReviewNotificationsEnabled &&
           settings.isNeedsReviewAlertsEnabled;
 
       if (!isEnabled) {
@@ -160,7 +163,8 @@ class NotificationCoordinator with WidgetsBindingObserver {
 
       final text = NotificationFormatter.formatNeedsReview(
         count: pendingItems.length,
-        singleMerchant: pendingItems.first.merchantDisplayName ??
+        singleMerchant:
+            pendingItems.first.merchantDisplayName ??
             pendingItems.first.rawMerchant,
         singleAmount: pendingItems.first.amount,
         hideSensitive: settings.hideSensitiveNotificationContent,
@@ -178,7 +182,10 @@ class NotificationCoordinator with WidgetsBindingObserver {
         payload: payload,
       );
     } catch (e) {
-      developer.log('Error syncing review notifications: $e', name: 'NotificationCoordinator');
+      developer.log(
+        'Error syncing review notifications: $e',
+        name: 'NotificationCoordinator',
+      );
     }
   }
 
@@ -189,7 +196,10 @@ class NotificationCoordinator with WidgetsBindingObserver {
 
       for (final alert in activeAlerts) {
         final alertNotifId = NotificationId.forAlertItem(alert.id);
-        final isCategoryEnabled = _isCategoryEnabledForAlert(alert.type, settings);
+        final isCategoryEnabled = _isCategoryEnabledForAlert(
+          alert.type,
+          settings,
+        );
 
         if (!isCategoryEnabled) {
           await _notificationService.cancelNotification(alertNotifId);
@@ -268,13 +278,17 @@ class NotificationCoordinator with WidgetsBindingObserver {
         );
       }
     } catch (e) {
-      developer.log('Error syncing active alerts: $e', name: 'NotificationCoordinator');
+      developer.log(
+        'Error syncing active alerts: $e',
+        name: 'NotificationCoordinator',
+      );
     }
   }
 
   Future<void> _syncSubscriptionReminders(AppSettings settings) async {
     try {
-      final isEnabled = settings.isSubscriptionNotificationEnabled &&
+      final isEnabled =
+          settings.isSubscriptionNotificationEnabled &&
           settings.isSubscriptionAlertsEnabled;
 
       if (!isEnabled) return;
@@ -318,14 +332,17 @@ class NotificationCoordinator with WidgetsBindingObserver {
         );
       }
     } catch (e) {
-      developer.log('Error scheduling subscription reminders: $e', name: 'NotificationCoordinator');
+      developer.log(
+        'Error scheduling subscription reminders: $e',
+        name: 'NotificationCoordinator',
+      );
     }
   }
 
   Future<void> _syncLoanEmiReminders(AppSettings settings) async {
     try {
-      final isEnabled = settings.isLoanNotificationEnabled &&
-          settings.isLoanAlertsEnabled;
+      final isEnabled =
+          settings.isLoanNotificationEnabled && settings.isLoanAlertsEnabled;
 
       if (!isEnabled) return;
 
@@ -361,7 +378,10 @@ class NotificationCoordinator with WidgetsBindingObserver {
         );
       }
     } catch (e) {
-      developer.log('Error scheduling loan EMI reminders: $e', name: 'NotificationCoordinator');
+      developer.log(
+        'Error scheduling loan EMI reminders: $e',
+        name: 'NotificationCoordinator',
+      );
     }
   }
 

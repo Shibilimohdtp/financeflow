@@ -20,15 +20,20 @@ class NotificationFormatter {
   }) {
     if (hideSensitive) {
       return NotificationText(
-        title: count > 1 ? 'Transactions need review' : 'Transaction needs review',
-        body: count > 1
-            ? '$count imported transactions are waiting for your review.'
-            : '1 imported transaction is waiting for your review.',
+        title:
+            count > 1 ? 'Transactions need review' : 'Transaction needs review',
+        body:
+            count > 1
+                ? '$count imported transactions are waiting for your review.'
+                : '1 imported transaction is waiting for your review.',
       );
     }
 
     if (count == 1 && singleMerchant != null && singleMerchant.isNotEmpty) {
-      final amountSuffix = singleAmount != null ? ' · ${CurrencyFormatter.formatINR(singleAmount)}' : '';
+      final amountSuffix =
+          singleAmount != null
+              ? ' · ${CurrencyFormatter.formatINR(singleAmount)}'
+              : '';
       return NotificationText(
         title: 'Transaction needs review',
         body: '$singleMerchant$amountSuffix is waiting for review.',
@@ -85,14 +90,16 @@ class NotificationFormatter {
     required int daysUntil,
     required bool hideSensitive,
   }) {
-    final whenText = daysUntil <= 0
-        ? 'today'
-        : (daysUntil == 1 ? 'tomorrow' : 'in $daysUntil days');
+    final whenText =
+        daysUntil <= 0
+            ? 'today'
+            : (daysUntil == 1 ? 'tomorrow' : 'in $daysUntil days');
 
     if (hideSensitive) {
       return NotificationText(
         title: 'Subscription reminder',
-        body: 'An upcoming subscription renewal is due $whenText. Open to view.',
+        body:
+            'An upcoming subscription renewal is due $whenText. Open to view.',
       );
     }
 
@@ -109,9 +116,10 @@ class NotificationFormatter {
     required int daysUntil,
     required bool hideSensitive,
   }) {
-    final whenText = daysUntil <= 0
-        ? 'today'
-        : (daysUntil == 1 ? 'tomorrow' : 'in $daysUntil days');
+    final whenText =
+        daysUntil <= 0
+            ? 'today'
+            : (daysUntil == 1 ? 'tomorrow' : 'in $daysUntil days');
 
     if (hideSensitive) {
       return NotificationText(
@@ -140,9 +148,10 @@ class NotificationFormatter {
 
     return NotificationText(
       title: 'Encrypted backup reminder',
-      body: daysSinceLastBackup == null
-          ? 'Create a local encrypted backup to protect your financial data.'
-          : 'It has been over $daysSinceLastBackup days since your last encrypted backup.',
+      body:
+          daysSinceLastBackup == null
+              ? 'Create a local encrypted backup to protect your financial data.'
+              : 'It has been over $daysSinceLastBackup days since your last encrypted backup.',
     );
   }
 }

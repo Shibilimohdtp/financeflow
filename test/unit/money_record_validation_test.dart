@@ -80,7 +80,10 @@ void main() {
         createdAt: validDate,
       );
 
-      expect(() => validRepayment.validate(remainingBalance: 5000.0), returnsNormally);
+      expect(
+        () => validRepayment.validate(remainingBalance: 5000.0),
+        returnsNormally,
+      );
 
       final zeroRepayment = validRepayment.copyWith(amount: 0.0);
       expect(
@@ -123,24 +126,27 @@ void main() {
       expect(deserialized.reminderDaysBefore, 3);
     });
 
-    test('serializes and deserializes MoneyRepayment to/from JSON correctly', () {
-      final original = MoneyRepayment(
-        id: 'rep_json_1',
-        moneyRecordId: 'rec_json_1',
-        userId: 'user_123',
-        amount: 4500.75,
-        repaymentDate: DateTime(2026, 2, 1, 10, 0),
-        notes: 'UPI part payment',
-        createdAt: DateTime(2026, 2, 1, 10, 0),
-      );
+    test(
+      'serializes and deserializes MoneyRepayment to/from JSON correctly',
+      () {
+        final original = MoneyRepayment(
+          id: 'rep_json_1',
+          moneyRecordId: 'rec_json_1',
+          userId: 'user_123',
+          amount: 4500.75,
+          repaymentDate: DateTime(2026, 2, 1, 10, 0),
+          notes: 'UPI part payment',
+          createdAt: DateTime(2026, 2, 1, 10, 0),
+        );
 
-      final json = original.toJson();
-      final deserialized = MoneyRepayment.fromJson(json);
+        final json = original.toJson();
+        final deserialized = MoneyRepayment.fromJson(json);
 
-      expect(deserialized.id, original.id);
-      expect(deserialized.moneyRecordId, original.moneyRecordId);
-      expect(deserialized.amount, original.amount);
-      expect(deserialized.notes, original.notes);
-    });
+        expect(deserialized.id, original.id);
+        expect(deserialized.moneyRecordId, original.moneyRecordId);
+        expect(deserialized.amount, original.amount);
+        expect(deserialized.notes, original.notes);
+      },
+    );
   });
 }

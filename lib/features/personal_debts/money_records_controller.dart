@@ -261,10 +261,7 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
           moneyRecordId,
           userId: userId,
         );
-        final totalAdv = advances.fold<double>(
-          0.0,
-          (sum, a) => sum + a.amount,
-        );
+        final totalAdv = advances.fold<double>(0.0, (sum, a) => sum + a.amount);
         final updatedRecord = record.copyWith(
           originalAmount: totalAdv,
           clearSettledAt: true,

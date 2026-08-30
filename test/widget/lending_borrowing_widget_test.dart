@@ -157,9 +157,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: StillwaterTheme.daylight,
-            home: const Scaffold(
-              body: AddEditMoneyRecordSheet(),
-            ),
+            home: const Scaffold(body: AddEditMoneyRecordSheet()),
           ),
         ),
       );
@@ -236,56 +234,55 @@ void main() {
       expect(find.text('Pharmacy'), findsOneWidget);
 
       // Settle the record via controller
-      await fakeRepo.saveRecord(testRecord1.copyWith(settledAt: DateTime.now()));
+      await fakeRepo.saveRecord(
+        testRecord1.copyWith(settledAt: DateTime.now()),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Fully Settled · No balance remaining'), findsOneWidget);
     },
   );
 
-  testWidgets(
-    'AddRepaymentSheet validates and records partial repayment',
-    (WidgetTester tester) async {
-      final fakeRepo = FakeMoneyRecordRepository(
-        initialRecords: [testRecord1],
-        initialAdvances: [testAdvance1, testAdvance2],
-        initialRepayments: [testRepayment1],
-      );
+  testWidgets('AddRepaymentSheet validates and records partial repayment', (
+    WidgetTester tester,
+  ) async {
+    final fakeRepo = FakeMoneyRecordRepository(
+      initialRecords: [testRecord1],
+      initialAdvances: [testAdvance1, testAdvance2],
+      initialRepayments: [testRepayment1],
+    );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            moneyRecordRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: MaterialApp(
-            theme: StillwaterTheme.daylight,
-            home: Scaffold(
-              body: AddRepaymentSheet(
-                record: testRecord1,
-                remainingBalance: 7000.0,
-              ),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [moneyRecordRepositoryProvider.overrideWithValue(fakeRepo)],
+        child: MaterialApp(
+          theme: StillwaterTheme.daylight,
+          home: Scaffold(
+            body: AddRepaymentSheet(
+              record: testRecord1,
+              remainingBalance: 7000.0,
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-      expect(find.text('Record Repayment'), findsOneWidget);
-      expect(find.text('Pay Full'), findsOneWidget);
+    expect(find.text('Record Repayment'), findsOneWidget);
+    expect(find.text('Pay Full'), findsOneWidget);
 
-      // Tap Pay Full
-      await tester.tap(find.text('Pay Full'));
-      await tester.pumpAndSettle();
+    // Tap Pay Full
+    await tester.tap(find.text('Pay Full'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('7000'), findsOneWidget);
+    expect(find.text('7000'), findsOneWidget);
 
-      await tester.tap(find.text('Save Repayment'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Save Repayment'));
+    await tester.pumpAndSettle();
 
-      final reps = await fakeRepo.getRepaymentsForRecord(testRecord1.id);
-      expect(reps.length, 2);
-      expect(reps.last.amount, 7000.0);
-    },
-  );
+    final reps = await fakeRepo.getRepaymentsForRecord(testRecord1.id);
+    expect(reps.length, 2);
+    expect(reps.last.amount, 7000.0);
+  });
 }

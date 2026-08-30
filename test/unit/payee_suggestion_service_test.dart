@@ -34,34 +34,58 @@ void main() {
   group('PayeeSuggestionService Normalization & Keying', () {
     test('normalizeKey trims, lowercases, and collapses internal spaces', () {
       expect(PayeeSuggestionService.normalizeKey('  Zomato  '), 'zomato');
-      expect(PayeeSuggestionService.normalizeKey('Lulu   Hypermarket'), 'lulu hypermarket');
-      expect(PayeeSuggestionService.normalizeKey('Bismi   CAFE  '), 'bismi cafe');
+      expect(
+        PayeeSuggestionService.normalizeKey('Lulu   Hypermarket'),
+        'lulu hypermarket',
+      );
+      expect(
+        PayeeSuggestionService.normalizeKey('Bismi   CAFE  '),
+        'bismi cafe',
+      );
     });
 
     test('cleanDisplayName normalizes known brands and cleans casing', () {
       expect(PayeeSuggestionService.cleanDisplayName('  zomato  '), 'Zomato');
       expect(PayeeSuggestionService.cleanDisplayName('amzn pay'), 'Amazon');
-      expect(PayeeSuggestionService.cleanDisplayName('  shahasad  '), 'Shahasad');
-    });
-
-    test('deduplicates case and whitespace variants into a single canonical suggestion', () {
-      final transactions = [
-        createTx(id: '1', merchant: 'Zomato', date: baseTime.subtract(const Duration(days: 3))),
-        createTx(id: '2', merchant: 'zomato', date: baseTime.subtract(const Duration(days: 2))),
-        createTx(id: '3', merchant: '  Zomato  ', date: baseTime.subtract(const Duration(days: 1))),
-      ];
-
-      final suggestions = PayeeSuggestionService.getSuggestions(
-        transactions: transactions,
-        type: TransactionType.expense,
-        now: baseTime,
+      expect(
+        PayeeSuggestionService.cleanDisplayName('  shahasad  '),
+        'Shahasad',
       );
-
-      expect(suggestions.length, 1);
-      expect(suggestions.first.displayName, 'Zomato');
-      expect(suggestions.first.totalCount, 3);
-      expect(suggestions.first.normalizedKey, 'zomato');
     });
+
+    test(
+      'deduplicates case and whitespace variants into a single canonical suggestion',
+      () {
+        final transactions = [
+          createTx(
+            id: '1',
+            merchant: 'Zomato',
+            date: baseTime.subtract(const Duration(days: 3)),
+          ),
+          createTx(
+            id: '2',
+            merchant: 'zomato',
+            date: baseTime.subtract(const Duration(days: 2)),
+          ),
+          createTx(
+            id: '3',
+            merchant: '  Zomato  ',
+            date: baseTime.subtract(const Duration(days: 1)),
+          ),
+        ];
+
+        final suggestions = PayeeSuggestionService.getSuggestions(
+          transactions: transactions,
+          type: TransactionType.expense,
+          now: baseTime,
+        );
+
+        expect(suggestions.length, 1);
+        expect(suggestions.first.displayName, 'Zomato');
+        expect(suggestions.first.totalCount, 3);
+        expect(suggestions.first.normalizedKey, 'zomato');
+      },
+    );
   });
 
   group('Category-aware Suggestions', () {
@@ -129,28 +153,31 @@ void main() {
       ),
     ];
 
-    test('prioritizes category-specific payees when a category is selected', () {
-      final grocerySuggestions = PayeeSuggestionService.getSuggestions(
-        transactions: transactions,
-        type: TransactionType.expense,
-        categoryId: 'cat_groceries',
-        limit: 4,
-        now: baseTime,
-      );
+    test(
+      'prioritizes category-specific payees when a category is selected',
+      () {
+        final grocerySuggestions = PayeeSuggestionService.getSuggestions(
+          transactions: transactions,
+          type: TransactionType.expense,
+          categoryId: 'cat_groceries',
+          limit: 4,
+          now: baseTime,
+        );
 
-      expect(grocerySuggestions.isNotEmpty, isTrue);
-      // Top results must be Groceries payees
-      expect(grocerySuggestions[0].displayName, 'Lulu Hypermarket');
-      expect(grocerySuggestions[0].isCategoryMatch, isTrue);
-      expect(grocerySuggestions[0].reasonLabel, 'Used with Groceries');
+        expect(grocerySuggestions.isNotEmpty, isTrue);
+        // Top results must be Groceries payees
+        expect(grocerySuggestions[0].displayName, 'Lulu Hypermarket');
+        expect(grocerySuggestions[0].isCategoryMatch, isTrue);
+        expect(grocerySuggestions[0].reasonLabel, 'Used with Groceries');
 
-      expect(grocerySuggestions[1].displayName, 'Carrefour');
-      expect(grocerySuggestions[1].isCategoryMatch, isTrue);
+        expect(grocerySuggestions[1].displayName, 'Carrefour');
+        expect(grocerySuggestions[1].isCategoryMatch, isTrue);
 
-      // Remaining slots filled with general frequent/recent fallbacks
-      expect(grocerySuggestions.length, 4);
-      expect(grocerySuggestions[2].isCategoryMatch, isFalse);
-    });
+        // Remaining slots filled with general frequent/recent fallbacks
+        expect(grocerySuggestions.length, 4);
+        expect(grocerySuggestions[2].isCategoryMatch, isFalse);
+      },
+    );
 
     test('prioritizes Food payees when Food category is selected', () {
       final foodSuggestions = PayeeSuggestionService.getSuggestions(
@@ -169,35 +196,41 @@ void main() {
       expect(foodSuggestions.first.isCategoryMatch, isTrue);
     });
 
-    test('returns general recent & frequent payees when no category is selected', () {
-      final generalSuggestions = PayeeSuggestionService.getSuggestions(
-        transactions: transactions,
-        type: TransactionType.expense,
-        categoryId: null,
-        limit: 4,
-        now: baseTime,
-      );
+    test(
+      'returns general recent & frequent payees when no category is selected',
+      () {
+        final generalSuggestions = PayeeSuggestionService.getSuggestions(
+          transactions: transactions,
+          type: TransactionType.expense,
+          categoryId: null,
+          limit: 4,
+          now: baseTime,
+        );
 
-      expect(generalSuggestions.length, 4);
-      // Swiggy and Lulu are most frequent / recent
-      final topNames = generalSuggestions.map((s) => s.displayName).toList();
-      expect(topNames.contains('Swiggy'), isTrue);
-      expect(topNames.contains('Lulu Hypermarket'), isTrue);
-      expect(generalSuggestions.every((s) => !s.isCategoryMatch), isTrue);
-    });
+        expect(generalSuggestions.length, 4);
+        // Swiggy and Lulu are most frequent / recent
+        final topNames = generalSuggestions.map((s) => s.displayName).toList();
+        expect(topNames.contains('Swiggy'), isTrue);
+        expect(topNames.contains('Lulu Hypermarket'), isTrue);
+        expect(generalSuggestions.every((s) => !s.isCategoryMatch), isTrue);
+      },
+    );
 
-    test('falls back gracefully to general suggestions when category has no history', () {
-      final suggestions = PayeeSuggestionService.getSuggestions(
-        transactions: transactions,
-        type: TransactionType.expense,
-        categoryId: 'cat_travel_new',
-        limit: 4,
-        now: baseTime,
-      );
+    test(
+      'falls back gracefully to general suggestions when category has no history',
+      () {
+        final suggestions = PayeeSuggestionService.getSuggestions(
+          transactions: transactions,
+          type: TransactionType.expense,
+          categoryId: 'cat_travel_new',
+          limit: 4,
+          now: baseTime,
+        );
 
-      expect(suggestions.length, 4);
-      expect(suggestions.every((s) => !s.isCategoryMatch), isTrue);
-    });
+        expect(suggestions.length, 4);
+        expect(suggestions.every((s) => !s.isCategoryMatch), isTrue);
+      },
+    );
   });
 
   group('Transaction Type Awareness', () {
@@ -351,10 +384,22 @@ void main() {
     });
 
     test('recency score decays gracefully with days elapsed', () {
-      final scoreToday = PayeeSuggestionService.calculateRecencyScore(baseTime, baseTime);
-      final score7d = PayeeSuggestionService.calculateRecencyScore(baseTime.subtract(const Duration(days: 7)), baseTime);
-      final score30d = PayeeSuggestionService.calculateRecencyScore(baseTime.subtract(const Duration(days: 30)), baseTime);
-      final score100d = PayeeSuggestionService.calculateRecencyScore(baseTime.subtract(const Duration(days: 100)), baseTime);
+      final scoreToday = PayeeSuggestionService.calculateRecencyScore(
+        baseTime,
+        baseTime,
+      );
+      final score7d = PayeeSuggestionService.calculateRecencyScore(
+        baseTime.subtract(const Duration(days: 7)),
+        baseTime,
+      );
+      final score30d = PayeeSuggestionService.calculateRecencyScore(
+        baseTime.subtract(const Duration(days: 30)),
+        baseTime,
+      );
+      final score100d = PayeeSuggestionService.calculateRecencyScore(
+        baseTime.subtract(const Duration(days: 100)),
+        baseTime,
+      );
 
       expect(scoreToday > score7d, isTrue);
       expect(score7d > score30d, isTrue);

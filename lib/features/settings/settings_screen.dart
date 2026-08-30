@@ -370,7 +370,8 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.notifications_outlined,
                 label: 'All Alerts & Notifications',
                 subtitle: 'Master switch for local alerts and notifications',
-                value: settings.isAlertsEnabled &&
+                value:
+                    settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
@@ -393,9 +394,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.rate_review_outlined,
                 label: 'Needs Review Alerts',
                 subtitle: 'Remind when imported transactions need confirmation',
-                value: settings.isNeedsReviewNotificationsEnabled &&
+                value:
+                    settings.isNeedsReviewNotificationsEnabled &&
                     settings.isNeedsReviewAlertsEnabled,
-                enabled: settings.isAlertsEnabled &&
+                enabled:
+                    settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
@@ -412,9 +415,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.pie_chart_outline_rounded,
                 label: 'Budget Alerts',
                 subtitle: 'Notify when spending approaches limit',
-                value: settings.isBudgetNotificationEnabled &&
+                value:
+                    settings.isBudgetNotificationEnabled &&
                     settings.isBudgetAlertsEnabled,
-                enabled: settings.isAlertsEnabled &&
+                enabled:
+                    settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
@@ -431,9 +436,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.repeat_rounded,
                 label: 'Subscription Alerts',
                 subtitle: 'Notify before renewal dates',
-                value: settings.isSubscriptionNotificationEnabled &&
+                value:
+                    settings.isSubscriptionNotificationEnabled &&
                     settings.isSubscriptionAlertsEnabled,
-                enabled: settings.isAlertsEnabled &&
+                enabled:
+                    settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
@@ -450,9 +457,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.account_balance_outlined,
                 label: 'Loan & EMI Alerts',
                 subtitle: 'Remind before EMI due dates',
-                value: settings.isLoanNotificationEnabled &&
+                value:
+                    settings.isLoanNotificationEnabled &&
                     settings.isLoanAlertsEnabled,
-                enabled: settings.isAlertsEnabled &&
+                enabled:
+                    settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
                 onChanged: (val) {
                   ref
@@ -469,9 +478,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 icon: Icons.backup_outlined,
                 label: 'Backup Reminder',
                 subtitle: 'Periodic reminder to create a backup',
-                value: settings.isBackupNotificationEnabled &&
+                value:
+                    settings.isBackupNotificationEnabled &&
                     settings.isBackupReminderEnabled,
-                enabled: settings.isAlertsEnabled &&
+                enabled:
+                    settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
                 isLast: true,
                 onChanged: (val) {

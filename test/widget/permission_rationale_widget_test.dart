@@ -37,10 +37,7 @@ void main() {
       expect(find.text('Google Pay'), findsOneWidget);
       expect(find.text('PhonePe'), findsOneWidget);
       expect(find.text('Paytm'), findsOneWidget);
-      expect(
-        find.text('Open Android Notification Access'),
-        findsOneWidget,
-      );
+      expect(find.text('Open Android Notification Access'), findsOneWidget);
     },
   );
 

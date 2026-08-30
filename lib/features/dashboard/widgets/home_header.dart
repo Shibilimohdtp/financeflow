@@ -93,10 +93,10 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
         // Ask Your Finances Action Button
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.space2Xs),
-          child: Center(
-            child: _AskFinanceButton(onPressed: onOpenAi),
+          padding: const EdgeInsets.symmetric(
+            horizontal: StillwaterTokens.space2Xs,
           ),
+          child: Center(child: _AskFinanceButton(onPressed: onOpenAi)),
         ),
         // On-Device Privacy Badge
         const Padding(
@@ -136,7 +136,9 @@ class _AskFinanceButton extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: aiColors.surface,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+                borderRadius: BorderRadius.circular(
+                  StillwaterTokens.radiusFull,
+                ),
                 border: Border.all(
                   color: aiColors.accent.withValues(alpha: 0.35),
                   width: StillwaterTokens.borderWidthHairline,

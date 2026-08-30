@@ -36,6 +36,7 @@ class CategoryIcons {
     'phone_android': Icons.phone_android_rounded,
     'wifi': Icons.wifi_rounded,
     'pets': Icons.pets_rounded,
+    'swap_horiz': Icons.swap_horiz_rounded,
   };
 
   static IconData getIcon(String? iconIdentifier) {

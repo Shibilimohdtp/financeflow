@@ -304,7 +304,8 @@ ParsedTransaction? _parseIndianBankSms({
     r'(?:amount|amt)\s*(?:of|:)?\s*([\d,]+(?:\.\d{1,2})?)',
     caseSensitive: false,
   );
-  final amtMatch = amtRegex.firstMatch(body) ?? labelledAmountRegex.firstMatch(body);
+  final amtMatch =
+      amtRegex.firstMatch(body) ?? labelledAmountRegex.firstMatch(body);
   if (amtMatch == null) return null;
 
   final amount = CsvParser.parseAmountString(amtMatch.group(1)!);
@@ -451,5 +452,6 @@ bool _isPotentialTransactionMessage(String body) {
     r'\b(upi|card|account|acct|bank|wallet|mandate|merchant|pos)\b',
     caseSensitive: false,
   ).hasMatch(body);
-  return hasAction && (hasCurrencyAmount || (hasLabelledAmount && hasFinancialContext));
+  return hasAction &&
+      (hasCurrencyAmount || (hasLabelledAmount && hasFinancialContext));
 }

@@ -57,7 +57,9 @@ void main() {
     expect(find.text('Application ready'), findsOneWidget);
   });
 
-  testWidgets('timeout retry joins unfinished initialization', (tester) async {
+  testWidgets('startup resumes automatically when a timed-out open finishes', (
+    tester,
+  ) async {
     final initialization = Completer<void>();
     var calls = 0;
     await tester.pumpWidget(
@@ -73,11 +75,9 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(find.text('Try again'), findsOneWidget);
-    await tester.tap(find.text('Try again'));
-    await tester.pump();
-    expect(calls, 1);
     initialization.complete();
     await tester.pumpAndSettle();
+    expect(calls, 1);
     expect(find.text('Application ready'), findsOneWidget);
   });
 

@@ -493,6 +493,24 @@ class CategorizationService {
       categoryColor: 'marigold',
       defaultConfidence: 0.90,
     ),
+
+    // 15. General Transaction / Transfer / Lending / Advance
+    const CategorizationRule(
+      keywords: [
+        'transfer',
+        'p2p',
+        'upi transfer',
+        'sent to',
+        'advance',
+        'lending',
+        'peer to peer',
+      ],
+      categoryId: 'cat_transaction',
+      categoryName: 'Transaction',
+      categoryIcon: 'swap_horiz',
+      categoryColor: 'slate',
+      defaultConfidence: 0.85,
+    ),
   ];
 
   /// Suggest a category based on the merchant name, checking user overrides first, then on-device rules

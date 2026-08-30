@@ -630,7 +630,10 @@ void main() {
       expect(repayments, hasLength(1));
       expect(repayments.single.amount, 2600);
 
-      expect(menonRecord.calculateRemainingAmount(repayments, advances: advances), 200);
+      expect(
+        menonRecord.calculateRemainingAmount(repayments, advances: advances),
+        200,
+      );
 
       final allocations = menonRecord.calculateAllocatedAdvances(
         advances: advances,
@@ -645,7 +648,9 @@ void main() {
       // Delete the second advance of ₹300
       await service.deleteTransaction('tx_menon_2');
       final updatedRecord = (await debts.getAllRecords()).single;
-      final remainingAdvances = await debts.getAdvancesForRecord(updatedRecord.id);
+      final remainingAdvances = await debts.getAdvancesForRecord(
+        updatedRecord.id,
+      );
       expect(remainingAdvances, hasLength(1));
       expect(remainingAdvances.single.amount, 2500);
       expect(updatedRecord.originalAmount, 2500);
@@ -718,12 +723,15 @@ void main() {
 
       final allRecords = await debts.getAllRecords();
       expect(allRecords, hasLength(2));
-      final lentRec = allRecords.firstWhere((r) => r.type == MoneyRecordType.lent);
-      final borrowedRec = allRecords.firstWhere((r) => r.type == MoneyRecordType.borrowed);
+      final lentRec = allRecords.firstWhere(
+        (r) => r.type == MoneyRecordType.lent,
+      );
+      final borrowedRec = allRecords.firstWhere(
+        (r) => r.type == MoneyRecordType.borrowed,
+      );
 
       expect(lentRec.originalAmount, 2500);
       expect(borrowedRec.originalAmount, 1000);
     },
   );
 }
-

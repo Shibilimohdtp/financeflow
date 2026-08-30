@@ -356,9 +356,10 @@ class LoansController extends StateNotifier<AsyncValue<void>> {
         }
       } else {
         final payments = await _repository.getPaymentsForLoan(loan.id);
-        final match = payments
-            .where((p) => p.installmentNumber == installmentNumber)
-            .firstOrNull;
+        final match =
+            payments
+                .where((p) => p.installmentNumber == installmentNumber)
+                .firstOrNull;
         if (match != null) {
           if (_coordinator != null) {
             await _coordinator.deleteEmiPayment(match.id);

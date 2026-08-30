@@ -266,7 +266,8 @@ class IsarMoneyRecordRepository implements MoneyRecordRepository {
 
       final grouped = <String, List<MoneyRecordEntity>>{};
       for (final rec in activeRecords) {
-        final key = '${rec.type}_${rec.normalizedPersonName ?? MoneyRecord.normalizePersonName(rec.personName)}';
+        final key =
+            '${rec.type}_${rec.normalizedPersonName ?? MoneyRecord.normalizePersonName(rec.personName)}';
         grouped.putIfAbsent(key, () => []).add(rec);
       }
 

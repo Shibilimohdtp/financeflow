@@ -37,7 +37,9 @@ void main() {
       expect(budget.type, equals('budget'));
       expect(budget.entityId, equals('b_groceries'));
 
-      final sub = NotificationPayload.subscription(subscriptionId: 'sub_netflix');
+      final sub = NotificationPayload.subscription(
+        subscriptionId: 'sub_netflix',
+      );
       expect(sub.route, equals('/subscriptions'));
       expect(sub.type, equals('subscription'));
 
@@ -52,23 +54,29 @@ void main() {
       expect(inbox.route, equals('/alerts-inbox'));
     });
 
-    test('tryDecode safely handles invalid, corrupt, or empty JSON without throwing', () {
-      expect(NotificationPayload.tryDecode(null), isNull);
-      expect(NotificationPayload.tryDecode(''), isNull);
-      expect(NotificationPayload.tryDecode('   '), isNull);
-      expect(NotificationPayload.tryDecode('not valid json'), isNull);
-      expect(NotificationPayload.tryDecode('12345'), isNull);
-      expect(NotificationPayload.tryDecode('["array"]'), isNull);
-    });
+    test(
+      'tryDecode safely handles invalid, corrupt, or empty JSON without throwing',
+      () {
+        expect(NotificationPayload.tryDecode(null), isNull);
+        expect(NotificationPayload.tryDecode(''), isNull);
+        expect(NotificationPayload.tryDecode('   '), isNull);
+        expect(NotificationPayload.tryDecode('not valid json'), isNull);
+        expect(NotificationPayload.tryDecode('12345'), isNull);
+        expect(NotificationPayload.tryDecode('["array"]'), isNull);
+      },
+    );
 
-    test('tryDecode provides safe fallback defaults when fields are missing', () {
-      const partialJson = '{"version": 1}';
-      final decoded = NotificationPayload.tryDecode(partialJson);
+    test(
+      'tryDecode provides safe fallback defaults when fields are missing',
+      () {
+        const partialJson = '{"version": 1}';
+        final decoded = NotificationPayload.tryDecode(partialJson);
 
-      expect(decoded, isNotNull);
-      expect(decoded!.version, equals(1));
-      expect(decoded.type, equals('inbox'));
-      expect(decoded.route, equals('/alerts-inbox'));
-    });
+        expect(decoded, isNotNull);
+        expect(decoded!.version, equals(1));
+        expect(decoded.type, equals('inbox'));
+        expect(decoded.route, equals('/alerts-inbox'));
+      },
+    );
   });
 }

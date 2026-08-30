@@ -502,7 +502,6 @@ class BackupService {
           );
         }
 
-
         return RestoreResult(
           isSuccess: true,
           mode: RestoreMode.merge,

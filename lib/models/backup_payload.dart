@@ -785,8 +785,7 @@ class BackupDataPayload {
     ),
     matchedTransactionId: j['matchedTransactionId'] as String?,
     duplicateReasons: List<String>.from(j['duplicateReasons'] as List? ?? []),
-    duplicateConfidence:
-        (j['duplicateConfidence'] as num?)?.toDouble() ?? 0.0,
+    duplicateConfidence: (j['duplicateConfidence'] as num?)?.toDouble() ?? 0.0,
     duplicateResolution: DuplicateResolution.values.firstWhere(
       (e) => e.name == j['duplicateResolution'],
       orElse: () => DuplicateResolution.unresolved,

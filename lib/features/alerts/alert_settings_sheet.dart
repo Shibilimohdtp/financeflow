@@ -19,11 +19,11 @@ import '../../services/notifications/notification_coordinator.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
-  final service = ref.watch(localNotificationServiceProvider);
-  final isEnabled = await service.areNotificationsEnabled();
-  if (isEnabled) return NotificationPermissionStatus.granted;
-  return NotificationPermissionStatus.notRequested;
-});
+      final service = ref.watch(localNotificationServiceProvider);
+      final isEnabled = await service.areNotificationsEnabled();
+      if (isEnabled) return NotificationPermissionStatus.granted;
+      return NotificationPermissionStatus.notRequested;
+    });
 
 /// Bottom sheet for configuring local push notifications and alerts preferences.
 class AlertSettingsSheet extends ConsumerStatefulWidget {
@@ -63,9 +63,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
     final isPermissionGranted = permissionAsync.value?.isGranted ?? false;
 
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: mediaQuery.size.height * 0.88,
-      ),
+      constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.88),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(
@@ -126,37 +124,41 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                           ),
                           const SizedBox(height: StillwaterTokens.spaceMd),
                           FfButton(
-                            label: _isRequestingPermission
-                                ? 'Checking...'
-                                : 'Enable System Notifications',
+                            label:
+                                _isRequestingPermission
+                                    ? 'Checking...'
+                                    : 'Enable System Notifications',
                             size: FfButtonSize.sm,
-                            onPressed: _isRequestingPermission
-                                ? null
-                                : () async {
-                                    setState(
-                                      () => _isRequestingPermission = true,
-                                    );
-                                    try {
-                                      final status = await notificationService
-                                          .requestNotificationPermission();
-                                      ref.invalidate(
-                                        notificationPermissionStatusProvider,
+                            onPressed:
+                                _isRequestingPermission
+                                    ? null
+                                    : () async {
+                                      setState(
+                                        () => _isRequestingPermission = true,
                                       );
-                                      if (status ==
-                                              NotificationPermissionStatus
-                                                  .permanentlyDenied &&
-                                          context.mounted) {
-                                        await notificationService
-                                            .openSystemNotificationSettings();
-                                      }
-                                    } finally {
-                                      if (mounted) {
-                                        setState(
-                                          () => _isRequestingPermission = false,
+                                      try {
+                                        final status =
+                                            await notificationService
+                                                .requestNotificationPermission();
+                                        ref.invalidate(
+                                          notificationPermissionStatusProvider,
                                         );
+                                        if (status ==
+                                                NotificationPermissionStatus
+                                                    .permanentlyDenied &&
+                                            context.mounted) {
+                                          await notificationService
+                                              .openSystemNotificationSettings();
+                                        }
+                                      } finally {
+                                        if (mounted) {
+                                          setState(
+                                            () =>
+                                                _isRequestingPermission = false,
+                                          );
+                                        }
                                       }
-                                    }
-                                  },
+                                    },
                           ),
                         ],
                       ),
@@ -172,7 +174,8 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         icon: Icons.notifications_outlined,
                         title: 'Local Alerts & Notifications',
                         subtitle: 'Evaluated 100% on-device using local rules',
-                        value: settings.isAlertsEnabled &&
+                        value:
+                            settings.isAlertsEnabled &&
                             settings.isLocalNotificationsEnabled,
                         onChanged: (val) {
                           controller.updateSettings(
@@ -201,7 +204,8 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                           title: 'Needs Review Transactions',
                           subtitle:
                               'Remind when imported SMS / CSV items require confirmation',
-                          value: settings.isNeedsReviewNotificationsEnabled &&
+                          value:
+                              settings.isNeedsReviewNotificationsEnabled &&
                               settings.isNeedsReviewAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
@@ -217,7 +221,8 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                           title: 'Budget Limits',
                           subtitle:
                               'Alert when category spending reaches 80% or exceeds limit',
-                          value: settings.isBudgetNotificationEnabled &&
+                          value:
+                              settings.isBudgetNotificationEnabled &&
                               settings.isBudgetAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
@@ -233,7 +238,8 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                           title: 'Subscription Renewals',
                           subtitle:
                               'Remind before upcoming subscriptions renew',
-                          value: settings.isSubscriptionNotificationEnabled &&
+                          value:
+                              settings.isSubscriptionNotificationEnabled &&
                               settings.isSubscriptionAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
@@ -247,9 +253,9 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         FfSwitchRow(
                           icon: Icons.account_balance_outlined,
                           title: 'Loan & EMI Due Dates',
-                          subtitle:
-                              'Remind before upcoming loan EMIs are due',
-                          value: settings.isLoanNotificationEnabled &&
+                          subtitle: 'Remind before upcoming loan EMIs are due',
+                          value:
+                              settings.isLoanNotificationEnabled &&
                               settings.isLoanAlertsEnabled,
                           onChanged: (val) {
                             controller.updateSettings(
@@ -265,7 +271,8 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                           title: 'Encrypted Backup Reminders',
                           subtitle:
                               'Remind when 30 days have elapsed since last backup export',
-                          value: settings.isBackupNotificationEnabled &&
+                          value:
+                              settings.isBackupNotificationEnabled &&
                               settings.isBackupReminderEnabled,
                           onChanged: (val) {
                             controller.updateSettings(

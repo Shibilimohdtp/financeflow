@@ -29,9 +29,7 @@ void main() {
           MonthlyCashFlow(totalIncome: 0, totalExpense: 0, netSavings: 0),
         ),
       ),
-      accountsWithBalancesProvider.overrideWithValue(
-        const AsyncValue.data([]),
-      ),
+      accountsWithBalancesProvider.overrideWithValue(const AsyncValue.data([])),
       totalNetWorthProvider.overrideWithValue(const AsyncValue.data(0.0)),
       recentTransactionsProvider.overrideWith((ref) => Stream.value([])),
       dashboardInsightsProvider.overrideWithValue(const AsyncValue.data([])),
@@ -85,9 +83,7 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            ...createOverrides(),
-          ],
+          overrides: [...createOverrides()],
           child: Consumer(
             builder: (context, ref, _) {
               navIndexController = ref.watch(currentNavIndexProvider.notifier);

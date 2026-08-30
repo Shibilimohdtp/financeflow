@@ -4,18 +4,21 @@ import 'package:financeflow/services/notifications/notification_formatter.dart';
 void main() {
   group('NotificationFormatter Tests', () {
     group('Needs Review formatting', () {
-      test('formats singular item with merchant and amount when privacy is off', () {
-        final text = NotificationFormatter.formatNeedsReview(
-          count: 1,
-          singleMerchant: 'Swiggy',
-          singleAmount: 450.0,
-          hideSensitive: false,
-        );
-        expect(text.title, equals('Transaction needs review'));
-        expect(text.body, contains('Swiggy'));
-        expect(text.body, contains('450'));
-        expect(text.body, contains('waiting for review'));
-      });
+      test(
+        'formats singular item with merchant and amount when privacy is off',
+        () {
+          final text = NotificationFormatter.formatNeedsReview(
+            count: 1,
+            singleMerchant: 'Swiggy',
+            singleAmount: 450.0,
+            hideSensitive: false,
+          );
+          expect(text.title, equals('Transaction needs review'));
+          expect(text.body, contains('Swiggy'));
+          expect(text.body, contains('450'));
+          expect(text.body, contains('waiting for review'));
+        },
+      );
 
       test('formats plural items with count when privacy is off', () {
         final text = NotificationFormatter.formatNeedsReview(
@@ -25,30 +28,42 @@ void main() {
           hideSensitive: false,
         );
         expect(text.title, equals('Transactions need review'));
-        expect(text.body, equals('3 imported transactions are waiting for your review.'));
+        expect(
+          text.body,
+          equals('3 imported transactions are waiting for your review.'),
+        );
       });
 
-      test('formats privacy-safe text hiding merchant and amount when privacy is on', () {
-        final textSingular = NotificationFormatter.formatNeedsReview(
-          count: 1,
-          singleMerchant: 'Swiggy',
-          singleAmount: 450.0,
-          hideSensitive: true,
-        );
-        expect(textSingular.title, equals('Transaction needs review'));
-        expect(textSingular.body, equals('1 imported transaction is waiting for your review.'));
-        expect(textSingular.body, isNot(contains('Swiggy')));
-        expect(textSingular.body, isNot(contains('450')));
+      test(
+        'formats privacy-safe text hiding merchant and amount when privacy is on',
+        () {
+          final textSingular = NotificationFormatter.formatNeedsReview(
+            count: 1,
+            singleMerchant: 'Swiggy',
+            singleAmount: 450.0,
+            hideSensitive: true,
+          );
+          expect(textSingular.title, equals('Transaction needs review'));
+          expect(
+            textSingular.body,
+            equals('1 imported transaction is waiting for your review.'),
+          );
+          expect(textSingular.body, isNot(contains('Swiggy')));
+          expect(textSingular.body, isNot(contains('450')));
 
-        final textPlural = NotificationFormatter.formatNeedsReview(
-          count: 4,
-          singleMerchant: 'Swiggy',
-          singleAmount: 450.0,
-          hideSensitive: true,
-        );
-        expect(textPlural.title, equals('Transactions need review'));
-        expect(textPlural.body, equals('4 imported transactions are waiting for your review.'));
-      });
+          final textPlural = NotificationFormatter.formatNeedsReview(
+            count: 4,
+            singleMerchant: 'Swiggy',
+            singleAmount: 450.0,
+            hideSensitive: true,
+          );
+          expect(textPlural.title, equals('Transactions need review'));
+          expect(
+            textPlural.body,
+            equals('4 imported transactions are waiting for your review.'),
+          );
+        },
+      );
     });
 
     group('Budget Alerts formatting', () {
@@ -67,7 +82,10 @@ void main() {
           hideSensitive: true,
         );
         expect(safe.title, equals('Budget update'));
-        expect(safe.body, equals('A FinanceFlow budget is nearing its limit. Open to view.'));
+        expect(
+          safe.body,
+          equals('A FinanceFlow budget is nearing its limit. Open to view.'),
+        );
         expect(safe.body, isNot(contains('Dining')));
       });
 
@@ -87,7 +105,10 @@ void main() {
           hideSensitive: true,
         );
         expect(safe.title, equals('Budget update'));
-        expect(safe.body, equals('A FinanceFlow budget has been exceeded. Open to view.'));
+        expect(
+          safe.body,
+          equals('A FinanceFlow budget has been exceeded. Open to view.'),
+        );
       });
     });
 
@@ -131,7 +152,12 @@ void main() {
           hideSensitive: true,
         );
         expect(safe.title, equals('Subscription reminder'));
-        expect(safe.body, equals('An upcoming subscription renewal is due tomorrow. Open to view.'));
+        expect(
+          safe.body,
+          equals(
+            'An upcoming subscription renewal is due tomorrow. Open to view.',
+          ),
+        );
         expect(safe.body, isNot(contains('Netflix')));
         expect(safe.body, isNot(contains('649')));
       });
@@ -156,7 +182,12 @@ void main() {
           hideSensitive: true,
         );
         expect(safe.title, equals('Loan EMI reminder'));
-        expect(safe.body, equals('An upcoming loan EMI payment is due in 3 days. Open to view.'));
+        expect(
+          safe.body,
+          equals(
+            'An upcoming loan EMI payment is due in 3 days. Open to view.',
+          ),
+        );
       });
     });
 
@@ -174,7 +205,10 @@ void main() {
           hideSensitive: true,
         );
         expect(safe.title, equals('Backup reminder'));
-        expect(safe.body, equals('A local encrypted backup is recommended. Open to view.'));
+        expect(
+          safe.body,
+          equals('A local encrypted backup is recommended. Open to view.'),
+        );
       });
     });
   });

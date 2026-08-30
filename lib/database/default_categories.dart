@@ -165,6 +165,13 @@ class DefaultCategories {
         'types': ['income', 'expense', 'transfer'],
       },
       {
+        'id': 'cat_transaction',
+        'name': 'Transaction',
+        'icon': 'swap_horiz',
+        'color': 'slate',
+        'types': ['expense', 'income', 'transfer'],
+      },
+      {
         'id': 'cat_miscellaneous',
         'name': 'Miscellaneous',
         'icon': 'more_horiz',

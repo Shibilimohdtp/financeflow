@@ -146,12 +146,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 InkWell(
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const BackupScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const BackupScreen()),
                     );
                   },
-                  borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                  borderRadius: BorderRadius.circular(
+                    StillwaterTokens.radiusSm,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -227,7 +227,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               ],
             ),
           ),
-
 
           const SizedBox(height: StillwaterTokens.spaceLg),
 

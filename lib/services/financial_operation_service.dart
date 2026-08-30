@@ -281,7 +281,10 @@ class FinancialOperationService {
         payments
             .where((p) => p.installmentNumber == installmentNumber)
             .firstOrNull;
-    final txId = transactionId ?? existingForNumber?.transactionId ?? 'tx_${DateTime.now().microsecondsSinceEpoch}';
+    final txId =
+        transactionId ??
+        existingForNumber?.transactionId ??
+        'tx_${DateTime.now().microsecondsSinceEpoch}';
 
     final transaction = Transaction(
       id: txId,
@@ -320,14 +323,20 @@ class FinancialOperationService {
 
   Future<void> deleteInvestmentKeepingHistory(String investmentId) async {
     await isar.writeTxn(() async {
-      await isar.investmentEntitys.filter().uuidEqualTo(investmentId).deleteAll();
+      await isar.investmentEntitys
+          .filter()
+          .uuidEqualTo(investmentId)
+          .deleteAll();
     });
   }
 
   Future<void> deleteEmiPayment(String paymentId) async {
     await isar.writeTxn(() async {
       final payment =
-          await isar.emiPaymentEntitys.filter().uuidEqualTo(paymentId).findFirst();
+          await isar.emiPaymentEntitys
+              .filter()
+              .uuidEqualTo(paymentId)
+              .findFirst();
       if (payment != null) {
         if (payment.transactionId != null) {
           await isar.transactionEntitys
@@ -478,7 +487,10 @@ class FinancialOperationService {
 
   Future<void> _validateAccounts(Transaction tx) async {
     final from =
-        await isar.accountEntitys.filter().uuidEqualTo(tx.accountId).findFirst();
+        await isar.accountEntitys
+            .filter()
+            .uuidEqualTo(tx.accountId)
+            .findFirst();
     if (from == null || from.isArchived) {
       throw ValidationError(
         message: 'Source account is missing or archived.',
@@ -513,12 +525,10 @@ class FinancialOperationService {
       );
     }
     final loan = _loans.domainFromEntity(loanEntity);
-    final payments = (await isar.emiPaymentEntitys
-            .filter()
-            .loanIdEqualTo(loanId)
-            .findAll())
-        .map(_loans.paymentFromEntity)
-        .toList();
+    final payments =
+        (await isar.emiPaymentEntitys.filter().loanIdEqualTo(loanId).findAll())
+            .map(_loans.paymentFromEntity)
+            .toList();
 
     final nextNumber =
         preferredInstallmentNumber ??
@@ -528,7 +538,10 @@ class FinancialOperationService {
             ?.installmentNumber ??
         (payments.isEmpty
             ? 1
-            : (payments.map((p) => p.installmentNumber).reduce((a, b) => a > b ? a : b) + 1));
+            : (payments
+                    .map((p) => p.installmentNumber)
+                    .reduce((a, b) => a > b ? a : b) +
+                1));
 
     final split = LoanCalculator.calculateInstallmentSplit(
       loan: loan,
@@ -573,7 +586,8 @@ class FinancialOperationService {
         transaction.merchant.trim();
     if (person.isEmpty) {
       throw const ValidationError(
-        message: 'A counterparty person name is required for lending/borrowing.',
+        message:
+            'A counterparty person name is required for lending/borrowing.',
       );
     }
 
@@ -652,8 +666,8 @@ class FinancialOperationService {
             originalAmount: transaction.amount,
             transactionDate: transaction.date,
             dueDate:
-              details?.dueDate ??
-              transaction.date.add(const Duration(days: 30)),
+                details?.dueDate ??
+                transaction.date.add(const Duration(days: 30)),
             notes: details?.notes ?? transaction.notes,
             isReminderEnabled: details?.isReminderEnabled ?? true,
             reminderDaysBefore: details?.reminderDaysBefore ?? 1,
@@ -686,9 +700,7 @@ class FinancialOperationService {
       amount: transaction.amount,
       date: transaction.date,
       dueDate:
-          details?.dueDate ??
-          existingAdvance?.dueDate ??
-          recordEntity.dueDate,
+          details?.dueDate ?? existingAdvance?.dueDate ?? recordEntity.dueDate,
       notes: details?.notes ?? transaction.notes,
       accountId: transaction.accountId,
       transactionId: transaction.id,

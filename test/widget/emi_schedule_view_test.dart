@@ -113,96 +113,95 @@ void main() {
     },
   );
 
-  testWidgets(
-    'EmiScheduleView allows marking a paid installment as unpaid',
-    (WidgetTester tester) async {
-      final now = DateTime.now();
-      final startDate = DateTime(now.year, now.month - 3, 1);
+  testWidgets('EmiScheduleView allows marking a paid installment as unpaid', (
+    WidgetTester tester,
+  ) async {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month - 3, 1);
 
-      final loan = Loan(
-        id: 'unmark_loan_test',
-        name: 'Personal Loan',
-        lender: 'SBI',
-        loanType: LoanType.personalLoan,
-        principalAmount: 30000.0,
-        interestRate: 10.0,
-        interestType: InterestType.flatRate,
-        tenureMonths: 3,
-        startDate: startDate,
-        expectedEndDate: DateTime(now.year, now.month, 1),
-        emiAmount: 10250.0,
-        paymentDay: 5,
-        totalPrincipalPaid: 20000.0,
-        totalInterestPaid: 500.0,
-        outstandingPrincipal: 10000.0,
-        nextDueDate: DateTime(now.year, now.month, 5),
-        status: LoanStatus.active,
-        createdAt: startDate,
-        updatedAt: startDate,
-      );
+    final loan = Loan(
+      id: 'unmark_loan_test',
+      name: 'Personal Loan',
+      lender: 'SBI',
+      loanType: LoanType.personalLoan,
+      principalAmount: 30000.0,
+      interestRate: 10.0,
+      interestType: InterestType.flatRate,
+      tenureMonths: 3,
+      startDate: startDate,
+      expectedEndDate: DateTime(now.year, now.month, 1),
+      emiAmount: 10250.0,
+      paymentDay: 5,
+      totalPrincipalPaid: 20000.0,
+      totalInterestPaid: 500.0,
+      outstandingPrincipal: 10000.0,
+      nextDueDate: DateTime(now.year, now.month, 5),
+      status: LoanStatus.active,
+      createdAt: startDate,
+      updatedAt: startDate,
+    );
 
-      final fakeRepo = FakeLoanRepository([loan]);
+    final fakeRepo = FakeLoanRepository([loan]);
 
-      // Record payments for installments #1 and #2
-      final payment1 = EmiPayment(
-        id: 'emi_p1',
-        loanId: loan.id,
-        installmentNumber: 1,
-        dueDate: DateTime(startDate.year, startDate.month + 1, 5),
-        paymentDate: DateTime(startDate.year, startDate.month + 1, 5),
-        principalPaid: 10000.0,
-        interestPaid: 250.0,
-        emiAmount: 10250.0,
-        createdAt: startDate,
-        updatedAt: startDate,
-      );
-      final payment2 = EmiPayment(
-        id: 'emi_p2',
-        loanId: loan.id,
-        installmentNumber: 2,
-        dueDate: DateTime(startDate.year, startDate.month + 2, 5),
-        paymentDate: DateTime(startDate.year, startDate.month + 2, 5),
-        principalPaid: 10000.0,
-        interestPaid: 250.0,
-        emiAmount: 10250.0,
-        createdAt: startDate,
-        updatedAt: startDate,
-      );
-      await fakeRepo.recordMultipleEmiPayments([payment1, payment2]);
+    // Record payments for installments #1 and #2
+    final payment1 = EmiPayment(
+      id: 'emi_p1',
+      loanId: loan.id,
+      installmentNumber: 1,
+      dueDate: DateTime(startDate.year, startDate.month + 1, 5),
+      paymentDate: DateTime(startDate.year, startDate.month + 1, 5),
+      principalPaid: 10000.0,
+      interestPaid: 250.0,
+      emiAmount: 10250.0,
+      createdAt: startDate,
+      updatedAt: startDate,
+    );
+    final payment2 = EmiPayment(
+      id: 'emi_p2',
+      loanId: loan.id,
+      installmentNumber: 2,
+      dueDate: DateTime(startDate.year, startDate.month + 2, 5),
+      paymentDate: DateTime(startDate.year, startDate.month + 2, 5),
+      principalPaid: 10000.0,
+      interestPaid: 250.0,
+      emiAmount: 10250.0,
+      createdAt: startDate,
+      updatedAt: startDate,
+    );
+    await fakeRepo.recordMultipleEmiPayments([payment1, payment2]);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [loanRepositoryProvider.overrideWithValue(fakeRepo)],
-          child: MaterialApp(
-            theme: StillwaterTheme.daylight,
-            home: EmiScheduleView(loan: loan),
-          ),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [loanRepositoryProvider.overrideWithValue(fakeRepo)],
+        child: MaterialApp(
+          theme: StillwaterTheme.daylight,
+          home: EmiScheduleView(loan: loan),
         ),
-      );
+      ),
+    );
 
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-      expect(find.text('2 Paid'), findsOneWidget);
+    expect(find.text('2 Paid'), findsOneWidget);
 
-      // Find undo button for paid installments
-      final undoButtons = find.byIcon(Icons.undo_rounded);
-      expect(undoButtons, findsNWidgets(2));
+    // Find undo button for paid installments
+    final undoButtons = find.byIcon(Icons.undo_rounded);
+    expect(undoButtons, findsNWidgets(2));
 
-      // Tap undo button on installment #1
-      await tester.tap(undoButtons.first);
-      await tester.pumpAndSettle();
+    // Tap undo button on installment #1
+    await tester.tap(undoButtons.first);
+    await tester.pumpAndSettle();
 
-      // Verify confirmation dialog
-      expect(find.text('Mark Installment #1 as Unpaid?'), findsOneWidget);
-      expect(find.text('Mark Unpaid'), findsOneWidget);
+    // Verify confirmation dialog
+    expect(find.text('Mark Installment #1 as Unpaid?'), findsOneWidget);
+    expect(find.text('Mark Unpaid'), findsOneWidget);
 
-      // Confirm unmark
-      await tester.tap(find.text('Mark Unpaid'));
-      await tester.pumpAndSettle();
+    // Confirm unmark
+    await tester.tap(find.text('Mark Unpaid'));
+    await tester.pumpAndSettle();
 
-      // Verify status changed to 1 Paid
-      expect(find.text('1 Paid'), findsOneWidget);
-      expect(find.byIcon(Icons.undo_rounded), findsNWidgets(1));
-    },
-  );
+    // Verify status changed to 1 Paid
+    expect(find.text('1 Paid'), findsOneWidget);
+    expect(find.byIcon(Icons.undo_rounded), findsNWidgets(1));
+  });
 }

@@ -115,7 +115,8 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
         ),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + StillwaterTokens.spaceLg,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom + StillwaterTokens.spaceLg,
         top: StillwaterTokens.spaceLg,
         left: StillwaterTokens.spaceLg,
         right: StillwaterTokens.spaceLg,
