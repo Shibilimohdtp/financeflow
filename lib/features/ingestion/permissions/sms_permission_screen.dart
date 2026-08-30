@@ -90,6 +90,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                     '• Only transactional debit/credit bank SMS are parsed.\n'
                     '• OTPs, login verification codes, and personal chats are NEVER parsed or stored.\n'
                     '• All regex parsing happens strictly on this device in memory.\n'
+                    '• New financial sender IDs are reviewed locally when their format is unfamiliar.\n'
                     '• You can disable SMS detection anytime in Settings.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.secondary,
@@ -188,11 +189,15 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
               if (settings != null &&
                   platformStatus?.smsPermission ==
                       IngestionPermissionState.granted) {
+                final enabledSettings = settings.copyWith(
+                  isSmsDetectionEnabled: true,
+                );
                 await ref
                     .read(settingsControllerProvider.notifier)
-                    .updateSettings(
-                      settings.copyWith(isSmsDetectionEnabled: true),
-                    );
+                    .updateSettings(enabledSettings);
+                // Do not leave the receiver waiting for an asynchronous stream
+                // update after the user has granted SMS permission.
+                await coordinator.configure(enabledSettings);
                 if (context.mounted) {
                   FfSnackbar.show(
                     context,

@@ -202,15 +202,16 @@ class _NotificationPermissionScreenState
               }
               final settings = ref.read(settingsStreamProvider).value;
               if (settings != null) {
+                final enabledSettings = settings.copyWith(
+                  isNotificationDetectionEnabled: true,
+                  selectedNotificationPackages: _selectedPackages.toList(),
+                );
                 await ref
                     .read(settingsControllerProvider.notifier)
-                    .updateSettings(
-                      settings.copyWith(
-                        isNotificationDetectionEnabled: true,
-                        selectedNotificationPackages:
-                            _selectedPackages.toList(),
-                      ),
-                    );
+                    .updateSettings(enabledSettings);
+                await ref
+                    .read(ingestionCoordinatorProvider)
+                    .configure(enabledSettings);
                 if (context.mounted) {
                   FfSnackbar.show(
                     context,

@@ -287,6 +287,53 @@ void main() {
       expect(parsed.referenceNumber, equals('321654987012'));
     });
 
+    test('Parses current UPI, card, and bank transaction wording', () {
+      final samples = <({String sender, String body, String bank})>[
+        (
+          sender: 'VM-HDFCBK-S',
+          body:
+              'HDFC Bank: transaction successful. Payment of Rs 1,500 made using card ending 4321 at SWIGGY.',
+          bank: 'HDFC Bank',
+        ),
+        (
+          sender: 'AD-ICICIB',
+          body:
+              'ICICI Bank Card ending 1234 was used for INR 1,250.00 at AMAZON.',
+          bank: 'ICICI Bank',
+        ),
+        (
+          sender: 'VK-SBIN',
+          body:
+              'SBI UPI transfer of Rs.275 completed from account XX4321 to ZOMATO. UTR 99112233.',
+          bank: 'State Bank of India',
+        ),
+        (
+          sender: 'VM-KOTAKB',
+          body:
+              'Payment of INR 899 made using card ending 1234 at NETFLIX.',
+          bank: 'Bank SMS',
+        ),
+        (
+          sender: 'UPI-ALERT',
+          body:
+              'UPI mandate executed. Amount: 799 from account XX1001.',
+          bank: 'Bank SMS',
+        ),
+      ];
+
+      for (final sample in samples) {
+        final parsed = registry.parse(
+          sender: sample.sender,
+          body: sample.body,
+          timestamp: DateTime(2026, 8, 22),
+        );
+        expect(parsed, isNotNull, reason: sample.sender);
+        expect(parsed!.amount, greaterThan(0), reason: sample.sender);
+        expect(parsed.type, TransactionType.expense, reason: sample.sender);
+        expect(parsed.sourceName, sample.bank, reason: sample.sender);
+      }
+    });
+
     test('Rejects OTP, balance enquiry, and non-financial SMS', () {
       final hdfcParser = HdfcSmsParser();
       final now = DateTime.now();
@@ -302,6 +349,31 @@ void main() {
           'Get pre-approved Personal Loan up to Rs. 10 Lakhs with HDFC Bank. Apply now at bit.ly/test';
       expect(
         hdfcParser.parse(sender: 'HDFCBK', body: promoSms, timestamp: now),
+        isNull,
+      );
+
+      expect(
+        registry.parse(
+          sender: 'VM-HDFCBK',
+          body: 'Your verification code is 123456. Do not share it.',
+          timestamp: now,
+        ),
+        isNull,
+      );
+      expect(
+        registry.parse(
+          sender: 'AD-ICICIB',
+          body: 'Limited time offer: get Rs 500 cashback. Apply now.',
+          timestamp: now,
+        ),
+        isNull,
+      );
+      expect(
+        registry.parse(
+          sender: 'UNKNOWN',
+          body: 'Your parcel will arrive tomorrow.',
+          timestamp: now,
+        ),
         isNull,
       );
     });

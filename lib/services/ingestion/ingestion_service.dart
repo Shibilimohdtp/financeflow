@@ -178,7 +178,17 @@ class IngestionService {
       defaultAccountId: defaultAccountId,
       autoStagePending: false,
     );
-    return _persistRealtime(parsed);
+    return _persistRealtime(
+      parsed ??
+          _unparsedRealtimeCandidate(
+            source: TransactionSource.sms,
+            sourceName: 'Bank SMS',
+            rawContent: body,
+            timestamp: timestamp,
+            sourceIdentifier: sourceIdentifier,
+            defaultAccountId: defaultAccountId,
+          ),
+    );
   }
 
   Future<IngestionResult> ingestNotification({
@@ -198,7 +208,113 @@ class IngestionService {
       defaultAccountId: defaultAccountId,
       autoStagePending: false,
     );
-    return _persistRealtime(parsed);
+    return _persistRealtime(
+      parsed ??
+          _unparsedRealtimeCandidate(
+            source: TransactionSource.notification,
+            sourceName: packageName,
+            rawContent: '$title $text',
+            timestamp: timestamp,
+            sourceIdentifier: sourceIdentifier,
+            defaultAccountId: defaultAccountId,
+          ),
+    );
+  }
+
+  /// Native Android code has already removed OTP and promotional messages.
+  /// This second check also protects callers such as the developer injector.
+  /// A candidate that no parser understands is still saved locally for review,
+  /// never silently acknowledged as a rejection.
+  ParsedTransaction? _unparsedRealtimeCandidate({
+    required TransactionSource source,
+    required String sourceName,
+    required String rawContent,
+    required DateTime? timestamp,
+    required String? sourceIdentifier,
+    required String defaultAccountId,
+  }) {
+    final lower = rawContent.toLowerCase();
+    const blocked = [
+      'otp',
+      'one time password',
+      'verification code',
+      'login code',
+      'mpin',
+      'cvv',
+      'promo code',
+      'offer',
+      'pre-approved',
+      'apply now',
+      'cashback offer',
+      'limited time offer',
+      'discount',
+      'sale',
+    ];
+    if (blocked.any(lower.contains)) return null;
+
+    final hasAction = RegExp(
+      r'\b(debited|debit|credited|credit|spent|paid|payment|sent|received|withdrawn|withdrawal|purchase|purchased|refunded|refund|deposited|used|txn|transaction|upi transfer|upi mandate|mandate|transferred)\b',
+    ).hasMatch(lower);
+    final money = RegExp(
+      r'(?:rs\.?|inr|₹)\s*:?\s*([0-9][0-9,]*(?:\.\d{1,2})?)(?:/-)?',
+      caseSensitive: false,
+    ).firstMatch(rawContent);
+    final labelledMoney = RegExp(
+      r'(?:amount|amt)\s*(?:of|:)?\s*([0-9][0-9,]*(?:\.\d{1,2})?)',
+      caseSensitive: false,
+    ).firstMatch(rawContent);
+    final hasFinancialContext = RegExp(
+      r'\b(upi|card|account|acct|bank|wallet|mandate|merchant|pos)\b',
+      caseSensitive: false,
+    ).hasMatch(rawContent);
+    final amountText = money?.group(1) ??
+        (hasFinancialContext ? labelledMoney?.group(1) : null);
+    if (!hasAction || amountText == null) return null;
+
+    final amount = double.tryParse(amountText.replaceAll(',', '')) ?? 0;
+    final isCredit = RegExp(
+      r'\b(credited|credit|received|deposited|refunded|refund)\b',
+    ).hasMatch(lower);
+    final type = isCredit ? TransactionType.income : TransactionType.expense;
+    final date = timestamp ?? DateTime.now();
+    final dateKey =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final sourceKey = sourceIdentifier?.isNotEmpty == true
+        ? sourceIdentifier!
+        : sourceName;
+    final errors = <String>[
+      if (amount <= 0) 'Could not extract positive transaction amount',
+    ];
+
+    return ParsedTransaction(
+      source: source,
+      sourceName: sourceName,
+      rawSource: rawContent,
+      sourceIdentifier: sourceIdentifier,
+      amount: amount,
+      type: type,
+      rawMerchant: 'Bank Transaction',
+      normalizedMerchant: 'Bank Transaction',
+      date: date,
+      time: date,
+      accountId: defaultAccountId,
+      paymentMethod:
+          source == TransactionSource.sms ? 'Bank / SMS' : 'UPI / Notification',
+      categoryId: 'cat_miscellaneous',
+      categoryName: 'Miscellaneous',
+      categoryIcon: 'more_horiz',
+      categoryColor: 'clay',
+      categorizationConfidence: 0,
+      categorizationReason: 'Candidate needs manual review',
+      fingerprint:
+          '$dateKey|${amount.toStringAsFixed(2)}|unparsed|${type.toDbString()}|$sourceKey',
+      warnings: const [
+        'Could not fully parse transaction details; review the local source.',
+      ],
+      validationErrors: errors,
+      isIncluded: true,
+      reviewStatus: ReviewStatus.pending,
+    );
   }
 
   Future<IngestionResult> _persistRealtime(ParsedTransaction? parsed) async {

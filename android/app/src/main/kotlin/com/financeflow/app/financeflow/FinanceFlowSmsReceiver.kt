@@ -16,8 +16,7 @@ class FinanceFlowSmsReceiver : BroadcastReceiver() {
         val sender = messages.firstOrNull()?.displayOriginatingAddress.orEmpty()
         val body = messages.joinToString(separator = "") { it.displayMessageBody.orEmpty() }
         val selected = IngestionEventStore.selectedSmsSenders(context)
-        val canonicalSender = sender.uppercase().replace(Regex("[^A-Z0-9]"), "")
-        if (selected.isNotEmpty() && selected.none { canonicalSender.contains(it.uppercase()) }) return
+        if (!FinancialEventGate.senderMatches(selected, sender)) return
         if (!IngestionEventStore.isFinancialCandidate(body)) return
 
         val timestamp = messages.minOfOrNull { it.timestampMillis } ?: System.currentTimeMillis()

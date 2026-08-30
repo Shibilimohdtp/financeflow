@@ -4,6 +4,8 @@ import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/repositories/transaction_repository.dart';
 import 'package:financeflow/services/ingestion/ingestion_service.dart';
+import 'package:financeflow/services/ingestion/parsers/notification_parser_registry.dart';
+import 'package:financeflow/services/ingestion/parsers/sms_parser_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class InMemoryTransactionRepository implements TransactionRepository {
@@ -322,6 +324,75 @@ void main() {
       expect(notification.disposition, IngestionDisposition.duplicate);
       expect(await txRepo.getAllTransactions(), hasLength(1));
       expect(await pendingRepo.getPendingTransactions(), hasLength(1));
+    });
+
+    test('unparsed financial realtime SMS is visible in Needs Review', () async {
+      service = IngestionService(
+        transactionRepository: txRepo,
+        pendingTransactionRepository: pendingRepo,
+        smsRegistry: SmsParserRegistry(const []),
+      );
+
+      final result = await service.ingestSms(
+        sender: 'VK-NEWBANK',
+        body:
+            'New Bank transaction successful. Amount: 499 from card ending 4321.',
+        timestamp: DateTime(2026, 8, 22, 12),
+        sourceIdentifier: 'sms-unparsed',
+        defaultAccountId: defaultAcc.id,
+      );
+
+      expect(result.disposition, IngestionDisposition.pending);
+      expect(await txRepo.getAllTransactions(), isEmpty);
+      final pending = await pendingRepo.getPendingTransactions();
+      expect(pending, hasLength(1));
+      expect(pending.single.warnings, isNotEmpty);
+      expect(pending.single.sourceIdentifier, 'sms-unparsed');
+    });
+
+    test(
+      'unparsed financial notification is visible in Needs Review',
+      () async {
+        service = IngestionService(
+          transactionRepository: txRepo,
+          pendingTransactionRepository: pendingRepo,
+          notificationRegistry: NotificationParserRegistry(const []),
+        );
+
+        final result = await service.ingestNotification(
+          packageName: 'com.example.bank',
+          title: 'New Bank',
+          text: 'Transaction successful. Amount: 799 from card ending 4321.',
+          timestamp: DateTime(2026, 8, 22, 12),
+          sourceIdentifier: 'notification-unparsed',
+          defaultAccountId: defaultAcc.id,
+        );
+
+        expect(result.disposition, IngestionDisposition.pending);
+        expect(await txRepo.getAllTransactions(), isEmpty);
+        final pending = await pendingRepo.getPendingTransactions();
+        expect(pending, hasLength(1));
+        expect(pending.single.sourceIdentifier, 'notification-unparsed');
+        expect(pending.single.warnings, isNotEmpty);
+      },
+    );
+
+    test('OTP and offers are rejected rather than staged', () async {
+      for (final body in const [
+        '123456 is your OTP to sign in. Do not share it.',
+        'Limited time offer: Rs 500 cashback. Apply now.',
+      ]) {
+        final result = await service.ingestSms(
+          sender: 'HDFCBK',
+          body: body,
+          timestamp: DateTime(2026, 8, 22, 12),
+          sourceIdentifier: 'blocked-$body',
+          defaultAccountId: defaultAcc.id,
+        );
+        expect(result.disposition, IngestionDisposition.rejected);
+      }
+      expect(await txRepo.getAllTransactions(), isEmpty);
+      expect(await pendingRepo.getPendingTransactions(), isEmpty);
     });
   });
 }

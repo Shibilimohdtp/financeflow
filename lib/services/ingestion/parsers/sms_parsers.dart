@@ -229,18 +229,7 @@ class GenericUpiSmsParser implements SmsParser {
 
   @override
   bool canParse(String sender, String body) {
-    final lower = body.toLowerCase();
-    return (lower.contains('debited') ||
-            lower.contains('credited') ||
-            lower.contains('spent') ||
-            lower.contains('sent') ||
-            lower.contains('received')) &&
-        (lower.contains('rs') ||
-            lower.contains('inr') ||
-            lower.contains('₹') ||
-            lower.contains('a/c') ||
-            lower.contains('acct') ||
-            lower.contains('upi'));
+    return _isPotentialTransactionMessage(body);
   }
 
   @override
@@ -271,24 +260,34 @@ ParsedTransaction? _parseIndianBankSms({
   final lower = body.toLowerCase();
 
   // Filter non-transactional messages (e.g. OTP, login alerts, balance enquiry only without debit/credit)
-  if (lower.contains('otp') ||
-      lower.contains('one time password') ||
-      lower.contains('verification code')) {
+  if (_isBlockedNonTransaction(lower)) {
     return null;
   }
 
   final isDebit =
       lower.contains('debited') ||
+      lower.contains('debit ') ||
       lower.contains('spent') ||
       lower.contains('sent') ||
       lower.contains('paid') ||
+      lower.contains('payment') ||
       lower.contains('withdrawn') ||
-      lower.contains('purchase');
+      lower.contains('withdrawal') ||
+      lower.contains('purchase') ||
+      lower.contains('used') ||
+      lower.contains('upi transfer') ||
+      lower.contains('upi mandate') ||
+      lower.contains('mandate') ||
+      lower.contains('transferred') ||
+      lower.contains('transaction successful') ||
+      lower.contains('txn');
   final isCredit =
       lower.contains('credited') ||
+      lower.contains('credit ') ||
       lower.contains('received') ||
       lower.contains('deposited') ||
-      lower.contains('refunded');
+      lower.contains('refunded') ||
+      lower.contains('refund');
 
   if (!isDebit && !isCredit) {
     return null;
@@ -298,10 +297,14 @@ ParsedTransaction? _parseIndianBankSms({
 
   // Extract Amount: e.g. "Rs. 1,450.00", "INR 500", "₹ 2,000", "Rs 450"
   final amtRegex = RegExp(
-    r'(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)',
+    r'(?:rs\.?|inr|₹)\s*:?\s*([\d,]+(?:\.\d{1,2})?)(?:/-)?',
     caseSensitive: false,
   );
-  final amtMatch = amtRegex.firstMatch(body);
+  final labelledAmountRegex = RegExp(
+    r'(?:amount|amt)\s*(?:of|:)?\s*([\d,]+(?:\.\d{1,2})?)',
+    caseSensitive: false,
+  );
+  final amtMatch = amtRegex.firstMatch(body) ?? labelledAmountRegex.firstMatch(body);
   if (amtMatch == null) return null;
 
   final amount = CsvParser.parseAmountString(amtMatch.group(1)!);
@@ -409,4 +412,44 @@ ParsedTransaction? _parseIndianBankSms({
             ? ReviewStatus.confirmed
             : ReviewStatus.pending,
   );
+}
+
+bool _isBlockedNonTransaction(String lower) {
+  return const [
+    'otp',
+    'one time password',
+    'verification code',
+    'login code',
+    'mpin',
+    'cvv',
+    'promo code',
+    'offer',
+    'pre-approved',
+    'apply now',
+    'cashback offer',
+    'limited time offer',
+    'discount',
+    'sale',
+  ].any(lower.contains);
+}
+
+bool _isPotentialTransactionMessage(String body) {
+  final lower = body.toLowerCase();
+  if (_isBlockedNonTransaction(lower)) return false;
+  final hasAction = RegExp(
+    r'\b(debited|debit|credited|credit|spent|paid|payment|sent|received|withdrawn|withdrawal|purchase|purchased|refunded|refund|deposited|used|txn|transaction|upi transfer|upi mandate|mandate|transferred)\b',
+  ).hasMatch(lower);
+  final hasCurrencyAmount = RegExp(
+    r'(?:rs\.?|inr|₹)\s*:?\s*[0-9][0-9,]*(?:\.\d{1,2})?(?:/-)?',
+    caseSensitive: false,
+  ).hasMatch(body);
+  final hasLabelledAmount = RegExp(
+    r'(?:amount|amt)\s*(?:of|:)?\s*[0-9][0-9,]*(?:\.\d{1,2})?',
+    caseSensitive: false,
+  ).hasMatch(body);
+  final hasFinancialContext = RegExp(
+    r'\b(upi|card|account|acct|bank|wallet|mandate|merchant|pos)\b',
+    caseSensitive: false,
+  ).hasMatch(body);
+  return hasAction && (hasCurrencyAmount || (hasLabelledAmount && hasFinancialContext));
 }

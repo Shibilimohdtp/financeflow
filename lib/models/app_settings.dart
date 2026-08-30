@@ -106,15 +106,9 @@ class AppSettings {
       'in.org.npci.upiapp', // BHIM
       'com.dreamplug.androidapp', // CRED
     ],
-    this.selectedSmsSenders = const [
-      'HDFCBK',
-      'ICICIB',
-      'SBIN',
-      'AXISBK',
-      'FEDBNK',
-      'CANBNK',
-      'UNIONB',
-    ],
+    // Empty means "all financial sender IDs".  Android still rejects OTPs and
+    // promotions before queueing; unfamiliar bank wording is kept for review.
+    this.selectedSmsSenders = const [],
     this.lastIngestionScan,
     this.lastSuccessfulSmsEvent,
     this.lastSuccessfulNotificationEvent,

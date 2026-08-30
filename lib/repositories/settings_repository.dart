@@ -8,6 +8,30 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return IsarSettingsRepository();
 });
 
+const _legacyDefaultSmsSenders = {
+  'HDFCBK',
+  'ICICIB',
+  'SBIN',
+  'AXISBK',
+  'FEDBNK',
+  'CANBNK',
+  'UNIONB',
+};
+
+/// Releases before the sender-policy change stored this fixed list for every
+/// user even though there was no per-sender configuration UI.  Treat that
+/// exact list as the new broad, financial-only default; an actual custom list
+/// remains an explicit allow-list.
+List<String> restoreSmsSenderPolicy(List<String> stored) {
+  final normalized = stored.map((sender) => sender.trim().toUpperCase()).toSet();
+  if (stored.isEmpty ||
+      (normalized.length == _legacyDefaultSmsSenders.length &&
+          normalized.containsAll(_legacyDefaultSmsSenders))) {
+    return const [];
+  }
+  return List<String>.from(stored);
+}
+
 final settingsStreamProvider = StreamProvider<AppSettings>((ref) {
   return ref.watch(settingsRepositoryProvider).watchSettings();
 });
@@ -52,18 +76,7 @@ class IsarSettingsRepository implements SettingsRepository {
                 'in.org.npci.upiapp',
                 'com.dreamplug.androidapp',
               ],
-      selectedSmsSenders:
-          entity.selectedSmsSenders.isNotEmpty
-              ? List<String>.from(entity.selectedSmsSenders)
-              : const [
-                'HDFCBK',
-                'ICICIB',
-                'SBIN',
-                'AXISBK',
-                'FEDBNK',
-                'CANBNK',
-                'UNIONB',
-              ],
+      selectedSmsSenders: restoreSmsSenderPolicy(entity.selectedSmsSenders),
       lastIngestionScan: entity.lastIngestionScan,
       lastSuccessfulSmsEvent: entity.lastSuccessfulSmsEvent,
       lastSuccessfulNotificationEvent: entity.lastSuccessfulNotificationEvent,

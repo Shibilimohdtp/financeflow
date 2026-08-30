@@ -24,8 +24,20 @@ final ingestionCoordinatorProvider = Provider<IngestionCoordinator>((ref) {
     platform: ref.watch(ingestionPlatformProvider),
     ingestionService: ref.watch(ingestionServiceProvider),
   );
-  ref.listen<AsyncValue<AppSettings>>(settingsStreamProvider, (_, next) {
-    next.whenData(coordinator.configure);
+  ref.listen<AsyncValue<AppSettings>>(settingsStreamProvider, (previous, next) {
+    final before = previous?.asData?.value;
+    next.whenData((settings) {
+      if (before == null ||
+          before.isSmsDetectionEnabled != settings.isSmsDetectionEnabled ||
+          before.isNotificationDetectionEnabled !=
+              settings.isNotificationDetectionEnabled ||
+          before.selectedSmsSenders.join('|') !=
+              settings.selectedSmsSenders.join('|') ||
+          before.selectedNotificationPackages.join('|') !=
+              settings.selectedNotificationPackages.join('|')) {
+        coordinator.scheduleConfigure(settings);
+      }
+    });
   }, fireImmediately: true);
   coordinator.start();
   ref.onDispose(coordinator.dispose);
@@ -38,6 +50,7 @@ class IngestionCoordinator with WidgetsBindingObserver {
   final IngestionService _ingestionService;
   bool _processing = false;
   StreamSubscription<void>? _eventSubscription;
+  Future<void> _configurationBarrier = Future.value();
 
   IngestionCoordinator({
     required Ref ref,
@@ -76,6 +89,20 @@ class IngestionCoordinator with WidgetsBindingObserver {
     );
   }
 
+  /// Serializes native preference writes so a settings update cannot be
+  /// overwritten by an older stream emission.  Draining after the write also
+  /// covers events captured while Flutter was starting.
+  void scheduleConfigure(AppSettings settings) {
+    _configurationBarrier = _configurationBarrier
+        .catchError((_) {})
+        .then<void>((_) => configure(settings));
+    unawaited(
+      _configurationBarrier
+          .then((_) => processPendingNativeEvents())
+          .catchError((_) {}),
+    );
+  }
+
   Future<IngestionPlatformStatus> refreshStatus() async {
     try {
       final status = await _platform.getStatus();
@@ -106,6 +133,12 @@ class IngestionCoordinator with WidgetsBindingObserver {
 
   Future<void> refreshStatusAndProcess() async {
     await refreshStatus();
+    try {
+      await _configurationBarrier;
+    } catch (error, stack) {
+      _ref.read(ingestionPlatformStatusProvider.notifier).state =
+          AsyncValue.error(error, stack);
+    }
     await processPendingNativeEvents();
   }
 

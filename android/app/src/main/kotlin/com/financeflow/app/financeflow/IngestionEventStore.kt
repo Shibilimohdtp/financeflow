@@ -36,7 +36,9 @@ object IngestionEventStore {
             .putBoolean("notification_enabled", notificationEnabled)
             .putStringSet("sms_senders", smsSenders)
             .putStringSet("notification_packages", notificationPackages)
-            .apply()
+            // A receiver can run immediately after the Flutter method returns.
+            // Commit makes the configuration visible before that happens.
+            .commit()
     }
 
     @Synchronized
@@ -51,7 +53,9 @@ object IngestionEventStore {
         val bounded = JSONArray()
         val start = maxOf(0, stored.length() - MAX_EVENTS)
         for (index in start until stored.length()) bounded.put(stored.get(index))
-        prefs(context).edit().putString(QUEUE, bounded.toString()).apply()
+        // Notify Dart only after the event is durable.  Using apply() here can
+        // race a foreground MethodChannel drain and leave an event unnoticed.
+        prefs(context).edit().putString(QUEUE, bounded.toString()).commit()
     }
 
     @Synchronized
@@ -78,7 +82,7 @@ object IngestionEventStore {
             val item = stored.optJSONObject(index) ?: continue
             if (item.optString("eventId") !in ids) remaining.put(item)
         }
-        prefs(context).edit().putString(QUEUE, remaining.toString()).apply()
+        prefs(context).edit().putString(QUEUE, remaining.toString()).commit()
     }
 
     fun eventId(vararg values: String): String {
@@ -87,19 +91,6 @@ object IngestionEventStore {
         return bytes.take(16).joinToString("") { "%02x".format(it) }
     }
 
-    fun isFinancialCandidate(text: String): Boolean {
-        val normalized = text.lowercase()
-        val blocked = listOf(
-            "otp", "one time password", "verification code", "login code", "promo code",
-            "offer", "cashback offer", "sale", "discount", "pre-approved", "apply now",
-        )
-        if (blocked.any(normalized::contains)) return false
-        val action = listOf(
-            "debited", "credited", "spent", "paid", "sent", "received", "withdrawn",
-            "purchase", "refunded", "deposited",
-        ).any(normalized::contains)
-        val money = Regex("(?:₹|rs\\.?|inr)\\s*[0-9,]+(?:\\.[0-9]{1,2})?", RegexOption.IGNORE_CASE)
-            .containsMatchIn(text)
-        return action && money
-    }
+    fun isFinancialCandidate(text: String): Boolean =
+        FinancialEventGate.isFinancialCandidate(text)
 }
