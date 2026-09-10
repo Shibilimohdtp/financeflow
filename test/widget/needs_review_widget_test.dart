@@ -318,4 +318,99 @@ void main() {
       expect(find.text('Approve', skipOffstage: false), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Dismissing an item triggers Undo snackbar and tapping Undo restores it',
+    (tester) async {
+      final pending = FakePendingTransactionRepository();
+      final committed = FakeTransactionRepository();
+      addTearDown(pending.dispose);
+      addTearDown(committed.dispose);
+
+      final original = await _pumpQueue(tester, pending, committed);
+      expect(find.text('Anitha Menon T'), findsOneWidget);
+
+      // Tap Dismiss
+      await tester.tap(find.text('Dismiss'));
+      await tester.pumpAndSettle();
+
+      // Item is removed from pending repository
+      expect(await pending.getPendingTransactions(), isEmpty);
+
+      // Snackbar with Undo appears
+      expect(find.text('Anitha Menon T dismissed.'), findsOneWidget);
+      expect(find.text('Undo'), findsOneWidget);
+
+      // Tap Undo
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+
+      // Item is restored back into pending repository
+      final restored = await pending.getPendingTransactions();
+      expect(restored.length, 1);
+      expect(restored.single.tempId, original.tempId);
+    },
+  );
+
+  testWidgets(
+    'Approving an item triggers Undo snackbar and tapping Undo reverts approval',
+    (tester) async {
+      final pending = FakePendingTransactionRepository();
+      final committed = FakeTransactionRepository();
+      addTearDown(pending.dispose);
+      addTearDown(committed.dispose);
+
+      await _pumpQueue(tester, pending, committed);
+      expect(find.text('Anitha Menon T'), findsOneWidget);
+
+      // Tap Approve
+      await tester.tap(find.text('Approve'));
+      await tester.pumpAndSettle();
+
+      // Item committed to ledger, removed from pending
+      expect(await pending.getPendingTransactions(), isEmpty);
+      expect(await committed.getAllTransactions(), isNotEmpty);
+
+      // Snackbar with Undo appears
+      expect(find.text('Anitha Menon T approved.'), findsOneWidget);
+      expect(find.text('Undo'), findsOneWidget);
+
+      // Tap Undo
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+
+      // Transaction reverted: back in pending, removed from committed
+      expect(await pending.getPendingTransactions(), isNotEmpty);
+      expect(await committed.getAllTransactions(), isEmpty);
+    },
+  );
+
+  testWidgets(
+    'Filter empty states display when switching to tab with 0 items and allow navigating back to All',
+    (tester) async {
+      final pending = FakePendingTransactionRepository();
+      final committed = FakeTransactionRepository();
+      addTearDown(pending.dispose);
+      addTearDown(committed.dispose);
+
+      await _pumpQueue(tester, pending, committed);
+
+      // Switch to Duplicates (0)
+      expect(find.text('Duplicates (0)'), findsOneWidget);
+      await tester.tap(find.text('Duplicates (0)'));
+      await tester.pumpAndSettle();
+
+      // Duplicates empty state appears
+      expect(find.text('No duplicate transactions'), findsOneWidget);
+      expect(find.text('View all items'), findsOneWidget);
+
+      // Tap View all items
+      await tester.tap(find.text('View all items'));
+      await tester.pumpAndSettle();
+
+      // Item is visible again
+      expect(find.text('Anitha Menon T'), findsOneWidget);
+    },
+  );
 }
+

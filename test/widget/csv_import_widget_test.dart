@@ -77,6 +77,20 @@ class FakeTxRepo implements TransactionRepository {
     DateTime? startDate,
     DateTime? endDate,
   }) => Stream.value(_txs);
+
+  @override
+  Future<List<Transaction>> getTransactionsBySubscription(
+    String subscriptionId,
+  ) async =>
+      _txs.where((t) => t.linkedSubscriptionId == subscriptionId).toList();
+
+  @override
+  Stream<List<Transaction>> watchTransactionsBySubscription(
+    String subscriptionId,
+  ) =>
+      Stream.value(
+        _txs.where((t) => t.linkedSubscriptionId == subscriptionId).toList(),
+      );
 }
 
 class FakePendingRepo implements PendingTransactionRepository {

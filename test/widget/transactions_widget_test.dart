@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
+import 'package:financeflow/features/ingestion/needs_review_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
 import 'package:financeflow/features/transactions/transactions_controller.dart';
 import 'package:financeflow/features/transactions/transactions_screen.dart';
@@ -10,6 +11,7 @@ import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/category.dart';
 import 'package:financeflow/models/transaction.dart';
+import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/shared/widgets/ff_chip.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
@@ -189,4 +191,175 @@ void main() {
     expect(find.byIcon(Icons.search_rounded), findsOneWidget);
     expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
   });
+
+  testWidgets(
+    'TransactionsScreen displays PendingReviewTaskCard when pending reviews exist, and Review now navigates',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            filteredTransactionsProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            allTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            categoriesStreamProvider.overrideWith(
+              (ref) => Stream.value([testCategory]),
+            ),
+            rawAccountsStreamProvider.overrideWith(
+              (ref) => Stream.value([testAccount]),
+            ),
+            pendingReviewCountProvider.overrideWithValue(2),
+            pendingTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: TransactionsScreen(
+              onOpenDetail: (_) {},
+              onAddTransaction: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify task card content
+      expect(find.text('2 imported transactions need review'), findsOneWidget);
+      expect(find.text('NEEDS REVIEW · 2 ITEMS'), findsOneWidget);
+      expect(
+        find.text(
+          'Verify merchant and category so your ledger balances and spending trends stay accurate.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Review now'), findsOneWidget);
+      expect(find.text('Later'), findsOneWidget);
+
+      // Tap Review now
+      await tester.tap(find.text('Review now'));
+      await tester.pumpAndSettle();
+
+      // Should navigate to NeedsReviewScreen
+      expect(find.text('Needs Review Queue'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Tapping Later on PendingReviewTaskCard snoozes inline card and displays App Bar badge',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            filteredTransactionsProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            allTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            categoriesStreamProvider.overrideWith(
+              (ref) => Stream.value([testCategory]),
+            ),
+            rawAccountsStreamProvider.overrideWith(
+              (ref) => Stream.value([testAccount]),
+            ),
+            pendingReviewCountProvider.overrideWithValue(1),
+            pendingTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: TransactionsScreen(
+              onOpenDetail: (_) {},
+              onAddTransaction: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Inline card is visible initially
+      expect(find.text('1 imported transaction needs review'), findsOneWidget);
+      expect(find.byIcon(Icons.pending_actions_rounded), findsWidgets);
+
+      // Tap Later to snooze
+      await tester.tap(find.text('Later'));
+      await tester.pumpAndSettle();
+
+      // Inline card is hidden
+      expect(find.text('1 imported transaction needs review'), findsNothing);
+
+      // App bar has the snoozed review queue badge
+      final badgeFinder = find.byTooltip('Review queue (1 pending)');
+      expect(badgeFinder, findsOneWidget);
+
+      // Tapping badge navigates to NeedsReviewScreen
+      await tester.tap(badgeFinder);
+      await tester.pumpAndSettle();
+      expect(find.text('Needs Review Queue'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'No review task card is rendered when pending count is 0',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            filteredTransactionsProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            allTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([testTransaction]),
+            ),
+            categoriesStreamProvider.overrideWith(
+              (ref) => Stream.value([testCategory]),
+            ),
+            rawAccountsStreamProvider.overrideWith(
+              (ref) => Stream.value([testAccount]),
+            ),
+            pendingReviewCountProvider.overrideWithValue(0),
+            pendingTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: TransactionsScreen(
+              onOpenDetail: (_) {},
+              onAddTransaction: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('imported transaction'), findsNothing);
+      expect(find.text('Review now'), findsNothing);
+    },
+  );
 }
+
+

@@ -194,9 +194,9 @@ void main() {
       }
       final summary = calculateTransactionListSummary(allTypes);
       expect(summary.income, 100);
-      // Consumption excludes investment principal and unallocated loan
-      // principal. Legacy cash remains an outflow pending user review.
-      expect(summary.expenses, 60);
+      // Consumption includes expense, legacy cash, and loan/EMI repayment (10 + 40 + 50).
+      // Investment principal is excluded.
+      expect(summary.expenses, 100);
     },
   );
 

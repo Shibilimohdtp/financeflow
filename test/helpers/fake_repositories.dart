@@ -294,6 +294,29 @@ class FakeTransactionRepository implements TransactionRepository {
   Future<Transaction?> getTransactionById(String id) async => _transactions[id];
 
   @override
+  Future<List<Transaction>> getTransactionsBySubscription(
+    String subscriptionId,
+  ) async {
+    return _transactions.values
+        .where((t) => t.linkedSubscriptionId == subscriptionId)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  @override
+  Stream<List<Transaction>> watchTransactionsBySubscription(
+    String subscriptionId,
+  ) async* {
+    yield await getTransactionsBySubscription(subscriptionId);
+    yield* _controller.stream.map(
+      (list) =>
+          list
+              .where((t) => t.linkedSubscriptionId == subscriptionId)
+              .toList(),
+    );
+  }
+
+  @override
   Future<void> saveTransaction(Transaction transaction) async {
     _transactions[transaction.id] = transaction;
     _emit();

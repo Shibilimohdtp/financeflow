@@ -11,6 +11,7 @@ import '../database/schemas/investment_entity.dart';
 import '../database/schemas/money_advance_entity.dart';
 import '../database/schemas/money_record_entity.dart';
 import '../database/schemas/money_repayment_entity.dart';
+import '../database/schemas/subscription_entity.dart';
 import '../database/schemas/transaction_entity.dart';
 import '../models/loan.dart';
 import '../models/money_advance.dart';
@@ -145,6 +146,27 @@ class FinancialOperationService {
           await _postMoneyRepayment(transaction);
           if (transaction.linkedMoneyRecordId != null) {
             affectedRecords.add(transaction.linkedMoneyRecordId!);
+          }
+        case TransactionPurpose.subscriptionPayment:
+          // Update lastPaymentDate on the linked subscription so the detail
+          // screen always shows an accurate "last paid" date. This is purely
+          // informational and does not block the transaction if the subscription
+          // is missing (e.g. deleted).
+          if (transaction.linkedSubscriptionId != null) {
+            final subEntity =
+                await isar.subscriptionEntitys
+                    .filter()
+                    .uuidEqualTo(transaction.linkedSubscriptionId!)
+                    .findFirst();
+            if (subEntity != null) {
+              // Only update if this payment is more recent than the stored date.
+              final payDate = transaction.date;
+              if (subEntity.lastPaymentDate == null ||
+                  payDate.isAfter(subEntity.lastPaymentDate!)) {
+                subEntity.lastPaymentDate = payDate;
+                await isar.subscriptionEntitys.put(subEntity);
+              }
+            }
           }
         default:
           break;
@@ -481,6 +503,18 @@ class FinancialOperationService {
           interestComponent: null,
           feeComponent: null,
         );
+      case TransactionPurpose.subscriptionPayment:
+        // Keep linkedSubscriptionId; strip all other semantic links.
+        tx = tx.copyWith(
+          type: TransactionType.expense,
+          toAccountId: null,
+          linkedLoanId: null,
+          linkedInvestmentId: null,
+          linkedMoneyRecordId: null,
+          principalComponent: null,
+          interestComponent: null,
+          feeComponent: null,
+        );
     }
     return tx;
   }
@@ -564,7 +598,7 @@ class FinancialOperationService {
       paymentDate: transaction.date,
       dueDate: split.dueDate,
       principalPaid: transaction.principalComponent ?? split.principal,
-      interestPaid: transaction.interestAmount,
+      interestPaid: transaction.interestComponent ?? split.interest,
       emiAmount: transaction.amount,
       accountId: transaction.accountId,
       transactionId: transaction.id,

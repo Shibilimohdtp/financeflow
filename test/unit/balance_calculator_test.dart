@@ -161,10 +161,10 @@ void main() {
       final cashFlow = BalanceCalculator.calculateMonthlyCashFlow(transactions);
 
       expect(cashFlow.totalIncome, 50000.0);
-      expect(cashFlow.totalExpense, 13500.0); // food + EMI interest
+      expect(cashFlow.totalExpense, 20000.0); // food + complete EMI repayment
       expect(cashFlow.cashOutflow, 20000.0); // food + complete EMI
       expect(cashFlow.debtPrincipalPaid, 6500.0);
-      expect(cashFlow.netSavings, 36500.0);
+      expect(cashFlow.netSavings, 30000.0);
       expect(cashFlow.isPositiveSavings, isTrue);
     });
 

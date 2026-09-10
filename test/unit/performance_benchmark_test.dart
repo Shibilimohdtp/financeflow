@@ -10,9 +10,10 @@ import '../helpers/fake_repositories.dart';
 
 void main() {
   group('Performance and Scalability Benchmarks', () {
+    final DateTime baseDate = DateTime(2026, 8, 22);
+
     List<Transaction> generateSyntheticDataset(int count) {
       final Random rnd = Random(42);
-      final DateTime baseDate = DateTime(2026, 8, 22);
       final List<String> categories = [
         'Food',
         'Transport',
@@ -73,6 +74,7 @@ void main() {
       final report = AnalyticsCalculator.calculateReport(
         allTransactions: dataset,
         timeRange: AnalyticsTimeRange.month,
+        referenceDate: baseDate,
       );
 
       stopwatch.stop();

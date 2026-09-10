@@ -80,7 +80,11 @@ enum TransactionPurpose {
   investmentPurchase,
   investmentRedemption,
   accountAdjustment,
-  legacyCash;
+  legacyCash,
+  /// A manual payment recorded against a tracked subscription.
+  /// Semantically equivalent to [expense]: full amount is consumption spending,
+  /// direction is outflow. Does not affect loan, investment, or debt balances.
+  subscriptionPayment;
 
   String get displayName => switch (this) {
     expense => 'Expense',
@@ -96,6 +100,7 @@ enum TransactionPurpose {
     investmentRedemption => 'Investment redemption',
     accountAdjustment => 'Account adjustment',
     legacyCash => 'Legacy cash entry',
+    subscriptionPayment => 'Subscription payment',
   };
 
   static TransactionPurpose? fromString(String? value) {
@@ -198,6 +203,10 @@ class Transaction {
   final String? linkedLoanId;
   final String? linkedMoneyRecordId;
   final String? linkedInvestmentId;
+  /// Nullable reference to a tracked [Subscription]. Populated only when
+  /// [purpose] == [TransactionPurpose.subscriptionPayment]. Changing this field
+  /// after the fact does not rewrite historical amounts.
+  final String? linkedSubscriptionId;
   final double? principalComponent;
   final double? interestComponent;
   final double? feeComponent;
@@ -242,6 +251,7 @@ class Transaction {
     this.linkedLoanId,
     this.linkedMoneyRecordId,
     this.linkedInvestmentId,
+    this.linkedSubscriptionId,
     this.principalComponent,
     this.interestComponent,
     this.feeComponent,
@@ -285,6 +295,7 @@ class Transaction {
     String? linkedLoanId,
     String? linkedMoneyRecordId,
     String? linkedInvestmentId,
+    String? linkedSubscriptionId,
     double? principalComponent,
     double? interestComponent,
     double? feeComponent,
@@ -337,6 +348,10 @@ class Transaction {
           clearSemanticLinks
               ? null
               : linkedInvestmentId ?? this.linkedInvestmentId,
+      linkedSubscriptionId:
+          clearSemanticLinks
+              ? null
+              : linkedSubscriptionId ?? this.linkedSubscriptionId,
       principalComponent:
           clearSemanticLinks
               ? null
@@ -403,8 +418,12 @@ class Transaction {
   };
 
   double get consumptionExpenseAmount => switch (effectivePurpose) {
-    TransactionPurpose.expense || TransactionPurpose.legacyCash => amount,
-    TransactionPurpose.loanRepayment => interestAmount + feeAmount,
+    TransactionPurpose.expense ||
+    TransactionPurpose.legacyCash ||
+    // Subscription payment is full consumption — the entire amount is spent.
+    TransactionPurpose.subscriptionPayment ||
+    // Full repayment amount paid toward loan/EMI is an outgoing expense.
+    TransactionPurpose.loanRepayment => amount,
     TransactionPurpose.investmentPurchase ||
     TransactionPurpose.investmentRedemption => feeAmount,
     _ => 0,
@@ -418,7 +437,8 @@ class Transaction {
   bool get isLinkedOperation =>
       linkedLoanId != null ||
       linkedMoneyRecordId != null ||
-      linkedInvestmentId != null;
+      linkedInvestmentId != null ||
+      linkedSubscriptionId != null;
 
   /// Validation according to Phase 1 and 3 rules
   void validate() {

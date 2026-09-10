@@ -32,6 +32,8 @@ abstract class TransactionRepository {
     DateTime? endDate,
   });
   Future<Transaction?> getTransactionById(String id);
+  Future<List<Transaction>> getTransactionsBySubscription(String subscriptionId);
+  Stream<List<Transaction>> watchTransactionsBySubscription(String subscriptionId);
   Future<void> saveTransaction(Transaction transaction);
   Future<void> saveTransactions(List<Transaction> transactions);
   Future<void> deleteTransaction(String id);
@@ -66,6 +68,7 @@ class IsarTransactionRepository implements TransactionRepository {
       linkedLoanId: entity.linkedLoanId,
       linkedMoneyRecordId: entity.linkedMoneyRecordId,
       linkedInvestmentId: entity.linkedInvestmentId,
+      linkedSubscriptionId: entity.linkedSubscriptionId,
       principalComponent: entity.principalComponent,
       interestComponent: entity.interestComponent,
       feeComponent: entity.feeComponent,
@@ -120,6 +123,7 @@ class IsarTransactionRepository implements TransactionRepository {
     entity.linkedLoanId = domain.linkedLoanId;
     entity.linkedMoneyRecordId = domain.linkedMoneyRecordId;
     entity.linkedInvestmentId = domain.linkedInvestmentId;
+    entity.linkedSubscriptionId = domain.linkedSubscriptionId;
     entity.principalComponent = domain.principalComponent;
     entity.interestComponent = domain.interestComponent;
     entity.feeComponent = domain.feeComponent;
@@ -379,6 +383,38 @@ class IsarTransactionRepository implements TransactionRepository {
     final entity =
         await isar.transactionEntitys.filter().uuidEqualTo(id).findFirst();
     return entity != null ? _toDomain(entity) : null;
+  }
+
+  @override
+  Future<List<Transaction>> getTransactionsBySubscription(
+    String subscriptionId,
+  ) async {
+    // Isar index query will be available after schema regen; for now fall back
+    // to in-memory filter on the full set so the app is functional before the
+    // schema migration.
+    final all =
+        await isar.transactionEntitys.where().sortByDateDesc().findAll();
+    return all
+        .where((e) => e.linkedSubscriptionId == subscriptionId)
+        .map(_toDomain)
+        .toList();
+  }
+
+  @override
+  Stream<List<Transaction>> watchTransactionsBySubscription(
+    String subscriptionId,
+  ) {
+    return isar.transactionEntitys
+        .where()
+        .sortByDateDesc()
+        .watch(fireImmediately: true)
+        .map(
+          (entities) =>
+              entities
+                  .where((e) => e.linkedSubscriptionId == subscriptionId)
+                  .map(_toDomain)
+                  .toList(),
+        );
   }
 
   @override

@@ -242,11 +242,10 @@ void main() {
         // Step 17: Verify Dashboard totals (Cash Flow calculations)
         final cashFlow = BalanceCalculator.calculateMonthlyCashFlow(allTxs);
         expect(cashFlow.totalIncome, 85000.0);
-        // Consumption expense excludes invested principal and EMI principal.
-        // This legacy unlinked EMI has no interest/fee split, so only dining is
-        // included until the user links/repairs it with explicit components.
-        expect(cashFlow.totalExpense, 520.0);
-        expect(cashFlow.netSavings, 85000.0 - 520.0);
+        // Consumption expense includes dining (₹520) and full loan repayment (₹15,000).
+        // Investment principal remains excluded.
+        expect(cashFlow.totalExpense, 15520.0);
+        expect(cashFlow.netSavings, 85000.0 - 15520.0);
         expect(cashFlow.isPositiveSavings, isTrue);
 
         // Step 18: Verify Budgets update

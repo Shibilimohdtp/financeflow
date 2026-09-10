@@ -13,9 +13,11 @@ import '../../models/investment.dart';
 import '../../models/money_advance.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
+import '../../models/subscription.dart';
 import '../../models/transaction.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/investment_repository.dart';
+import '../../repositories/subscription_repository.dart';
 import '../../services/categorization_service.dart';
 import '../../services/default_account_service.dart';
 import '../../services/merchant_normalization_service.dart';
@@ -106,6 +108,7 @@ class _AddEditTransactionScreenState
   Loan? _selectedLoan;
   MoneyRecord? _selectedMoneyRecord;
   Investment? _selectedInvestment;
+  Subscription? _selectedSubscription;
   DateTime _selectedDate = DateTime.now();
   DateTime? _debtDueDate;
   bool _createAsSeparateDebt = false;
@@ -182,6 +185,22 @@ class _AddEditTransactionScreenState
 
     _merchantFocusNode = FocusNode();
     _merchantFocusNode.addListener(_onMerchantFocusChanged);
+
+    // Restore subscription link when editing an existing transaction.
+    if (initial?.purpose == TransactionPurpose.subscriptionPayment &&
+        initial?.linkedSubscriptionId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final subs =
+            ref.read(allSubscriptionsStreamProvider).value ?? const [];
+        final found =
+            subs
+                .where((s) => s.id == initial!.linkedSubscriptionId)
+                .firstOrNull;
+        if (found != null && mounted) {
+          setState(() => _selectedSubscription = found);
+        }
+      });
+    }
 
     if (initial != null &&
         widget.onSave == null &&
@@ -443,6 +462,7 @@ class _AddEditTransactionScreenState
       _selectedLoan = null;
       _selectedMoneyRecord = null;
       _selectedInvestment = null;
+      _selectedSubscription = null;
       _counterpartyController.clear();
       _principalController.clear();
       _interestController.clear();
@@ -780,6 +800,10 @@ class _AddEditTransactionScreenState
                   TransactionPurpose.investmentRedemption,
                 }.contains(_selectedPurpose)
                 ? _selectedInvestment?.id
+                : null,
+        linkedSubscriptionId:
+            _selectedPurpose == TransactionPurpose.subscriptionPayment
+                ? _selectedSubscription?.id
                 : null,
         principalComponent:
             _selectedLoan == null && _selectedInvestment == null
@@ -1209,6 +1233,7 @@ class _AddEditTransactionScreenState
         TransactionPurpose.personalDebtRepaymentMade,
         TransactionPurpose.loanRepayment,
         TransactionPurpose.investmentPurchase,
+        TransactionPurpose.subscriptionPayment,
       ],
     };
 
@@ -1853,7 +1878,142 @@ class _AddEditTransactionScreenState
   }
 
   Widget _buildPurposeFields() {
+    if (_selectedPurpose == TransactionPurpose.subscriptionPayment) {
+      final theme = context.theme;
+      final isDark = theme.brightness == Brightness.dark;
+      final allSubs = ref.watch(allSubscriptionsStreamProvider).value ?? [];
+      final activeSubs =
+          allSubs.where((s) => s.status == SubscriptionStatus.active).toList()
+            ..sort((a, b) => a.merchant.compareTo(b.merchant));
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Subscription selector ──────────────────────────────────────────
+          if (activeSubs.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.subscriptions_outlined,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  Expanded(
+                    child: Text(
+                      'No active subscriptions yet. Add subscriptions in the Subscriptions screen.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            DropdownButtonFormField<String>(
+              value: _selectedSubscription?.id ?? 'unlinked',
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Subscription',
+                prefixIcon: const Icon(Icons.subscriptions_outlined),
+                helperText:
+                    _selectedSubscription == null
+                        ? 'Choose a tracked subscription to link this payment.'
+                        : null,
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: 'unlinked',
+                  child: Text('Unlinked subscription payment'),
+                ),
+                ...activeSubs.map(
+                  (sub) => DropdownMenuItem(
+                    value: sub.id,
+                    child: Text(
+                      '${sub.merchant} · ${CurrencyFormatter.formatINR(sub.amount)}/${sub.billingFrequency.shortLabel}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: (id) {
+                final chosen =
+                    activeSubs.where((s) => s.id == id).firstOrNull;
+                setState(() {
+                  _selectedSubscription = chosen;
+                  if (chosen != null) {
+                    // Pre-fill amount and merchant from the subscription.
+                    _amountController.text =
+                        chosen.amount.toStringAsFixed(2);
+                    if (_merchantController.text.isEmpty) {
+                      _merchantController.text = chosen.merchant;
+                    }
+                  }
+                });
+              },
+            ),
+          // ── Info chip when subscription is linked ──────────────────────────
+          if (_selectedSubscription != null) ...[
+            const SizedBox(height: StillwaterTokens.spaceXs),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceSm,
+                vertical: StillwaterTokens.space2Xs + 2,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    isDark
+                        ? theme.colorScheme.primaryContainer.withValues(
+                          alpha: 0.3,
+                        )
+                        : theme.colorScheme.primaryContainer.withValues(
+                          alpha: 0.45,
+                        ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                  width: StillwaterTokens.borderWidthDefault,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.link_rounded,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  Expanded(
+                    child: Text(
+                      'This payment will appear in ${_selectedSubscription!.merchant}\'s payment history.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
     if (_selectedPurpose == TransactionPurpose.loanRepayment) {
+
       final loans =
           (ref.watch(allLoansStreamProvider).valueOrNull ?? const <Loan>[])
               .where((loan) => loan.status == LoanStatus.active)

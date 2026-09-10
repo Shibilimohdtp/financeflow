@@ -37,6 +37,14 @@ enum SubscriptionFrequency {
     }
   }
 
+  String get shortLabel => switch (this) {
+    SubscriptionFrequency.weekly => 'wk',
+    SubscriptionFrequency.monthly => 'mo',
+    SubscriptionFrequency.quarterly => 'qtr',
+    SubscriptionFrequency.yearly => 'yr',
+    SubscriptionFrequency.custom => 'custom',
+  };
+
   String toDbString() => name;
 }
 

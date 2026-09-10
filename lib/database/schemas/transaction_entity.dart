@@ -59,6 +59,9 @@ class TransactionEntity {
   @Index()
   String? linkedInvestmentId;
 
+  @Index()
+  String? linkedSubscriptionId;
+
   double? principalComponent;
 
   double? interestComponent;

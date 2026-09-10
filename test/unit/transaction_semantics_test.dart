@@ -114,20 +114,28 @@ void main() {
     },
   );
 
-  test('whole EMI is cash outflow but only interest and fees are expense', () {
-    final emi = tx(
-      id: 'emi',
-      amount: 8000,
-      purpose: TransactionPurpose.loanRepayment,
-      principal: 6500,
-      interest: 1400,
-      fee: 100,
-    );
-    final flow = BalanceCalculator.calculateMonthlyCashFlow([emi]);
-    expect(flow.cashOutflow, 8000);
-    expect(flow.totalExpense, 1500);
-    expect(flow.debtPrincipalPaid, 6500);
-  });
+  test(
+    'whole EMI is cash outflow and full consumption expense while tracking principal and interest breakdown',
+    () {
+      final emi = tx(
+        id: 'emi',
+        amount: 8000,
+        purpose: TransactionPurpose.loanRepayment,
+        principal: 6500,
+        interest: 1400,
+        fee: 100,
+      );
+      expect(emi.cashOutflowAmount, 8000);
+      expect(emi.consumptionExpenseAmount, 8000);
+      expect(emi.principalAmount, 6500);
+      expect(emi.interestAmount, 1400);
+      expect(emi.feeAmount, 100);
+      final flow = BalanceCalculator.calculateMonthlyCashFlow([emi]);
+      expect(flow.cashOutflow, 8000);
+      expect(flow.totalExpense, 8000);
+      expect(flow.debtPrincipalPaid, 6500);
+    },
+  );
 
   test('investment principal is not consumption spending', () {
     final investment = tx(
@@ -145,5 +153,24 @@ void main() {
       referenceDate: now,
     );
     expect(report.totalExpense, 50);
+  });
+
+  test('subscription payment is full consumption expense and cash outflow', () {
+    final subPayment = tx(
+      id: 'sub_payment',
+      amount: 499,
+      purpose: TransactionPurpose.subscriptionPayment,
+    );
+    expect(subPayment.cashOutflowAmount, 499);
+    expect(subPayment.consumptionExpenseAmount, 499);
+    final flow = BalanceCalculator.calculateMonthlyCashFlow([subPayment]);
+    expect(flow.cashOutflow, 499);
+    expect(flow.totalExpense, 499);
+    final report = AnalyticsCalculator.calculateReport(
+      allTransactions: [subPayment],
+      timeRange: AnalyticsTimeRange.month,
+      referenceDate: now,
+    );
+    expect(report.totalExpense, 499);
   });
 }

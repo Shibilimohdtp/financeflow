@@ -3,6 +3,8 @@ import 'package:isar/isar.dart';
 import '../database/isar_service.dart';
 import '../database/schemas/subscription_entity.dart';
 import '../models/subscription.dart';
+import '../models/transaction.dart';
+import 'transaction_repository.dart';
 
 abstract class SubscriptionRepository {
   Future<List<Subscription>> getAllSubscriptions();
@@ -147,4 +149,27 @@ final allSubscriptionsStreamProvider = StreamProvider<List<Subscription>>((
   } catch (_) {
     return Stream.value(const []);
   }
+});
+
+/// Stream of all transactions linked to [subscriptionId], sorted newest first.
+final subscriptionPaymentsStreamProvider =
+    StreamProvider.family<List<Transaction>, String>((ref, subscriptionId) {
+      final repo = ref.watch(transactionRepositoryProvider);
+      return repo.watchTransactionsBySubscription(subscriptionId);
+    });
+
+/// Aggregate payment summary for a subscription (total paid, count, most recent date).
+final subscriptionPaymentsTotalProvider = Provider.family<
+  ({double totalPaid, int count, DateTime? lastPaymentDate}),
+  String
+>((ref, subscriptionId) {
+  final payments =
+      ref.watch(subscriptionPaymentsStreamProvider(subscriptionId)).value ??
+      [];
+  if (payments.isEmpty) {
+    return (totalPaid: 0.0, count: 0, lastPaymentDate: null);
+  }
+  final total = payments.fold<double>(0.0, (sum, t) => sum + t.amount);
+  // payments are sorted newest-first by watchTransactionsBySubscription
+  return (totalPaid: total, count: payments.length, lastPaymentDate: payments.first.date);
 });

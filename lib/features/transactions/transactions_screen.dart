@@ -27,6 +27,7 @@ import '../settings/settings_controller.dart';
 import 'add_edit_transaction_screen.dart';
 import 'transaction_list_utils.dart';
 import 'transactions_controller.dart';
+import 'widgets/pending_review_task_card.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -123,6 +124,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final privacyBlur =
         ref.watch(settingsStreamProvider).value?.isPrivacyBlurEnabled ?? false;
     final pendingCount = ref.watch(pendingReviewCountProvider);
+    final isReviewSnoozed = ref.watch(reviewPromptSnoozedProvider);
+
+    ref.listen<int>(pendingReviewCountProvider, (prev, next) {
+      if (next > (prev ?? 0)) {
+        ref.read(reviewPromptSnoozedProvider.notifier).state = false;
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -184,6 +192,22 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   const SizedBox(width: StillwaterTokens.spaceXs),
                 ]
                 : [
+                  if (pendingCount > 0 && isReviewSnoozed)
+                    IconButton(
+                      icon: Badge(
+                        label: Text('$pendingCount'),
+                        backgroundColor: context.statusColors.warning,
+                        textColor: context.theme.colorScheme.surface,
+                        child: const Icon(Icons.pending_actions_rounded),
+                      ),
+                      tooltip: 'Review queue ($pendingCount pending)',
+                      onPressed:
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const NeedsReviewScreen(),
+                            ),
+                          ),
+                    ),
                   IconButton(
                     icon: const Icon(Icons.search_rounded),
                     tooltip: 'Search transactions',
@@ -237,7 +261,19 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               accounts: accounts,
               onClear: _clearFilters,
             ),
-          if (pendingCount > 0) _PendingReviewBanner(count: pendingCount),
+          if (pendingCount > 0 && !isReviewSnoozed)
+            PendingReviewTaskCard(
+              count: pendingCount,
+              onReviewNow:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NeedsReviewScreen(),
+                    ),
+                  ),
+              onLater: () {
+                ref.read(reviewPromptSnoozedProvider.notifier).state = true;
+              },
+            ),
           Expanded(
             child: transactions.when(
               loading: () => const _TransactionsLoading(),
@@ -1086,50 +1122,6 @@ class _ActiveFilters extends StatelessWidget {
       ),
     );
   }
-}
-
-class _PendingReviewBanner extends StatelessWidget {
-  final int count;
-
-  const _PendingReviewBanner({required this.count});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      StillwaterTokens.spaceLg,
-      StillwaterTokens.spaceXs,
-      StillwaterTokens.spaceLg,
-      0,
-    ),
-    child: Material(
-      color: context.aiColors.accent.withValues(
-        alpha: StillwaterTokens.opacityTint,
-      ),
-      borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
-      child: InkWell(
-        onTap:
-            () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NeedsReviewScreen()),
-            ),
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
-        child: Padding(
-          padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-          child: Row(
-            children: [
-              Icon(Icons.rate_review_outlined, color: context.aiColors.accent),
-              const SizedBox(width: StillwaterTokens.spaceSm),
-              Expanded(
-                child: Text(
-                  '$count imported ${count == 1 ? 'transaction needs' : 'transactions need'} review',
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 class _TransactionsLoading extends StatelessWidget {

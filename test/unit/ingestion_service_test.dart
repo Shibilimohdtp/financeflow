@@ -84,6 +84,24 @@ class InMemoryTransactionRepository implements TransactionRepository {
   @override
   Stream<List<Transaction>> watchTransactionsByMonth(DateTime month) =>
       Stream.value(_store.values.toList());
+
+  @override
+  Future<List<Transaction>> getTransactionsBySubscription(
+    String subscriptionId,
+  ) async =>
+      _store.values
+          .where((t) => t.linkedSubscriptionId == subscriptionId)
+          .toList();
+
+  @override
+  Stream<List<Transaction>> watchTransactionsBySubscription(
+    String subscriptionId,
+  ) =>
+      Stream.value(
+        _store.values
+            .where((t) => t.linkedSubscriptionId == subscriptionId)
+            .toList(),
+      );
 }
 
 class InMemoryPendingTransactionRepository

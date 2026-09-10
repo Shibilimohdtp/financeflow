@@ -4,8 +4,10 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/subscription.dart';
+import '../../models/transaction.dart';
 import '../../repositories/account_repository.dart';
 import '../../repositories/subscription_repository.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
@@ -16,6 +18,8 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
+import '../transactions/add_edit_transaction_screen.dart';
+import '../transactions/transaction_detail_screen.dart';
 import 'add_edit_subscription_sheet.dart';
 import 'subscriptions_controller.dart';
 
@@ -23,6 +27,17 @@ class SubscriptionDetailScreen extends ConsumerWidget {
   final Subscription subscription;
 
   const SubscriptionDetailScreen({super.key, required this.subscription});
+
+  static Future<T?> push<T>(
+    BuildContext context, {
+    required Subscription subscription,
+  }) {
+    return Navigator.of(context).push<T>(
+      MaterialPageRoute<T>(
+        builder: (ctx) => SubscriptionDetailScreen(subscription: subscription),
+      ),
+    );
+  }
 
   void _edit(BuildContext context, Subscription currentSub) {
     showModalBottomSheet(
@@ -100,6 +115,12 @@ class SubscriptionDetailScreen extends ConsumerWidget {
       (a) => a.id == currentSub.accountId,
       orElse: () => null as dynamic,
     );
+
+    final paymentTotals =
+        ref.watch(subscriptionPaymentsTotalProvider(currentSub.id));
+    final recentPayments =
+        ref.watch(subscriptionPaymentsStreamProvider(currentSub.id)).value ?? [];
+    final displayPayments = recentPayments.take(5).toList();
 
     final days = currentSub.daysUntilRenewal();
     final isActive = currentSub.status == SubscriptionStatus.active;
@@ -318,7 +339,127 @@ class SubscriptionDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.spaceXl),
 
-          // ── 4. Action Buttons ───────────────────────────────────────
+          // ── 4. Payment History ─────────────────────────────────────
+          const FfSectionHeader(title: 'Payment History'),
+          FfCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Summary row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceMd,
+                    StillwaterTokens.spaceLg,
+                    StillwaterTokens.spaceSm,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              CurrencyFormatter.formatINR(
+                                paymentTotals.totalPaid,
+                              ),
+                              style: StillwaterTypography.numHero(
+                                color: theme.colorScheme.onSurface,
+                              ).copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'Total paid · ${paymentTotals.count} payment${paymentTotals.count == 1 ? '' : 's'}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.secondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (paymentTotals.lastPaymentDate != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Last paid',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.secondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              DateFormatter.formatShortDate(
+                                paymentTotals.lastPaymentDate!,
+                              ),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                if (displayPayments.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      StillwaterTokens.spaceLg,
+                      StillwaterTokens.space2Xs,
+                      StillwaterTokens.spaceLg,
+                      StillwaterTokens.spaceMd,
+                    ),
+                    child: Text(
+                      'No payments recorded yet. Use "Record payment" to link a manual payment.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  ...displayPayments.map(
+                    (tx) => _buildPaymentRow(context, tx, theme),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceMd),
+
+          // Record Payment button
+          FfButton(
+            label: 'Record payment',
+            variant: FfButtonVariant.secondary,
+            leadingIcon: const Icon(Icons.add_rounded, size: 18),
+            onPressed: () {
+              AddEditTransactionScreen.push<void>(
+                context,
+                initialTransaction: Transaction(
+                  id: '',
+                  amount: currentSub.amount,
+                  type: TransactionType.expense,
+                  purpose: TransactionPurpose.subscriptionPayment,
+                  categoryId: 'cat_subscriptions',
+                  categoryName: 'Subscriptions',
+                  categoryIcon: 'subscriptions',
+                  categoryColor: 'indigo',
+                  merchant: currentSub.merchant,
+                  date: DateTime.now(),
+                  accountId: currentSub.accountId ?? '',
+                  linkedSubscriptionId: currentSub.id,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: StillwaterTokens.spaceXl),
+
+          // ── 5. Action Buttons ───────────────────────────────────────
           Row(
             children: [
               Expanded(
@@ -341,6 +482,66 @@ class SubscriptionDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: StillwaterTokens.space3Xl),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentRow(
+    BuildContext context,
+    Transaction tx,
+    ThemeData theme,
+  ) {
+    return InkWell(
+      onTap: () {
+        showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => TransactionDetailScreen(transaction: tx),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceSm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormatter.formatShortDate(tx.date),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (tx.notes != null && tx.notes!.isNotEmpty)
+                    Text(
+                      tx.notes!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            FfAmountText(
+              amount: tx.amount,
+              type: TransactionType.expense,
+              size: FfAmountSize.sm,
+            ),
+            const SizedBox(width: StillwaterTokens.space2Xs),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }

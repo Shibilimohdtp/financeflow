@@ -12,6 +12,12 @@ import '../settings/settings_controller.dart';
 class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
 
+  ParsedTransaction? _lastDismissedItem;
+  ParsedTransaction? _lastApprovedItem;
+  String? _lastCommittedId;
+  bool _lastApprovedWasMerge = false;
+  Transaction? _lastPreMergeExistingTransaction;
+
   NeedsReviewController(this._ref) : super(const AsyncValue.data(null));
 
   /// Approve a single pending transaction
@@ -19,6 +25,40 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _commitItem(item);
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Undo the last approved item, restoring it to the pending queue
+  Future<void> undoLastApprove() async {
+    final item = _lastApprovedItem;
+    if (item == null) return;
+    state = const AsyncValue.loading();
+    try {
+      final txRepo = _ref.read(transactionRepositoryProvider);
+      final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
+      if (_lastApprovedWasMerge && _lastPreMergeExistingTransaction != null) {
+        await txRepo.saveTransaction(_lastPreMergeExistingTransaction!);
+      } else if (_lastCommittedId != null) {
+        try {
+          await _ref
+              .read(financialOperationServiceProvider)
+              .deleteTransaction(_lastCommittedId!);
+        } catch (_) {
+          await txRepo.deleteTransaction(_lastCommittedId!);
+        }
+      }
+      await pendingRepo.savePendingTransaction(item);
+      _lastApprovedItem = null;
+      _lastCommittedId = null;
+      _lastPreMergeExistingTransaction = null;
+      _lastApprovedWasMerge = false;
       try {
         await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
       } catch (_) {}
@@ -87,14 +127,20 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
           'Edited details no longer match this duplicate. Review the resolution.',
         );
       }
+      _lastApprovedWasMerge = true;
+      _lastPreMergeExistingTransaction = existing;
       tx = TransactionMergeService.mergeWithExisting(
         existing: existing,
         incoming: item,
       );
     } else {
+      _lastApprovedWasMerge = false;
+      _lastPreMergeExistingTransaction = null;
       // Stable ID makes retries safe if removing the pending row fails.
       tx = item.toTransaction(targetId: item.tempId);
     }
+    _lastApprovedItem = item;
+    _lastCommittedId = tx.id;
     // Rich edited transactions must use the same linked-operation boundary as
     // Add Transaction; unedited imports retain their existing repository path.
     if (item.purpose != null || tx.isLinkedOperation) {
@@ -106,11 +152,32 @@ class NeedsReviewController extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Dismiss or exclude a pending transaction
-  Future<void> dismissItem(String tempId) async {
+  Future<void> dismissItem(String tempId, {ParsedTransaction? item}) async {
     state = const AsyncValue.loading();
     try {
       final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
+      _lastDismissedItem =
+          item ?? await pendingRepo.getPendingTransactionById(tempId);
       await pendingRepo.removePendingTransaction(tempId);
+      try {
+        await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
+      } catch (_) {}
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Undo the last dismissed item, restoring it to the pending queue
+  Future<void> undoLastDismiss() async {
+    final item = _lastDismissedItem;
+    if (item == null) return;
+    state = const AsyncValue.loading();
+    try {
+      final pendingRepo = _ref.read(pendingTransactionRepositoryProvider);
+      await pendingRepo.savePendingTransaction(item);
+      _lastDismissedItem = null;
       try {
         await _ref.read(notificationCoordinatorProvider).syncFromLocalState();
       } catch (_) {}
@@ -199,3 +266,7 @@ final pendingReviewCountProvider = Provider<int>((ref) {
   final pendingAsync = ref.watch(pendingTransactionsStreamProvider);
   return pendingAsync.value?.length ?? 0;
 });
+
+/// Session-level snooze provider for the Money-screen review task card
+final reviewPromptSnoozedProvider = StateProvider<bool>((ref) => false);
+

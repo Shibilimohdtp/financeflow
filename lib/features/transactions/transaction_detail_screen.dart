@@ -4,6 +4,7 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/transaction.dart';
+import '../../repositories/subscription_repository.dart';
 import '../../services/ingestion/transaction_merge_service.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
@@ -14,6 +15,7 @@ import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
+import '../subscriptions/subscription_detail_screen.dart';
 import 'add_edit_transaction_screen.dart';
 import 'transactions_controller.dart';
 
@@ -26,11 +28,19 @@ class TransactionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
+    final subscriptions =
+        ref.watch(allSubscriptionsStreamProvider).value ?? [];
     final account =
         accounts.where((a) => a.id == transaction.accountId).firstOrNull;
     final toAccount =
         transaction.toAccountId != null
             ? accounts.where((a) => a.id == transaction.toAccountId).firstOrNull
+            : null;
+    final linkedSubscription =
+        transaction.linkedSubscriptionId != null
+            ? subscriptions
+                .where((s) => s.id == transaction.linkedSubscriptionId)
+                .firstOrNull
             : null;
 
     return Scaffold(
@@ -62,6 +72,8 @@ class TransactionDetailScreen extends ConsumerWidget {
                         ? 'Delete this payment and reopen its linked EMI installment? The loan balance and next due date will be recalculated. This can be undone briefly.'
                         : transaction.linkedMoneyRecordId != null
                         ? 'Delete this linked ledger operation? The personal debt balance and settlement status will be recalculated. This can be undone briefly.'
+                        : transaction.linkedSubscriptionId != null
+                        ? 'Delete this subscription payment? The payment will no longer appear in the subscription\'s history. This can be undone briefly.'
                         : 'Are you sure you want to delete this transaction for "${transaction.merchant}"? This action can be undone briefly.',
                 confirmLabel: 'Delete',
                 isDestructive: true,
@@ -299,6 +311,23 @@ class TransactionDetailScreen extends ConsumerWidget {
                           'Principal ${CurrencyFormatter.formatINR(transaction.principalAmount)} · Interest ${CurrencyFormatter.formatINR(transaction.interestAmount)} · Fees ${CurrencyFormatter.formatINR(transaction.feeAmount)}',
                     ),
                   ],
+                  if (transaction.linkedSubscriptionId != null) ...[
+                    const Divider(height: 1),
+                    _buildSubscriptionRow(
+                      context,
+                      linkedSubscription: linkedSubscription,
+                      subscriptionId: transaction.linkedSubscriptionId!,
+                      onTap:
+                          linkedSubscription != null
+                              ? () {
+                                SubscriptionDetailScreen.push(
+                                  context,
+                                  subscription: linkedSubscription,
+                                );
+                              }
+                              : null,
+                    ),
+                  ],
                   const Divider(height: 1),
                   _buildDetailRow(
                     context,
@@ -401,6 +430,73 @@ class TransactionDetailScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionRow(
+    BuildContext context, {
+    required dynamic linkedSubscription,
+    required String subscriptionId,
+    required VoidCallback? onTap,
+  }) {
+    final theme = context.theme;
+    final name =
+        linkedSubscription?.merchant as String? ?? 'Subscription no longer tracked';
+    final isResolved = linkedSubscription != null;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                'Subscription',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.subscriptions_outlined,
+              size: 16,
+              color:
+                  isResolved
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: StillwaterTokens.spaceXs),
+            Expanded(
+              child: Text(
+                name,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color:
+                      isResolved
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.end,
+              ),
+            ),
+            if (isResolved) ...[
+              const SizedBox(width: StillwaterTokens.space2Xs),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
