@@ -345,11 +345,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                               : 'Archive Account',
                                         ),
                                       ),
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                         value: 'delete',
                                         child: Text(
                                           'Delete Account',
-                                          style: TextStyle(color: Colors.red),
+                                          style: TextStyle(
+                                            color: theme.colorScheme.error,
+                                          ),
                                         ),
                                       ),
                                     ],

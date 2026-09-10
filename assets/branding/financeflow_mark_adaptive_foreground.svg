@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" width="432" height="432">
   <defs>
     <linearGradient id="fgTealGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D3EDE6" />
+      <stop offset="0%" stop-color="#E3E8CB" />
       <stop offset="100%" stop-color="#FFFFFF" />
     </linearGradient>
     <linearGradient id="fgGoldGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FAE3BC" />
-      <stop offset="100%" stop-color="#E9B366" />
+      <stop offset="0%" stop-color="#F1DFEA" />
+      <stop offset="100%" stop-color="#A77D92" />
     </linearGradient>
   </defs>
   <!-- Centered Stillwater Mark in 288x288 safe zone (center at 216, 216) -->

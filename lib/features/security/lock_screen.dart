@@ -85,7 +85,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     final isPin = settings?.isPinEnabled ?? false;
 
     return Scaffold(
-      backgroundColor: StillwaterColors.lightSecInk,
+      backgroundColor: StillwaterColors.darkSecInk,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -100,10 +100,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.2),
                       width: 1.5,
                     ),
                   ),
@@ -119,7 +119,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 const Text(
                   'FinanceFlow Locked',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: StillwaterColors.darkOnSecInk,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
@@ -128,7 +128,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 Text(
                   'Your financial data is protected on this device.',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.7),
                     fontSize: 13,
                   ),
                   textAlign: TextAlign.center,
@@ -150,10 +150,14 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                           shape: BoxShape.circle,
                           color:
                               index < _enteredPin.length
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.2),
+                                  ? StillwaterColors.darkOnSecInk
+                                  : StillwaterColors.darkOnSecInk.withValues(
+                                    alpha: 0.2,
+                                  ),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: StillwaterColors.darkOnSecInk.withValues(
+                              alpha: 0.4,
+                            ),
                           ),
                         ),
                       ),
@@ -234,7 +238,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       width: 64,
       height: 64,
       child: Material(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.08),
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -243,7 +247,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             child: Text(
               digit,
               style: const TextStyle(
-                color: Colors.white,
+                color: StillwaterColors.darkOnSecInk,
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
               ),
@@ -261,7 +265,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       child: IconButton(
         icon: const Icon(
           Icons.fingerprint_rounded,
-          color: Colors.white,
+          color: StillwaterColors.darkOnSecInk,
           size: 32,
         ),
         onPressed: _tryBiometricUnlock,
@@ -276,7 +280,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       child: IconButton(
         icon: const Icon(
           Icons.backspace_outlined,
-          color: Colors.white,
+          color: StillwaterColors.darkOnSecInk,
           size: 24,
         ),
         onPressed: _onDeletePressed,

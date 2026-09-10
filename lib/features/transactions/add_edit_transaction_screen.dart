@@ -17,6 +17,7 @@ import '../../models/transaction.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../services/categorization_service.dart';
+import '../../services/default_account_service.dart';
 import '../../services/merchant_normalization_service.dart';
 import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
@@ -327,13 +328,15 @@ class _AddEditTransactionScreenState
     }
     _defaultsApplied = true;
 
+    // The newest account is the user's intentional default. Keep category
+    // and payment-method suggestions based on transaction history, but do not
+    // let an older transaction force the account back to Cash Wallet.
+    _selectedAccount = defaultTransactionAccount(accounts);
+
     final recentForType =
         history.where((tx) => tx.type == _selectedType).toList();
     if (recentForType.isNotEmpty) {
       final recent = recentForType.first;
-      _selectedAccount =
-          accounts.where((a) => a.id == recent.accountId).firstOrNull ??
-          accounts.first;
 
       final relevant = _prioritizedCategories(categories, history);
       _selectedCategory =
@@ -345,7 +348,6 @@ class _AddEditTransactionScreenState
         _selectedPaymentMethod = recent.paymentMethod!;
       }
     } else {
-      _selectedAccount = accounts.first;
       final relevant = _prioritizedCategories(categories, history);
       if (relevant.isNotEmpty) {
         _selectedCategory = relevant.first;
@@ -854,19 +856,14 @@ class _AddEditTransactionScreenState
   }
 
   Color _typeColor(BuildContext context, TransactionType type) {
-    final finColors = context.theme.extension<FfFinColors>();
+    final finColors = context.finColors;
     return switch (type) {
-      TransactionType.expense =>
-        finColors?.expense ?? StillwaterColors.lightExpense,
-      TransactionType.income =>
-        finColors?.income ?? StillwaterColors.lightIncome,
-      TransactionType.transfer =>
-        finColors?.transfer ?? StillwaterColors.lightTransfer,
-      TransactionType.investment =>
-        finColors?.investment ?? StillwaterColors.lightInvestment,
-      TransactionType.loanEmi => finColors?.debt ?? StillwaterColors.lightDebt,
-      TransactionType.cash =>
-        finColors?.savings ?? StillwaterColors.lightSavings,
+      TransactionType.expense => finColors.expense,
+      TransactionType.income => finColors.income,
+      TransactionType.transfer => finColors.transfer,
+      TransactionType.investment => finColors.investment,
+      TransactionType.loanEmi => finColors.debt,
+      TransactionType.cash => finColors.savings,
     };
   }
 
@@ -1544,7 +1541,9 @@ class _AddEditTransactionScreenState
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                  color: theme.colorScheme.shadow.withValues(
+                    alpha: isDark ? 0.35 : 0.08,
+                  ),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -2144,9 +2143,9 @@ class _AddEditTransactionScreenState
                       'Repeated advances to the same person combine into one active balance.',
                   suffixIcon:
                       matchingRecord != null
-                          ? const Icon(
+                          ? Icon(
                             Icons.check_circle_rounded,
-                            color: StillwaterColors.lightIncome,
+                            color: context.secColors.verified,
                             size: 20,
                           )
                           : null,
@@ -2188,10 +2187,10 @@ class _AddEditTransactionScreenState
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.account_balance_wallet_outlined,
                         size: 18,
-                        color: StillwaterColors.lightPrimary,
+                        color: theme.colorScheme.primary,
                       ),
                       const SizedBox(width: StillwaterTokens.spaceXs),
                       Expanded(
@@ -2201,7 +2200,7 @@ class _AddEditTransactionScreenState
                               : 'Adding to ${matchingRecord.personName}\'s active balance',
                           style: context.theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: StillwaterColors.lightPrimary,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                       ),
@@ -2213,7 +2212,7 @@ class _AddEditTransactionScreenState
                         ? 'This advance will be tracked as its own separate obligation card.'
                         : 'Current balance: ${CurrencyFormatter.formatINR(existingRemaining)} → New balance: ${CurrencyFormatter.formatINR(newTotal)}',
                     style: context.theme.textTheme.bodySmall?.copyWith(
-                      color: StillwaterColors.lightTextSecondary,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceXs),

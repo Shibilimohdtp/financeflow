@@ -4,7 +4,7 @@ import 'stillwater_colors.dart';
 import 'stillwater_tokens.dart';
 import 'stillwater_typography.dart';
 
-/// Stillwater Theme Generator (Daylight and Deep Water)
+/// FinanceFlow theme generator. Public names remain stable for compatibility.
 class StillwaterTheme {
   StillwaterTheme._();
 
@@ -22,27 +22,35 @@ class StillwaterTheme {
       primaryContainer: StillwaterColors.lightPrimaryContainer,
       onPrimaryContainer: StillwaterColors.lightOnPrimaryContainer,
       secondary: StillwaterColors.lightSecondary,
-      onSecondary: StillwaterColors.lightSurfaceDefault,
+      onSecondary: StillwaterColors.lightOnSecondary,
       secondaryContainer: StillwaterColors.lightSecondaryContainer,
       onSecondaryContainer: StillwaterColors.lightOnSecondaryContainer,
       tertiary: StillwaterColors.lightAccent,
-      onTertiary: Colors.white,
+      onTertiary: StillwaterColors.lightOnAccent,
       tertiaryContainer: StillwaterColors.lightAccentContainer,
       onTertiaryContainer: StillwaterColors.lightOnAccentContainer,
       error: StillwaterColors.lightError,
-      onError: Colors.white,
+      onError: StillwaterColors.lightOnError,
       errorContainer: StillwaterColors.lightErrorContainer,
       onErrorContainer: StillwaterColors.lightError,
       surface: StillwaterColors.lightSurfaceDefault,
       onSurface: StillwaterColors.lightTextPrimary,
+      onSurfaceVariant: StillwaterColors.lightTextSecondary,
+      surfaceDim: StillwaterColors.lightSurfaceContainerHighest,
+      surfaceBright: StillwaterColors.lightSurfaceElevated,
       surfaceContainerLowest: StillwaterColors.lightSurfaceElevated,
       surfaceContainerLow: StillwaterColors.lightSurfaceContainerLow,
       surfaceContainer: StillwaterColors.lightSurfaceContainer,
       surfaceContainerHigh: StillwaterColors.lightSurfaceContainerHigh,
-      surfaceContainerHighest: StillwaterColors.lightBorderHairline,
+      surfaceContainerHighest: StillwaterColors.lightSurfaceContainerHighest,
       outline: StillwaterColors.lightBorderStrong,
       outlineVariant: StillwaterColors.lightBorderHairline,
-      scrim: Color(0x7A10201C),
+      shadow: StillwaterColors.darkSecInk,
+      scrim: StillwaterColors.lightScrim,
+      inverseSurface: StillwaterColors.darkSurfaceDefault,
+      onInverseSurface: StillwaterColors.darkTextPrimary,
+      inversePrimary: StillwaterColors.darkPrimary,
+      surfaceTint: StillwaterColors.lightPrimary,
     );
 
     return ThemeData(
@@ -56,6 +64,7 @@ class StillwaterTheme {
       textTheme: textTheme,
       extensions: const [
         FfFinColors.daylight,
+        FfStatusColors.daylight,
         FfAiColors.daylight,
         FfSecColors.daylight,
       ],
@@ -236,7 +245,9 @@ class StillwaterTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: StillwaterColors.lightSecInk,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: Colors.white),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: StillwaterColors.lightOnSecInk,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
         ),
@@ -264,27 +275,35 @@ class StillwaterTheme {
       primaryContainer: StillwaterColors.darkPrimaryContainer,
       onPrimaryContainer: StillwaterColors.darkOnPrimaryContainer,
       secondary: StillwaterColors.darkSecondary,
-      onSecondary: StillwaterColors.darkSurfaceDefault,
+      onSecondary: StillwaterColors.darkOnSecondary,
       secondaryContainer: StillwaterColors.darkSecondaryContainer,
       onSecondaryContainer: StillwaterColors.darkOnSecondaryContainer,
       tertiary: StillwaterColors.darkAccent,
-      onTertiary: Colors.black,
+      onTertiary: StillwaterColors.darkOnAccent,
       tertiaryContainer: StillwaterColors.darkAccentContainer,
       onTertiaryContainer: StillwaterColors.darkOnAccentContainer,
       error: StillwaterColors.darkError,
-      onError: Colors.black,
+      onError: StillwaterColors.darkOnError,
       errorContainer: StillwaterColors.darkErrorContainer,
       onErrorContainer: StillwaterColors.darkError,
       surface: StillwaterColors.darkSurfaceDefault,
       onSurface: StillwaterColors.darkTextPrimary,
+      onSurfaceVariant: StillwaterColors.darkTextSecondary,
+      surfaceDim: StillwaterColors.darkSurfaceApp,
+      surfaceBright: StillwaterColors.darkSurfaceElevated,
       surfaceContainerLowest: StillwaterColors.darkSurfaceApp,
       surfaceContainerLow: StillwaterColors.darkSurfaceContainerLow,
       surfaceContainer: StillwaterColors.darkSurfaceContainer,
       surfaceContainerHigh: StillwaterColors.darkSurfaceContainerHigh,
-      surfaceContainerHighest: StillwaterColors.darkSurfaceElevated,
+      surfaceContainerHighest: StillwaterColors.darkSurfaceContainerHighest,
       outline: StillwaterColors.darkBorderStrong,
       outlineVariant: StillwaterColors.darkBorderHairline,
-      scrim: Color(0x99050B0A),
+      shadow: StillwaterColors.darkSecInk,
+      scrim: StillwaterColors.darkScrim,
+      inverseSurface: StillwaterColors.lightSurfaceDefault,
+      onInverseSurface: StillwaterColors.lightTextPrimary,
+      inversePrimary: StillwaterColors.lightPrimary,
+      surfaceTint: StillwaterColors.darkPrimary,
     );
 
     return ThemeData(
@@ -298,6 +317,7 @@ class StillwaterTheme {
       textTheme: textTheme,
       extensions: const [
         FfFinColors.deepWater,
+        FfStatusColors.deepWater,
         FfAiColors.deepWater,
         FfSecColors.deepWater,
       ],

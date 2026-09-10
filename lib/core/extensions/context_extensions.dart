@@ -9,13 +9,20 @@ extension BuildContextExtensions on BuildContext {
 
   // Custom Stillwater Theme Extensions
   FfFinColors get finColors =>
-      Theme.of(this).extension<FfFinColors>() ?? FfFinColors.daylight;
+      Theme.of(this).extension<FfFinColors>() ??
+      (isDarkMode ? FfFinColors.deepWater : FfFinColors.daylight);
+
+  FfStatusColors get statusColors =>
+      Theme.of(this).extension<FfStatusColors>() ??
+      (isDarkMode ? FfStatusColors.deepWater : FfStatusColors.daylight);
 
   FfAiColors get aiColors =>
-      Theme.of(this).extension<FfAiColors>() ?? FfAiColors.daylight;
+      Theme.of(this).extension<FfAiColors>() ??
+      (isDarkMode ? FfAiColors.deepWater : FfAiColors.daylight);
 
   FfSecColors get secColors =>
-      Theme.of(this).extension<FfSecColors>() ?? FfSecColors.daylight;
+      Theme.of(this).extension<FfSecColors>() ??
+      (isDarkMode ? FfSecColors.deepWater : FfSecColors.daylight);
 
   bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
 }

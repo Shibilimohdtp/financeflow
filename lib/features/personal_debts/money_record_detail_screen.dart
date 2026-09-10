@@ -338,7 +338,9 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                         vertical: StillwaterTokens.space2Xs,
                       ),
                       decoration: BoxDecoration(
-                        color: status.color.withValues(alpha: 0.12),
+                        color: status
+                            .colorFor(isDark: context.isDarkMode)
+                            .withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(
                           StillwaterTokens.radiusSm,
                         ),
@@ -346,7 +348,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       child: Text(
                         status.displayName,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: status.color,
+                          color: status.colorFor(isDark: context.isDarkMode),
                           fontWeight: FontWeight.w700,
                         ),
                       ),

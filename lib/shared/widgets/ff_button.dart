@@ -44,14 +44,23 @@ class FfButton extends StatelessWidget {
 
     final double fontSize = size == FfButtonSize.sm ? 12.0 : 14.0;
 
+    final loadingColor = switch (variant) {
+      FfButtonVariant.primary || FfButtonVariant.filled =>
+        context.colorScheme.onPrimary,
+      FfButtonVariant.secondary => context.colorScheme.onSecondaryContainer,
+      FfButtonVariant.destructive => context.colorScheme.onError,
+      FfButtonVariant.outlined || FfButtonVariant.text =>
+        context.colorScheme.primary,
+    };
+
     Widget labelWidget =
         isLoading
-            ? const SizedBox(
+            ? SizedBox(
               height: 18,
               width: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                color: loadingColor,
               ),
             )
             : Row(

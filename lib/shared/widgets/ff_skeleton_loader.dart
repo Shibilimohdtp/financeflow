@@ -64,9 +64,7 @@ class FfSkeletonBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor =
-        isDark ? const Color(0xFF1D2D2A) : const Color(0xFFE7E5DC);
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHigh;
 
     return Container(
       width: width,

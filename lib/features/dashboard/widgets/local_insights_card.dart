@@ -62,7 +62,7 @@ class LocalInsightsCard extends ConsumerWidget {
                 break;
               case InsightSeverity.warning:
                 iconData = Icons.info_outline_rounded;
-                iconColor = theme.colorScheme.tertiary;
+                iconColor = context.statusColors.warning;
                 break;
               case InsightSeverity.info:
               case InsightSeverity.neutral:

@@ -66,7 +66,7 @@ class BudgetInsightsCard extends StatelessWidget {
       insights.add(
         _BudgetInsightItem(
           icon: Icons.warning_amber_rounded,
-          iconColor: theme.colorScheme.tertiary,
+          iconColor: context.statusColors.warning,
           title: '${first.budget.name} nearing limit',
           subtitle:
               '${(first.percentageUsed * 100).toStringAsFixed(0)}% used with ${CurrencyFormatter.formatINR(first.remainingAmount)} remaining across ${first.daysRemaining} days.',

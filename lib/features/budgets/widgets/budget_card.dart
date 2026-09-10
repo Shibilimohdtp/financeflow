@@ -42,11 +42,11 @@ class BudgetCard extends StatelessWidget {
           '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit';
       statusTextColor = finColors.expense;
     } else if (isApproaching) {
-      progressColor = theme.colorScheme.tertiary;
+      progressColor = context.statusColors.warning;
       statusIcon = Icons.warning_amber_rounded;
       statusLabel =
           '${CurrencyFormatter.formatINR(summary.remainingAmount)} left · Approaching';
-      statusTextColor = theme.colorScheme.tertiary;
+      statusTextColor = context.statusColors.warning;
     } else {
       progressColor = theme.colorScheme.primary;
       statusIcon = Icons.check_circle_outline_rounded;

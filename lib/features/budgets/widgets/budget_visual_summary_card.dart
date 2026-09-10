@@ -46,7 +46,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
           '${CurrencyFormatter.formatINR(overAmount)} over planned limit';
       gaugeSublabel = 'OVER';
     } else if (isApproaching) {
-      statusColor = theme.colorScheme.tertiary;
+      statusColor = context.statusColors.warning;
       statusIcon = Icons.warning_amber_rounded;
       statusMessage = 'Approaching limit ($percentageInt% used)';
       gaugeSublabel = 'USED';

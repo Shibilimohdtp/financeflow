@@ -36,11 +36,19 @@ enum MoneyRecordType {
   }
 
   Color get color {
+    return colorFor(isDark: false);
+  }
+
+  Color colorFor({required bool isDark}) {
     switch (this) {
       case MoneyRecordType.lent:
-        return StillwaterColors.lightIncome;
+        return isDark
+            ? StillwaterColors.darkIncome
+            : StillwaterColors.lightIncome;
       case MoneyRecordType.borrowed:
-        return StillwaterColors.lightExpense;
+        return isDark
+            ? StillwaterColors.darkExpense
+            : StillwaterColors.lightExpense;
     }
   }
 
@@ -100,17 +108,31 @@ enum MoneyRecordStatus {
   }
 
   Color get color {
+    return colorFor(isDark: false);
+  }
+
+  Color colorFor({required bool isDark}) {
     switch (this) {
       case MoneyRecordStatus.active:
-        return StillwaterColors.lightPrimary;
+        return isDark
+            ? StillwaterColors.darkPrimary
+            : StillwaterColors.lightPrimary;
       case MoneyRecordStatus.dueSoon:
-        return StillwaterColors.lightWarning;
+        return isDark
+            ? StillwaterColors.darkWarning
+            : StillwaterColors.lightWarning;
       case MoneyRecordStatus.overdue:
-        return StillwaterColors.lightError;
+        return isDark
+            ? StillwaterColors.darkError
+            : StillwaterColors.lightError;
       case MoneyRecordStatus.partiallyPaid:
-        return StillwaterColors.lightTransfer;
+        return isDark
+            ? StillwaterColors.darkTransfer
+            : StillwaterColors.lightTransfer;
       case MoneyRecordStatus.settled:
-        return StillwaterColors.lightIncome;
+        return isDark
+            ? StillwaterColors.darkIncome
+            : StillwaterColors.lightIncome;
     }
   }
 }

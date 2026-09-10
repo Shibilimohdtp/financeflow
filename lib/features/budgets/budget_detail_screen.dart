@@ -122,7 +122,7 @@ class BudgetDetailScreen extends ConsumerWidget {
       statusLabel =
           '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit';
     } else if (isApproaching) {
-      progressColor = theme.colorScheme.tertiary;
+      progressColor = context.statusColors.warning;
       statusIcon = Icons.warning_amber_rounded;
       statusLabel =
           'Approaching threshold (${(budget.alertThreshold * 100).toInt()}%)';

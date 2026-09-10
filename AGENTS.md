@@ -1,5 +1,33 @@
 # FinanceFlow contributor instructions
 
+## Mandatory user-controlled backup gate
+
+Before starting any operation that could affect a user's existing FinanceFlow
+data or device installation, interrupt the task and ask the user to personally
+create and verify an encrypted FinanceFlow backup/export. Do not assume that a
+backup exists, create one silently on the user's behalf, or continue until the
+user explicitly confirms that the backup was created and stored somewhere
+recoverable outside the app/device. This gate applies especially before:
+
+- installing, reinstalling, upgrading, downgrading, signing, or changing the
+  application ID of an APK on a real device;
+- any `adb install`, package replacement, migration, Isar schema/generated-file
+  change, database repair, reset, clear-data, uninstall, or restore operation;
+- dependency/build configuration changes or other large changes when a real
+  device may be used for validation and the app contains user data.
+
+For device work, explicitly tell the user to keep the backup file and its
+passphrase, then wait for confirmation before building or installing. If the
+user cannot confirm a recoverable backup, stop and ask for direction. Never
+run `adb uninstall`, `adb shell pm clear`, or an install command that may
+uninstall an existing package as part of this task.
+
+When preserving device data, never use `flutter install`, because it can select
+the wrong/stale APK and uninstall the existing package when signing keys do
+not match. Build the exact requested APK and use `adb install -r` only. If any
+tool reports “Uninstalling old version”, stop immediately, report it, and do
+not proceed until the user confirms the backup and recovery plan again.
+
 ## Android standalone-startup gate
 
 Any change to Dart bootstrap (`lib/main.dart`, providers, plugins), Android

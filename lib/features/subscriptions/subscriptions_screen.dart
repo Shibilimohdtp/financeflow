@@ -313,7 +313,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                                     vertical: 1,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.tertiaryContainer,
+                                    color: context.statusColors.warningContainer,
                                     borderRadius: BorderRadius.circular(
                                       StillwaterTokens.radiusXs,
                                     ),
@@ -323,7 +323,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.tertiary,
+                                      color: context.statusColors.warning,
                                     ),
                                   ),
                                 ),

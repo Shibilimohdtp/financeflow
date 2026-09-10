@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/analytics_calculator.dart';
+import '../../../theme/stillwater_colors.dart';
 import '../../../theme/stillwater_tokens.dart';
 
 /// Stillwater spending heatmap visualizing day-of-week intensity
@@ -43,6 +44,15 @@ class FfSpendingHeatmap extends StatelessWidget {
                       alpha: 0.15 + (intensity * 0.85),
                     );
                   }
+                  final compositedCell = Color.alphaBlend(
+                    cellColor,
+                    theme.colorScheme.surface,
+                  );
+                  final cellForeground =
+                      ThemeData.estimateBrightnessForColor(compositedCell) ==
+                              Brightness.dark
+                          ? StillwaterColors.lightOnPrimary
+                          : StillwaterColors.darkOnPrimary;
 
                   return Expanded(
                     child: Padding(
@@ -79,10 +89,8 @@ class FfSpendingHeatmap extends StatelessWidget {
                                             fontWeight: FontWeight.bold,
                                             color:
                                                 intensity > 0.5
-                                                    ? Colors.white
-                                                    : theme
-                                                        .colorScheme
-                                                        .onSurface,
+                                                    ? cellForeground
+                                                    : theme.colorScheme.onSurface,
                                           ),
                                         )
                                         : const SizedBox.shrink(),

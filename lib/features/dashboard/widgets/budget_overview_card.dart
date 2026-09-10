@@ -219,7 +219,7 @@ class BudgetOverviewCard extends StatelessWidget {
                               isOver
                                   ? finColors.expense
                                   : isNear
-                                  ? theme.colorScheme.tertiary
+                                  ? context.statusColors.warning
                                   : theme.colorScheme.primary;
 
                           return Padding(

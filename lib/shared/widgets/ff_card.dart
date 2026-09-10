@@ -41,13 +41,14 @@ class FfCard extends StatelessWidget {
         borderColor = context.theme.colorScheme.primary.withValues(alpha: 0.2);
         break;
       case FfCardVariant.elevated:
-        backgroundColor = context.theme.colorScheme.surfaceContainerLowest;
+        backgroundColor = context.isDarkMode
+            ? context.theme.colorScheme.surfaceContainerHighest
+            : context.theme.colorScheme.surfaceContainerLowest;
         borderColor = context.theme.dividerColor;
         break;
       case FfCardVariant.warning:
-        backgroundColor = context.theme.colorScheme.tertiaryContainer
-            .withValues(alpha: 0.3);
-        borderColor = context.theme.colorScheme.tertiary.withValues(alpha: 0.3);
+        backgroundColor = context.statusColors.warningContainer;
+        borderColor = context.statusColors.warning;
         break;
     }
 

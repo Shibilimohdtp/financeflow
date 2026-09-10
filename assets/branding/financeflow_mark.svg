@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
     <linearGradient id="ffTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#127367" />
-      <stop offset="100%" stop-color="#0E5F55" />
+      <stop offset="0%" stop-color="#697343" />
+      <stop offset="100%" stop-color="#535B36" />
     </linearGradient>
     <linearGradient id="ffGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E9B366" />
-      <stop offset="100%" stop-color="#C98A1F" />
+      <stop offset="0%" stop-color="#A77D92" />
+      <stop offset="100%" stop-color="#76546A" />
     </linearGradient>
   </defs>
   <!-- Stillwater Canonical Mark -->

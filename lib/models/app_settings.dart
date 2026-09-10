@@ -8,9 +8,9 @@ enum AppThemePreference {
       case AppThemePreference.system:
         return 'System Default';
       case AppThemePreference.daylight:
-        return 'Daylight (Light)';
+        return 'Lichen Ledger (Light)';
       case AppThemePreference.deepWater:
-        return 'Deep Water (Dark)';
+        return 'Lichen Ledger (Dark)';
     }
   }
 

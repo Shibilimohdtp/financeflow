@@ -102,11 +102,14 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
         barrierDismissible: false,
         builder:
             (ctx) => AlertDialog(
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.check_circle_outline, color: Color(0xFF10B981)),
-                  SizedBox(width: 8),
-                  Text('Restore Complete'),
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: context.secColors.verified,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Restore Complete'),
                 ],
               ),
               content: SingleChildScrollView(
@@ -152,31 +155,29 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                       Container(
                         padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
                         decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFF59E0B,
-                          ).withValues(alpha: 0.15),
+                          color: context.statusColors.warningContainer,
                           borderRadius: BorderRadius.circular(
                             StillwaterTokens.radiusSm,
                           ),
                           border: Border.all(
-                            color: const Color(0xFFF59E0B),
+                            color: context.statusColors.warning,
                             width: StillwaterTokens.borderWidthHairline,
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(
                               Icons.lock_reset_rounded,
                               size: 18,
-                              color: Color(0xFFB45309),
+                              color: context.statusColors.warning,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Security Notice: For safety across devices, PIN/Biometrics must be re-enabled in Settings.',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Color(0xFF92400E),
+                                  color: context.statusColors.warning,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../accounts/accounts_controller.dart';
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
+import '../../services/default_account_service.dart';
 import '../../repositories/pending_transaction_repository.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_chip.dart';
@@ -27,9 +29,32 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
   String _selectedFilter = 'all'; // all, duplicates, uncertain, errors
 
   void _openEditItemSheet(BuildContext context, ParsedTransaction item) {
+    final accounts = ref.read(rawAccountsStreamProvider).value ?? const [];
+    final importedDefault = defaultTransactionAccount(
+      accounts,
+      preferNonCash: true,
+    );
+    final parsedTransaction = item.toTransaction(targetId: item.tempId);
+    final isImportedFinancialEvent =
+        item.source == TransactionSource.sms ||
+        item.source == TransactionSource.notification;
+    final wasAlreadyReviewed =
+        item.categorizationConfidence >= 1 &&
+        item.categorizationReason == 'User reviewed category';
+    // Older queued SMS/notification items may still carry the historical
+    // Cash Wallet fallback. Repair that default when the user opens review;
+    // explicitly chosen accounts remain untouched.
+    final initialTransaction =
+        isImportedFinancialEvent &&
+                item.accountId == 'acc_primary_cash' &&
+                importedDefault != null &&
+                !wasAlreadyReviewed
+            ? parsedTransaction.copyWith(accountId: importedDefault.id)
+            : parsedTransaction;
+
     AddEditTransactionScreen.push<void>(
       context,
-      initialTransaction: item.toTransaction(targetId: item.tempId),
+      initialTransaction: initialTransaction,
       headerTitle: 'Edit Pending Transaction',
       saveLabel: 'Save Changes',
       sourceContext: Column(

@@ -229,7 +229,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                         style: theme.textTheme.bodySmall?.copyWith(
                           color:
                               isActive && days <= 3
-                                  ? theme.colorScheme.tertiary
+                                  ? context.statusColors.warning
                                   : theme.colorScheme.secondary,
                           fontWeight:
                               isActive && days <= 3

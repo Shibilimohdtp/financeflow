@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
     <linearGradient id="ffTealGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#127367" />
-      <stop offset="100%" stop-color="#0E5F55" />
+      <stop offset="0%" stop-color="#697343" />
+      <stop offset="100%" stop-color="#535B36" />
     </linearGradient>
     <linearGradient id="ffGoldGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E9B366" />
-      <stop offset="100%" stop-color="#C98A1F" />
+      <stop offset="0%" stop-color="#A77D92" />
+      <stop offset="100%" stop-color="#76546A" />
     </linearGradient>
   </defs>
   <!-- Background: Warm Shore / Daylight surface -->
-  <rect width="512" height="512" rx="112" fill="#F7F5EF" />
+  <rect width="512" height="512" rx="112" fill="#F5F4ED" />
   <!-- Outer Enclosing Arc: Still Water Boundary -->
   <path d="M 256 78 C 354.3 78 434 157.7 434 256 C 434 354.3 354.3 434 256 434 C 176.75 434 109.17 382.46 85.5 311.5" fill="none" stroke="url(#ffTealGradLight)" stroke-width="38" stroke-linecap="round" />
   <!-- Inner Ascending Current: Cashflow & F-Geometry -->

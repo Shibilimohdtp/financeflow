@@ -121,7 +121,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                       FinanceFlowMark(size: 44, variant: MarkVariant.deepWater),
                       SizedBox(height: StillwaterTokens.spaceSm),
                       Text(
-                        'Deep Water',
+                        'Lichen Ledger · Dark',
                         style: TextStyle(
                           color: StillwaterColors.darkTextPrimary,
                           fontWeight: FontWeight.w600,

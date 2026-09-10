@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Stillwater Colors Palette & Theme Extensions
+/// FinanceFlow Lichen Ledger palette and theme extensions.
 ///
 /// Daylight (Light) and Deep Water (Dark) colors derived strictly from
 /// the Stillwater Design System Specification.
@@ -8,150 +8,150 @@ class StillwaterColors {
   StillwaterColors._();
 
   // ===================== DAYLIGHT (LIGHT) =====================
-  // Primary (Deepwater)
-  static const Color lightPrimary = Color(0xFF0E5F55); // Deepwater 600
-  static const Color lightPrimaryDark = Color(0xFF093F39); // Deepwater 800
-  static const Color lightPrimaryContainer = Color(0xFFD3EDE6); // Deepwater 100
-  static const Color lightOnPrimary = Color(0xFFFFFFFF);
-  static const Color lightOnPrimaryContainer = Color(0xFF07423B);
+  // Primary (Lichen)
+  static const Color lightPrimary = Color(0xFF535B36);
+  static const Color lightPrimaryDark = Color(0xFF394022);
+  static const Color lightPrimaryContainer = Color(0xFFE3E8CB);
+  static const Color lightOnPrimary = Color(0xFFFCFCF5);
+  static const Color lightOnPrimaryContainer = Color(0xFF282F16);
 
-  // Secondary (Shore)
-  static const Color lightSecondary = Color(0xFF71624A); // Shore 600
-  static const Color lightSecondaryContainer = Color(0xFFF0E6D2); // Shore 150
-  static const Color lightOnSecondaryContainer = Color(0xFF4A3E2B);
+  // Secondary (Mushroom)
+  static const Color lightSecondary = Color(0xFF655C68);
+  static const Color lightSecondaryContainer = Color(0xFFECE3EB);
+  static const Color lightOnSecondary = Color(0xFFFAF9F3);
+  static const Color lightOnSecondaryContainer = Color(0xFF382F3B);
 
-  // Tertiary / Accent (Marigold / AI)
-  static const Color lightAccent = Color(0xFF9C6410); // Marigold 600
-  static const Color lightAccentBright = Color(0xFFC98A1F);
-  static const Color lightAccentContainer = Color(0xFFFAE3BC);
-  static const Color lightOnAccentContainer = Color(0xFF5A3A06);
+  // Tertiary / Accent (Mineral Rose / AI)
+  static const Color lightAccent = Color(0xFF76546A);
+  static const Color lightAccentBright = Color(0xFFA77D92);
+  static const Color lightAccentContainer = Color(0xFFF1DFEA);
+  static const Color lightOnAccent = Color(0xFFFDFCF7);
+  static const Color lightOnAccentContainer = Color(0xFF422B3A);
 
   // Neutrals & Surfaces (Mist)
-  static const Color lightSurfaceApp = Color(
-    0xFFF7F5EF,
-  ); // Root background (warm paper)
-  static const Color lightSurfaceDefault = Color(0xFFFDFDFB); // Cards, sheets
-  static const Color lightSurfaceContainerLow = Color(
-    0xFFF2F0E8,
-  ); // Insets, search resting
-  static const Color lightSurfaceContainer = Color(
-    0xFFEDEBE2,
-  ); // Grouped backgrounds
-  static const Color lightSurfaceContainerHigh = Color(
-    0xFFE7E5DC,
-  ); // Pressed containers
-  static const Color lightSurfaceElevated = Color(0xFFFFFFFF); // Dialogs, FAB
-  static const Color lightSurfaceAi = Color(0xFFFBF3E3); // AI insight surfaces
-  static const Color lightSurfaceSecurity = Color(
-    0xFFE3EFE9,
-  ); // Security panels
-  static const Color lightSurfaceTintPrimary = Color(
-    0xFFE7F3F0,
-  ); // Selected tint
+  static const Color lightSurfaceApp = Color(0xFFF5F4ED);
+  static const Color lightSurfaceDefault = Color(0xFFFAF9F3);
+  static const Color lightSurfaceContainerLow = Color(0xFFF0EFE7);
+  static const Color lightSurfaceContainer = Color(0xFFEAE9DF);
+  static const Color lightSurfaceContainerHigh = Color(0xFFE3E3D7);
+  static const Color lightSurfaceContainerHighest = Color(0xFFDCDDD1);
+  static const Color lightSurfaceElevated = Color(0xFFFDFCF7);
+  static const Color lightSurfaceAi = Color(0xFFF5EDF1);
+  static const Color lightSurfaceSecurity = Color(0xFFEDF0E3);
+  static const Color lightSurfaceTintPrimary = Color(0xFFE9EDD9);
 
   // Text
-  static const Color lightTextPrimary = Color(0xFF1B2422);
-  static const Color lightTextSecondary = Color(0xFF4E5B57);
-  static const Color lightTextTertiary = Color(0xFF77857F);
-  static const Color lightTextDisabled = Color(0xFFA9B3AE);
+  static const Color lightTextPrimary = Color(0xFF252820);
+  static const Color lightTextSecondary = Color(0xFF55594F);
+  static const Color lightTextTertiary = Color(0xFF606559);
+  static const Color lightTextDisabled = Color(0xFF9DA195);
 
   // Borders
-  static const Color lightBorderHairline = Color(0xFFE4E2D8);
-  static const Color lightBorderDefault = Color(0xFFD8D6CB);
-  static const Color lightBorderStrong = Color(0xFFB9B7AB);
-  static const Color lightBorderFocus = Color(0xFF0E5F55);
+  static const Color lightBorderHairline = Color(0xFFDCDDD1);
+  static const Color lightBorderDefault = Color(0xFF7B806F);
+  static const Color lightBorderStrong = Color(0xFF6B715F);
+  static const Color lightBorderFocus = Color(0xFF535B36);
 
   // Semantic & Financial
-  static const Color lightIncome = Color(
-    0xFF177A50,
-  ); // Grove Green (Income/Credits)
-  static const Color lightIncomeContainer = Color(0xFFD7EFE0);
-  static const Color lightExpense = Color(
-    0xFFAE4E2E,
-  ); // Terracotta Clay (Expense/Debits)
-  static const Color lightExpenseContainer = Color(0xFFF7E2D8);
-  static const Color lightSavings = Color(0xFF0E7263); // Goals
-  static const Color lightDebt = Color(0xFF6D4A78); // Damson Plum (Loans, EMI)
-  static const Color lightInvestment = Color(
-    0xFF4756A6,
-  ); // Neel Indigo (Investments)
-  static const Color lightTransfer = Color(0xFF5C7078); // Slate (Transfers)
-  static const Color lightWarning = Color(0xFF9A6A00);
-  static const Color lightWarningContainer = Color(0xFFF8ECC8);
-  static const Color lightInfo = Color(0xFF3E6278);
-  static const Color lightInfoContainer = Color(0xFFDCE8EF);
-  static const Color lightError = Color(0xFFC23A22);
-  static const Color lightErrorContainer = Color(0xFFFBDFD8);
+  static const Color lightIncome = Color(0xFF216843);
+  static const Color lightIncomeContainer = Color(0xFFDDEDDD);
+  static const Color lightExpense = Color(0xFF9F3D50);
+  static const Color lightExpenseContainer = Color(0xFFF5DFE3);
+  static const Color lightSavings = Color(0xFF326A70);
+  static const Color lightSavingsContainer = Color(0xFFDDEDEE);
+  static const Color lightDebt = Color(0xFF80523E);
+  static const Color lightDebtContainer = Color(0xFFF0E3D9);
+  static const Color lightInvestment = Color(0xFF55569A);
+  static const Color lightInvestmentContainer = Color(0xFFE5E4F6);
+  static const Color lightTransfer = Color(0xFF536474);
+  static const Color lightTransferContainer = Color(0xFFE3E9EF);
+  static const Color lightWarning = Color(0xFF795B12);
+  static const Color lightWarningContainer = Color(0xFFF3E8C7);
+  static const Color lightInfo = Color(0xFF385F82);
+  static const Color lightInfoContainer = Color(0xFFDFEAF5);
+  static const Color lightError = Color(0xFFAD3529);
+  static const Color lightErrorContainer = Color(0xFFF9E0DA);
+  static const Color lightOnError = Color(0xFFFDFCF7);
 
   // Security & Privacy
-  static const Color lightSecInk = Color(0xFF142B27);
-  static const Color lightSecVerified = Color(0xFF177A50);
-  static const Color lightSecBoundary = Color(0xFFC98A1F);
+  static const Color lightSecInk = Color(0xFF24291E);
+  static const Color lightOnSecInk = Color(0xFFF4F6EB);
+  static const Color lightSecVerified = Color(0xFF216843);
+  static const Color lightSecBoundary = Color(0xFF795B12);
+  static const Color lightScrim = Color(0x7A171B12);
 
   // ===================== DEEP WATER (DARK) =====================
-  // Primary (Deepwater)
-  static const Color darkPrimary = Color(0xFF7AD8C6);
-  static const Color darkPrimaryDark = Color(0xFF8FE2D2);
-  static const Color darkPrimaryContainer = Color(0xFF0E4C43);
-  static const Color darkOnPrimary = Color(0xFF063B33);
-  static const Color darkOnPrimaryContainer = Color(0xFFC6F0E6);
+  // Primary (Lichen)
+  static const Color darkPrimary = Color(0xFFC4CC9B);
+  static const Color darkPrimaryDark = Color(0xFFD7DEB5);
+  static const Color darkPrimaryContainer = Color(0xFF3E4728);
+  static const Color darkOnPrimary = Color(0xFF292F18);
+  static const Color darkOnPrimaryContainer = Color(0xFFE6EBCF);
 
   // Secondary (Shore)
-  static const Color darkSecondary = Color(0xFFD6C4A2);
-  static const Color darkSecondaryContainer = Color(0xFF43392A);
-  static const Color darkOnSecondaryContainer = Color(0xFFF0E6D2);
+  static const Color darkSecondary = Color(0xFFCEC0D0);
+  static const Color darkSecondaryContainer = Color(0xFF493F4C);
+  static const Color darkOnSecondary = Color(0xFF1C2019);
+  static const Color darkOnSecondaryContainer = Color(0xFFEFE3F0);
 
   // Tertiary / Accent (Marigold / AI)
-  static const Color darkAccent = Color(0xFFE9B366);
-  static const Color darkAccentBright = Color(0xFFE9B366);
-  static const Color darkAccentContainer = Color(0xFF3B2C10);
-  static const Color darkOnAccentContainer = Color(0xFFF8E4C0);
+  static const Color darkAccent = Color(0xFFDFB6CD);
+  static const Color darkAccentBright = Color(0xFFEDCADE);
+  static const Color darkAccentContainer = Color(0xFF533849);
+  static const Color darkOnAccent = Color(0xFF30212B);
+  static const Color darkOnAccentContainer = Color(0xFFF7DEEC);
 
   // Neutrals & Surfaces (Ink Water)
-  static const Color darkSurfaceApp = Color(0xFF0B1412); // Root background
-  static const Color darkSurfaceDefault = Color(0xFF101B19); // Cards
-  static const Color darkSurfaceContainerLow = Color(0xFF14201E); // Insets
-  static const Color darkSurfaceContainer = Color(0xFF182624); // Groups
-  static const Color darkSurfaceContainerHigh = Color(0xFF1D2D2A); // Pressed
-  static const Color darkSurfaceElevated = Color(0xFF21332F); // Dialogs, FAB
-  static const Color darkSurfaceAi = Color(0xFF201D12); // AI surfaces
-  static const Color darkSurfaceSecurity = Color(0xFF10241F); // Security panels
-  static const Color darkSurfaceTintPrimary = Color(
-    0xFF12332E,
-  ); // Selected tint
+  static const Color darkSurfaceApp = Color(0xFF151812);
+  static const Color darkSurfaceDefault = Color(0xFF1C2019);
+  static const Color darkSurfaceContainerLow = Color(0xFF22261E);
+  static const Color darkSurfaceContainer = Color(0xFF292D24);
+  static const Color darkSurfaceContainerHigh = Color(0xFF30352A);
+  static const Color darkSurfaceContainerHighest = Color(0xFF383D31);
+  static const Color darkSurfaceElevated = Color(0xFF383D31);
+  static const Color darkSurfaceAi = Color(0xFF2B242B);
+  static const Color darkSurfaceSecurity = Color(0xFF242D21);
+  static const Color darkSurfaceTintPrimary = Color(0xFF343D26);
 
   // Text
-  static const Color darkTextPrimary = Color(0xFFE6EDE8);
-  static const Color darkTextSecondary = Color(0xFFA9B8B0);
-  static const Color darkTextTertiary = Color(0xFF7E8D86);
-  static const Color darkTextDisabled = Color(0xFF56635E);
+  static const Color darkTextPrimary = Color(0xFFE8EBDF);
+  static const Color darkTextSecondary = Color(0xFFC0C5B6);
+  static const Color darkTextTertiary = Color(0xFFABB19F);
+  static const Color darkTextDisabled = Color(0xFF717867);
 
   // Borders
-  static const Color darkBorderHairline = Color(0xFF22322E);
-  static const Color darkBorderDefault = Color(0xFF2E3D39);
-  static const Color darkBorderStrong = Color(0xFF45544F);
-  static const Color darkBorderFocus = Color(0xFF7AD8C6);
+  static const Color darkBorderHairline = Color(0xFF3A4033);
+  static const Color darkBorderDefault = Color(0xFF838B77);
+  static const Color darkBorderStrong = Color(0xFFA0A98F);
+  static const Color darkBorderFocus = Color(0xFFC4CC9B);
 
   // Semantic & Financial
-  static const Color darkIncome = Color(0xFF6FD39B);
-  static const Color darkIncomeContainer = Color(0xFF143324);
-  static const Color darkExpense = Color(0xFFE59276);
-  static const Color darkExpenseContainer = Color(0xFF3A1F14);
-  static const Color darkSavings = Color(0xFF62CBB5);
-  static const Color darkDebt = Color(0xFFC79BD4);
-  static const Color darkInvestment = Color(0xFFA3B0EE);
-  static const Color darkTransfer = Color(0xFF9FB6BF);
-  static const Color darkWarning = Color(0xFFE5C069);
-  static const Color darkWarningContainer = Color(0xFF362A0C);
-  static const Color darkInfo = Color(0xFF9CC0D6);
-  static const Color darkInfoContainer = Color(0xFF14252E);
-  static const Color darkError = Color(0xFFF2866F);
-  static const Color darkErrorContainer = Color(0xFF41160B);
+  static const Color darkIncome = Color(0xFF8CD7A5);
+  static const Color darkIncomeContainer = Color(0xFF243D2B);
+  static const Color darkExpense = Color(0xFFF0A6B7);
+  static const Color darkExpenseContainer = Color(0xFF472832);
+  static const Color darkSavings = Color(0xFF91CED1);
+  static const Color darkSavingsContainer = Color(0xFF253D40);
+  static const Color darkDebt = Color(0xFFDEB39A);
+  static const Color darkDebtContainer = Color(0xFF443327);
+  static const Color darkInvestment = Color(0xFFBEC0F1);
+  static const Color darkInvestmentContainer = Color(0xFF32334F);
+  static const Color darkTransfer = Color(0xFFB4C5D7);
+  static const Color darkTransferContainer = Color(0xFF303B48);
+  static const Color darkWarning = Color(0xFFE8CA7C);
+  static const Color darkWarningContainer = Color(0xFF43381B);
+  static const Color darkInfo = Color(0xFFA8CDEF);
+  static const Color darkInfoContainer = Color(0xFF273B4D);
+  static const Color darkError = Color(0xFFFFA99A);
+  static const Color darkErrorContainer = Color(0xFF502B24);
+  static const Color darkOnError = Color(0xFF3D100B);
 
   // Security & Privacy
-  static const Color darkSecInk = Color(0xFF081210);
-  static const Color darkSecVerified = Color(0xFF6FD39B);
-  static const Color darkSecBoundary = Color(0xFFE9B366);
+  static const Color darkSecInk = Color(0xFF11160E);
+  static const Color darkOnSecInk = Color(0xFFF4F6EB);
+  static const Color darkSecVerified = Color(0xFF8CD7A5);
+  static const Color darkSecBoundary = Color(0xFFE8CA7C);
+  static const Color darkScrim = Color(0x99090C07);
 }
 
 /// ThemeExtension for Financial Palette
@@ -161,9 +161,13 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
   final Color expense;
   final Color expenseContainer;
   final Color savings;
+  final Color savingsContainer;
   final Color debt;
+  final Color debtContainer;
   final Color investment;
+  final Color investmentContainer;
   final Color transfer;
+  final Color transferContainer;
 
   const FfFinColors({
     required this.income,
@@ -171,9 +175,13 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
     required this.expense,
     required this.expenseContainer,
     required this.savings,
+    required this.savingsContainer,
     required this.debt,
+    required this.debtContainer,
     required this.investment,
+    required this.investmentContainer,
     required this.transfer,
+    required this.transferContainer,
   });
 
   static const daylight = FfFinColors(
@@ -182,9 +190,13 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
     expense: StillwaterColors.lightExpense,
     expenseContainer: StillwaterColors.lightExpenseContainer,
     savings: StillwaterColors.lightSavings,
+    savingsContainer: StillwaterColors.lightSavingsContainer,
     debt: StillwaterColors.lightDebt,
+    debtContainer: StillwaterColors.lightDebtContainer,
     investment: StillwaterColors.lightInvestment,
+    investmentContainer: StillwaterColors.lightInvestmentContainer,
     transfer: StillwaterColors.lightTransfer,
+    transferContainer: StillwaterColors.lightTransferContainer,
   );
 
   static const deepWater = FfFinColors(
@@ -193,9 +205,13 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
     expense: StillwaterColors.darkExpense,
     expenseContainer: StillwaterColors.darkExpenseContainer,
     savings: StillwaterColors.darkSavings,
+    savingsContainer: StillwaterColors.darkSavingsContainer,
     debt: StillwaterColors.darkDebt,
+    debtContainer: StillwaterColors.darkDebtContainer,
     investment: StillwaterColors.darkInvestment,
+    investmentContainer: StillwaterColors.darkInvestmentContainer,
     transfer: StillwaterColors.darkTransfer,
+    transferContainer: StillwaterColors.darkTransferContainer,
   );
 
   @override
@@ -205,9 +221,13 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
     Color? expense,
     Color? expenseContainer,
     Color? savings,
+    Color? savingsContainer,
     Color? debt,
+    Color? debtContainer,
     Color? investment,
+    Color? investmentContainer,
     Color? transfer,
+    Color? transferContainer,
   }) {
     return FfFinColors(
       income: income ?? this.income,
@@ -215,9 +235,13 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
       expense: expense ?? this.expense,
       expenseContainer: expenseContainer ?? this.expenseContainer,
       savings: savings ?? this.savings,
+      savingsContainer: savingsContainer ?? this.savingsContainer,
       debt: debt ?? this.debt,
+      debtContainer: debtContainer ?? this.debtContainer,
       investment: investment ?? this.investment,
+      investmentContainer: investmentContainer ?? this.investmentContainer,
       transfer: transfer ?? this.transfer,
+      transferContainer: transferContainer ?? this.transferContainer,
     );
   }
 
@@ -234,9 +258,70 @@ class FfFinColors extends ThemeExtension<FfFinColors> {
       expenseContainer:
           Color.lerp(expenseContainer, other.expenseContainer, t)!,
       savings: Color.lerp(savings, other.savings, t)!,
+      savingsContainer:
+          Color.lerp(savingsContainer, other.savingsContainer, t)!,
       debt: Color.lerp(debt, other.debt, t)!,
+      debtContainer: Color.lerp(debtContainer, other.debtContainer, t)!,
       investment: Color.lerp(investment, other.investment, t)!,
+      investmentContainer:
+          Color.lerp(investmentContainer, other.investmentContainer, t)!,
       transfer: Color.lerp(transfer, other.transfer, t)!,
+      transferContainer:
+          Color.lerp(transferContainer, other.transferContainer, t)!,
+    );
+  }
+}
+
+/// ThemeExtension for non-financial status colors.
+class FfStatusColors extends ThemeExtension<FfStatusColors> {
+  final Color warning;
+  final Color warningContainer;
+  final Color info;
+  final Color infoContainer;
+
+  const FfStatusColors({
+    required this.warning,
+    required this.warningContainer,
+    required this.info,
+    required this.infoContainer,
+  });
+
+  static const daylight = FfStatusColors(
+    warning: StillwaterColors.lightWarning,
+    warningContainer: StillwaterColors.lightWarningContainer,
+    info: StillwaterColors.lightInfo,
+    infoContainer: StillwaterColors.lightInfoContainer,
+  );
+
+  static const deepWater = FfStatusColors(
+    warning: StillwaterColors.darkWarning,
+    warningContainer: StillwaterColors.darkWarningContainer,
+    info: StillwaterColors.darkInfo,
+    infoContainer: StillwaterColors.darkInfoContainer,
+  );
+
+  @override
+  FfStatusColors copyWith({
+    Color? warning,
+    Color? warningContainer,
+    Color? info,
+    Color? infoContainer,
+  }) => FfStatusColors(
+    warning: warning ?? this.warning,
+    warningContainer: warningContainer ?? this.warningContainer,
+    info: info ?? this.info,
+    infoContainer: infoContainer ?? this.infoContainer,
+  );
+
+  @override
+  FfStatusColors lerp(ThemeExtension<FfStatusColors>? other, double t) {
+    if (other is! FfStatusColors) return this;
+    return FfStatusColors(
+      warning: Color.lerp(warning, other.warning, t)!,
+      warningContainer:
+          Color.lerp(warningContainer, other.warningContainer, t)!,
+      info: Color.lerp(info, other.info, t)!,
+      infoContainer: Color.lerp(infoContainer, other.infoContainer, t)!,
     );
   }
 }
@@ -292,6 +377,7 @@ class FfAiColors extends ThemeExtension<FfAiColors> {
 /// ThemeExtension for Privacy & Security Colors
 class FfSecColors extends ThemeExtension<FfSecColors> {
   final Color ink;
+  final Color onInk;
   final Color verified;
   final Color boundary;
   final Color surface;
@@ -299,6 +385,7 @@ class FfSecColors extends ThemeExtension<FfSecColors> {
 
   const FfSecColors({
     required this.ink,
+    required this.onInk,
     required this.verified,
     required this.boundary,
     required this.surface,
@@ -307,6 +394,7 @@ class FfSecColors extends ThemeExtension<FfSecColors> {
 
   static const daylight = FfSecColors(
     ink: StillwaterColors.lightSecInk,
+    onInk: StillwaterColors.lightOnSecInk,
     verified: StillwaterColors.lightSecVerified,
     boundary: StillwaterColors.lightSecBoundary,
     surface: StillwaterColors.lightSurfaceSecurity,
@@ -315,6 +403,7 @@ class FfSecColors extends ThemeExtension<FfSecColors> {
 
   static const deepWater = FfSecColors(
     ink: StillwaterColors.darkSecInk,
+    onInk: StillwaterColors.darkOnSecInk,
     verified: StillwaterColors.darkSecVerified,
     boundary: StillwaterColors.darkSecBoundary,
     surface: StillwaterColors.darkSurfaceSecurity,
@@ -324,6 +413,7 @@ class FfSecColors extends ThemeExtension<FfSecColors> {
   @override
   ThemeExtension<FfSecColors> copyWith({
     Color? ink,
+    Color? onInk,
     Color? verified,
     Color? boundary,
     Color? surface,
@@ -331,6 +421,7 @@ class FfSecColors extends ThemeExtension<FfSecColors> {
   }) {
     return FfSecColors(
       ink: ink ?? this.ink,
+      onInk: onInk ?? this.onInk,
       verified: verified ?? this.verified,
       boundary: boundary ?? this.boundary,
       surface: surface ?? this.surface,
@@ -346,6 +437,7 @@ class FfSecColors extends ThemeExtension<FfSecColors> {
     if (other is! FfSecColors) return this;
     return FfSecColors(
       ink: Color.lerp(ink, other.ink, t)!,
+      onInk: Color.lerp(onInk, other.onInk, t)!,
       verified: Color.lerp(verified, other.verified, t)!,
       boundary: Color.lerp(boundary, other.boundary, t)!,
       surface: Color.lerp(surface, other.surface, t)!,

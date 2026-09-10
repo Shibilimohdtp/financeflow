@@ -104,11 +104,14 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           context: context,
           builder:
               (ctx) => AlertDialog(
-                title: const Row(
+                title: Row(
                   children: [
-                    Icon(Icons.check_circle_outline, color: Color(0xFF10B981)),
-                    SizedBox(width: 8),
-                    Text('Backup Created'),
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: context.secColors.verified,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Backup Created'),
                   ],
                 ),
                 content: const Text(

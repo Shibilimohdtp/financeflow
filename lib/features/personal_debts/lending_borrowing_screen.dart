@@ -659,7 +659,9 @@ class _MoneyRecordCard extends StatelessWidget {
                   vertical: StillwaterTokens.space2Xs,
                 ),
                 decoration: BoxDecoration(
-                  color: status.color.withValues(alpha: 0.12),
+                  color: status
+                      .colorFor(isDark: context.isDarkMode)
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(
                     StillwaterTokens.radiusFull,
                   ),
@@ -667,7 +669,7 @@ class _MoneyRecordCard extends StatelessWidget {
                 child: Text(
                   status.displayName,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: status.color,
+                    color: status.colorFor(isDark: context.isDarkMode),
                     fontWeight: FontWeight.w700,
                     fontSize: 11,
                   ),

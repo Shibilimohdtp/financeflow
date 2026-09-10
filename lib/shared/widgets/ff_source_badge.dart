@@ -52,7 +52,7 @@ class FfSourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = context.aiColors.accent;
+    final accentColor = context.statusColors.info;
 
     return Container(
       padding: const EdgeInsets.symmetric(

@@ -4,7 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_settings.dart';
+import '../../repositories/account_repository.dart';
 import '../../repositories/settings_repository.dart';
+import '../default_account_service.dart';
 import '../notifications/notification_coordinator.dart';
 import 'ingestion_platform.dart';
 import 'ingestion_service.dart';
@@ -150,27 +152,34 @@ class IngestionCoordinator with WidgetsBindingObserver {
       final settingsRepo = _ref.read(settingsRepositoryProvider);
       var settings = await settingsRepo.getSettings();
       final events = await _platform.pendingEvents();
+      String? defaultAccountId;
       for (final event in events) {
         try {
           IngestionResult? result;
           if (event.type == 'sms' && settings.isSmsDetectionEnabled) {
+            final accountId =
+                defaultAccountId ??= await _defaultAccountId();
             result = await _ingestionService.ingestSms(
               sender: event.payload['sender'] as String? ?? '',
               body: event.payload['body'] as String? ?? '',
               timestamp: _timestamp(event.payload['timestamp']),
               sourceIdentifier: event.eventId,
+              defaultAccountId: accountId,
             );
           } else if (event.type == 'notification' &&
               settings.isNotificationDetectionEnabled &&
               settings.selectedNotificationPackages.contains(
                 event.payload['packageName'],
               )) {
+            final accountId =
+                defaultAccountId ??= await _defaultAccountId();
             result = await _ingestionService.ingestNotification(
               packageName: event.payload['packageName'] as String? ?? '',
               title: event.payload['title'] as String? ?? '',
               text: event.payload['text'] as String? ?? '',
               timestamp: _timestamp(event.payload['timestamp']),
               sourceIdentifier: event.eventId,
+              defaultAccountId: accountId,
             );
           }
 
@@ -205,7 +214,8 @@ class IngestionCoordinator with WidgetsBindingObserver {
           'HDFC Bank: Rs 1500.00 debited from a/c **4321 on 22-AUG-26 to SWIGGY. UPI Ref 42352345.',
       timestamp: DateTime.now(),
       sourceIdentifier:
-          'developer-sms-${DateTime.now().microsecondsSinceEpoch}',
+        'developer-sms-${DateTime.now().microsecondsSinceEpoch}',
+      defaultAccountId: await _defaultAccountId(preferNonCash: true),
     );
     await _recordInjected('sms', result);
     try {
@@ -221,7 +231,8 @@ class IngestionCoordinator with WidgetsBindingObserver {
       text: 'Paid ₹325 to Uber successfully',
       timestamp: DateTime.now(),
       sourceIdentifier:
-          'developer-notification-${DateTime.now().microsecondsSinceEpoch}',
+        'developer-notification-${DateTime.now().microsecondsSinceEpoch}',
+      defaultAccountId: await _defaultAccountId(preferNonCash: true),
     );
     await _recordInjected('notification', result);
     try {
@@ -234,6 +245,17 @@ class IngestionCoordinator with WidgetsBindingObserver {
     final repo = _ref.read(settingsRepositoryProvider);
     final current = await repo.getSettings();
     await repo.updateSettings(_updatedDiagnostics(current, type, result));
+  }
+
+  Future<String> _defaultAccountId({bool preferNonCash = true}) async {
+    final accounts = await _ref
+        .read(accountRepositoryProvider)
+        .getAllAccounts();
+    return defaultTransactionAccount(
+          accounts,
+          preferNonCash: preferNonCash,
+        )?.id ??
+        'acc_primary_cash';
   }
 
   AppSettings _updatedDiagnostics(

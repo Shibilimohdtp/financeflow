@@ -1,6 +1,6 @@
 """
 FinanceFlow Brand Assets Generator
-Generates all multi-density and multi-platform icon & splash assets from the Stillwater design system.
+Generates all multi-density and multi-platform icon & splash assets from the Lichen Ledger design system.
 Uses 4x supersampled rendering for ultra-crisp antialiasing.
 """
 
@@ -11,14 +11,14 @@ from PIL import Image, ImageDraw
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Color definitions
-COLOR_DEEPWATER_600 = (14, 95, 85, 255)       # #0E5F55
-COLOR_DEEPWATER_800 = (9, 63, 57, 255)        # #093F39
-COLOR_DEEPWATER_DARK = (11, 20, 18, 255)      # #0B1412
-COLOR_SHORE_SAND = (247, 245, 239, 255)       # #F7F5EF
-COLOR_MIST_WHITE = (255, 255, 255, 255)
-COLOR_MIST_SOFT = (211, 237, 230, 255)        # #D3EDE6
-COLOR_MARIGOLD = (201, 138, 31, 255)          # #C98A1F
-COLOR_MARIGOLD_LIGHT = (233, 179, 102, 255)   # #E9B366
+COLOR_DEEPWATER_600 = (83, 91, 54, 255)       # Lichen #535B36
+COLOR_DEEPWATER_800 = (57, 64, 34, 255)       # Deep lichen #394022
+COLOR_DEEPWATER_DARK = (21, 24, 18, 255)      # Night ground #151812
+COLOR_SHORE_SAND = (245, 244, 237, 255)       # Limestone #F5F4ED
+COLOR_MIST_WHITE = (252, 252, 245, 255)        # Warm on-primary #FCFCF5
+COLOR_MIST_SOFT = (227, 232, 203, 255)         # Lichen container #E3E8CB
+COLOR_MARIGOLD = (118, 84, 106, 255)           # Mineral rose #76546A
+COLOR_MARIGOLD_LIGHT = (167, 125, 146, 255)    # Rose highlight #A77D92
 COLOR_TRANSPARENT = (0, 0, 0, 0)
 
 def draw_arc_with_caps(draw, cx, cy, radius, start_deg, end_deg, width, color, step=0.5):

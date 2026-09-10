@@ -46,7 +46,7 @@ class _FfTrendLineChartState extends State<FfTrendLineChart> {
           child: Text(
             'No trend data recorded for this period.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -91,8 +91,9 @@ class _FfTrendLineChartState extends State<FfTrendLineChart> {
                       lineColor: primaryColor,
                       gridColor: theme.dividerColor.withValues(alpha: 0.25),
                       textColor: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.6,
+                        alpha: 1,
                       ),
+                      pointCenterColor: theme.colorScheme.surface,
                     ),
                   ),
                 );
@@ -146,6 +147,7 @@ class _TrendLinePainter extends CustomPainter {
   final Color lineColor;
   final Color gridColor;
   final Color textColor;
+  final Color pointCenterColor;
 
   _TrendLinePainter({
     required this.points,
@@ -154,6 +156,7 @@ class _TrendLinePainter extends CustomPainter {
     required this.lineColor,
     required this.gridColor,
     required this.textColor,
+    required this.pointCenterColor,
   });
 
   @override
@@ -253,7 +256,7 @@ class _TrendLinePainter extends CustomPainter {
       if (isSelected) {
         // Draw selected highlight circle
         canvas.drawCircle(offset, 6, Paint()..color = lineColor);
-        canvas.drawCircle(offset, 3, Paint()..color = Colors.white);
+        canvas.drawCircle(offset, 3, Paint()..color = pointCenterColor);
       }
 
       // Draw intermittent labels
@@ -283,6 +286,10 @@ class _TrendLinePainter extends CustomPainter {
   bool shouldRepaint(covariant _TrendLinePainter oldDelegate) {
     return oldDelegate.points != points ||
         oldDelegate.maxValue != maxValue ||
-        oldDelegate.selectedIndex != selectedIndex;
+        oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.textColor != textColor ||
+        oldDelegate.pointCenterColor != pointCenterColor;
   }
 }
