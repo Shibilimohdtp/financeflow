@@ -45,7 +45,6 @@ dependencies:
   local_auth: ^2.3.0
   intl: ^0.20.2
   uuid: ^4.6.0
-  google_fonts: ^6.3.2
   crypto: ^3.0.7
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
@@ -83,6 +82,27 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/branding/
+
+  # Bundled so text never needs the network. See assets/fonts/README.md.
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-ExtraBold.ttf
+          weight: 800
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Fraunces-Bold.ttf
+          weight: 700
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

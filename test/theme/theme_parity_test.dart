@@ -3,9 +3,9 @@
 // replaced (test/theme/legacy/, copied from commit 7c6e015). Delete the
 // snapshot and this parity check when slice DS-8 changes Lichen on purpose.
 //
-// Everything runs as a widget test: building text styles asks google_fonts
-// to fetch fonts, and only the widget-test harness absorbs that failure.
-// Slice DS-3 bundles the fonts and removes the fetch.
+// DS-3 bundled the fonts: the snapshot now names the bundled families instead
+// of fetching them through google_fonts. All other text properties are
+// still compared.
 import 'package:financeflow/core/extensions/context_extensions.dart';
 import 'package:financeflow/theme/ff_colors.dart';
 import 'package:financeflow/theme/ff_theme.dart';

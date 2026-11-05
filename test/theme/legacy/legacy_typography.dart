@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+/// Snapshot of the pre-DS-1 type scale. DS-3 replaced its google_fonts
+/// loading with the bundled families (the old fallback branch, kept below);
+/// every size, weight, height, spacing and colour is unchanged.
 /// Legacy Typography System (Manrope + Fraunces + Ledger Tabular Numerals)
 class LegacyTypography {
   LegacyTypography._();
@@ -20,27 +22,16 @@ class LegacyTypography {
     Color? color,
     List<FontFeature>? fontFeatures,
   }) {
-    try {
-      return GoogleFonts.manrope(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-        fontFeatures: fontFeatures,
-      );
-    } catch (_) {
-      return TextStyle(
-        fontFamily: 'Manrope',
-        fontFamilyFallback: fallbackFamilies,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-        fontFeatures: fontFeatures,
-      );
-    }
+    return TextStyle(
+      fontFamily: 'Manrope',
+      fontFamilyFallback: fallbackFamilies,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+      fontFeatures: fontFeatures,
+    );
   }
 
   static TextStyle fraunces({
@@ -50,25 +41,15 @@ class LegacyTypography {
     double? letterSpacing,
     Color? color,
   }) {
-    try {
-      return GoogleFonts.fraunces(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-      );
-    } catch (_) {
-      return TextStyle(
-        fontFamily: 'Fraunces',
-        fontFamilyFallback: fallbackFamilies,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-      );
-    }
+    return TextStyle(
+      fontFamily: 'Fraunces',
+      fontFamilyFallback: fallbackFamilies,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+    );
   }
 
   // Tabular Numerals Font Features

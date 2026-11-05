@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'ff_colors.dart';
 
@@ -28,8 +27,17 @@ enum FfTextRole {
   moneySm,
 }
 
-/// Font loading lives here and nowhere else.
+/// The app's fonts. They are bundled in `assets/fonts/` and declared in
+/// `pubspec.yaml`, so text never needs the network and release builds match
+/// debug builds. Font families are named here and nowhere else.
 abstract final class FfFonts {
+  /// UI and amounts. Bundled weights: 400, 500, 600, 700, 800.
+  static const String manropeFamily = 'Manrope';
+
+  /// Display roles only. Bundled weights: 600, 700.
+  static const String frauncesFamily = 'Fraunces';
+
+  /// Used for scripts the bundled fonts don't cover (for example Devanagari).
   static const List<String> fallbackFamilies = [
     'NotoSansDevanagari',
     'Roboto',
@@ -48,29 +56,16 @@ abstract final class FfFonts {
     double? letterSpacing,
     Color? color,
     List<FontFeature>? fontFeatures,
-  }) {
-    try {
-      return GoogleFonts.manrope(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-        fontFeatures: fontFeatures,
-      );
-    } catch (_) {
-      return TextStyle(
-        fontFamily: 'Manrope',
-        fontFamilyFallback: fallbackFamilies,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-        fontFeatures: fontFeatures,
-      );
-    }
-  }
+  }) => TextStyle(
+    fontFamily: manropeFamily,
+    fontFamilyFallback: fallbackFamilies,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    height: height,
+    letterSpacing: letterSpacing,
+    color: color,
+    fontFeatures: fontFeatures,
+  );
 
   /// Display face, used only by the display roles.
   static TextStyle fraunces({
@@ -79,27 +74,15 @@ abstract final class FfFonts {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) {
-    try {
-      return GoogleFonts.fraunces(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-      );
-    } catch (_) {
-      return TextStyle(
-        fontFamily: 'Fraunces',
-        fontFamilyFallback: fallbackFamilies,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-      );
-    }
-  }
+  }) => TextStyle(
+    fontFamily: frauncesFamily,
+    fontFamilyFallback: fallbackFamilies,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    height: height,
+    letterSpacing: letterSpacing,
+    color: color,
+  );
 }
 
 /// The type scale. Sizes, line heights, weights and tracking are defined
