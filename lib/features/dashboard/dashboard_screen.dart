@@ -20,21 +20,15 @@ import '../loans/loans_screen.dart';
 import '../savings_goals/savings_goals_controller.dart';
 import '../settings/settings_controller.dart';
 import '../subscriptions/subscriptions_screen.dart';
-import '../transactions/add_edit_transaction_screen.dart';
 import 'dashboard_controller.dart';
-import 'insights_controller.dart';
-import 'widgets/account_summary_strip.dart';
 import 'widgets/actionable_items_section.dart';
 import 'widgets/budget_overview_card.dart';
 import 'widgets/cash_flow_card.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_loans_overview.dart';
 import 'widgets/home_period_selector.dart';
-import 'widgets/home_quick_actions.dart';
 import 'widgets/home_recent_transactions.dart';
-import 'widgets/local_insights_card.dart';
 import 'widgets/savings_goals_overview_card.dart';
-import 'widgets/top_categories_card.dart';
 import 'widgets/total_balance_hero.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -67,10 +61,6 @@ class DashboardScreen extends ConsumerWidget {
     this.onOpenSettings,
   });
 
-  void _openTransfer(BuildContext context) {
-    AddEditTransactionScreen.push(context);
-  }
-
   void _push(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
@@ -92,11 +82,9 @@ class DashboardScreen extends ConsumerWidget {
     final selectedMonth = ref.watch(selectedDashboardMonthProvider);
     final selectedPeriod = ref.watch(selectedDashboardPeriodProvider);
     final trendMetric = ref.watch(periodComparisonProvider);
-    final topCategoriesAsync = ref.watch(topSpendingCategoriesProvider);
     final overallBudgetAsync = ref.watch(overallBudgetSummaryProvider);
     final activeBudgetsAsync = ref.watch(budgetSummariesProvider);
     final overallGoalAsync = ref.watch(overallSavingsGoalSummaryProvider);
-    final insightsAsync = ref.watch(dashboardInsightsProvider);
 
     // Loans & Subscriptions Data
     final allLoans = ref.watch(allLoansStreamProvider).valueOrNull ?? const [];
@@ -140,6 +128,14 @@ class DashboardScreen extends ConsumerWidget {
             onOpenAlerts ?? () => _push(context, const AlertsInboxScreen()),
         onOpenSettings: onOpenSettings,
       ),
+      // Logging a transaction is the most common action, so it gets the
+      // primary button rather than a row of shortcuts.
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'home_add_transaction',
+        onPressed: onAddTransaction,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add'),
+      ),
       body: RefreshIndicator(
         color: theme.colorScheme.primary,
         onRefresh: () async {
@@ -151,11 +147,9 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(dashboardCashFlowChartProvider);
           ref.invalidate(accountsWithBalancesProvider);
           ref.invalidate(recentTransactionsProvider);
-          ref.invalidate(topSpendingCategoriesProvider);
           ref.invalidate(overallBudgetSummaryProvider);
           ref.invalidate(budgetSummariesProvider);
           ref.invalidate(overallSavingsGoalSummaryProvider);
-          ref.invalidate(dashboardInsightsProvider);
           ref.invalidate(allLoansStreamProvider);
           ref.invalidate(allSubscriptionsStreamProvider);
           ref.invalidate(activeAlertsStreamProvider);
@@ -179,6 +173,7 @@ class DashboardScreen extends ConsumerWidget {
                       .setPrivacyBlurEnabled(!isPrivacyBlur);
                 },
                 onManageAccounts: onManageAccounts,
+                onAddAccount: onAddAccount,
               ),
 
               const SizedBox(height: StillwaterTokens.spaceMd),
@@ -215,19 +210,7 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceMd),
 
-              // 3. Quick Actions Widget
-              HomeQuickActions(
-                onAddTransaction: onAddTransaction,
-                onTransfer: () => _openTransfer(context),
-                onManageAccounts: onManageAccounts,
-                onOpenBudgets: onOpenBudgets,
-                onOpenLoans:
-                    onOpenLoans ?? () => _push(context, const LoansScreen()),
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceLg),
-
-              // 4. Actionable & Upcoming Items
+              // 3. Actionable & Upcoming Items
               ActionableItemsSection(
                 pendingReviewCount: pendingCount,
                 upcomingLoans: upcomingLoans,
@@ -261,7 +244,7 @@ class DashboardScreen extends ConsumerWidget {
                   overBudgetCount > 0)
                 const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 5. Cash Flow & Visualization Summary Card
+              // 4. Cash Flow & Visualization Summary Card
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: StillwaterTokens.spaceLg,
@@ -388,45 +371,7 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 6. Accounts & Wallets Overview
-              accountsAsync.when(
-                data:
-                    (accountsList) => AccountSummaryStrip(
-                      accounts: accountsList,
-                      isPrivacyBlur: isPrivacyBlur,
-                      onManageAccounts: onManageAccounts,
-                      onAddAccount: onAddAccount,
-                    ),
-                loading:
-                    () => FfSkeletonLoader(
-                      child: SizedBox(
-                        height: 112,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: StillwaterTokens.spaceLg,
-                          ),
-                          child: Row(
-                            children: const [
-                              FfSkeletonBlock(
-                                width: 176,
-                                height: 112,
-                                borderRadius: 16,
-                              ),
-                              SizedBox(width: StillwaterTokens.spaceSm),
-                              FfSkeletonBlock(
-                                width: 176,
-                                height: 112,
-                                borderRadius: 16,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                error: (e, _) => const SizedBox.shrink(),
-              ),
-
-              // 7. Budgets & Spending Overview
+              // 5. Budgets & Spending Overview
               overallBudgetAsync.when(
                 data: (budgetSummary) {
                   if (budgetSummary.totalBudgeted <= 0) {
@@ -451,7 +396,7 @@ class DashboardScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              // 8. Loans & EMIs Overview
+              // 6. Loans & EMIs Overview
               if (activeLoans.isNotEmpty) ...[
                 const SizedBox(height: StillwaterTokens.spaceLg),
                 HomeLoansOverview(
@@ -471,7 +416,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
 
-              // 9. Savings Goals Overview
+              // 7. Savings Goals Overview
               overallGoalAsync.when(
                 data: (goalSummary) {
                   if (goalSummary.totalTarget <= 0) {
@@ -496,43 +441,9 @@ class DashboardScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              // 10. Top Spending Categories
-              topCategoriesAsync.when(
-                data: (topCats) {
-                  if (topCats.isEmpty) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      top: StillwaterTokens.spaceLg,
-                    ),
-                    child: TopCategoriesCard(
-                      categories: topCats,
-                      isPrivacyBlur: isPrivacyBlur,
-                      onExploreMore: onOpenAnalytics ?? () {},
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-
-              // 11. Local On-Device Insights
-              insightsAsync.when(
-                data: (insights) {
-                  if (insights.isEmpty) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      top: StillwaterTokens.spaceLg,
-                    ),
-                    child: LocalInsightsCard(insights: insights),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-
               const SizedBox(height: StillwaterTokens.spaceXl),
 
-              // 12. Recent Transactions List
+              // 8. Recent Transactions List
               recentTxAsync.when(
                 data:
                     (transactions) => HomeRecentTransactions(

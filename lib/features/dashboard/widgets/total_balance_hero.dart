@@ -12,6 +12,9 @@ class TotalBalanceHero extends StatelessWidget {
   final VoidCallback onToggleBlur;
   final VoidCallback? onManageAccounts;
 
+  /// Shown as a call to action when there are no active accounts.
+  final VoidCallback? onAddAccount;
+
   const TotalBalanceHero({
     super.key,
     required this.totalBalance,
@@ -19,6 +22,7 @@ class TotalBalanceHero extends StatelessWidget {
     required this.isPrivacyBlur,
     required this.onToggleBlur,
     this.onManageAccounts,
+    this.onAddAccount,
   });
 
   @override
@@ -149,6 +153,16 @@ class TotalBalanceHero extends StatelessWidget {
               ),
             ],
           ),
+          if (activeAccountsCount == 0 && onAddAccount != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey('balance-add-account'),
+                onPressed: onAddAccount,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add your first account'),
+              ),
+            ),
         ],
       ),
     );

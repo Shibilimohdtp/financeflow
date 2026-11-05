@@ -6,7 +6,6 @@ import 'package:financeflow/features/dashboard/dashboard_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_screen.dart';
 import 'package:financeflow/features/dashboard/widgets/total_balance_hero.dart';
 import 'package:financeflow/features/dashboard/widgets/cash_flow_card.dart';
-import 'package:financeflow/features/dashboard/insights_controller.dart';
 import 'package:financeflow/features/ingestion/needs_review_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
 import 'package:financeflow/models/account.dart';
@@ -144,7 +143,7 @@ void main() {
   );
 
   testWidgets(
-    'DashboardScreen renders Total Balance Hero, Quick Actions, Cash Flow, Accounts and Recent Transactions',
+    'DashboardScreen renders Total Balance Hero, Add button, Cash Flow and Recent Transactions',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -163,9 +162,6 @@ void main() {
             ),
             recentTransactionsProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
-            ),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
             ),
           ],
           child: MaterialApp(
@@ -192,19 +188,14 @@ void main() {
       expect(find.text('1 account'), findsOneWidget);
       expect(find.text('₹48,500'), findsWidgets);
 
-      // Verify Quick Actions
-      expect(find.text('Add Entry'), findsOneWidget);
-      expect(find.text('Accounts'), findsWidgets);
+      // Logging is the primary action
+      expect(find.widgetWithText(FloatingActionButton, 'Add'), findsOneWidget);
 
       // Verify Cash Flow Values
       expect(find.text('Net Savings'), findsOneWidget);
       expect(find.text('+ ₹73,500'), findsOneWidget);
       expect(find.text('+ ₹75,000'), findsOneWidget);
       expect(find.text('− ₹1,500'), findsWidgets);
-
-      // Verify Account Strip
-      expect(find.text('HDFC Salary'), findsOneWidget);
-      expect(find.text('••4321'), findsOneWidget);
 
       // Verify Recent Transaction
       expect(find.text('Recent Transactions'), findsOneWidget);
@@ -234,9 +225,6 @@ void main() {
           ),
           recentTransactionsProvider.overrideWith(
             (ref) => Stream.value([testTransaction]),
-          ),
-          dashboardInsightsProvider.overrideWithValue(
-            const AsyncValue.data([]),
           ),
         ],
         child: MaterialApp(
@@ -317,9 +305,6 @@ void main() {
             recentTransactionsProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
             ),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
-            ),
           ],
           child: MaterialApp(
             theme: StillwaterTheme.daylight,
@@ -372,9 +357,6 @@ void main() {
               ),
             ),
             recentTransactionsProvider.overrideWith((ref) => Stream.value([])),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
-            ),
           ],
           child: MaterialApp(
             theme: StillwaterTheme.daylight,
@@ -403,7 +385,7 @@ void main() {
   );
 
   testWidgets(
-    'DashboardScreen quick actions and transaction taps trigger callbacks',
+    'DashboardScreen add button, accounts link and transaction taps trigger callbacks',
     (WidgetTester tester) async {
       bool addTapped = false;
       bool manageAccountsTapped = false;
@@ -428,9 +410,6 @@ void main() {
             recentTransactionsProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
             ),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
-            ),
           ],
           child: MaterialApp(
             theme: StillwaterTheme.daylight,
@@ -448,12 +427,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Add Entry
-      await tester.tap(find.text('Add Entry'));
+      await tester.tap(find.widgetWithText(FloatingActionButton, 'Add'));
       await tester.pumpAndSettle();
       expect(addTapped, isTrue);
 
       // Tap Accounts quick action
-      await tester.tap(find.text('Accounts').first);
+      await tester.tap(find.byKey(const ValueKey('balance-accounts')));
       await tester.pumpAndSettle();
       expect(manageAccountsTapped, isTrue);
 
@@ -504,9 +483,6 @@ void main() {
             recentTransactionsProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
             ),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
-            ),
           ],
           child: MaterialApp(
             theme: StillwaterTheme.deepWater,
@@ -551,9 +527,6 @@ void main() {
             ),
             recentTransactionsProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
-            ),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
             ),
           ],
           child: MaterialApp(
@@ -625,9 +598,6 @@ void main() {
             ),
             recentTransactionsProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
-            ),
-            dashboardInsightsProvider.overrideWithValue(
-              const AsyncValue.data([]),
             ),
           ],
           child: MaterialApp(

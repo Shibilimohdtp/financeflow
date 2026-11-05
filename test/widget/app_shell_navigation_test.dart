@@ -4,7 +4,6 @@ import 'package:financeflow/features/analytics/analytics_controller.dart';
 import 'package:financeflow/features/budgets/budgets_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
-import 'package:financeflow/features/dashboard/insights_controller.dart';
 import 'package:financeflow/features/ingestion/needs_review_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
 import 'package:financeflow/features/transactions/transactions_controller.dart';
@@ -32,7 +31,6 @@ void main() {
       accountsWithBalancesProvider.overrideWithValue(const AsyncValue.data([])),
       totalNetWorthProvider.overrideWithValue(const AsyncValue.data(0.0)),
       recentTransactionsProvider.overrideWith((ref) => Stream.value([])),
-      dashboardInsightsProvider.overrideWithValue(const AsyncValue.data([])),
       filteredTransactionsProvider.overrideWith((ref) => Stream.value([])),
       allTransactionsStreamProvider.overrideWith((ref) => Stream.value([])),
       categoriesStreamProvider.overrideWith((ref) => Stream.value([])),
