@@ -16,6 +16,7 @@ import 'add_goal_contribution_sheet.dart';
 import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class SavingsGoalDetailScreen extends ConsumerWidget {
   final SavingsGoal goal;
@@ -23,19 +24,15 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
   const SavingsGoalDetailScreen({super.key, required this.goal});
 
   void _openEdit(BuildContext context, SavingsGoal currentGoal) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (ctx) => AddEditSavingsGoalSheet(initialGoal: currentGoal),
     );
   }
 
   void _openAddContribution(BuildContext context, SavingsGoal currentGoal) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (ctx) => AddGoalContributionSheet(goal: currentGoal),
     );
   }

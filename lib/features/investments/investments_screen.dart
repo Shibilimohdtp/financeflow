@@ -16,17 +16,13 @@ import '../../theme/stillwater_typography.dart';
 import 'add_edit_investment_sheet.dart';
 import 'investment_detail_screen.dart';
 import 'investments_controller.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class InvestmentsScreen extends ConsumerWidget {
   const InvestmentsScreen({super.key});
 
   void _openAddSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const AddEditInvestmentSheet(),
-    );
+    showFfSheet(context, builder: (_) => const AddEditInvestmentSheet());
   }
 
   void _openDetail(BuildContext context, Investment inv) {

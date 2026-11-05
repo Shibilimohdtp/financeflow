@@ -13,6 +13,7 @@ import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class RecurringSuggestionsSheet extends ConsumerWidget {
   const RecurringSuggestionsSheet({super.key});
@@ -22,147 +23,135 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
     final theme = context.theme;
     final suggestionsAsync = ref.watch(recurringSuggestionsProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
+    return FfSheet(
+      children: [
+        const FfSheetHeader(
+          title: 'Recurring Patterns',
+          subtitle: 'Detected on-device from transaction history',
+          trailing: FfPrivacyBadge(label: 'On-device'),
         ),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const FfSheetHeader(
-              title: 'Recurring Patterns',
-              subtitle: 'Detected on-device from transaction history',
-              trailing: FfPrivacyBadge(label: 'On-device'),
-            ),
-            const Divider(height: 1, thickness: 1),
-            Flexible(
-              child: suggestionsAsync.when(
-                data: (suggestions) {
-                  if (suggestions.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(StillwaterTokens.space2Xl),
-                        child: FfEmptyState(
-                          icon: Icons.check_circle_outline_rounded,
-                          title: 'No unconfirmed recurring patterns',
-                          description:
-                              'FinanceFlow scans local transactions for recurring charges. All patterns are already tracked.',
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceLg,
-                      vertical: StillwaterTokens.spaceMd,
+        const Divider(height: 1, thickness: 1),
+        Flexible(
+          child: suggestionsAsync.when(
+            data: (suggestions) {
+              if (suggestions.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(StillwaterTokens.space2Xl),
+                    child: FfEmptyState(
+                      icon: Icons.check_circle_outline_rounded,
+                      title: 'No unconfirmed recurring patterns',
+                      description:
+                          'FinanceFlow scans local transactions for recurring charges. All patterns are already tracked.',
                     ),
-                    children: [
-                      FfSectionHeader(
-                        title: 'Detected Patterns (${suggestions.length})',
-                      ),
-                      FfGroupedContainer(
-                        children:
-                            suggestions.map((sug) {
-                              return Padding(
-                                padding: const EdgeInsets.all(
-                                  StillwaterTokens.spaceMd,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                );
+              }
+
+              return ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StillwaterTokens.spaceLg,
+                  vertical: StillwaterTokens.spaceMd,
+                ),
+                children: [
+                  FfSectionHeader(
+                    title: 'Detected Patterns (${suggestions.length})',
+                  ),
+                  FfGroupedContainer(
+                    children:
+                        suggestions.map((sug) {
+                          return Padding(
+                            padding: const EdgeInsets.all(
+                              StillwaterTokens.spaceMd,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            sug.merchant,
-                                            style: theme.textTheme.titleSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${CurrencyFormatter.formatAmount(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
-                                          style: StillwaterTypography.numMd(
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(
-                                      height: StillwaterTokens.space2Xs,
+                                    Expanded(
+                                      child: Text(
+                                        sug.merchant,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                     Text(
-                                      'Matched ${sug.matchingTransactions.length} past payments · Last: ${DateFormatter.formatShortDate(sug.lastPaymentDate)}',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                          ),
-                                    ),
-                                    const SizedBox(
-                                      height: StillwaterTokens.spaceMd,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        FfButton(
-                                          label: 'Track Subscription',
-                                          size: FfButtonSize.sm,
-                                          leadingIcon: const Icon(
-                                            Icons.add_rounded,
-                                            size: 16,
-                                          ),
-                                          onPressed: () async {
-                                            await ref
-                                                .read(
-                                                  subscriptionsControllerProvider
-                                                      .notifier,
-                                                )
-                                                .addFromSuggestion(sug);
-                                            ref.invalidate(
-                                              recurringSuggestionsProvider,
-                                            );
-                                            if (context.mounted) {
-                                              FfToast.show(
-                                                context,
-                                                message:
-                                                    'Subscription tracked for ${sug.merchant}.',
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      ],
+                                      '${CurrencyFormatter.formatAmount(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
+                                      style: StillwaterTypography.numMd(
+                                        color: theme.colorScheme.primary,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              );
-                            }).toList(),
-                      ),
-                    ],
-                  );
-                },
-                loading:
-                    () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                error: (e, _) => Center(child: Text('Error: $e')),
-              ),
-            ),
-          ],
+                                const SizedBox(
+                                  height: StillwaterTokens.space2Xs,
+                                ),
+                                Text(
+                                  'Matched ${sug.matchingTransactions.length} past payments · Last: ${DateFormatter.formatShortDate(sug.lastPaymentDate)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.secondary,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: StillwaterTokens.spaceMd,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    FfButton(
+                                      label: 'Track Subscription',
+                                      size: FfButtonSize.sm,
+                                      leadingIcon: const Icon(
+                                        Icons.add_rounded,
+                                        size: 16,
+                                      ),
+                                      onPressed: () async {
+                                        await ref
+                                            .read(
+                                              subscriptionsControllerProvider
+                                                  .notifier,
+                                            )
+                                            .addFromSuggestion(sug);
+                                        ref.invalidate(
+                                          recurringSuggestionsProvider,
+                                        );
+                                        if (context.mounted) {
+                                          FfToast.show(
+                                            context,
+                                            message:
+                                                'Subscription tracked for ${sug.merchant}.',
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                ],
+              );
+            },
+            loading:
+                () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+            error: (e, _) => Center(child: Text('Error: $e')),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

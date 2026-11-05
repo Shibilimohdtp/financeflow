@@ -8,6 +8,7 @@ import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -24,109 +25,87 @@ class _SecuritySettingsScreenState
     final confirmController = TextEditingController();
     String? errorText;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (ctx) {
-        final theme = ctx.theme;
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(StillwaterTokens.radius2Xl),
+            return FfSheet(
+              children: [
+                const FfSheetHeader(
+                  title: 'Set Security PIN',
+                  subtitle: 'PIN is stored in your device hardware keystore',
                 ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const FfSheetHeader(
-                      title: 'Set Security PIN',
-                      subtitle:
-                          'PIN is stored in your device hardware keystore',
-                    ),
-                    const Divider(height: 1, thickness: 1),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        left: StillwaterTokens.spaceLg,
-                        right: StillwaterTokens.spaceLg,
-                        top: StillwaterTokens.spaceMd,
-                        bottom:
-                            MediaQuery.of(context).viewInsets.bottom +
-                            StillwaterTokens.spaceMd,
+                const Divider(height: 1, thickness: 1),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: StillwaterTokens.spaceLg,
+                    right: StillwaterTokens.spaceLg,
+                    top: StillwaterTokens.spaceMd,
+                    bottom: StillwaterTokens.spaceMd,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: pinController,
+                        obscureText: true,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        decoration: const InputDecoration(
+                          labelText: 'Enter 4-6 Digit PIN',
+                          counterText: '',
+                        ),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextField(
-                            controller: pinController,
-                            obscureText: true,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            decoration: const InputDecoration(
-                              labelText: 'Enter 4-6 Digit PIN',
-                              counterText: '',
-                            ),
-                          ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          TextField(
-                            controller: confirmController,
-                            obscureText: true,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            decoration: InputDecoration(
-                              labelText: 'Confirm PIN',
-                              counterText: '',
-                              errorText: errorText,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      TextField(
+                        controller: confirmController,
+                        obscureText: true,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm PIN',
+                          counterText: '',
+                          errorText: errorText,
+                        ),
                       ),
-                    ),
-                    FfSheetFooter(
-                      secondaryLabel: 'Cancel',
-                      primaryLabel: 'Save PIN',
-                      onPrimaryPressed: () async {
-                        final pin = pinController.text.trim();
-                        final confirm = confirmController.text.trim();
-
-                        if (pin.length < 4) {
-                          setSheetState(() {
-                            errorText = 'PIN must be at least 4 digits.';
-                          });
-                          return;
-                        }
-                        if (pin != confirm) {
-                          setSheetState(() {
-                            errorText = 'PINs do not match.';
-                          });
-                          return;
-                        }
-
-                        final securityService = ref.read(
-                          securityServiceProvider,
-                        );
-                        await securityService.setPin(pin);
-                        await ref
-                            .read(settingsControllerProvider.notifier)
-                            .setPinEnabled(true);
-
-                        if (context.mounted) {
-                          Navigator.of(context).pop();
-                          FfToast.show(
-                            context,
-                            message: 'App PIN set securely.',
-                          );
-                        }
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                FfSheetFooter(
+                  secondaryLabel: 'Cancel',
+                  primaryLabel: 'Save PIN',
+                  onPrimaryPressed: () async {
+                    final pin = pinController.text.trim();
+                    final confirm = confirmController.text.trim();
+
+                    if (pin.length < 4) {
+                      setSheetState(() {
+                        errorText = 'PIN must be at least 4 digits.';
+                      });
+                      return;
+                    }
+                    if (pin != confirm) {
+                      setSheetState(() {
+                        errorText = 'PINs do not match.';
+                      });
+                      return;
+                    }
+
+                    final securityService = ref.read(securityServiceProvider);
+                    await securityService.setPin(pin);
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .setPinEnabled(true);
+
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      FfToast.show(context, message: 'App PIN set securely.');
+                    }
+                  },
+                ),
+              ],
             );
           },
         );

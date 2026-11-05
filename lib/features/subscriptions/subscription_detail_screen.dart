@@ -22,6 +22,7 @@ import 'add_edit_subscription_sheet.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class SubscriptionDetailScreen extends ConsumerWidget {
   final Subscription subscription;
@@ -40,10 +41,8 @@ class SubscriptionDetailScreen extends ConsumerWidget {
   }
 
   void _edit(BuildContext context, Subscription currentSub) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (_) => AddEditSubscriptionSheet(initialSubscription: currentSub),
     );
   }
@@ -495,11 +494,10 @@ class SubscriptionDetailScreen extends ConsumerWidget {
   ) {
     return InkWell(
       onTap: () {
-        showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => TransactionDetailScreen(transaction: tx),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TransactionDetailScreen(transaction: tx),
+          ),
         );
       },
       child: Padding(

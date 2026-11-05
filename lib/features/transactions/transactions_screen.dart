@@ -28,6 +28,7 @@ import 'widgets/transaction_list_summary.dart';
 import 'widgets/transaction_tile.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -197,34 +198,25 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   ) async {
     final chosen = _selectedTransactions(items);
     if (chosen.isEmpty) return;
-    final category = await showModalBottomSheet<Category>(
-      context: context,
-      isScrollControlled: true,
+    final category = await showFfSheet<Category>(
+      context,
       builder:
-          (ctx) => SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(ctx).height * 0.7,
+          (ctx) => FfSheet(
+            children: [
+              const FfSheetHeader(title: 'Move to category'),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final c in categories.where((c) => !c.isArchived))
+                      ListTile(
+                        title: Text(c.name),
+                        onTap: () => Navigator.of(ctx).pop(c),
+                      ),
+                  ],
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FfSheetHeader(title: 'Move to category'),
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: [
-                        for (final c in categories.where((c) => !c.isArchived))
-                          ListTile(
-                            title: Text(c.name),
-                            onTap: () => Navigator.of(ctx).pop(c),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
     );
     if (category == null || !mounted) return;

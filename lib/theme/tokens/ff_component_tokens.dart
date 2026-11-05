@@ -45,6 +45,9 @@ abstract final class FfRowTokens {
 abstract final class FfSheetTokens {
   static const double radius = FfRadius.x2l;
   static const Size dragHandle = Size(32, 4);
+
+  /// Tallest a sheet may grow, as a share of the screen height.
+  static const double maxHeightFraction = 0.9;
 }
 
 abstract final class FfDialogTokens {

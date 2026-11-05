@@ -32,6 +32,7 @@ import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 String _smsStatusLabel(IngestionPlatformStatus? status) {
   if (status == null) return 'Checking';
@@ -821,59 +822,51 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
     AppSettings settings,
   ) {
     final selected = AppCurrency.fromCode(settings.currencyCode);
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
-        ),
-      ),
+    showFfSheet(
+      context,
       builder: (ctx) {
         final theme = ctx.theme;
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const FfSheetHeader(
-                title: 'Currency',
-                subtitle: 'Changes how amounts are shown. No conversion.',
-              ),
-              const Divider(height: 1, thickness: 1),
-              for (final currency in AppCurrency.values)
-                ListTile(
-                  key: ValueKey('currency-${currency.code}'),
-                  leading: SizedBox(
-                    width: 32,
-                    child: Center(
-                      child: Text(
-                        currency.symbol,
-                        style: theme.textTheme.titleMedium,
-                      ),
+        return FfSheet(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FfSheetHeader(
+              title: 'Currency',
+              subtitle: 'Changes how amounts are shown. No conversion.',
+            ),
+            const Divider(height: 1, thickness: 1),
+            for (final currency in AppCurrency.values)
+              ListTile(
+                key: ValueKey('currency-${currency.code}'),
+                leading: SizedBox(
+                  width: 32,
+                  child: Center(
+                    child: Text(
+                      currency.symbol,
+                      style: theme.textTheme.titleMedium,
                     ),
                   ),
-                  title: Text(currency.displayName),
-                  subtitle: Text(currency.code),
-                  trailing:
-                      currency == selected
-                          ? Icon(
-                            Icons.check_rounded,
-                            color: theme.colorScheme.primary,
-                          )
-                          : null,
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    if (currency != selected) {
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .updateSettings(
-                            settings.copyWith(currencyCode: currency.code),
-                          );
-                    }
-                  },
                 ),
-            ],
-          ),
+                title: Text(currency.displayName),
+                subtitle: Text(currency.code),
+                trailing:
+                    currency == selected
+                        ? Icon(
+                          Icons.check_rounded,
+                          color: theme.colorScheme.primary,
+                        )
+                        : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  if (currency != selected) {
+                    ref
+                        .read(settingsControllerProvider.notifier)
+                        .updateSettings(
+                          settings.copyWith(currencyCode: currency.code),
+                        );
+                  }
+                },
+              ),
+          ],
         );
       },
     );
@@ -884,71 +877,62 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
     WidgetRef ref,
     AppSettings settings,
   ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
-        ),
-      ),
+    showFfSheet(
+      context,
       builder: (ctx) {
         final theme = ctx.theme;
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const FfSheetHeader(
-                title: 'Theme',
-                subtitle: 'Choose your visual preference',
+        return FfSheet(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FfSheetHeader(
+              title: 'Theme',
+              subtitle: 'Choose your visual preference',
+            ),
+            const Divider(height: 1, thickness: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceLg,
+                vertical: StillwaterTokens.spaceSm,
               ),
-              const Divider(height: 1, thickness: 1),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                  vertical: StillwaterTokens.spaceSm,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...AppThemePreference.values.map((pref) {
-                      final isSelected = settings.themePreference == pref;
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          pref == AppThemePreference.system
-                              ? Icons.brightness_auto_outlined
-                              : pref == AppThemePreference.daylight
-                              ? Icons.light_mode_outlined
-                              : Icons.dark_mode_outlined,
-                          color:
-                              isSelected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.secondary,
-                        ),
-                        title: Text(pref.displayName),
-                        trailing:
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...AppThemePreference.values.map((pref) {
+                    final isSelected = settings.themePreference == pref;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        pref == AppThemePreference.system
+                            ? Icons.brightness_auto_outlined
+                            : pref == AppThemePreference.daylight
+                            ? Icons.light_mode_outlined
+                            : Icons.dark_mode_outlined,
+                        color:
                             isSelected
-                                ? Icon(
-                                  Icons.check_rounded,
-                                  color: theme.colorScheme.primary,
-                                )
-                                : null,
-                        onTap: () {
-                          ref
-                              .read(settingsControllerProvider.notifier)
-                              .setThemePreference(pref);
-                          Navigator.of(ctx).pop();
-                        },
-                      );
-                    }),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
-                  ],
-                ),
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.secondary,
+                      ),
+                      title: Text(pref.displayName),
+                      trailing:
+                          isSelected
+                              ? Icon(
+                                Icons.check_rounded,
+                                color: theme.colorScheme.primary,
+                              )
+                              : null,
+                      onTap: () {
+                        ref
+                            .read(settingsControllerProvider.notifier)
+                            .setThemePreference(pref);
+                        Navigator.of(ctx).pop();
+                      },
+                    );
+                  }),
+                  const SizedBox(height: StillwaterTokens.spaceSm),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );

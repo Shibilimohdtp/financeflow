@@ -16,17 +16,13 @@ import '../../theme/stillwater_typography.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loan_detail_screen.dart';
 import 'loans_controller.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class LoansScreen extends ConsumerWidget {
   const LoansScreen({super.key});
 
   void _openAddSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const AddEditLoanSheet(),
-    );
+    showFfSheet(context, builder: (_) => const AddEditLoanSheet());
   }
 
   void _openDetail(BuildContext context, Loan loan) {

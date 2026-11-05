@@ -36,6 +36,7 @@ import 'widgets/transaction_pickers.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -509,11 +510,9 @@ class _AddEditTransactionScreenState
   }
 
   Future<void> _showCategoryPicker(List<Category> categories) async {
-    final chosen = await showModalBottomSheet<Category>(
-      context: context,
-      isScrollControlled: true,
+    final chosen = await showFfSheet<Category>(
+      context,
       enableDrag: false,
-      backgroundColor: Colors.transparent,
       builder:
           (context) => CategoryPickerSheet(
             categories: categories,
@@ -537,11 +536,9 @@ class _AddEditTransactionScreenState
             ? accounts.where((a) => a.id != _selectedAccount!.id).toList()
             : accounts;
 
-    final chosen = await showModalBottomSheet<Account>(
-      context: context,
-      isScrollControlled: true,
+    final chosen = await showFfSheet<Account>(
+      context,
       enableDrag: false,
-      backgroundColor: Colors.transparent,
       builder:
           (context) => AccountPickerSheet(
             title:

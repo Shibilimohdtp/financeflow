@@ -69,7 +69,18 @@ void _expectSameTheme(ThemeData actual, ThemeData legacy) {
   expect(actual.appBarTheme, legacy.appBarTheme);
   expect(actual.cardTheme, legacy.cardTheme);
   expect(actual.inputDecorationTheme, legacy.inputDecorationTheme);
-  expect(actual.bottomSheetTheme, legacy.bottomSheetTheme);
+  // DS-4b moved every sheet onto FfSheet and the page colour, which most
+  // sheets already used. Only the sheet background differs.
+  expect(
+    actual.bottomSheetTheme.copyWith(
+      backgroundColor: legacy.bottomSheetTheme.backgroundColor,
+    ),
+    legacy.bottomSheetTheme,
+  );
+  expect(
+    actual.bottomSheetTheme.backgroundColor,
+    actual.scaffoldBackgroundColor,
+  );
   expect(actual.dialogTheme, legacy.dialogTheme);
   expect(actual.floatingActionButtonTheme, legacy.floatingActionButtonTheme);
   expect(actual.snackBarTheme, legacy.snackBarTheme);

@@ -21,6 +21,7 @@ import '../settings/settings_controller.dart';
 import 'accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -33,10 +34,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   bool _showArchived = false;
 
   void _showAddEditAccountSheet(BuildContext context, [Account? account]) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (ctx) => _AddEditAccountSheet(account: account),
     );
   }
@@ -500,166 +499,148 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
   Widget build(BuildContext context) {
     final theme = context.theme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
+    return FfSheet(
+      children: [
+        FfSheetHeader(
+          title: isEditing ? 'Edit Account' : 'Add Financial Account',
+          subtitle: 'Stored 100% locally on device',
         ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: isEditing ? 'Edit Account' : 'Add Financial Account',
-                subtitle: 'Stored 100% locally on device',
-              ),
-              const Divider(height: 1, thickness: 1),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    StillwaterTokens.spaceLg,
-                    StillwaterTokens.spaceMd,
-                    StillwaterTokens.spaceLg,
-                    StillwaterTokens.spaceMd,
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Account Type selector
-                        Text(
-                          'ACCOUNT TYPE',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            letterSpacing: 1.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        DropdownButtonFormField<AccountType>(
-                          value: _selectedType,
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceMd,
-                              vertical: StillwaterTokens.spaceSm,
-                            ),
-                          ),
-                          items:
-                              AccountType.values.map((type) {
-                                return DropdownMenuItem(
-                                  value: type,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _AccountsScreenState._getAccountTypeIcon(
-                                          type,
-                                        ),
-                                        size: 18,
-                                        color: theme.colorScheme.secondary,
-                                      ),
-                                      const SizedBox(
-                                        width: StillwaterTokens.spaceSm,
-                                      ),
-                                      Text(type.displayName),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => _selectedType = val);
-                            }
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Account Name field
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Account Name',
-                            hintText: 'e.g. HDFC Salary, Cash in Hand',
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Please enter an account name.';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Opening Balance field
-                        TextFormField(
-                          controller: _openingBalanceController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'),
-                            ),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: 'Opening Balance',
-                            prefixText: '${CurrencyFormatter.currencySymbol} ',
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Please enter opening balance.';
-                            }
-                            if (double.tryParse(val) == null) {
-                              return 'Please enter a valid amount.';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Optional Details (Institution & Masked ID)
-                        TextFormField(
-                          controller: _institutionController,
-                          decoration: const InputDecoration(
-                            labelText: 'Institution Name (Optional)',
-                            hintText: 'e.g. HDFC Bank, SBI, ICICI, Zerodha',
-                          ),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        TextFormField(
-                          controller: _maskedController,
-                          decoration: const InputDecoration(
-                            labelText: 'Masked Number / UPI ID (Optional)',
-                            hintText: 'e.g. •••• 4235, user@okhdfcbank',
-                          ),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-                      ],
+        const Divider(height: 1, thickness: 1),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceMd,
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceMd,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Account Type selector
+                  Text(
+                    'ACCOUNT TYPE',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  DropdownButtonFormField<AccountType>(
+                    value: _selectedType,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceMd,
+                        vertical: StillwaterTokens.spaceSm,
+                      ),
+                    ),
+                    items:
+                        AccountType.values.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _AccountsScreenState._getAccountTypeIcon(
+                                    type,
+                                  ),
+                                  size: 18,
+                                  color: theme.colorScheme.secondary,
+                                ),
+                                const SizedBox(width: StillwaterTokens.spaceSm),
+                                Text(type.displayName),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _selectedType = val);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Account Name field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Account Name',
+                      hintText: 'e.g. HDFC Salary, Cash in Hand',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please enter an account name.';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Opening Balance field
+                  TextFormField(
+                    controller: _openingBalanceController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d+\.?\d{0,2}'),
+                      ),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: 'Opening Balance',
+                      prefixText: '${CurrencyFormatter.currencySymbol} ',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please enter opening balance.';
+                      }
+                      if (double.tryParse(val) == null) {
+                        return 'Please enter a valid amount.';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Optional Details (Institution & Masked ID)
+                  TextFormField(
+                    controller: _institutionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Institution Name (Optional)',
+                      hintText: 'e.g. HDFC Bank, SBI, ICICI, Zerodha',
+                    ),
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  TextFormField(
+                    controller: _maskedController,
+                    decoration: const InputDecoration(
+                      labelText: 'Masked Number / UPI ID (Optional)',
+                      hintText: 'e.g. •••• 4235, user@okhdfcbank',
+                    ),
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+                ],
               ),
-              FfSheetFooter(
-                primaryLabel: isEditing ? 'Save Changes' : 'Add Account',
-                isPrimaryLoading: _isSaving,
-                onPrimaryPressed: _save,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        FfSheetFooter(
+          primaryLabel: isEditing ? 'Save Changes' : 'Add Account',
+          isPrimaryLoading: _isSaving,
+          onPrimaryPressed: _save,
+        ),
+      ],
     );
   }
 }

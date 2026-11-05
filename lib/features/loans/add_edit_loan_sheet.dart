@@ -15,6 +15,7 @@ import '../../theme/stillwater_tokens.dart';
 import 'loans_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon map for each loan type
@@ -342,286 +343,260 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
     final previewData = _preview();
     final isEdit = widget.initialLoan != null;
 
-    return Padding(
-      // Lifts content above the keyboard
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.92,
-        minChildSize: 0.6,
-        maxChildSize: 0.97,
-        expand: false,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(StillwaterTokens.radius2Xl),
+    return FfSheet(
+      children: [
+        // ── Drag handle + header ─────────────────────────────────
+        FfSheetHeader(
+          title: isEdit ? 'Edit Loan' : 'Add Loan / EMI',
+          subtitle:
+              isEdit
+                  ? 'Update loan details and repayment terms.'
+                  : 'Track repayments and outstanding balance.',
+          onClose: () => Navigator.of(context).pop(),
+        ),
+        const Divider(height: 1, thickness: 1),
+
+        // ── Scrollable form body ─────────────────────────────────
+        Flexible(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: StillwaterTokens.spaceLg,
               ),
-            ),
-            child: Column(
               children: [
-                // ── Drag handle + header ─────────────────────────────────
-                FfSheetHeader(
-                  title: isEdit ? 'Edit Loan' : 'Add Loan / EMI',
-                  subtitle:
-                      isEdit
-                          ? 'Update loan details and repayment terms.'
-                          : 'Track repayments and outstanding balance.',
-                  onClose: () => Navigator.of(context).pop(),
+                const SizedBox(height: StillwaterTokens.spaceXs),
+
+                // ── 1. Loan type selector ──────────────────────────
+                _LoanTypeSelector(
+                  selected: _loanType,
+                  onChanged: (t) => setState(() => _loanType = t),
                 ),
-                const Divider(height: 1, thickness: 1),
 
-                // ── Scrollable form body ─────────────────────────────────
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceLg,
+                const SizedBox(height: StillwaterTokens.spaceLg),
+
+                // ── 2. Loan details ────────────────────────────────
+                _SectionLabel(label: 'Loan Details'),
+                const SizedBox(height: StillwaterTokens.spaceXs),
+
+                _inputField(
+                  controller: _nameController,
+                  label: 'Loan name',
+                  hint: 'e.g. HDFC Home Loan, Macbook EMI',
+                  capitalization: TextCapitalization.words,
+                  validator:
+                      (v) =>
+                          v == null || v.trim().isEmpty
+                              ? 'Loan name is required.'
+                              : null,
+                ),
+
+                const SizedBox(height: StillwaterTokens.spaceMd),
+
+                _inputField(
+                  controller: _lenderController,
+                  label: 'Lender / Institution',
+                  hint: 'e.g. HDFC Bank, Bajaj Finserv',
+                  capitalization: TextCapitalization.words,
+                  icon: Icons.business_outlined,
+                  validator:
+                      (v) =>
+                          v == null || v.trim().isEmpty
+                              ? 'Lender name is required.'
+                              : null,
+                ),
+
+                const SizedBox(height: StillwaterTokens.spaceLg),
+
+                // ── 3. Amount and repayment ────────────────────────
+                _SectionLabel(label: 'Amount & Repayment'),
+                const SizedBox(height: StillwaterTokens.spaceXs),
+
+                // Principal
+                _NumericInputField(
+                  controller: _principalController,
+                  label: 'Principal Amount',
+                  suffix: CurrencyFormatter.currencySymbol,
+                  prefixSymbol: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  errorText: _principalError,
+                  onChanged: (_) {
+                    setState(() => _principalError = null);
+                    _recalculateEmi();
+                  },
+                ),
+
+                const SizedBox(height: StillwaterTokens.spaceMd),
+
+                // Rate + Tenure row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _NumericInputField(
+                        controller: _rateController,
+                        label: 'Interest rate',
+                        suffix: '% p.a.',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        errorText: _rateError,
+                        onChanged: (_) {
+                          setState(() => _rateError = null);
+                          _recalculateEmi();
+                        },
                       ),
-                      children: [
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-
-                        // ── 1. Loan type selector ──────────────────────────
-                        _LoanTypeSelector(
-                          selected: _loanType,
-                          onChanged: (t) => setState(() => _loanType = t),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // ── 2. Loan details ────────────────────────────────
-                        _SectionLabel(label: 'Loan Details'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-
-                        _inputField(
-                          controller: _nameController,
-                          label: 'Loan name',
-                          hint: 'e.g. HDFC Home Loan, Macbook EMI',
-                          capitalization: TextCapitalization.words,
-                          validator:
-                              (v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Loan name is required.'
-                                      : null,
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-
-                        _inputField(
-                          controller: _lenderController,
-                          label: 'Lender / Institution',
-                          hint: 'e.g. HDFC Bank, Bajaj Finserv',
-                          capitalization: TextCapitalization.words,
-                          icon: Icons.business_outlined,
-                          validator:
-                              (v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Lender name is required.'
-                                      : null,
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // ── 3. Amount and repayment ────────────────────────
-                        _SectionLabel(label: 'Amount & Repayment'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-
-                        // Principal
-                        _NumericInputField(
-                          controller: _principalController,
-                          label: 'Principal Amount',
-                          suffix: CurrencyFormatter.currencySymbol,
-                          prefixSymbol: true,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          errorText: _principalError,
-                          onChanged: (_) {
-                            setState(() => _principalError = null);
-                            _recalculateEmi();
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-
-                        // Rate + Tenure row
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _NumericInputField(
-                                controller: _rateController,
-                                label: 'Interest rate',
-                                suffix: '% p.a.',
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                errorText: _rateError,
-                                onChanged: (_) {
-                                  setState(() => _rateError = null);
-                                  _recalculateEmi();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: StillwaterTokens.spaceMd),
-                            Expanded(
-                              child: _NumericInputField(
-                                controller: _tenureController,
-                                label: 'Tenure',
-                                suffix: 'months',
-                                keyboardType: TextInputType.number,
-                                errorText: _tenureError,
-                                onChanged: (_) {
-                                  setState(() => _tenureError = null);
-                                  _recalculateEmi();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-
-                        // ── 4. Interest type ───────────────────────────────
-                        _InterestTypeSelector(
-                          selected: _interestType,
-                          onChanged: (t) {
-                            setState(() => _interestType = t);
-                            _recalculateEmi();
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-
-                        // Monthly EMI
-                        _NumericInputField(
-                          controller: _emiController,
-                          label: 'Monthly EMI',
-                          suffix: CurrencyFormatter.currencySymbol,
-                          prefixSymbol: true,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          errorText: _emiError,
-                          helperText: 'Auto-calculated · edit to override',
-                          onChanged: (_) => setState(() => _emiError = null),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // ── 5. Repayment preview ───────────────────────────
-                        if (previewData != null) ...[
-                          _RepaymentPreview(data: previewData),
-                          const SizedBox(height: StillwaterTokens.spaceLg),
-                        ],
-
-                        // ── 6. Schedule ────────────────────────────────────
-                        _SectionLabel(label: 'Schedule'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-
-                        _DateAndPaymentDayRow(
-                          startDate: _startDate,
-                          paymentDayController: _paymentDayController,
-                          onSelectDate: _selectDate,
-                          onDayChanged: (_) => setState(() {}),
-                        ),
-
-                        // ── Past loan notice ───────────────────────────────
-                        if (pastInstallments.isNotEmpty) ...[
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-                          _PastLoanNotice(
-                            installments: pastInstallments,
-                            markPaid: _markPastPaid,
-                            onChanged: (v) => setState(() => _markPastPaid = v),
-                          ),
-                        ],
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // ── 7. More options ────────────────────────────────
-                        _MoreOptionsToggle(
-                          isExpanded: _showMoreOptions,
-                          onToggle:
-                              () => setState(
-                                () => _showMoreOptions = !_showMoreOptions,
-                              ),
-                        ),
-
-                        if (_showMoreOptions) ...[
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-
-                          // Linked account
-                          _AccountSelector(
-                            accounts: accounts,
-                            selected: _selectedAccountId,
-                            onChanged:
-                                (v) => setState(() => _selectedAccountId = v),
-                          ),
-
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-
-                          // Notes
-                          _inputField(
-                            controller: _notesController,
-                            label: 'Notes (optional)',
-                            hint: 'Any additional details about this loan',
-                            icon: Icons.notes_outlined,
-                            maxLines: 2,
-                          ),
-                        ],
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // ── Trust notice ───────────────────────────────────
-                        FfCard(
-                          variant: FfCardVariant.tinted,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: StillwaterTokens.spaceMd,
-                            vertical: StillwaterTokens.spaceSm,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.lock_outline_rounded,
-                                size: 16,
-                                color: context.secColors.verified,
-                              ),
-                              const SizedBox(width: StillwaterTokens.spaceXs),
-                              Expanded(
-                                child: Text(
-                                  'Entered by you · Calculated locally · FinanceFlow does not access lender servers.',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 11,
-                                    color: theme.colorScheme.secondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-                      ],
                     ),
+                    const SizedBox(width: StillwaterTokens.spaceMd),
+                    Expanded(
+                      child: _NumericInputField(
+                        controller: _tenureController,
+                        label: 'Tenure',
+                        suffix: 'months',
+                        keyboardType: TextInputType.number,
+                        errorText: _tenureError,
+                        onChanged: (_) {
+                          setState(() => _tenureError = null);
+                          _recalculateEmi();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: StillwaterTokens.spaceMd),
+
+                // ── 4. Interest type ───────────────────────────────
+                _InterestTypeSelector(
+                  selected: _interestType,
+                  onChanged: (t) {
+                    setState(() => _interestType = t);
+                    _recalculateEmi();
+                  },
+                ),
+
+                const SizedBox(height: StillwaterTokens.spaceMd),
+
+                // Monthly EMI
+                _NumericInputField(
+                  controller: _emiController,
+                  label: 'Monthly EMI',
+                  suffix: CurrencyFormatter.currencySymbol,
+                  prefixSymbol: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  errorText: _emiError,
+                  helperText: 'Auto-calculated · edit to override',
+                  onChanged: (_) => setState(() => _emiError = null),
+                ),
+
+                const SizedBox(height: StillwaterTokens.spaceLg),
+
+                // ── 5. Repayment preview ───────────────────────────
+                if (previewData != null) ...[
+                  _RepaymentPreview(data: previewData),
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+                ],
+
+                // ── 6. Schedule ────────────────────────────────────
+                _SectionLabel(label: 'Schedule'),
+                const SizedBox(height: StillwaterTokens.spaceXs),
+
+                _DateAndPaymentDayRow(
+                  startDate: _startDate,
+                  paymentDayController: _paymentDayController,
+                  onSelectDate: _selectDate,
+                  onDayChanged: (_) => setState(() {}),
+                ),
+
+                // ── Past loan notice ───────────────────────────────
+                if (pastInstallments.isNotEmpty) ...[
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  _PastLoanNotice(
+                    installments: pastInstallments,
+                    markPaid: _markPastPaid,
+                    onChanged: (v) => setState(() => _markPastPaid = v),
+                  ),
+                ],
+
+                const SizedBox(height: StillwaterTokens.spaceLg),
+
+                // ── 7. More options ────────────────────────────────
+                _MoreOptionsToggle(
+                  isExpanded: _showMoreOptions,
+                  onToggle:
+                      () =>
+                          setState(() => _showMoreOptions = !_showMoreOptions),
+                ),
+
+                if (_showMoreOptions) ...[
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+
+                  // Linked account
+                  _AccountSelector(
+                    accounts: accounts,
+                    selected: _selectedAccountId,
+                    onChanged: (v) => setState(() => _selectedAccountId = v),
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+
+                  // Notes
+                  _inputField(
+                    controller: _notesController,
+                    label: 'Notes (optional)',
+                    hint: 'Any additional details about this loan',
+                    icon: Icons.notes_outlined,
+                    maxLines: 2,
+                  ),
+                ],
+
+                const SizedBox(height: StillwaterTokens.spaceLg),
+
+                // ── Trust notice ───────────────────────────────────
+                FfCard(
+                  variant: FfCardVariant.tinted,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StillwaterTokens.spaceMd,
+                    vertical: StillwaterTokens.spaceSm,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 16,
+                        color: context.secColors.verified,
+                      ),
+                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      Expanded(
+                        child: Text(
+                          'Entered by you · Calculated locally · FinanceFlow does not access lender servers.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11,
+                            color: theme.colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                // ── Sticky primary action ───────────────────────────────────
-                FfSheetFooter(
-                  primaryLabel: isEdit ? 'Save Changes' : 'Create Loan',
-                  isPrimaryLoading: _isSaving,
-                  onPrimaryPressed: _isSaving ? null : _save,
-                ),
+                const SizedBox(height: StillwaterTokens.spaceLg),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        ),
+
+        // ── Sticky primary action ───────────────────────────────────
+        FfSheetFooter(
+          primaryLabel: isEdit ? 'Save Changes' : 'Create Loan',
+          isPrimaryLoading: _isSaving,
+          onPrimaryPressed: _isSaving ? null : _save,
+        ),
+      ],
     );
   }
 

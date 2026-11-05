@@ -18,6 +18,7 @@ import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import 'csv_import_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -117,148 +118,136 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final headers = state.headers;
     final mapping = state.columnMapping;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.theme.scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
-        ),
-      ),
+    showFfSheet(
+      context,
       builder:
           (ctx) => StatefulBuilder(
             builder: (ctx, setModalState) {
-              return SafeArea(
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.75,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const FfSheetHeader(
-                        title: 'Map CSV Columns',
-                        subtitle:
-                            'Select which column in your CSV matches each transaction field',
-                      ),
-                      const Divider(height: 1, thickness: 1),
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: StillwaterTokens.spaceLg,
-                            vertical: StillwaterTokens.spaceMd,
-                          ),
-                          children: [
-                            _buildDropdownRow(
-                              'Date Column *',
-                              mapping.dateIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  dateIndex: idx,
-                                  clearDate: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                            _buildDropdownRow(
-                              'Merchant / Narration *',
-                              mapping.merchantIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  merchantIndex: idx,
-                                  clearMerchant: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                            _buildDropdownRow(
-                              'Debit Column',
-                              mapping.debitIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  debitIndex: idx,
-                                  clearDebit: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                            _buildDropdownRow(
-                              'Credit Column',
-                              mapping.creditIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  creditIndex: idx,
-                                  clearCredit: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                            _buildDropdownRow(
-                              'Amount (Single Column)',
-                              mapping.amountIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  amountIndex: idx,
-                                  clearAmount: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                            _buildDropdownRow(
-                              'Reference / UTR',
-                              mapping.referenceIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  referenceIndex: idx,
-                                  clearReference: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                            _buildDropdownRow(
-                              'Category',
-                              mapping.categoryIndex,
-                              headers,
-                              (idx) {
-                                final newMap = mapping.copyWith(
-                                  categoryIndex: idx,
-                                  clearCategory: idx == null,
-                                );
-                                ref
-                                    .read(csvImportControllerProvider.notifier)
-                                    .updateMapping(newMap);
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+              return FfSheet(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const FfSheetHeader(
+                    title: 'Map CSV Columns',
+                    subtitle:
+                        'Select which column in your CSV matches each transaction field',
                   ),
-                ),
+                  const Divider(height: 1, thickness: 1),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceLg,
+                        vertical: StillwaterTokens.spaceMd,
+                      ),
+                      children: [
+                        _buildDropdownRow(
+                          'Date Column *',
+                          mapping.dateIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              dateIndex: idx,
+                              clearDate: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _buildDropdownRow(
+                          'Merchant / Narration *',
+                          mapping.merchantIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              merchantIndex: idx,
+                              clearMerchant: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _buildDropdownRow(
+                          'Debit Column',
+                          mapping.debitIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              debitIndex: idx,
+                              clearDebit: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _buildDropdownRow(
+                          'Credit Column',
+                          mapping.creditIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              creditIndex: idx,
+                              clearCredit: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _buildDropdownRow(
+                          'Amount (Single Column)',
+                          mapping.amountIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              amountIndex: idx,
+                              clearAmount: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _buildDropdownRow(
+                          'Reference / UTR',
+                          mapping.referenceIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              referenceIndex: idx,
+                              clearReference: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _buildDropdownRow(
+                          'Category',
+                          mapping.categoryIndex,
+                          headers,
+                          (idx) {
+                            final newMap = mapping.copyWith(
+                              categoryIndex: idx,
+                              clearCategory: idx == null,
+                            );
+                            ref
+                                .read(csvImportControllerProvider.notifier)
+                                .updateMapping(newMap);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               );
             },
           ),

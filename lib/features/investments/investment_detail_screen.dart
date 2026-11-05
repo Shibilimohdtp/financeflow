@@ -15,6 +15,7 @@ import 'add_edit_investment_sheet.dart';
 import 'investments_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class InvestmentDetailScreen extends ConsumerWidget {
   final Investment investment;
@@ -22,10 +23,8 @@ class InvestmentDetailScreen extends ConsumerWidget {
   const InvestmentDetailScreen({super.key, required this.investment});
 
   void _edit(BuildContext context, Investment currentInv) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (_) => AddEditInvestmentSheet(initialInvestment: currentInv),
     );
   }
@@ -42,59 +41,43 @@ class InvestmentDetailScreen extends ConsumerWidget {
               : currentInv.currentValue.toString(),
     );
 
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    final confirmed = await showFfSheet<bool>(
+      context,
       builder: (ctx) {
-        final theme = ctx.theme;
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(StillwaterTokens.radius2Xl),
+        return FfSheet(
+          children: [
+            FfSheetHeader(
+              title: 'Update Valuation',
+              subtitle:
+                  'Enter current market valuation for "${currentInv.name}"',
             ),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FfSheetHeader(
-                  title: 'Update Valuation',
-                  subtitle:
-                      'Enter current market valuation for "${currentInv.name}"',
+            const Divider(height: 1, thickness: 1),
+            Padding(
+              padding: EdgeInsets.only(
+                left: StillwaterTokens.spaceLg,
+                right: StillwaterTokens.spaceLg,
+                top: StillwaterTokens.spaceMd,
+                bottom: StillwaterTokens.spaceMd,
+              ),
+              child: TextFormField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                const Divider(height: 1, thickness: 1),
-                Padding(
-                  padding: EdgeInsets.only(
-                    left: StillwaterTokens.spaceLg,
-                    right: StillwaterTokens.spaceLg,
-                    top: StillwaterTokens.spaceMd,
-                    bottom:
-                        MediaQuery.of(ctx).viewInsets.bottom +
-                        StillwaterTokens.spaceMd,
-                  ),
-                  child: TextFormField(
-                    controller: controller,
-                    autofocus: true,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Current Value',
-                      prefixText: '${CurrencyFormatter.currencySymbol} ',
-                    ),
-                  ),
+                decoration: InputDecoration(
+                  labelText: 'Current Value',
+                  prefixText: '${CurrencyFormatter.currencySymbol} ',
                 ),
-                FfSheetFooter(
-                  secondaryLabel: 'Cancel',
-                  primaryLabel: 'Update Value',
-                  onSecondaryPressed: () => Navigator.of(ctx).pop(false),
-                  onPrimaryPressed: () => Navigator.of(ctx).pop(true),
-                ),
-              ],
+              ),
             ),
-          ),
+            FfSheetFooter(
+              secondaryLabel: 'Cancel',
+              primaryLabel: 'Update Value',
+              onSecondaryPressed: () => Navigator.of(ctx).pop(false),
+              onPrimaryPressed: () => Navigator.of(ctx).pop(true),
+            ),
+          ],
         );
       },
     );

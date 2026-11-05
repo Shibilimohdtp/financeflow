@@ -11,6 +11,7 @@ import '../../theme/stillwater_tokens.dart';
 import 'investments_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class AddEditInvestmentSheet extends ConsumerStatefulWidget {
   final Investment? initialInvestment;
@@ -172,44 +173,232 @@ class _AddEditInvestmentSheetState
     final theme = context.theme;
     final accountsAsync = ref.watch(allAccountsStreamProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
+    return FfSheet(
+      children: [
+        FfSheetHeader(
+          title: isEditing ? 'Edit Holding' : 'Add Investment',
+          subtitle: 'Manual on-device portfolio valuation',
         ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: isEditing ? 'Edit Holding' : 'Add Investment',
-                subtitle: 'Manual on-device portfolio valuation',
-              ),
-              const Divider(height: 1, thickness: 1),
+        const Divider(height: 1, thickness: 1),
 
-              // Form Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceLg,
+        // Form Content
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: StillwaterTokens.spaceLg,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Asset Type
+                  _SectionLabel(label: 'Asset Class'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  DropdownButtonFormField<AssetType>(
+                    value: _assetType,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: StillwaterTokens.spaceMd,
+                        vertical: StillwaterTokens.spaceSm,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          StillwaterTokens.radiusMd,
+                        ),
+                      ),
+                    ),
+                    items:
+                        AssetType.values.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(type.displayName),
+                          );
+                        }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _assetType = val);
+                      }
+                    },
                   ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Asset Type
-                        _SectionLabel(label: 'Asset Class'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        DropdownButtonFormField<AssetType>(
-                          value: _assetType,
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Holding Name
+                  _SectionLabel(label: 'Holding / Asset Name'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  TextFormField(
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      hintText:
+                          'e.g. Parag Parikh Flexi Cap, HDFC Bank Shares, SGB',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please enter holding name';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Invested Amount & Current Valuation Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionLabel(label: 'Invested Cost'),
+                            const SizedBox(height: StillwaterTokens.spaceXs),
+                            TextFormField(
+                              controller: _purchasePriceController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                hintText: '50000',
+                                prefixText:
+                                    '${CurrencyFormatter.currencySymbol} ',
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionLabel(label: 'Current Value'),
+                            const SizedBox(height: StillwaterTokens.spaceXs),
+                            TextFormField(
+                              controller: _currentValueController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                hintText: '55000',
+                                prefixText:
+                                    '${CurrencyFormatter.currencySymbol} ',
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Purchase Date
+                  _SectionLabel(label: 'Purchase Date'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  InkWell(
+                    onTap: _selectDate,
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusMd,
+                    ),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: StillwaterTokens.spaceMd,
+                          vertical: StillwaterTokens.spaceSm,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            StillwaterTokens.radiusMd,
+                          ),
+                        ),
+                        suffixIcon: const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 18,
+                        ),
+                      ),
+                      child: Text(
+                        DateFormatter.formatTransactionDate(_purchaseDate),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // More options
+                  InkWell(
+                    onTap: () => setState(() => _showAdvanced = !_showAdvanced),
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusMd,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: StillwaterTokens.spaceXs,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _showAdvanced
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            color: theme.colorScheme.secondary,
+                          ),
+                          const SizedBox(width: StillwaterTokens.spaceXs),
+                          Text(
+                            _showAdvanced
+                                ? 'Hide units, account & notes'
+                                : 'Units, Source Account & Notes (Optional)',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  if (_showAdvanced) ...[
+                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    // Quantity / Units
+                    TextFormField(
+                      controller: _unitsController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Units / Quantity',
+                        hintText: '1.0',
+                      ),
+                    ),
+
+                    const SizedBox(height: StillwaterTokens.spaceMd),
+
+                    // Linked Account
+                    accountsAsync.when(
+                      data: (accounts) {
+                        final activeAccounts =
+                            accounts.where((a) => !a.isArchived).toList();
+                        return DropdownButtonFormField<String>(
+                          value: _selectedAccountId,
                           decoration: InputDecoration(
+                            labelText: 'Purchased From Account',
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: StillwaterTokens.spaceMd,
                               vertical: StillwaterTokens.spaceSm,
@@ -220,267 +409,51 @@ class _AddEditInvestmentSheetState
                               ),
                             ),
                           ),
-                          items:
-                              AssetType.values.map((type) {
-                                return DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type.displayName),
-                                );
-                              }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => _assetType = val);
-                            }
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Holding Name
-                        _SectionLabel(label: 'Holding / Asset Name'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        TextFormField(
-                          controller: _nameController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            hintText:
-                                'e.g. Parag Parikh Flexi Cap, HDFC Bank Shares, SGB',
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Please enter holding name';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Invested Amount & Current Valuation Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _SectionLabel(label: 'Invested Cost'),
-                                  const SizedBox(
-                                    height: StillwaterTokens.spaceXs,
-                                  ),
-                                  TextFormField(
-                                    controller: _purchasePriceController,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                          decimal: true,
-                                        ),
-                                    decoration: InputDecoration(
-                                      hintText: '50000',
-                                      prefixText:
-                                          '${CurrencyFormatter.currencySymbol} ',
-                                    ),
-                                    validator: (val) {
-                                      if (val == null || val.trim().isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('Not specified'),
                             ),
-                            const SizedBox(width: StillwaterTokens.spaceMd),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _SectionLabel(label: 'Current Value'),
-                                  const SizedBox(
-                                    height: StillwaterTokens.spaceXs,
-                                  ),
-                                  TextFormField(
-                                    controller: _currentValueController,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                          decimal: true,
-                                        ),
-                                    decoration: InputDecoration(
-                                      hintText: '55000',
-                                      prefixText:
-                                          '${CurrencyFormatter.currencySymbol} ',
-                                    ),
-                                    validator: (val) {
-                                      if (val == null || val.trim().isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
+                            ...activeAccounts.map(
+                              (a) => DropdownMenuItem(
+                                value: a.id,
+                                child: Text(a.name),
                               ),
                             ),
                           ],
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Purchase Date
-                        _SectionLabel(label: 'Purchase Date'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        InkWell(
-                          onTap: _selectDate,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceMd,
-                                vertical: StillwaterTokens.spaceSm,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  StillwaterTokens.radiusMd,
-                                ),
-                              ),
-                              suffixIcon: const Icon(
-                                Icons.calendar_today_outlined,
-                                size: 18,
-                              ),
-                            ),
-                            child: Text(
-                              DateFormatter.formatTransactionDate(
-                                _purchaseDate,
-                              ),
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // More options
-                        InkWell(
-                          onTap:
-                              () => setState(
-                                () => _showAdvanced = !_showAdvanced,
-                              ),
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: StillwaterTokens.spaceXs,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _showAdvanced
-                                      ? Icons.keyboard_arrow_up_rounded
-                                      : Icons.keyboard_arrow_down_rounded,
-                                  size: 20,
-                                  color: theme.colorScheme.secondary,
-                                ),
-                                const SizedBox(width: StillwaterTokens.spaceXs),
-                                Text(
-                                  _showAdvanced
-                                      ? 'Hide units, account & notes'
-                                      : 'Units, Source Account & Notes (Optional)',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        if (_showAdvanced) ...[
-                          const SizedBox(height: StillwaterTokens.spaceSm),
-                          // Quantity / Units
-                          TextFormField(
-                            controller: _unitsController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Units / Quantity',
-                              hintText: '1.0',
-                            ),
-                          ),
-
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-
-                          // Linked Account
-                          accountsAsync.when(
-                            data: (accounts) {
-                              final activeAccounts =
-                                  accounts.where((a) => !a.isArchived).toList();
-                              return DropdownButtonFormField<String>(
-                                value: _selectedAccountId,
-                                decoration: InputDecoration(
-                                  labelText: 'Purchased From Account',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: StillwaterTokens.spaceMd,
-                                    vertical: StillwaterTokens.spaceSm,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusMd,
-                                    ),
-                                  ),
-                                ),
-                                items: [
-                                  const DropdownMenuItem(
-                                    value: null,
-                                    child: Text('Not specified'),
-                                  ),
-                                  ...activeAccounts.map(
-                                    (a) => DropdownMenuItem(
-                                      value: a.id,
-                                      child: Text(a.name),
-                                    ),
-                                  ),
-                                ],
-                                onChanged:
-                                    (val) => setState(
-                                      () => _selectedAccountId = val,
-                                    ),
-                              );
-                            },
-                            loading: () => const SizedBox.shrink(),
-                            error: (_, __) => const SizedBox.shrink(),
-                          ),
-
-                          const SizedBox(height: StillwaterTokens.spaceMd),
-
-                          // Notes
-                          TextFormField(
-                            controller: _notesController,
-                            maxLines: 2,
-                            decoration: const InputDecoration(
-                              labelText: 'Notes',
-                              hintText:
-                                  'e.g. SIP started in 2024, Long term horizon',
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-                      ],
+                          onChanged:
+                              (val) => setState(() => _selectedAccountId = val),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
                     ),
-                  ),
-                ),
+
+                    const SizedBox(height: StillwaterTokens.spaceMd),
+
+                    // Notes
+                    TextFormField(
+                      controller: _notesController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes',
+                        hintText: 'e.g. SIP started in 2024, Long term horizon',
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+                ],
               ),
-              FfSheetFooter(
-                secondaryLabel: 'Cancel',
-                primaryLabel: isEditing ? 'Save Changes' : 'Add Holding',
-                isPrimaryLoading: _isSaving,
-                onPrimaryPressed: _isSaving ? null : _save,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        FfSheetFooter(
+          secondaryLabel: 'Cancel',
+          primaryLabel: isEditing ? 'Save Changes' : 'Add Holding',
+          isPrimaryLoading: _isSaving,
+          onPrimaryPressed: _isSaving ? null : _save,
+        ),
+      ],
     );
   }
 }

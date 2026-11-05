@@ -17,6 +17,7 @@ import 'add_repayment_sheet.dart';
 import 'money_records_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class MoneyRecordDetailScreen extends ConsumerWidget {
   final MoneyRecord record;
@@ -24,21 +25,14 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
   const MoneyRecordDetailScreen({super.key, required this.record});
 
   void _openEditSheet(BuildContext context, MoneyRecord liveRecord) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (_) => AddEditMoneyRecordSheet(initialRecord: liveRecord),
     );
   }
 
   void _openAddAdvanceSheet(BuildContext context, MoneyRecord liveRecord) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddAdvanceSheet(record: liveRecord),
-    );
+    showFfSheet(context, builder: (_) => AddAdvanceSheet(record: liveRecord));
   }
 
   void _openRepaymentSheet(
@@ -46,10 +40,8 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
     MoneyRecord liveRecord,
     double remaining,
   ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder:
           (_) => AddRepaymentSheet(
             record: liveRecord,

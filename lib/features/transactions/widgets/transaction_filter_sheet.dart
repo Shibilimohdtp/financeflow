@@ -8,6 +8,7 @@ import '../../../shared/widgets/ff_sheet_footer.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
+import '../../../shared/widgets/ff_sheet.dart';
 
 /// Edits every filter except the period (period bar) and search (app bar).
 /// Returns the new query, or null when dismissed.
@@ -19,9 +20,8 @@ Future<TransactionQuery?> showTransactionFilterSheet(
   required List<String> tags,
   required List<String> paymentMethods,
 }) {
-  return showModalBottomSheet<TransactionQuery>(
-    context: context,
-    isScrollControlled: true,
+  return showFfSheet<TransactionQuery>(
+    context,
     builder:
         (_) => _TransactionFilterSheet(
           initial: query,
@@ -102,179 +102,171 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
         widget.categories.where((c) => !c.isArchived).toList();
     final activeAccounts = widget.accounts.where((a) => !a.isArchived).toList();
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const FfSheetHeader(title: 'Filter & sort'),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                ),
+    return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const FfSheetHeader(title: 'Filter & sort'),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(
+              horizontal: StillwaterTokens.spaceLg,
+            ),
+            children: [
+              const _Label('Show'),
+              Wrap(
+                spacing: StillwaterTokens.spaceXs,
+                runSpacing: StillwaterTokens.spaceXs,
                 children: [
-                  const _Label('Show'),
-                  Wrap(
-                    spacing: StillwaterTokens.spaceXs,
-                    runSpacing: StillwaterTokens.spaceXs,
-                    children: [
-                      for (final kind in TransactionKind.values)
-                        FfChip(
-                          key: ValueKey('kind-${kind.name}'),
-                          label: kind.label,
-                          isSelected: _query.kinds.contains(kind),
-                          onSelected: () => _toggleKind(kind),
-                        ),
-                    ],
-                  ),
-                  const _Label('Account'),
-                  _Dropdown<String>(
-                    keyName: 'filter-account',
-                    value: _query.accountId,
-                    allLabel: 'All accounts',
-                    items: {for (final a in activeAccounts) a.id: a.name},
-                    onChanged:
-                        (v) => setState(
-                          () =>
-                              _query = _query.copyWith(
-                                accountId: v,
-                                clearAccount: v == null,
-                              ),
-                        ),
-                  ),
-                  const _Label('Category'),
-                  _Dropdown<String>(
-                    keyName: 'filter-category',
-                    value: _query.categoryId,
-                    allLabel: 'All categories',
-                    items: {for (final c in activeCategories) c.id: c.name},
-                    onChanged:
-                        (v) => setState(
-                          () =>
-                              _query = _query.copyWith(
-                                categoryId: v,
-                                clearCategory: v == null,
-                              ),
-                        ),
-                  ),
-                  const _Label('Amount'),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          key: const ValueKey('filter-min-amount'),
-                          controller: _minController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Min',
-                            prefixText: '${CurrencyFormatter.currencySymbol} ',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceSm),
-                      Expanded(
-                        child: TextField(
-                          key: const ValueKey('filter-max-amount'),
-                          controller: _maxController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Max',
-                            prefixText: '${CurrencyFormatter.currencySymbol} ',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (widget.paymentMethods.isNotEmpty) ...[
-                    const _Label('Payment method'),
-                    _Dropdown<String>(
-                      keyName: 'filter-method',
-                      value: _query.paymentMethod,
-                      allLabel: 'Any method',
-                      items: {for (final m in widget.paymentMethods) m: m},
-                      onChanged:
-                          (v) => setState(
-                            () =>
-                                _query = _query.copyWith(
-                                  paymentMethod: v,
-                                  clearPaymentMethod: v == null,
-                                ),
-                          ),
+                  for (final kind in TransactionKind.values)
+                    FfChip(
+                      key: ValueKey('kind-${kind.name}'),
+                      label: kind.label,
+                      isSelected: _query.kinds.contains(kind),
+                      onSelected: () => _toggleKind(kind),
                     ),
-                  ],
-                  if (widget.tags.isNotEmpty) ...[
-                    const _Label('Tag'),
-                    _Dropdown<String>(
-                      keyName: 'filter-tag',
-                      value: _query.tag,
-                      allLabel: 'Any tag',
-                      items: {for (final t in widget.tags) t: '#$t'},
-                      onChanged:
-                          (v) => setState(
-                            () =>
-                                _query = _query.copyWith(
-                                  tag: v,
-                                  clearTag: v == null,
-                                ),
-                          ),
-                    ),
-                  ],
-                  const _Label('Sort'),
-                  Wrap(
-                    spacing: StillwaterTokens.spaceXs,
-                    runSpacing: StillwaterTokens.spaceXs,
-                    children: [
-                      for (final sort in TransactionSort.values)
-                        FfChip(
-                          label: sort.label,
-                          isSelected: _query.sort == sort,
-                          onSelected:
-                              () => setState(
-                                () => _query = _query.copyWith(sort: sort),
-                              ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceLg),
-                  Text(
-                    'Use the period bar to change dates.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceMd),
                 ],
               ),
-            ),
-            FfSheetFooter(
-              secondaryLabel: 'Reset',
-              onSecondaryPressed: () {
-                _minController.clear();
-                _maxController.clear();
-                setState(
-                  () =>
-                      _query = TransactionQuery(
-                        period: _query.period,
-                        search: _query.search,
+              const _Label('Account'),
+              _Dropdown<String>(
+                keyName: 'filter-account',
+                value: _query.accountId,
+                allLabel: 'All accounts',
+                items: {for (final a in activeAccounts) a.id: a.name},
+                onChanged:
+                    (v) => setState(
+                      () =>
+                          _query = _query.copyWith(
+                            accountId: v,
+                            clearAccount: v == null,
+                          ),
+                    ),
+              ),
+              const _Label('Category'),
+              _Dropdown<String>(
+                keyName: 'filter-category',
+                value: _query.categoryId,
+                allLabel: 'All categories',
+                items: {for (final c in activeCategories) c.id: c.name},
+                onChanged:
+                    (v) => setState(
+                      () =>
+                          _query = _query.copyWith(
+                            categoryId: v,
+                            clearCategory: v == null,
+                          ),
+                    ),
+              ),
+              const _Label('Amount'),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey('filter-min-amount'),
+                      controller: _minController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
-                );
-              },
-              primaryLabel: 'Show results',
-              onPrimaryPressed: () => Navigator.of(context).pop(_withAmounts()),
-            ),
-          ],
+                      decoration: InputDecoration(
+                        labelText: 'Min',
+                        prefixText: '${CurrencyFormatter.currencySymbol} ',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey('filter-max-amount'),
+                      controller: _maxController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Max',
+                        prefixText: '${CurrencyFormatter.currencySymbol} ',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.paymentMethods.isNotEmpty) ...[
+                const _Label('Payment method'),
+                _Dropdown<String>(
+                  keyName: 'filter-method',
+                  value: _query.paymentMethod,
+                  allLabel: 'Any method',
+                  items: {for (final m in widget.paymentMethods) m: m},
+                  onChanged:
+                      (v) => setState(
+                        () =>
+                            _query = _query.copyWith(
+                              paymentMethod: v,
+                              clearPaymentMethod: v == null,
+                            ),
+                      ),
+                ),
+              ],
+              if (widget.tags.isNotEmpty) ...[
+                const _Label('Tag'),
+                _Dropdown<String>(
+                  keyName: 'filter-tag',
+                  value: _query.tag,
+                  allLabel: 'Any tag',
+                  items: {for (final t in widget.tags) t: '#$t'},
+                  onChanged:
+                      (v) => setState(
+                        () =>
+                            _query = _query.copyWith(
+                              tag: v,
+                              clearTag: v == null,
+                            ),
+                      ),
+                ),
+              ],
+              const _Label('Sort'),
+              Wrap(
+                spacing: StillwaterTokens.spaceXs,
+                runSpacing: StillwaterTokens.spaceXs,
+                children: [
+                  for (final sort in TransactionSort.values)
+                    FfChip(
+                      label: sort.label,
+                      isSelected: _query.sort == sort,
+                      onSelected:
+                          () => setState(
+                            () => _query = _query.copyWith(sort: sort),
+                          ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: StillwaterTokens.spaceLg),
+              Text(
+                'Use the period bar to change dates.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: StillwaterTokens.spaceMd),
+            ],
+          ),
         ),
-      ),
+        FfSheetFooter(
+          secondaryLabel: 'Reset',
+          onSecondaryPressed: () {
+            _minController.clear();
+            _maxController.clear();
+            setState(
+              () =>
+                  _query = TransactionQuery(
+                    period: _query.period,
+                    search: _query.search,
+                  ),
+            );
+          },
+          primaryLabel: 'Show results',
+          onPrimaryPressed: () => Navigator.of(context).pop(_withAmounts()),
+        ),
+      ],
     );
   }
 }

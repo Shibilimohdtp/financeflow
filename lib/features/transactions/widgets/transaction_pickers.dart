@@ -10,6 +10,7 @@ import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_colors.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../shared/widgets/ff_sheet.dart';
 
 /// A compact, rich tile button for selecting an Account.
 class AccountTileButton extends StatelessWidget {
@@ -178,160 +179,159 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
             .where((c) => c.name.toLowerCase().contains(_query.toLowerCase()))
             .toList();
 
-    return Material(
-      color:
-          isDark
-              ? StillwaterColors.darkSurfaceDefault
-              : StillwaterColors.lightSurfaceDefault,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(StillwaterTokens.radius2Xl),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceSm,
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceLg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: 'Choose Category',
-                padding: EdgeInsets.zero,
-                onClose: () => Navigator.pop(context),
-              ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
-              TextField(
-                controller: _searchController,
-                autofocus: false,
-                onChanged: (val) => setState(() => _query = val.trim()),
-                style: theme.textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor:
-                      isDark
-                          ? StillwaterColors.darkSurfaceContainerLow
-                          : StillwaterColors.lightSurfaceContainerLow,
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  suffixIcon:
-                      _query.isEmpty
-                          ? null
-                          : IconButton(
-                            icon: const Icon(Icons.clear_rounded, size: 18),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                          ),
-                  hintText: 'Search categories...',
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.7,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceMd,
-                    vertical: StillwaterTokens.spaceSm,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.35,
-                      ),
-                      width: StillwaterTokens.borderWidthHairline,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.35,
-                      ),
-                      width: StillwaterTokens.borderWidthHairline,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: StillwaterTokens.borderWidthFocus,
-                    ),
-                  ),
-                  isDense: true,
+    return FfSheet(
+      children: [
+        Flexible(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceSm,
+              StillwaterTokens.spaceLg,
+              StillwaterTokens.spaceLg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FfSheetHeader(
+                  title: 'Choose Category',
+                  padding: EdgeInsets.zero,
+                  onClose: () => Navigator.pop(context),
                 ),
-              ),
-              const SizedBox(height: StillwaterTokens.spaceMd),
-              SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.50,
-                child:
-                    filtered.isEmpty
-                        ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.search_off_rounded,
-                                size: 40,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: StillwaterTokens.spaceXs),
-                              Text(
-                                'No matching category found',
-                                style: theme.textTheme.bodyMedium?.copyWith(
+                const SizedBox(height: StillwaterTokens.spaceSm),
+                TextField(
+                  controller: _searchController,
+                  autofocus: false,
+                  onChanged: (val) => setState(() => _query = val.trim()),
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor:
+                        isDark
+                            ? StillwaterColors.darkSurfaceContainerLow
+                            : StillwaterColors.lightSurfaceContainerLow,
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    suffixIcon:
+                        _query.isEmpty
+                            ? null
+                            : IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _query = '');
+                              },
+                            ),
+                    hintText: 'Search categories...',
+                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.7,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: StillwaterTokens.spaceMd,
+                      vertical: StillwaterTokens.spaceSm,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        StillwaterTokens.radiusFull,
+                      ),
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.35,
+                        ),
+                        width: StillwaterTokens.borderWidthHairline,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        StillwaterTokens.radiusFull,
+                      ),
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.35,
+                        ),
+                        width: StillwaterTokens.borderWidthHairline,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        StillwaterTokens.radiusFull,
+                      ),
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: StillwaterTokens.borderWidthFocus,
+                      ),
+                    ),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: StillwaterTokens.spaceMd),
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.50,
+                  child:
+                      filtered.isEmpty
+                          ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 40,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                        : LayoutBuilder(
-                          builder: (context, constraints) {
-                            final width = constraints.maxWidth;
-                            final crossAxisCount =
-                                width < 340 ? 2 : (width < 600 ? 3 : 4);
-
-                            return GridView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: filtered.length,
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: crossAxisCount,
-                                    crossAxisSpacing: StillwaterTokens.spaceSm,
-                                    mainAxisSpacing: StillwaterTokens.spaceSm,
-                                    childAspectRatio: 1.3,
+                                const SizedBox(
+                                  height: StillwaterTokens.spaceXs,
+                                ),
+                                Text(
+                                  'No matching category found',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
                                   ),
-                              itemBuilder: (context, index) {
-                                final category = filtered[index];
-                                final isSelected =
-                                    category.id == widget.selected?.id;
+                                ),
+                              ],
+                            ),
+                          )
+                          : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final width = constraints.maxWidth;
+                              final crossAxisCount =
+                                  width < 340 ? 2 : (width < 600 ? 3 : 4);
 
-                                return _CategoryGridTile(
-                                  category: category,
-                                  isSelected: isSelected,
-                                  onTap: () => Navigator.pop(context, category),
-                                );
-                              },
-                            );
-                          },
-                        ),
-              ),
-            ],
+                              return GridView.builder(
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: filtered.length,
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing:
+                                          StillwaterTokens.spaceSm,
+                                      mainAxisSpacing: StillwaterTokens.spaceSm,
+                                      childAspectRatio: 1.3,
+                                    ),
+                                itemBuilder: (context, index) {
+                                  final category = filtered[index];
+                                  final isSelected =
+                                      category.id == widget.selected?.id;
+
+                                  return _CategoryGridTile(
+                                    category: category,
+                                    isSelected: isSelected,
+                                    onTap:
+                                        () => Navigator.pop(context, category),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -464,85 +464,81 @@ class AccountPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Material(
-      color:
-          isDark
-              ? StillwaterColors.darkSurfaceDefault
-              : StillwaterColors.lightSurfaceDefault,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(StillwaterTokens.radius2Xl),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: title,
-                padding: EdgeInsets.zero,
-                onClose: () => Navigator.pop(context),
-              ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
-              if (accounts.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(StillwaterTokens.spaceXl),
-                  child: Text('No eligible account available.'),
-                )
-              else
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: accounts.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final account = accounts[index];
-                      final isSelected = account.id == selected?.id;
-
-                      return ListTile(
-                        leading: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.4),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _icon(account.type),
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        title: Text(
-                          account.name,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        trailing:
-                            isSelected
-                                ? Icon(
-                                  Icons.check_circle_rounded,
-                                  color: theme.colorScheme.primary,
-                                )
-                                : null,
-                        onTap: () => Navigator.pop(context, account),
-                      );
-                    },
-                  ),
+    return FfSheet(
+      children: [
+        Flexible(
+          child: Padding(
+            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FfSheetHeader(
+                  title: title,
+                  padding: EdgeInsets.zero,
+                  onClose: () => Navigator.pop(context),
                 ),
-            ],
+                const SizedBox(height: StillwaterTokens.spaceSm),
+                if (accounts.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(StillwaterTokens.spaceXl),
+                    child: Text('No eligible account available.'),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: accounts.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final account = accounts[index];
+                        final isSelected = account.id == selected?.id;
+
+                        return ListTile(
+                          leading: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _icon(account.type),
+                              size: 20,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          title: Text(
+                            account.name,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          trailing:
+                              isSelected
+                                  ? Icon(
+                                    Icons.check_circle_rounded,
+                                    color: theme.colorScheme.primary,
+                                  )
+                                  : null,
+                          onTap: () => Navigator.pop(context, account),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 

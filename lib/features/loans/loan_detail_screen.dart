@@ -16,6 +16,7 @@ import 'payment_account_picker.dart';
 import 'widgets/emi_schedule_view.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
   final Loan loan;
@@ -23,9 +24,8 @@ class LoanDetailScreen extends ConsumerWidget {
   const LoanDetailScreen({super.key, required this.loan});
 
   void _edit(BuildContext context, Loan currentLoan) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
+    showFfSheet(
+      context,
       builder: (_) => AddEditLoanSheet(initialLoan: currentLoan),
     );
   }

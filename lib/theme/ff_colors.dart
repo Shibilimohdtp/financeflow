@@ -13,7 +13,7 @@ enum FfColorRole {
   surfacePage, // screen background
   surfaceCard, // cards, list groups, inputs
   surfaceRaised, // dialogs, popovers
-  surfaceSheet, // bottom sheets
+  surfaceSheet, // bottom sheets (FfSheet); Lichen uses the page colour
   surfaceDim,
   surfaceContainerLowest,
   surfaceContainerLow,

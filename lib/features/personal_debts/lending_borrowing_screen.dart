@@ -15,15 +15,14 @@ import '../../theme/stillwater_typography.dart';
 import 'add_edit_money_record_sheet.dart';
 import 'money_record_detail_screen.dart';
 import 'money_records_controller.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class LendingBorrowingScreen extends ConsumerWidget {
   const LendingBorrowingScreen({super.key});
 
   void _openAddSheet(BuildContext context, {MoneyRecordType? defaultType}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showFfSheet(
+      context,
       builder: (_) => AddEditMoneyRecordSheet(defaultType: defaultType),
     );
   }

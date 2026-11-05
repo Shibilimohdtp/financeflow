@@ -19,6 +19,7 @@ import 'add_edit_subscription_sheet.dart';
 import 'recurring_suggestions_sheet.dart';
 import 'subscription_detail_screen.dart';
 import 'subscriptions_controller.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   const SubscriptionsScreen({super.key});
@@ -32,12 +33,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   bool _showInactive = false;
 
   void _openAddSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const AddEditSubscriptionSheet(),
-    );
+    showFfSheet(context, builder: (_) => const AddEditSubscriptionSheet());
   }
 
   void _openDetail(BuildContext context, Subscription sub) {
@@ -313,7 +309,8 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                                     vertical: 1,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: context.statusColors.warningContainer,
+                                    color:
+                                        context.statusColors.warningContainer,
                                     borderRadius: BorderRadius.circular(
                                       StillwaterTokens.radiusXs,
                                     ),

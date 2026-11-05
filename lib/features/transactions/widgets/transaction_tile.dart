@@ -11,6 +11,7 @@ import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
 import '../../../shared/widgets/ff_dialog.dart';
+import '../../../shared/widgets/ff_sheet.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -46,86 +47,73 @@ class TransactionTile extends StatelessWidget {
 
   void _showActionSheet(BuildContext context) {
     HapticFeedback.mediumImpact();
-    final theme = context.theme;
     final finColors = context.finColors;
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
+    showFfSheet<void>(
+      context,
       builder:
-          (sheetContext) => Container(
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(StillwaterTokens.radius2Xl),
+          (sheetContext) => FfSheet(
+            children: [
+              FfSheetHeader(
+                title: transaction.merchant,
+                subtitle: CurrencyFormatter.format(
+                  transaction.amount,
+                  isIncome: transaction.type == TransactionType.income,
+                  isExpense: transaction.type == TransactionType.expense,
+                ),
               ),
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FfSheetHeader(
-                    title: transaction.merchant,
-                    subtitle: CurrencyFormatter.format(
-                      transaction.amount,
-                      isIncome: transaction.type == TransactionType.income,
-                      isExpense: transaction.type == TransactionType.expense,
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.info_outline_rounded),
-                    title: const Text('View details'),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      onOpen();
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.edit_outlined),
-                    title: const Text('Edit transaction'),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      onEdit();
-                    },
-                  ),
-                  if (onDuplicate != null)
-                    ListTile(
-                      leading: const Icon(Icons.copy_rounded),
-                      title: const Text('Duplicate transaction'),
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        onDuplicate!();
-                      },
-                    ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.delete_outline_rounded,
-                      color: finColors.expense,
-                    ),
-                    title: Text(
-                      'Delete transaction',
-                      style: TextStyle(color: finColors.expense),
-                    ),
-                    onTap: () async {
-                      Navigator.of(sheetContext).pop();
-                      final confirmed = await FfDialog.confirm(
-                        context,
-                        title: 'Delete transaction?',
-                        message:
-                            'Are you sure you want to delete "${transaction.merchant}" (${CurrencyFormatter.format(transaction.amount)})?',
-                        confirmLabel: 'Delete',
-                        destructive: true,
-                      );
-                      if (confirmed == true) {
-                        await onDelete();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
-                ],
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.info_outline_rounded),
+                title: const Text('View details'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onOpen();
+                },
               ),
-            ),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit transaction'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onEdit();
+                },
+              ),
+              if (onDuplicate != null)
+                ListTile(
+                  leading: const Icon(Icons.copy_rounded),
+                  title: const Text('Duplicate transaction'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onDuplicate!();
+                  },
+                ),
+              ListTile(
+                leading: Icon(
+                  Icons.delete_outline_rounded,
+                  color: finColors.expense,
+                ),
+                title: Text(
+                  'Delete transaction',
+                  style: TextStyle(color: finColors.expense),
+                ),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  final confirmed = await FfDialog.confirm(
+                    context,
+                    title: 'Delete transaction?',
+                    message:
+                        'Are you sure you want to delete "${transaction.merchant}" (${CurrencyFormatter.format(transaction.amount)})?',
+                    confirmLabel: 'Delete',
+                    destructive: true,
+                  );
+                  if (confirmed == true) {
+                    await onDelete();
+                  }
+                },
+              ),
+              const SizedBox(height: StillwaterTokens.spaceSm),
+            ],
           ),
     );
   }

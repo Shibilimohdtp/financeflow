@@ -13,17 +13,13 @@ import '../../theme/stillwater_typography.dart';
 import 'add_edit_savings_goal_sheet.dart';
 import 'savings_goal_detail_screen.dart';
 import 'savings_goals_controller.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class SavingsGoalsScreen extends ConsumerWidget {
   const SavingsGoalsScreen({super.key});
 
   void _openAddGoal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const AddEditSavingsGoalSheet(),
-    );
+    showFfSheet(context, builder: (ctx) => const AddEditSavingsGoalSheet());
   }
 
   void _openGoalDetail(BuildContext context, SavingsGoal goal) {

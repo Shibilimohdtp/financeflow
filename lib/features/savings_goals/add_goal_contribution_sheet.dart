@@ -14,6 +14,7 @@ import '../../theme/stillwater_tokens.dart';
 import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_sheet.dart';
 
 class AddGoalContributionSheet extends ConsumerStatefulWidget {
   final SavingsGoal goal;
@@ -118,163 +119,144 @@ class _AddGoalContributionSheetState
     final theme = context.theme;
     final accountsAsync = ref.watch(allAccountsStreamProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
+    return FfSheet(
+      children: [
+        FfSheetHeader(
+          title: 'Add Funds',
+          subtitle: 'Contributing to "${widget.goal.name}"',
         ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: 'Add Funds',
-                subtitle: 'Contributing to "${widget.goal.name}"',
-              ),
-              const Divider(height: 1, thickness: 1),
+        const Divider(height: 1, thickness: 1),
 
-              // Form Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceLg,
+        // Form Content
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: StillwaterTokens.spaceLg,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Deposit Amount
+                  _SectionLabel(label: 'Deposit Amount'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  TextFormField(
+                    controller: _amountController,
+                    autofocus: true,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '5000',
+                      prefixText: '${CurrencyFormatter.currencySymbol} ',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please enter amount';
+                      }
+                      return null;
+                    },
                   ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Deposit Amount
-                        _SectionLabel(label: 'Deposit Amount'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        TextFormField(
-                          controller: _amountController,
-                          autofocus: true,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: '5000',
-                            prefixText: '${CurrencyFormatter.currencySymbol} ',
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Please enter amount';
-                            }
-                            return null;
-                          },
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Date
+                  _SectionLabel(label: 'Deposit Date'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  InkWell(
+                    onTap: _selectDate,
+                    borderRadius: BorderRadius.circular(
+                      StillwaterTokens.radiusMd,
+                    ),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: StillwaterTokens.spaceMd,
+                          vertical: StillwaterTokens.spaceSm,
                         ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Date
-                        _SectionLabel(label: 'Deposit Date'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        InkWell(
-                          onTap: _selectDate,
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
                             StillwaterTokens.radiusMd,
                           ),
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceMd,
-                                vertical: StillwaterTokens.spaceSm,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  StillwaterTokens.radiusMd,
-                                ),
-                              ),
-                              suffixIcon: const Icon(
-                                Icons.calendar_today_outlined,
-                                size: 18,
-                              ),
-                            ),
-                            child: Text(
-                              DateFormat('dd MMMM yyyy').format(_date),
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ),
                         ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Source Account
-                        _SectionLabel(label: 'Source Account (Optional)'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        accountsAsync.when(
-                          data: (accounts) {
-                            final activeAccounts =
-                                accounts.where((a) => !a.isArchived).toList();
-                            return DropdownButtonFormField<Account>(
-                              value: _selectedAccount,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: StillwaterTokens.spaceMd,
-                                  vertical: StillwaterTokens.spaceSm,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusMd,
-                                  ),
-                                ),
-                              ),
-                              items: [
-                                const DropdownMenuItem(
-                                  value: null,
-                                  child: Text('Direct / Cash Deposit'),
-                                ),
-                                ...activeAccounts.map(
-                                  (a) => DropdownMenuItem(
-                                    value: a,
-                                    child: Text(a.name),
-                                  ),
-                                ),
-                              ],
-                              onChanged:
-                                  (val) =>
-                                      setState(() => _selectedAccount = val),
-                            );
-                          },
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, __) => const SizedBox.shrink(),
+                        suffixIcon: const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 18,
                         ),
-
-                        const SizedBox(height: StillwaterTokens.spaceLg),
-
-                        // Notes
-                        _SectionLabel(label: 'Notes (Optional)'),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
-                        TextFormField(
-                          controller: _notesController,
-                          decoration: const InputDecoration(
-                            hintText: 'e.g. Monthly salary savings transfer',
-                          ),
-                        ),
-
-                        const SizedBox(height: StillwaterTokens.spaceMd),
-                      ],
+                      ),
+                      child: Text(
+                        DateFormat('dd MMMM yyyy').format(_date),
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Source Account
+                  _SectionLabel(label: 'Source Account (Optional)'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  accountsAsync.when(
+                    data: (accounts) {
+                      final activeAccounts =
+                          accounts.where((a) => !a.isArchived).toList();
+                      return DropdownButtonFormField<Account>(
+                        value: _selectedAccount,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: StillwaterTokens.spaceMd,
+                            vertical: StillwaterTokens.spaceSm,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusMd,
+                            ),
+                          ),
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Direct / Cash Deposit'),
+                          ),
+                          ...activeAccounts.map(
+                            (a) =>
+                                DropdownMenuItem(value: a, child: Text(a.name)),
+                          ),
+                        ],
+                        onChanged:
+                            (val) => setState(() => _selectedAccount = val),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceLg),
+
+                  // Notes
+                  _SectionLabel(label: 'Notes (Optional)'),
+                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  TextFormField(
+                    controller: _notesController,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Monthly salary savings transfer',
+                    ),
+                  ),
+
+                  const SizedBox(height: StillwaterTokens.spaceMd),
+                ],
               ),
-              FfSheetFooter(
-                secondaryLabel: 'Cancel',
-                primaryLabel: 'Confirm Deposit',
-                isPrimaryLoading: _isSubmitting,
-                onPrimaryPressed: _isSubmitting ? null : _submit,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        FfSheetFooter(
+          secondaryLabel: 'Cancel',
+          primaryLabel: 'Confirm Deposit',
+          isPrimaryLoading: _isSubmitting,
+          onPrimaryPressed: _isSubmitting ? null : _submit,
+        ),
+      ],
     );
   }
 }
