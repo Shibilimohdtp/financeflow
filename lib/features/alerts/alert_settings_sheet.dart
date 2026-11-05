@@ -16,6 +16,7 @@ import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../services/notifications/local_notification_service.dart';
 import '../../services/notifications/notification_coordinator.dart';
+import '../../core/formatting/currency_formatter.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
@@ -315,7 +316,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                       child: Text(
                         settings.hideSensitiveNotificationContent
                             ? 'Preview: "1 imported transaction is waiting for your review."'
-                            : 'Preview: "Swiggy · ₹450 is waiting for review."',
+                            : 'Preview: "Swiggy · ${CurrencyFormatter.formatAmount(450)} is waiting for review."',
                         style: context.textTheme.labelSmall?.copyWith(
                           color: context.colorScheme.outline,
                           fontStyle: FontStyle.italic,

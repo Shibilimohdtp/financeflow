@@ -194,7 +194,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 Text(
-                  CurrencyFormatter.formatINR(currentSub.amount),
+                  CurrencyFormatter.formatAmount(currentSub.amount),
                   style: StillwaterTypography.numHero(
                     color: theme.colorScheme.onSurface,
                   ),
@@ -279,7 +279,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: StillwaterTokens.spaceXs),
                       Text(
-                        CurrencyFormatter.formatINR(
+                        CurrencyFormatter.formatAmount(
                           currentSub.yearlyEquivalentAmount,
                         ),
                         style: StillwaterTypography.numMd(
@@ -361,7 +361,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              CurrencyFormatter.formatINR(
+                              CurrencyFormatter.formatAmount(
                                 paymentTotals.totalPaid,
                               ),
                               style: StillwaterTypography.numHero(

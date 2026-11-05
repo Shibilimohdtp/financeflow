@@ -330,12 +330,12 @@ class ExportService {
     buffer.writeln('');
     buffer.writeln('CASH FLOW SUMMARY');
     buffer.writeln('-----------------');
-    buffer.writeln('  Total Income:    ${CurrencyFormatter.formatINR(income)}');
+    buffer.writeln('  Total Income:    ${CurrencyFormatter.formatAmount(income)}');
     buffer.writeln(
-      '  Total Expenses:  ${CurrencyFormatter.formatINR(expense)}',
+      '  Total Expenses:  ${CurrencyFormatter.formatAmount(expense)}',
     );
     buffer.writeln(
-      '  Net Savings:     ${CurrencyFormatter.formatINR(netSavings)}',
+      '  Net Savings:     ${CurrencyFormatter.formatAmount(netSavings)}',
     );
     if (income > 0) {
       buffer.writeln(
@@ -351,7 +351,7 @@ class ExportService {
     for (final c in sortedCats) {
       final pct = expense > 0 ? (c.value / expense) * 100 : 0.0;
       buffer.writeln(
-        '  • ${c.key.padRight(20)}: ${CurrencyFormatter.formatINR(c.value).padRight(14)} (${pct.toStringAsFixed(1)}%)',
+        '  • ${c.key.padRight(20)}: ${CurrencyFormatter.formatAmount(c.value).padRight(14)} (${pct.toStringAsFixed(1)}%)',
       );
     }
     buffer.writeln('');
@@ -364,7 +364,7 @@ class ExportService {
         final rem = b.amountLimit - spent;
         final name = catName.padRight(20);
         buffer.writeln(
-          '  • $name: Limit ${CurrencyFormatter.formatINR(b.amountLimit)} | Spent ${CurrencyFormatter.formatINR(spent)} | Rem ${CurrencyFormatter.formatINR(rem)}',
+          '  • $name: Limit ${CurrencyFormatter.formatAmount(b.amountLimit)} | Spent ${CurrencyFormatter.formatAmount(spent)} | Rem ${CurrencyFormatter.formatAmount(rem)}',
         );
       }
       buffer.writeln('');

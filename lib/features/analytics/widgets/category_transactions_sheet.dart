@@ -123,7 +123,7 @@ class CategoryTransactionsSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      CurrencyFormatter.formatINR(totalAmount),
+                      CurrencyFormatter.formatAmount(totalAmount),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),

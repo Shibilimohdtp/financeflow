@@ -831,7 +831,7 @@ class _ParsedTransactionRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isIncome ? '+' : '−'} ${CurrencyFormatter.formatINR(item.amount)}',
+                '${isIncome ? '+' : '−'} ${CurrencyFormatter.formatAmount(item.amount)}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: amountColor,

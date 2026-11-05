@@ -167,7 +167,7 @@ class _ComparisonRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                CurrencyFormatter.formatINR(currentValue),
+                CurrencyFormatter.formatAmount(currentValue),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -175,7 +175,7 @@ class _ComparisonRow extends StatelessWidget {
               if (previousValue != null) ...[
                 const SizedBox(height: StillwaterTokens.space3Xs),
                 Text(
-                  'was ${CurrencyFormatter.formatINR(previousValue!)}',
+                  'was ${CurrencyFormatter.formatAmount(previousValue!)}',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.secondary,
                     fontSize: 11,

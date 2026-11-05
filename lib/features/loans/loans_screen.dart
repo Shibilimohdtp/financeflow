@@ -119,7 +119,7 @@ class LoansScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: StillwaterTokens.spaceXs),
                     Text(
-                      CurrencyFormatter.formatINR(summary.totalOutstanding),
+                      CurrencyFormatter.formatAmount(summary.totalOutstanding),
                       style: StillwaterTypography.numHero(
                         color: theme.colorScheme.onSurface,
                       ),
@@ -129,7 +129,7 @@ class LoansScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Monthly EMI: ${CurrencyFormatter.formatINR(summary.totalMonthlyEmi)}',
+                          'Monthly EMI: ${CurrencyFormatter.formatAmount(summary.totalMonthlyEmi)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.secondary,
                             fontWeight: FontWeight.w500,
@@ -237,7 +237,7 @@ class LoansScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      CurrencyFormatter.formatINR(
+                                      CurrencyFormatter.formatAmount(
                                         ref
                                             .watch(
                                               loanRemainingBalanceProvider(
@@ -251,7 +251,7 @@ class LoansScreen extends ConsumerWidget {
                                       ),
                                     ),
                                     Text(
-                                      'EMI: ${CurrencyFormatter.formatINR(loan.emiAmount)}',
+                                      'EMI: ${CurrencyFormatter.formatAmount(loan.emiAmount)}',
                                       style: theme.textTheme.labelSmall
                                           ?.copyWith(
                                             color: theme.colorScheme.secondary,
@@ -349,7 +349,7 @@ class LoansScreen extends ConsumerWidget {
                             title: loan.name,
                             subtitle:
                                 '${loan.lender} · Closed ${DateFormatter.formatShortDate(loan.updatedAt)}',
-                            trailingText: CurrencyFormatter.formatINR(
+                            trailingText: CurrencyFormatter.formatAmount(
                               loan.principalAmount,
                             ),
                             onTap: () => _openDetail(context, loan),

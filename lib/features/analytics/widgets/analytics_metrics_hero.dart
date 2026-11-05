@@ -35,7 +35,7 @@ class AnalyticsMetricsHero extends StatelessWidget {
               Expanded(
                 child: _MetricBlock(
                   label: 'Total Inflow',
-                  value: CurrencyFormatter.formatINR(report.totalIncome),
+                  value: CurrencyFormatter.formatAmount(report.totalIncome),
                   color: finColors.income,
                   trendPct: report.incomeChangePercentage,
                   isIncome: true,
@@ -49,7 +49,7 @@ class AnalyticsMetricsHero extends StatelessWidget {
                   ),
                   child: _MetricBlock(
                     label: 'Total Outflow',
-                    value: CurrencyFormatter.formatINR(report.totalExpense),
+                    value: CurrencyFormatter.formatAmount(report.totalExpense),
                     color: finColors.expense,
                     trendPct: report.expenseChangePercentage,
                     isIncome: false,
@@ -70,7 +70,7 @@ class AnalyticsMetricsHero extends StatelessWidget {
               Expanded(
                 child: _MetricBlock(
                   label: 'Net Savings',
-                  value: CurrencyFormatter.formatINR(report.netSavings),
+                  value: CurrencyFormatter.formatAmount(report.netSavings),
                   color: savingsColor,
                 ),
               ),
@@ -103,7 +103,7 @@ class AnalyticsMetricsHero extends StatelessWidget {
               Expanded(
                 child: _MetricBlock(
                   label: 'Avg Transaction',
-                  value: CurrencyFormatter.formatINR(
+                  value: CurrencyFormatter.formatAmount(
                     report.averageTransactionAmount,
                   ),
                 ),

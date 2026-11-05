@@ -91,7 +91,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                           ),
                                         ),
                                         Text(
-                                          '${CurrencyFormatter.formatINR(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
+                                          '${CurrencyFormatter.formatAmount(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
                                           style: StillwaterTypography.numMd(
                                             color: theme.colorScheme.primary,
                                           ),

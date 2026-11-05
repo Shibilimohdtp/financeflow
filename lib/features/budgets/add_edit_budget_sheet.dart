@@ -249,7 +249,7 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                '₹',
+                                CurrencyFormatter.currencySymbol,
                                 style: StillwaterTypography.numHero(
                                   color: theme.colorScheme.primary,
                                 ),
@@ -502,7 +502,7 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                           ),
                         ),
                         Text(
-                          '${(_alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatINR(alertRupeeValue)})',
+                          '${(_alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatAmount(alertRupeeValue)})',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w700,

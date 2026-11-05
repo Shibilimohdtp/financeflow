@@ -42,7 +42,7 @@ class EmiScheduleView extends ConsumerWidget {
       context,
       title: 'Pay Installment #${item.monthNumber}?',
       message:
-          'Record EMI payment of ${CurrencyFormatter.formatINR(item.emiAmount)} (Principal: ${CurrencyFormatter.formatINR(item.principalPaid)}, Interest: ${CurrencyFormatter.formatINR(item.interestPaid)}) due on ${DateFormatter.formatFullDate(item.dueDate)}?',
+          'Record EMI payment of ${CurrencyFormatter.formatAmount(item.emiAmount)} (Principal: ${CurrencyFormatter.formatAmount(item.principalPaid)}, Interest: ${CurrencyFormatter.formatAmount(item.interestPaid)}) due on ${DateFormatter.formatFullDate(item.dueDate)}?',
       confirmLabel: 'Mark Paid',
     );
 
@@ -79,7 +79,7 @@ class EmiScheduleView extends ConsumerWidget {
       context,
       title: 'Mark Installment #${item.monthNumber} as Unpaid?',
       message:
-          'Remove the recorded payment of ${CurrencyFormatter.formatINR(item.emiAmount)} (due ${DateFormatter.formatFullDate(item.dueDate)})? This will update your loan balance and next due date.',
+          'Remove the recorded payment of ${CurrencyFormatter.formatAmount(item.emiAmount)} (due ${DateFormatter.formatFullDate(item.dueDate)})? This will update your loan balance and next due date.',
       confirmLabel: 'Mark Unpaid',
       cancelLabel: 'Cancel',
       isDestructive: true,
@@ -136,7 +136,7 @@ class EmiScheduleView extends ConsumerWidget {
       context,
       title: 'Mark All Overdue EMIs Paid?',
       message:
-          'Record payments for all ${overdueItems.length} overdue installments totaling ${CurrencyFormatter.formatINR(totalOverdueAmount)}? This will advance your next due date to the next upcoming installment.',
+          'Record payments for all ${overdueItems.length} overdue installments totaling ${CurrencyFormatter.formatAmount(totalOverdueAmount)}? This will advance your next due date to the next upcoming installment.',
       confirmLabel: 'Mark All (${overdueItems.length}) Paid',
     );
 
@@ -368,7 +368,7 @@ class EmiScheduleView extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'P: ${CurrencyFormatter.formatINR(item.principalPaid)} · I: ${CurrencyFormatter.formatINR(item.interestPaid)}',
+                                'P: ${CurrencyFormatter.formatAmount(item.principalPaid)} · I: ${CurrencyFormatter.formatAmount(item.interestPaid)}',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontSize: 11,
                                   color: theme.colorScheme.secondary,
@@ -388,14 +388,14 @@ class EmiScheduleView extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              CurrencyFormatter.formatINR(item.emiAmount),
+                              CurrencyFormatter.formatAmount(item.emiAmount),
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
                             ),
                             Text(
-                              'Bal: ${CurrencyFormatter.formatINR(item.closingBalance)}',
+                              'Bal: ${CurrencyFormatter.formatAmount(item.closingBalance)}',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontSize: 10,
                                 color: theme.colorScheme.secondary,

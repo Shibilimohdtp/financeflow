@@ -1,6 +1,7 @@
 import '../merchant_normalization_service.dart';
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
+import '../../core/formatting/currency_formatter.dart';
 
 class DuplicateMatchResult {
   final DuplicateMatchLevel level;
@@ -87,7 +88,7 @@ class DuplicateMatcher {
       return DuplicateMatchResult.none;
     }
 
-    // Rule 2: Amount comparison (must match within ₹0.01 tolerance)
+    // Rule 2: Amount comparison (must match within one minor unit)
     final amtDiff = (incoming.amount - existing.amount).abs();
     if (amtDiff > 0.01) {
       return DuplicateMatchResult.none;
@@ -120,7 +121,7 @@ class DuplicateMatcher {
     if (hasMatchingRef) {
       reasons.add('Identical transaction reference number: $incRef');
       reasons.add(
-        'Exact amount match (₹${incoming.amount.toStringAsFixed(2)})',
+        'Exact amount match (${CurrencyFormatter.formatAmount(incoming.amount)})',
       );
       return DuplicateMatchResult(
         level: DuplicateMatchLevel.exact,
@@ -148,7 +149,7 @@ class DuplicateMatcher {
     // 2. Exact Duplicate: Same calendar day + exact amount + identical normalized merchant
     if (isSameCalendarDay && isExactMerchant) {
       reasons.add(
-        'Exact amount match (₹${incoming.amount.toStringAsFixed(2)})',
+        'Exact amount match (${CurrencyFormatter.formatAmount(incoming.amount)})',
       );
       reasons.add(
         'Same date (${incomingDate.day}/${incomingDate.month}/${incomingDate.year})',
@@ -167,7 +168,7 @@ class DuplicateMatcher {
     if (dateDiffDays <= 1.0 && isSimilarMerchant) {
       confidence = 0.90;
       reasons.add(
-        'Exact amount match (₹${incoming.amount.toStringAsFixed(2)})',
+        'Exact amount match (${CurrencyFormatter.formatAmount(incoming.amount)})',
       );
       reasons.add('Occurred within 24 hours');
       reasons.add(
@@ -188,7 +189,7 @@ class DuplicateMatcher {
     if (isSameCalendarDay) {
       confidence = 0.75;
       reasons.add(
-        'Same date and exact amount match (₹${incoming.amount.toStringAsFixed(2)})',
+        'Same date and exact amount match (${CurrencyFormatter.formatAmount(incoming.amount)})',
       );
       reasons.add(
         'Different merchant descriptions ("${incoming.rawMerchant}" vs "${existing.merchant}")',
@@ -203,7 +204,7 @@ class DuplicateMatcher {
     } else if (dateDiffDays <= 2.0 && isSimilarMerchant) {
       confidence = 0.65;
       reasons.add(
-        'Exact amount match (₹${incoming.amount.toStringAsFixed(2)})',
+        'Exact amount match (${CurrencyFormatter.formatAmount(incoming.amount)})',
       );
       reasons.add('Occurred within 48 hours');
       reasons.add('Similar merchant name');

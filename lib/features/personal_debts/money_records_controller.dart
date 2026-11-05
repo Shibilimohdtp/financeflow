@@ -10,6 +10,7 @@ import '../../repositories/transaction_repository.dart';
 import '../../services/financial_operation_service.dart';
 import '../../database/isar_service.dart';
 import '../../services/money_lending_calculator.dart';
+import '../../core/formatting/currency_formatter.dart';
 
 final allMoneyRecordsStreamProvider = StreamProvider<List<MoneyRecord>>((ref) {
   final repository = ref.watch(moneyRecordRepositoryProvider);
@@ -293,7 +294,7 @@ class MoneyRecordsController extends StateNotifier<AsyncValue<void>> {
           message:
               'Original amount cannot be less than total repayments already made.',
           actionableStep:
-              'Total repaid so far is ₹${totalRepaid.toStringAsFixed(2)}. Enter an amount >= ₹${totalRepaid.toStringAsFixed(2)}.',
+              'Total repaid so far is ${CurrencyFormatter.formatAmount(totalRepaid)}. Enter an amount >= ${CurrencyFormatter.formatAmount(totalRepaid)}.',
         );
       }
 

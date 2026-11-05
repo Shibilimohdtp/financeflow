@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/formatting/app_currency.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../models/app_settings.dart';
@@ -333,13 +334,15 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       .setDenseMode(val);
                 },
               ),
-              // Currency — informational
-              const _SettingsRow(
-                icon: Icons.currency_rupee_rounded,
+              _SettingsRow(
+                icon: Icons.payments_outlined,
                 label: 'Currency',
-                value: '₹ INR',
+                value: () {
+                  final currency = AppCurrency.fromCode(settings.currencyCode);
+                  return '${currency.symbol} ${currency.code}';
+                }(),
                 isLast: true,
-                onTap: null, // read-only informational row
+                onTap: () => _showCurrencyPicker(context, ref, settings),
               ),
             ],
           ),
@@ -619,7 +622,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-
           // ── 6. Developer Tools (collapsed) ───────────────────────────────
           _MoreOptionsToggle(
             label: 'Developer Tools',
@@ -810,6 +812,70 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           const SizedBox(height: StillwaterTokens.space4Xl),
         ],
       ),
+    );
+  }
+
+  void _showCurrencyPicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) {
+    final selected = AppCurrency.fromCode(settings.currencyCode);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(StillwaterTokens.radius2Xl),
+        ),
+      ),
+      builder: (ctx) {
+        final theme = ctx.theme;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const FfSheetHeader(
+                title: 'Currency',
+                subtitle: 'Changes how amounts are shown. No conversion.',
+              ),
+              const Divider(height: 1, thickness: 1),
+              for (final currency in AppCurrency.values)
+                ListTile(
+                  key: ValueKey('currency-${currency.code}'),
+                  leading: SizedBox(
+                    width: 32,
+                    child: Center(
+                      child: Text(
+                        currency.symbol,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  title: Text(currency.displayName),
+                  subtitle: Text(currency.code),
+                  trailing:
+                      currency == selected
+                          ? Icon(
+                            Icons.check_rounded,
+                            color: theme.colorScheme.primary,
+                          )
+                          : null,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    if (currency != selected) {
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .updateSettings(
+                            settings.copyWith(currencyCode: currency.code),
+                          );
+                    }
+                  },
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 

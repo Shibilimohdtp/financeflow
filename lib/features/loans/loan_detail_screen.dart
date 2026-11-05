@@ -82,7 +82,7 @@ class LoanDetailScreen extends ConsumerWidget {
       context,
       title: 'Pay Installment #$instNum?',
       message:
-          'Record an EMI payment of ${CurrencyFormatter.formatINR(emiAmount)} for ${currentLoan.name} due on ${DateFormatter.formatFullDate(dueDate)}?',
+          'Record an EMI payment of ${CurrencyFormatter.formatAmount(emiAmount)} for ${currentLoan.name} due on ${DateFormatter.formatFullDate(dueDate)}?',
       confirmLabel: 'Confirm Payment',
     );
 
@@ -137,7 +137,7 @@ class LoanDetailScreen extends ConsumerWidget {
       context,
       title: 'Mark All Overdue EMIs Paid?',
       message:
-          'Record payments for all ${overdueItems.length} overdue installments totaling ${CurrencyFormatter.formatINR(totalOverdue)}? This will advance the next due date to the next upcoming installment.',
+          'Record payments for all ${overdueItems.length} overdue installments totaling ${CurrencyFormatter.formatAmount(totalOverdue)}? This will advance the next due date to the next upcoming installment.',
       confirmLabel: 'Mark All (${overdueItems.length}) Paid',
     );
 
@@ -449,7 +449,7 @@ class _BalanceHeroSection extends ConsumerWidget {
 
           // Remaining principal + interest — primary visual anchor
           Text(
-            CurrencyFormatter.formatINR(remaining.total),
+            CurrencyFormatter.formatAmount(remaining.total),
             style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
@@ -457,8 +457,8 @@ class _BalanceHeroSection extends ConsumerWidget {
           ),
           const SizedBox(height: StillwaterTokens.space3Xs),
           Text(
-            '${CurrencyFormatter.formatINR(remaining.principal)} principal'
-            ' + ${CurrencyFormatter.formatINR(remaining.interest)} interest',
+            '${CurrencyFormatter.formatAmount(remaining.principal)} principal'
+            ' + ${CurrencyFormatter.formatAmount(remaining.interest)} interest',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.secondary,
             ),
@@ -495,7 +495,7 @@ class _BalanceHeroSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      CurrencyFormatter.formatINR(remaining.paid),
+                      CurrencyFormatter.formatAmount(remaining.paid),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: secColors.verified,
@@ -535,7 +535,7 @@ class _BalanceHeroSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      CurrencyFormatter.formatINR(remaining.totalPayable),
+                      CurrencyFormatter.formatAmount(remaining.totalPayable),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -603,7 +603,7 @@ class _NextEmiSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      CurrencyFormatter.formatINR(nextInstallment.emiAmount),
+                      CurrencyFormatter.formatAmount(nextInstallment.emiAmount),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.3,
@@ -728,7 +728,7 @@ class _OverdueBanner extends StatelessWidget {
                 ),
               ),
               Text(
-                CurrencyFormatter.formatINR(totalOverdue),
+                CurrencyFormatter.formatAmount(totalOverdue),
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: secColors.error,
@@ -934,7 +934,7 @@ class _LoanInfoSection extends StatelessWidget {
             _InfoRowData('Tenure', '${loan.tenureMonths} months'),
             _InfoRowData(
               'Est. Total Repayment',
-              CurrencyFormatter.formatINR(totalRepayment),
+              CurrencyFormatter.formatAmount(totalRepayment),
             ),
           ],
         ),
@@ -947,7 +947,7 @@ class _LoanInfoSection extends StatelessWidget {
           rows: [
             _InfoRowData(
               'Est. Total Interest',
-              CurrencyFormatter.formatINR(totalInterest),
+              CurrencyFormatter.formatAmount(totalInterest),
             ),
           ],
         ),

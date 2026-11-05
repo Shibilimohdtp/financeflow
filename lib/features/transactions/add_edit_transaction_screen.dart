@@ -1412,7 +1412,7 @@ class _AddEditTransactionScreenState
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            '₹ ',
+                            '${CurrencyFormatter.currencySymbol} ',
                             style: StillwaterTypography.numHero(
                               color: activeTypeColor,
                             ).copyWith(
@@ -1965,7 +1965,7 @@ class _AddEditTransactionScreenState
                   (sub) => DropdownMenuItem(
                     value: sub.id,
                     child: Text(
-                      '${sub.merchant} · ${CurrencyFormatter.formatINR(sub.amount)}/${sub.billingFrequency.shortLabel}',
+                      '${sub.merchant} · ${CurrencyFormatter.formatAmount(sub.amount)}/${sub.billingFrequency.shortLabel}',
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -2077,7 +2077,7 @@ class _AddEditTransactionScreenState
           Text(
             _selectedLoan == null
                 ? 'This payment will affect the account, but will not update a loan schedule.'
-                : 'Expected EMI ${CurrencyFormatter.formatINR(_selectedLoan!.emiAmount)} · Principal left ${CurrencyFormatter.formatINR(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
+                : 'Expected EMI ${CurrencyFormatter.formatAmount(_selectedLoan!.emiAmount)} · Principal left ${CurrencyFormatter.formatAmount(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
             style: context.theme.textTheme.bodySmall,
           ),
           if (_selectedLoan != null) ...[
@@ -2217,7 +2217,7 @@ class _AddEditTransactionScreenState
                   (record) => DropdownMenuItem(
                     value: record.id,
                     child: Text(
-                      '${record.personName} · ${CurrencyFormatter.formatINR(record.originalAmount)}',
+                      '${record.personName} · ${CurrencyFormatter.formatAmount(record.originalAmount)}',
                     ),
                   ),
                 )
@@ -2393,7 +2393,7 @@ class _AddEditTransactionScreenState
                   Text(
                     _createAsSeparateDebt
                         ? 'This advance will be tracked as its own separate obligation card.'
-                        : 'Current balance: ${CurrencyFormatter.formatINR(existingRemaining)} → New balance: ${CurrencyFormatter.formatINR(newTotal)}',
+                        : 'Current balance: ${CurrencyFormatter.formatAmount(existingRemaining)} → New balance: ${CurrencyFormatter.formatAmount(newTotal)}',
                     style: context.theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -2484,7 +2484,7 @@ class _AddEditTransactionScreenState
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-      decoration: InputDecoration(labelText: label, prefixText: '₹ '),
+      decoration: InputDecoration(labelText: label, prefixText: '${CurrencyFormatter.currencySymbol} '),
     );
   }
 
@@ -3088,7 +3088,7 @@ class _AccountTileButton extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                '${account!.displaySubtitle} • ${CurrencyFormatter.formatINR(account!.currentBalance)}',
+                                '${account!.displaySubtitle} • ${CurrencyFormatter.formatAmount(account!.currentBalance)}',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -3511,7 +3511,7 @@ class _AccountPickerSheet extends StatelessWidget {
                           ),
                         ),
                         subtitle: Text(
-                          '${account.displaySubtitle} • ${CurrencyFormatter.formatINR(account.currentBalance)}',
+                          '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
                           style: theme.textTheme.bodySmall,
                         ),
                         trailing:

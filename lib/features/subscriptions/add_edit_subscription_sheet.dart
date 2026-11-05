@@ -229,7 +229,7 @@ class _AddEditSubscriptionSheetState
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    '₹',
+                                    CurrencyFormatter.currencySymbol,
                                     style: StillwaterTypography.numLg(
                                       color: theme.colorScheme.primary,
                                     ),

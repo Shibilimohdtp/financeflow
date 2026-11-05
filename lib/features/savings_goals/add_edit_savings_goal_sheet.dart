@@ -186,16 +186,16 @@ class _AddEditSavingsGoalSheetState
                         const SizedBox(height: StillwaterTokens.spaceLg),
 
                         // Target Amount
-                        _SectionLabel(label: 'Target Amount (₹)'),
+                        _SectionLabel(label: 'Target Amount'),
                         const SizedBox(height: StillwaterTokens.spaceXs),
                         TextFormField(
                           controller: _amountController,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: '100000',
-                            prefixText: '₹ ',
+                            prefixText: '${CurrencyFormatter.currencySymbol} ',
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {

@@ -429,7 +429,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                         _NumericInputField(
                           controller: _principalController,
                           label: 'Principal Amount',
-                          suffix: '₹',
+                          suffix: CurrencyFormatter.currencySymbol,
                           prefixSymbol: true,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
@@ -497,7 +497,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                         _NumericInputField(
                           controller: _emiController,
                           label: 'Monthly EMI',
-                          suffix: '₹',
+                          suffix: CurrencyFormatter.currencySymbol,
                           prefixSymbol: true,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
@@ -753,7 +753,7 @@ class _NumericInputField extends StatelessWidget {
         labelStyle: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.secondary,
         ),
-        prefixText: prefixSymbol ? '₹  ' : null,
+        prefixText: prefixSymbol ? '${CurrencyFormatter.currencySymbol}  ' : null,
         prefixStyle: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.w600,
@@ -935,7 +935,7 @@ class _RepaymentPreview extends StatelessWidget {
                 Expanded(
                   child: _PreviewStat(
                     label: 'Monthly EMI',
-                    value: CurrencyFormatter.formatINR(data.emi),
+                    value: CurrencyFormatter.formatAmount(data.emi),
                     isPrimary: true,
                   ),
                 ),
@@ -949,7 +949,7 @@ class _RepaymentPreview extends StatelessWidget {
                 Expanded(
                   child: _PreviewStat(
                     label: 'Total Repayment',
-                    value: CurrencyFormatter.formatINR(data.total),
+                    value: CurrencyFormatter.formatAmount(data.total),
                   ),
                 ),
                 VerticalDivider(
@@ -962,7 +962,7 @@ class _RepaymentPreview extends StatelessWidget {
                 Expanded(
                   child: _PreviewStat(
                     label: 'Est. Interest',
-                    value: CurrencyFormatter.formatINR(data.interest),
+                    value: CurrencyFormatter.formatAmount(data.interest),
                   ),
                 ),
               ],
@@ -1158,7 +1158,7 @@ class _PastLoanNotice extends StatelessWidget {
             '${installments.length} past installment${installments.length > 1 ? "s" : ""} found '
             '(${DateFormatter.formatShortDate(installments.first.dueDate)} – '
             '${DateFormatter.formatShortDate(installments.last.dueDate)}) '
-            'totaling ${CurrencyFormatter.formatINR(total)}.',
+            'totaling ${CurrencyFormatter.formatAmount(total)}.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.secondary,
               fontSize: 11,

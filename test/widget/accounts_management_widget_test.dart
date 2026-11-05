@@ -92,7 +92,7 @@ void main() {
 
       expect(find.text('Add Financial Account'), findsOneWidget);
       expect(find.text('Account Name'), findsOneWidget);
-      expect(find.text('Opening Balance (₹)'), findsOneWidget);
+      expect(find.text('Opening Balance'), findsOneWidget);
       expect(find.text('Add Account'), findsOneWidget);
     });
   });

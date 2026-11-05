@@ -69,7 +69,7 @@ class BudgetInsightsCard extends StatelessWidget {
           iconColor: context.statusColors.warning,
           title: '${first.budget.name} nearing limit',
           subtitle:
-              '${(first.percentageUsed * 100).toStringAsFixed(0)}% used with ${CurrencyFormatter.formatINR(first.remainingAmount)} remaining across ${first.daysRemaining} days.',
+              '${(first.percentageUsed * 100).toStringAsFixed(0)}% used with ${CurrencyFormatter.formatAmount(first.remainingAmount)} remaining across ${first.daysRemaining} days.',
         ),
       );
     }
@@ -82,7 +82,7 @@ class BudgetInsightsCard extends StatelessWidget {
           iconColor: theme.colorScheme.primary,
           title: 'Daily budget allowance',
           subtitle:
-              'Spend under ${CurrencyFormatter.formatINR(overallDailyAllowance)}/day for the next $maxDaysRemaining days to finish the period within plan.',
+              'Spend under ${CurrencyFormatter.formatAmount(overallDailyAllowance)}/day for the next $maxDaysRemaining days to finish the period within plan.',
         ),
       );
     }

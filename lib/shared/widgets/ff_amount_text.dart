@@ -30,7 +30,7 @@ class FfAmountText extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isBlurred) {
       final style = _getTextStyle(context, context.textTheme.bodyMedium?.color);
-      return Text(includeSymbol ? '₹ ••••••' : '••••••', style: style);
+      return Text(includeSymbol ? '${CurrencyFormatter.currencySymbol} ••••••' : '••••••', style: style);
     }
 
     final isIncome = type == TransactionType.income;

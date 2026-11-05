@@ -66,7 +66,7 @@ class AnalyticsInsightsCard extends StatelessWidget {
             iconColor: finColors.expense,
             title: '${top.categoryName} is your top spend',
             subtitle:
-                '${CurrencyFormatter.formatINR(top.amount)} — $pct% of total expenses this period.',
+                '${CurrencyFormatter.formatAmount(top.amount)} — $pct% of total expenses this period.',
           ),
         );
       }
@@ -126,7 +126,7 @@ class AnalyticsInsightsCard extends StatelessWidget {
             iconColor: context.theme.colorScheme.secondary,
             title: '"${topM.normalizedMerchant}" is your most visited',
             subtitle:
-                '${topM.transactionCount} transactions totalling ${CurrencyFormatter.formatINR(topM.totalAmount)}.',
+                '${topM.transactionCount} transactions totalling ${CurrencyFormatter.formatAmount(topM.totalAmount)}.',
           ),
         );
       }

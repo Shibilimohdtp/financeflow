@@ -41,7 +41,7 @@ Future<Account?> showPaymentAccountPicker({
                         ),
                         title: Text(account.name),
                         subtitle: Text(
-                          '${account.displaySubtitle} · ${CurrencyFormatter.formatINR(account.currentBalance)}',
+                          '${account.displaySubtitle} · ${CurrencyFormatter.formatAmount(account.currentBalance)}',
                         ),
                         onTap: () => Navigator.of(context).pop(account),
                       ),

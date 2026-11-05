@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
+import '../../core/formatting/currency_formatter.dart';
 
 class FfAmountField extends StatelessWidget {
   final TextEditingController controller;
@@ -55,7 +56,7 @@ class FfAmountField extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                '₹ ',
+                '${CurrencyFormatter.currencySymbol} ',
                 style: StillwaterTypography.numHero(
                   color: theme.colorScheme.primary,
                 ),

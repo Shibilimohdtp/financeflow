@@ -119,7 +119,7 @@ class InvestmentsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: StillwaterTokens.spaceXs),
                     Text(
-                      CurrencyFormatter.formatINR(summary.totalCurrentValue),
+                      CurrencyFormatter.formatAmount(summary.totalCurrentValue),
                       style: StillwaterTypography.numHero(
                         color: theme.colorScheme.onSurface,
                       ),
@@ -129,13 +129,13 @@ class InvestmentsScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Invested: ${CurrencyFormatter.formatINR(summary.totalInvested)}',
+                          'Invested: ${CurrencyFormatter.formatAmount(summary.totalInvested)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.secondary,
                           ),
                         ),
                         Text(
-                          '${summary.isProfitable ? '+' : ''}${CurrencyFormatter.formatINR(summary.absoluteReturn)} returns',
+                          '${summary.isProfitable ? '+' : ''}${CurrencyFormatter.formatAmount(summary.absoluteReturn)} returns',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color:
                                 summary.isProfitable
@@ -197,7 +197,7 @@ class InvestmentsScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 3,
                                   child: Text(
-                                    CurrencyFormatter.formatINR(
+                                    CurrencyFormatter.formatAmount(
                                       summary.allocationSlices[i].totalValue,
                                     ),
                                     style: theme.textTheme.bodySmall?.copyWith(
@@ -279,7 +279,7 @@ class InvestmentsScreen extends ConsumerWidget {
                                 showSign: false,
                               ),
                               Text(
-                                '${isProfit ? '+' : ''}${CurrencyFormatter.formatINR(profit)}',
+                                '${isProfit ? '+' : ''}${CurrencyFormatter.formatAmount(profit)}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,

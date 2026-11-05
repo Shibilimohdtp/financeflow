@@ -39,19 +39,19 @@ class BudgetCard extends StatelessWidget {
       progressColor = finColors.expense;
       statusIcon = Icons.error_outline_rounded;
       statusLabel =
-          '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit';
+          '${CurrencyFormatter.formatAmount(summary.amountSpent - budget.amountLimit)} over limit';
       statusTextColor = finColors.expense;
     } else if (isApproaching) {
       progressColor = context.statusColors.warning;
       statusIcon = Icons.warning_amber_rounded;
       statusLabel =
-          '${CurrencyFormatter.formatINR(summary.remainingAmount)} left · Approaching';
+          '${CurrencyFormatter.formatAmount(summary.remainingAmount)} left · Approaching';
       statusTextColor = context.statusColors.warning;
     } else {
       progressColor = theme.colorScheme.primary;
       statusIcon = Icons.check_circle_outline_rounded;
       statusLabel =
-          '${CurrencyFormatter.formatINR(summary.remainingAmount)} left';
+          '${CurrencyFormatter.formatAmount(summary.remainingAmount)} left';
       statusTextColor = finColors.income;
     }
 
@@ -62,7 +62,7 @@ class BudgetCard extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${budget.name}, ${CurrencyFormatter.formatINR(summary.amountSpent)} spent of ${CurrencyFormatter.formatINR(budget.amountLimit)}, $statusLabel',
+          '${budget.name}, ${CurrencyFormatter.formatAmount(summary.amountSpent)} spent of ${CurrencyFormatter.formatAmount(budget.amountLimit)}, $statusLabel',
       child: FfCard(
         onTap: () => onTap(budget),
         padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
@@ -136,7 +136,7 @@ class BudgetCard extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        CurrencyFormatter.formatINR(summary.amountSpent),
+                        CurrencyFormatter.formatAmount(summary.amountSpent),
                         style: StillwaterTypography.numMd(
                           color:
                               isExceeded
@@ -146,7 +146,7 @@ class BudgetCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'of ${CurrencyFormatter.formatINR(budget.amountLimit)}',
+                      'of ${CurrencyFormatter.formatAmount(budget.amountLimit)}',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.secondary,
                       ),

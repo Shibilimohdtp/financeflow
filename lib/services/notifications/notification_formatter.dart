@@ -32,7 +32,7 @@ class NotificationFormatter {
     if (count == 1 && singleMerchant != null && singleMerchant.isNotEmpty) {
       final amountSuffix =
           singleAmount != null
-              ? ' · ${CurrencyFormatter.formatINR(singleAmount)}'
+              ? ' · ${CurrencyFormatter.formatAmount(singleAmount)}'
               : '';
       return NotificationText(
         title: 'Transaction needs review',
@@ -77,7 +77,7 @@ class NotificationFormatter {
       );
     }
 
-    final formattedOver = CurrencyFormatter.formatINR(amountOver);
+    final formattedOver = CurrencyFormatter.formatAmount(amountOver);
     return NotificationText(
       title: '$categoryName budget exceeded',
       body: '$categoryName is $formattedOver over this month’s budget.',
@@ -103,7 +103,7 @@ class NotificationFormatter {
       );
     }
 
-    final formatted = CurrencyFormatter.formatINR(amount);
+    final formatted = CurrencyFormatter.formatAmount(amount);
     return NotificationText(
       title: '$merchant renewal due',
       body: '$merchant ($formatted) renews $whenText.',
@@ -128,7 +128,7 @@ class NotificationFormatter {
       );
     }
 
-    final formatted = CurrencyFormatter.formatINR(emiAmount);
+    final formatted = CurrencyFormatter.formatAmount(emiAmount);
     return NotificationText(
       title: '$loanName EMI due',
       body: 'EMI of $formatted is due $whenText.',

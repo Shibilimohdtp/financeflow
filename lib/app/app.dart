@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/diagnostics/startup_trace.dart';
+import '../core/formatting/app_currency.dart';
+import '../core/formatting/currency_formatter.dart';
 import '../services/ingestion/ingestion_coordinator.dart';
 import '../shared/widgets/financeflow_mark.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -66,6 +68,17 @@ class FinanceFlowApp extends ConsumerWidget {
 
     return settingsAsync.when(
       data: (settings) {
+        final currency = AppCurrency.fromCode(settings.currencyCode);
+        if (currency != CurrencyFormatter.current) {
+          CurrencyFormatter.current = currency;
+          // Amounts are formatted through a static formatter, so widgets that
+          // don't watch settings must be rebuilt explicitly. This keeps all
+          // navigation and widget state.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) _rebuildDescendants(context as Element);
+          });
+        }
+
         ThemeMode themeMode;
         switch (settings.themePreference) {
           case AppThemePreference.system:
@@ -150,4 +163,13 @@ class FinanceFlowApp extends ConsumerWidget {
           ),
     );
   }
+}
+
+void _rebuildDescendants(Element root) {
+  void visit(Element element) {
+    element.markNeedsBuild();
+    element.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
 }

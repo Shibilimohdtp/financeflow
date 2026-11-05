@@ -33,7 +33,7 @@ class TotalBalanceHero extends StatelessWidget {
             ? '1 account'
             : '$activeAccountsCount accounts';
     final amount =
-        isPrivacyBlur ? '₹ ••••••' : CurrencyFormatter.format(totalBalance);
+        isPrivacyBlur ? '${CurrencyFormatter.currencySymbol} ••••••' : CurrencyFormatter.format(totalBalance);
 
     return Container(
       key: const ValueKey('total-balance-card'),

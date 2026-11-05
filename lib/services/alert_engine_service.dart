@@ -73,7 +73,7 @@ class AlertEngineService {
           );
           if (!exists) {
             final overAmount = summary.amountOverBudget;
-            final formattedOver = CurrencyFormatter.formatINR(overAmount);
+            final formattedOver = CurrencyFormatter.formatAmount(overAmount);
             final name = budget.categoryName ?? budget.name;
             final alert = AlertItem(
               id: 'alt_${_uuid.v4()}',
@@ -133,7 +133,7 @@ class AlertEngineService {
                 days == 0
                     ? 'today'
                     : (days == 1 ? 'tomorrow' : 'in $days days');
-            final formattedAmount = CurrencyFormatter.formatINR(sub.amount);
+            final formattedAmount = CurrencyFormatter.formatAmount(sub.amount);
             final alert = AlertItem(
               id: 'alt_${_uuid.v4()}',
               type: AlertType.upcomingSubscriptionRenewal,
@@ -170,7 +170,7 @@ class AlertEngineService {
                 days == 0
                     ? 'today'
                     : (days == 1 ? 'tomorrow' : 'in $days days');
-            final formattedEmi = CurrencyFormatter.formatINR(loan.emiAmount);
+            final formattedEmi = CurrencyFormatter.formatAmount(loan.emiAmount);
             final alert = AlertItem(
               id: 'alt_${_uuid.v4()}',
               type: AlertType.upcomingEmi,

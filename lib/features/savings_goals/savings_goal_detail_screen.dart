@@ -185,7 +185,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: StillwaterTokens.spaceXs),
                     Text(
-                      CurrencyFormatter.formatINR(summary.currentAmount),
+                      CurrencyFormatter.formatAmount(summary.currentAmount),
                       style: theme.textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -193,7 +193,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Target: ${CurrencyFormatter.formatINR(currentGoal.targetAmount)} · Due ${DateFormat('dd MMM yyyy').format(currentGoal.targetDate)} (${daysRemaining > 0 ? "$daysRemaining days left" : "Reached"})',
+                      'Target: ${CurrencyFormatter.formatAmount(currentGoal.targetAmount)} · Due ${DateFormat('dd MMM yyyy').format(currentGoal.targetDate)} (${daysRemaining > 0 ? "$daysRemaining days left" : "Reached"})',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.secondary,
                       ),
@@ -257,7 +257,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              'Save ${CurrencyFormatter.formatINR(summary.suggestedMonthlyContribution)} / month to hit your goal on schedule.',
+                              'Save ${CurrencyFormatter.formatAmount(summary.suggestedMonthlyContribution)} / month to hit your goal on schedule.',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.secondary,
                               ),
@@ -323,7 +323,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                               context,
                               title: 'Remove Contribution?',
                               message:
-                                  'Remove ${CurrencyFormatter.formatINR(contributions[i].amount)} deposit from this goal?',
+                                  'Remove ${CurrencyFormatter.formatAmount(contributions[i].amount)} deposit from this goal?',
                               confirmLabel: 'Remove',
                               isDestructive: true,
                             );
@@ -437,7 +437,7 @@ class _ContributionRow extends StatelessWidget {
             ),
           ),
           Text(
-            '+ ${CurrencyFormatter.formatINR(contribution.amount)}',
+            '+ ${CurrencyFormatter.formatAmount(contribution.amount)}',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: context.secColors.verified,

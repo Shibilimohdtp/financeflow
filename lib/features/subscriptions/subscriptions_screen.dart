@@ -111,7 +111,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                     ),
                     const SizedBox(height: StillwaterTokens.spaceXs),
                     Text(
-                      CurrencyFormatter.formatINR(summary.monthlyTotal),
+                      CurrencyFormatter.formatAmount(summary.monthlyTotal),
                       style: StillwaterTypography.numHero(
                         color: theme.colorScheme.primary,
                       ),
@@ -121,7 +121,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Annual pace: ${CurrencyFormatter.formatINR(summary.yearlyTotal)}',
+                          'Annual pace: ${CurrencyFormatter.formatAmount(summary.yearlyTotal)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.secondary,
                           ),

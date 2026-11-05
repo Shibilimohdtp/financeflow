@@ -1,8 +1,10 @@
 import 'package:intl/intl.dart';
 
-/// Exact Indian Rupee (INR) Currency Formatter
+import 'app_currency.dart';
+
+/// Currency formatter for the app-wide display currency ([current]).
 ///
-/// Implements Indian digit grouping:
+/// For INR it implements Indian digit grouping:
 /// - ₹1,234
 /// - ₹1,23,456
 /// - ₹12,34,567
@@ -12,17 +14,22 @@ import 'package:intl/intl.dart';
 /// - Never abbreviates primary balances.
 /// - Shows decimals only when paise exist (e.g. ₹1,250 vs ₹1,250.50).
 /// - Precise tabular-ready outputs.
+///
+/// USD, EUR and GBP use thousands grouping (\$1,234,567.50).
 class CurrencyFormatter {
   CurrencyFormatter._();
 
-  static const String currencySymbol = '₹';
+  /// The display currency, set from settings by the app root.
+  static AppCurrency current = AppCurrency.inr;
 
-  /// Shortcut helper for INR formatting
-  static String formatINR(double amount, {bool showSign = false}) =>
+  static String get currencySymbol => current.symbol;
+
+  /// Formats an amount in the display currency.
+  static String formatAmount(double amount, {bool showSign = false}) =>
       format(amount, showSign: showSign);
 
-  /// Format an amount into Indian Rupee format with Indian digit grouping
-  /// Example: 123456 -> "₹1,23,456"
+  /// Format an amount in the display currency
+  /// Example (INR): 123456 -> "₹1,23,456"
   /// Example: 123456.75 -> "₹1,23,456.75"
   /// Example: -430 -> "− ₹430"
   static String format(
@@ -38,8 +45,15 @@ class CurrencyFormatter {
     // Check if paise exist (fractional part)
     final hasPaise = (absAmount - absAmount.floorToDouble()) > 0.001;
 
-    final formatPattern = hasPaise ? '##,##,##,##,##0.00' : '##,##,##,##,##0';
-    final numberFormat = NumberFormat(formatPattern, 'en_IN');
+    final NumberFormat numberFormat;
+    if (current.usesIndianGrouping) {
+      numberFormat = NumberFormat(
+        hasPaise ? '##,##,##,##,##0.00' : '##,##,##,##,##0',
+        'en_IN',
+      );
+    } else {
+      numberFormat = NumberFormat(hasPaise ? '#,##0.00' : '#,##0', 'en_US');
+    }
     final formattedNumber = numberFormat.format(absAmount);
 
     final prefix = includeSymbol ? currencySymbol : '';
@@ -72,6 +86,16 @@ class CurrencyFormatter {
     final absAmount = amount.abs();
     final prefix = includeSymbol ? currencySymbol : '';
 
+    if (!current.usesIndianGrouping) {
+      if (absAmount >= 1000000000) {
+        return '$prefix${_formatShort(absAmount / 1000000000)}B';
+      } else if (absAmount >= 1000000) {
+        return '$prefix${_formatShort(absAmount / 1000000)}M';
+      } else if (absAmount >= 1000) {
+        return '$prefix${_formatShort(absAmount / 1000)}k';
+      }
+      return format(amount, includeSymbol: includeSymbol);
+    }
     if (absAmount >= 10000000) {
       final cr = absAmount / 10000000;
       return '$prefix${_formatShort(cr)}Cr';
@@ -99,7 +123,7 @@ class CurrencyFormatter {
     if (input.trim().isEmpty) return null;
     final sanitized =
         input
-            .replaceAll('₹', '')
+            .replaceAll(RegExp(r'[₹$€£]'), '')
             .replaceAll(',', '')
             .replaceAll(' ', '')
             .replaceAll('+', '')

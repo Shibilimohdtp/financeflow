@@ -80,9 +80,9 @@ class InvestmentDetailScreen extends ConsumerWidget {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Current Value (₹)',
-                      prefixText: '₹ ',
+                    decoration: InputDecoration(
+                      labelText: 'Current Value',
+                      prefixText: '${CurrencyFormatter.currencySymbol} ',
                     ),
                   ),
                 ),
@@ -222,7 +222,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                         ),
                       ),
                       child: Text(
-                        '${currentInv.isProfitable ? "+" : ""}${CurrencyFormatter.formatINR(currentInv.absoluteReturn)} (${currentInv.percentageReturn.toStringAsFixed(1)}%)',
+                        '${currentInv.isProfitable ? "+" : ""}${CurrencyFormatter.formatAmount(currentInv.absoluteReturn)} (${currentInv.percentageReturn.toStringAsFixed(1)}%)',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -237,7 +237,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: StillwaterTokens.spaceXs),
                 Text(
-                  CurrencyFormatter.formatINR(currentInv.currentValue),
+                  CurrencyFormatter.formatAmount(currentInv.currentValue),
                   style: theme.textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -245,7 +245,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Cost basis: ${CurrencyFormatter.formatINR(currentInv.investedAmount)} · Manual Entry',
+                  'Cost basis: ${CurrencyFormatter.formatAmount(currentInv.investedAmount)} · Manual Entry',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.secondary,
                   ),
@@ -288,7 +288,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 _DetailRow(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'Invested Cost',
-                  value: CurrencyFormatter.formatINR(currentInv.investedAmount),
+                  value: CurrencyFormatter.formatAmount(currentInv.investedAmount),
                 ),
                 _DetailDivider(),
                 _DetailRow(

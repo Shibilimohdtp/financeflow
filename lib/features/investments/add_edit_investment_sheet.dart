@@ -258,7 +258,7 @@ class _AddEditInvestmentSheetState
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _SectionLabel(label: 'Invested Cost (₹)'),
+                                  _SectionLabel(label: 'Invested Cost'),
                                   const SizedBox(
                                     height: StillwaterTokens.spaceXs,
                                   ),
@@ -268,9 +268,9 @@ class _AddEditInvestmentSheetState
                                         const TextInputType.numberWithOptions(
                                           decimal: true,
                                         ),
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       hintText: '50000',
-                                      prefixText: '₹ ',
+                                      prefixText: '${CurrencyFormatter.currencySymbol} ',
                                     ),
                                     validator: (val) {
                                       if (val == null || val.trim().isEmpty) {
@@ -287,7 +287,7 @@ class _AddEditInvestmentSheetState
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _SectionLabel(label: 'Current Value (₹)'),
+                                  _SectionLabel(label: 'Current Value'),
                                   const SizedBox(
                                     height: StillwaterTokens.spaceXs,
                                   ),
@@ -297,9 +297,9 @@ class _AddEditInvestmentSheetState
                                         const TextInputType.numberWithOptions(
                                           decimal: true,
                                         ),
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       hintText: '55000',
-                                      prefixText: '₹ ',
+                                      prefixText: '${CurrencyFormatter.currencySymbol} ',
                                     ),
                                     validator: (val) {
                                       if (val == null || val.trim().isEmpty) {

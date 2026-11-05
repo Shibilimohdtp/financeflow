@@ -128,14 +128,14 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                       const SizedBox(height: StillwaterTokens.spaceXs),
                       if (isPrivacyBlur)
                         Text(
-                          '₹ ••••••',
+                          '${CurrencyFormatter.currencySymbol} ••••••',
                           style: StillwaterTypography.numHero(
                             color: theme.colorScheme.onSurface,
                           ),
                         )
                       else
                         Text(
-                          CurrencyFormatter.formatINR(visibleBalance),
+                          CurrencyFormatter.formatAmount(visibleBalance),
                           style: StillwaterTypography.numHero(
                             color: theme.colorScheme.onSurface,
                           ),
@@ -609,9 +609,9 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                               RegExp(r'^\d+\.?\d{0,2}'),
                             ),
                           ],
-                          decoration: const InputDecoration(
-                            labelText: 'Opening Balance (₹)',
-                            prefixText: '₹ ',
+                          decoration: InputDecoration(
+                            labelText: 'Opening Balance',
+                            prefixText: '${CurrencyFormatter.currencySymbol} ',
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {

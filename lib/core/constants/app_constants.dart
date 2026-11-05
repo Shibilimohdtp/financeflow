@@ -14,7 +14,6 @@ class AppConstants {
 
   // Shared Prefs / Isar Settings Keys
   static const String defaultCurrency = 'INR';
-  static const String defaultCurrencySymbol = '₹';
 
   // Seed Data Version
   static const int seedCategoryVersion = 1;

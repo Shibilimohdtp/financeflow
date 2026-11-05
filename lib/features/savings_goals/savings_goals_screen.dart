@@ -122,7 +122,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                 text: TextSpan(
                                   children: [
                                     TextSpan(
-                                      text: CurrencyFormatter.formatINR(
+                                      text: CurrencyFormatter.formatAmount(
                                         overall.totalSaved,
                                       ),
                                       style: StillwaterTypography.numLg(
@@ -131,7 +131,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                     ),
                                     TextSpan(
                                       text:
-                                          ' of ${CurrencyFormatter.formatINR(overall.totalTarget)}',
+                                          ' of ${CurrencyFormatter.formatAmount(overall.totalTarget)}',
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
                                             color: theme.colorScheme.secondary,
@@ -166,7 +166,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                '${CurrencyFormatter.formatINR(overall.totalRemaining)} remaining',
+                                '${CurrencyFormatter.formatAmount(overall.totalRemaining)} remaining',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: context.finColors.savings,
                                   fontWeight: FontWeight.w600,
@@ -277,7 +277,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    CurrencyFormatter.formatINR(
+                                    CurrencyFormatter.formatAmount(
                                       summary.currentAmount,
                                     ),
                                     style: StillwaterTypography.numMd(
@@ -288,7 +288,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   Text(
-                                    'of ${CurrencyFormatter.formatINR(goal.targetAmount)}',
+                                    'of ${CurrencyFormatter.formatAmount(goal.targetAmount)}',
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: theme.colorScheme.secondary,
                                     ),
@@ -326,7 +326,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                               Text(
                                 isComplete
                                     ? 'Goal Reached 🎉'
-                                    : '${CurrencyFormatter.formatINR(summary.remainingAmount)} left',
+                                    : '${CurrencyFormatter.formatAmount(summary.remainingAmount)} left',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color:
                                       isComplete

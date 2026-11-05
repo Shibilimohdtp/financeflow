@@ -120,7 +120,7 @@ class BudgetDetailScreen extends ConsumerWidget {
       progressColor = finColors.expense;
       statusIcon = Icons.error_outline_rounded;
       statusLabel =
-          '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit';
+          '${CurrencyFormatter.formatAmount(summary.amountSpent - budget.amountLimit)} over limit';
     } else if (isApproaching) {
       progressColor = context.statusColors.warning;
       statusIcon = Icons.warning_amber_rounded;
@@ -261,7 +261,7 @@ class BudgetDetailScreen extends ConsumerWidget {
                         alignment: Alignment.centerLeft,
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          CurrencyFormatter.formatINR(summary.amountSpent),
+                          CurrencyFormatter.formatAmount(summary.amountSpent),
                           style: StillwaterTypography.numHero(
                             color:
                                 isExceeded
@@ -273,7 +273,7 @@ class BudgetDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: StillwaterTokens.spaceSm),
                     Text(
-                      'of ${CurrencyFormatter.formatINR(budget.amountLimit)}',
+                      'of ${CurrencyFormatter.formatAmount(budget.amountLimit)}',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: theme.colorScheme.secondary,
                         fontWeight: FontWeight.w600,
@@ -305,8 +305,8 @@ class BudgetDetailScreen extends ConsumerWidget {
                     ),
                     Text(
                       isExceeded
-                          ? '${CurrencyFormatter.formatINR(summary.amountSpent - budget.amountLimit)} over limit'
-                          : '${CurrencyFormatter.formatINR(summary.remainingAmount)} remaining',
+                          ? '${CurrencyFormatter.formatAmount(summary.amountSpent - budget.amountLimit)} over limit'
+                          : '${CurrencyFormatter.formatAmount(summary.remainingAmount)} remaining',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color:
                             isExceeded ? finColors.expense : finColors.income,
@@ -344,7 +344,7 @@ class BudgetDetailScreen extends ConsumerWidget {
                         alignment: Alignment.centerLeft,
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          CurrencyFormatter.formatINR(
+                          CurrencyFormatter.formatAmount(
                             summary.dailyAllowanceRemaining,
                           ),
                           style: StillwaterTypography.numMd(
@@ -385,7 +385,7 @@ class BudgetDetailScreen extends ConsumerWidget {
                         alignment: Alignment.centerLeft,
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          CurrencyFormatter.formatINR(
+                          CurrencyFormatter.formatAmount(
                             summary.projectedPeriodEndSpending,
                           ),
                           style: StillwaterTypography.numMd(
@@ -433,7 +433,7 @@ class BudgetDetailScreen extends ConsumerWidget {
                 icon: Icons.notifications_active_outlined,
                 title: 'Alert Notification',
                 subtitle:
-                    'Trigger alert at ${(budget.alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatINR(budget.amountLimit * budget.alertThreshold)})',
+                    'Trigger alert at ${(budget.alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatAmount(budget.amountLimit * budget.alertThreshold)})',
                 showChevron: false,
               ),
               FfListRow(

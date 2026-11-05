@@ -793,7 +793,7 @@ class _SummaryValue extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child:
               isPrivacyBlur
-                  ? Text('₹ ••••••', style: StillwaterTypography.numMd())
+                  ? Text('${CurrencyFormatter.currencySymbol} ••••••', style: StillwaterTypography.numMd())
                   : Text(
                     CurrencyFormatter.format(
                       value,

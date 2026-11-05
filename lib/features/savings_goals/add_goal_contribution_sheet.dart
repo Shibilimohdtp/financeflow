@@ -93,7 +93,7 @@ class _AddGoalContributionSheetState
         FfSnackbar.show(
           context,
           message:
-              'Added deposit of ${CurrencyFormatter.formatINR(amount)} to "${widget.goal.name}".',
+              'Added deposit of ${CurrencyFormatter.formatAmount(amount)} to "${widget.goal.name}".',
         );
       }
     } catch (e) {
@@ -142,7 +142,7 @@ class _AddGoalContributionSheetState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Deposit Amount
-                        _SectionLabel(label: 'Deposit Amount (₹)'),
+                        _SectionLabel(label: 'Deposit Amount'),
                         const SizedBox(height: StillwaterTokens.spaceXs),
                         TextFormField(
                           controller: _amountController,
@@ -150,9 +150,9 @@ class _AddGoalContributionSheetState
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: '5000',
-                            prefixText: '₹ ',
+                            prefixText: '${CurrencyFormatter.currencySymbol} ',
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {

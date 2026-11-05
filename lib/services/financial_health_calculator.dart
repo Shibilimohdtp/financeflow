@@ -10,6 +10,7 @@ import 'balance_calculator.dart';
 import 'budget_calculator.dart';
 import 'savings_goal_calculator.dart';
 import 'subscription_service.dart';
+import '../core/formatting/currency_formatter.dart';
 
 /// Pure domain service calculating explainable financial health score from on-device records
 class FinancialHealthCalculator {
@@ -282,7 +283,7 @@ class FinancialHealthCalculator {
       subScore = 7.0;
       subSummary = '${unarchivedSubs.length} active subscriptions';
       subDetail =
-          'Monthly subscription total is ₹${monthlySubs.toStringAsFixed(0)}.';
+          'Monthly subscription total is ${CurrencyFormatter.formatAmount(monthlySubs)}.';
     } else {
       final monthlySubs = SubscriptionService.calculateMonthlyTotal(
         unarchivedSubs,

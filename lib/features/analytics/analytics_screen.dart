@@ -292,7 +292,7 @@ class AnalyticsScreen extends ConsumerWidget {
                                 title: src.categoryName,
                                 subtitle:
                                     '${src.transactionCount} deposits · ${(src.percentage * 100).toStringAsFixed(1)}%',
-                                trailingText: CurrencyFormatter.formatINR(
+                                trailingText: CurrencyFormatter.formatAmount(
                                   src.amount,
                                 ),
                                 showChevron: false,
@@ -335,8 +335,8 @@ class AnalyticsScreen extends ConsumerWidget {
                                 ),
                                 title: accountName,
                                 subtitle:
-                                    '${acc.transactionCount} transactions · ${CurrencyFormatter.formatINR(acc.totalIncome)} in',
-                                trailingText: CurrencyFormatter.formatINR(
+                                    '${acc.transactionCount} transactions · ${CurrencyFormatter.formatAmount(acc.totalIncome)} in',
+                                trailingText: CurrencyFormatter.formatAmount(
                                   acc.totalExpense,
                                 ),
                                 showChevron: false,
@@ -488,7 +488,7 @@ class AnalyticsScreen extends ConsumerWidget {
                                 title: merch.normalizedMerchant,
                                 subtitle:
                                     '${merch.transactionCount} transactions',
-                                trailingText: CurrencyFormatter.formatINR(
+                                trailingText: CurrencyFormatter.formatAmount(
                                   merch.totalAmount,
                                 ),
                                 showChevron: false,

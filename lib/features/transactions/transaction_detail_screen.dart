@@ -308,7 +308,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                       context,
                       label: 'Payment split',
                       value:
-                          'Principal ${CurrencyFormatter.formatINR(transaction.principalAmount)} · Interest ${CurrencyFormatter.formatINR(transaction.interestAmount)} · Fees ${CurrencyFormatter.formatINR(transaction.feeAmount)}',
+                          'Principal ${CurrencyFormatter.formatAmount(transaction.principalAmount)} · Interest ${CurrencyFormatter.formatAmount(transaction.interestAmount)} · Fees ${CurrencyFormatter.formatAmount(transaction.feeAmount)}',
                     ),
                   ],
                   if (transaction.linkedSubscriptionId != null) ...[

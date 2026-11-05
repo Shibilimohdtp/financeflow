@@ -174,7 +174,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                 ),
                 decoration: InputDecoration(
                   labelText: 'Advance Amount',
-                  prefixText: '₹ ',
+                  prefixText: '${CurrencyFormatter.currencySymbol} ',
                   prefixStyle: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: typeColor,

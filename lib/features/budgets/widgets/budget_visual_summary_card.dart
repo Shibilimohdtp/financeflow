@@ -43,7 +43,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
       statusIcon = Icons.error_outline_rounded;
       final overAmount = totalSpent - totalBudgeted;
       statusMessage =
-          '${CurrencyFormatter.formatINR(overAmount)} over planned limit';
+          '${CurrencyFormatter.formatAmount(overAmount)} over planned limit';
       gaugeSublabel = 'OVER';
     } else if (isApproaching) {
       statusColor = context.statusColors.warning;
@@ -169,7 +169,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        CurrencyFormatter.formatINR(totalSpent),
+                        CurrencyFormatter.formatAmount(totalSpent),
                         style: StillwaterTypography.numHero(
                           color:
                               isExceeded
@@ -220,7 +220,7 @@ class BudgetVisualSummaryCard extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   label: 'TOTAL BUDGET',
-                  value: CurrencyFormatter.formatINR(totalBudgeted),
+                  value: CurrencyFormatter.formatAmount(totalBudgeted),
                   caption:
                       totalBudgetsCount > 0
                           ? '$totalBudgetsCount ${totalBudgetsCount == 1 ? 'category' : 'categories'}'
@@ -234,10 +234,10 @@ class BudgetVisualSummaryCard extends StatelessWidget {
                   label: isExceeded ? 'OVER BUDGET' : 'REMAINING',
                   value:
                       isExceeded
-                          ? CurrencyFormatter.formatINR(
+                          ? CurrencyFormatter.formatAmount(
                             totalSpent - totalBudgeted,
                           )
-                          : CurrencyFormatter.formatINR(totalRemaining),
+                          : CurrencyFormatter.formatAmount(totalRemaining),
                   caption:
                       isExceeded
                           ? 'Exceeds budget'
