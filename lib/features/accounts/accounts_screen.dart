@@ -24,6 +24,9 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_menu.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -282,11 +285,32 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 isBlurred: isPrivacyBlur,
                               ),
                               const SizedBox(width: StillwaterTokens.spaceXs),
-                              PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.more_vert_rounded,
-                                  size: 20,
-                                ),
+                              FfMenuButton<String>(
+                                tooltip: 'Account options',
+                                items: [
+                                  const FfMenuItem(
+                                    value: 'edit',
+                                    label: 'Edit details',
+                                    icon: Icons.edit_outlined,
+                                  ),
+                                  FfMenuItem(
+                                    value: 'archive',
+                                    label:
+                                        acc.isArchived
+                                            ? 'Restore account'
+                                            : 'Archive account',
+                                    icon:
+                                        acc.isArchived
+                                            ? Icons.unarchive_outlined
+                                            : Icons.archive_outlined,
+                                  ),
+                                  const FfMenuItem(
+                                    value: 'delete',
+                                    label: 'Delete account',
+                                    icon: Icons.delete_outline_rounded,
+                                    destructive: true,
+                                  ),
+                                ],
                                 onSelected: (val) async {
                                   if (val == 'edit') {
                                     _showAddEditAccountSheet(context, acc);
@@ -332,30 +356,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                     }
                                   }
                                 },
-                                itemBuilder:
-                                    (ctx) => [
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Text('Edit Details'),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'archive',
-                                        child: Text(
-                                          acc.isArchived
-                                              ? 'Restore Account'
-                                              : 'Archive Account',
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text(
-                                          'Delete Account',
-                                          style: TextStyle(
-                                            color: theme.colorScheme.error,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                               ),
                             ],
                           ),
@@ -531,14 +531,8 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  DropdownButtonFormField<AccountType>(
+                  FfSelect<AccountType>(
                     value: _selectedType,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.spaceSm,
-                      ),
-                    ),
                     items:
                         AccountType.values.map((type) {
                           return DropdownMenuItem(
@@ -568,12 +562,10 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                   const SizedBox(height: StillwaterTokens.spaceLg),
 
                   // Account Name field
-                  TextFormField(
+                  FfTextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Account Name',
-                      hintText: 'e.g. HDFC Salary, Cash in Hand',
-                    ),
+                    label: 'Account Name',
+                    hint: 'e.g. HDFC Salary, Cash in Hand',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter an account name.';
@@ -585,7 +577,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                   const SizedBox(height: StillwaterTokens.spaceLg),
 
                   // Opening Balance field
-                  TextFormField(
+                  FfTextField(
                     controller: _openingBalanceController,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -595,10 +587,8 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                         RegExp(r'^\d+\.?\d{0,2}'),
                       ),
                     ],
-                    decoration: InputDecoration(
-                      labelText: 'Opening Balance',
-                      prefixText: '${CurrencyFormatter.currencySymbol} ',
-                    ),
+                    label: 'Opening Balance',
+                    prefixText: '${CurrencyFormatter.currencySymbol} ',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter opening balance.';
@@ -613,22 +603,18 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                   const SizedBox(height: StillwaterTokens.spaceLg),
 
                   // Optional Details (Institution & Masked ID)
-                  TextFormField(
+                  FfTextField(
                     controller: _institutionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Institution Name (Optional)',
-                      hintText: 'e.g. HDFC Bank, SBI, ICICI, Zerodha',
-                    ),
+                    label: 'Institution Name (Optional)',
+                    hint: 'e.g. HDFC Bank, SBI, ICICI, Zerodha',
                   ),
 
                   const SizedBox(height: StillwaterTokens.spaceLg),
 
-                  TextFormField(
+                  FfTextField(
                     controller: _maskedController,
-                    decoration: const InputDecoration(
-                      labelText: 'Masked Number / UPI ID (Optional)',
-                      hintText: 'e.g. •••• 4235, user@okhdfcbank',
-                    ),
+                    label: 'Masked Number / UPI ID (Optional)',
+                    hint: 'e.g. •••• 4235, user@okhdfcbank',
                   ),
 
                   const SizedBox(height: StillwaterTokens.spaceMd),

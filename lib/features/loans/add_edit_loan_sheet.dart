@@ -17,6 +17,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon map for each loan type
@@ -612,20 +614,14 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
-    final theme = context.theme;
-    return TextFormField(
+    return FfTextField(
       controller: controller,
+      label: label,
+      hint: hint,
+      icon: icon,
       textCapitalization: capitalization,
       maxLines: maxLines,
       keyboardType: maxLines > 1 ? TextInputType.multiline : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: icon != null ? Icon(icon, size: 20) : null,
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.secondary,
-        ),
-      ),
       validator: validator,
     );
   }
@@ -718,8 +714,7 @@ class _NumericInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    return TextFormField(
+    return FfTextField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: [
@@ -729,32 +724,11 @@ class _NumericInputField extends StatelessWidget {
             const TextInputType.numberWithOptions(decimal: true))
           FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
       ],
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.secondary,
-        ),
-        prefixText:
-            prefixSymbol ? '${CurrencyFormatter.currencySymbol}  ' : null,
-        prefixStyle: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
-        suffixText: prefixSymbol ? null : suffix,
-        suffixStyle: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.secondary,
-        ),
-        errorText: errorText,
-        helperText: helperText,
-        helperStyle: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.secondary,
-          fontSize: 10,
-        ),
-        errorStyle: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.error,
-          fontSize: 10,
-        ),
-      ),
+      label: label,
+      prefixText: prefixSymbol ? '${CurrencyFormatter.currencySymbol}  ' : null,
+      suffixText: prefixSymbol ? null : suffix,
+      errorText: errorText,
+      helper: helperText,
       onChanged: onChanged,
     );
   }
@@ -1068,25 +1042,16 @@ class _DateAndPaymentDayRow extends StatelessWidget {
         // Due day of month
         Expanded(
           flex: 2,
-          child: TextFormField(
+          child: FfTextField(
             controller: paymentDayController,
             keyboardType: TextInputType.number,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(2),
             ],
-            decoration: InputDecoration(
-              labelText: 'Due day',
-              labelStyle: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.secondary,
-              ),
-              hintText: '1–28',
-              suffixText: 'of month',
-              suffixStyle: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.secondary,
-                fontSize: 10,
-              ),
-            ),
+            label: 'Due day',
+            hint: '1–28',
+            suffixText: 'of month',
             onChanged: onDayChanged,
           ),
         ),
@@ -1227,15 +1192,10 @@ class _AccountSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String?>(
+    return FfSelect<String?>(
       value: selected,
-      decoration: InputDecoration(
-        labelText: 'Linked account (optional)',
-        prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
-        labelStyle: context.textTheme.bodySmall?.copyWith(
-          color: context.theme.colorScheme.secondary,
-        ),
-      ),
+      label: 'Linked account (optional)',
+      icon: Icons.account_balance_wallet_outlined,
       items: [
         const DropdownMenuItem<String?>(
           value: null,

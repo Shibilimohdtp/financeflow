@@ -15,6 +15,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddEditSavingsGoalSheet extends ConsumerStatefulWidget {
   final SavingsGoal? initialGoal;
@@ -166,12 +168,10 @@ class _AddEditSavingsGoalSheetState
                   // Goal Name
                   _SectionLabel(label: 'Goal Name'),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. Emergency Fund, Japan Trip, Vehicle',
-                    ),
+                    hint: 'e.g. Emergency Fund, Japan Trip, Vehicle',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter goal name';
@@ -185,15 +185,13 @@ class _AddEditSavingsGoalSheetState
                   // Target Amount
                   _SectionLabel(label: 'Target Amount'),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _amountController,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: InputDecoration(
-                      hintText: '100000',
-                      prefixText: '${CurrencyFormatter.currencySymbol} ',
-                    ),
+                    hint: '100000',
+                    prefixText: '${CurrencyFormatter.currencySymbol} ',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter target amount';
@@ -278,20 +276,9 @@ class _AddEditSavingsGoalSheetState
                       data: (accounts) {
                         final activeAccounts =
                             accounts.where((a) => !a.isArchived).toList();
-                        return DropdownButtonFormField<Account>(
+                        return FfSelect<Account>(
                           value: _selectedAccount,
-                          decoration: InputDecoration(
-                            labelText: 'Dedicated Savings Account',
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceMd,
-                              vertical: StillwaterTokens.spaceSm,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusMd,
-                              ),
-                            ),
-                          ),
+                          label: 'Dedicated Savings Account',
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -315,13 +302,11 @@ class _AddEditSavingsGoalSheetState
                     const SizedBox(height: StillwaterTokens.spaceMd),
 
                     // Notes
-                    TextFormField(
+                    FfTextField(
                       controller: _notesController,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes',
-                        hintText: 'e.g. Set aside 10% bonus each quarter',
-                      ),
+                      label: 'Notes',
+                      hint: 'e.g. Set aside 10% bonus each quarter',
                     ),
                   ],
                   const SizedBox(height: StillwaterTokens.spaceMd),

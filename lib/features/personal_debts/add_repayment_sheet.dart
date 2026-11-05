@@ -16,6 +16,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddRepaymentSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -244,9 +246,9 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                             setState(() => _recordInTransactions = value),
                   ),
                   if (_recordInTransactions) ...[
-                    DropdownButtonFormField<String>(
+                    FfSelect<String>(
                       value: _selectedAccountId,
-                      decoration: const InputDecoration(labelText: 'Account'),
+                      label: 'Account',
                       items:
                           accounts
                               .map(
@@ -382,18 +384,11 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _notesController,
                     maxLines: 2,
                     maxLength: 200,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. UPI transfer, Part 1 of 2',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                      ),
-                    ),
+                    hint: 'e.g. UPI transfer, Part 1 of 2',
                   ),
                 ],
               ),

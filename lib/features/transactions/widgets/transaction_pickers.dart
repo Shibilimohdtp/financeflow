@@ -11,6 +11,7 @@ import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_colors.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_sheet.dart';
+import '../../../shared/widgets/ff_text_field.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
 import '../../../shared/widgets/ff_icon_tile.dart';
@@ -175,7 +176,6 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
 
     final filtered =
         widget.categories
@@ -201,75 +201,10 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                   onClose: () => Navigator.pop(context),
                 ),
                 const SizedBox(height: StillwaterTokens.spaceSm),
-                TextField(
+                FfTextField.search(
                   controller: _searchController,
-                  autofocus: false,
+                  hint: 'Search categories...',
                   onChanged: (val) => setState(() => _query = val.trim()),
-                  style: theme.textTheme.bodyMedium,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor:
-                        isDark
-                            ? StillwaterColors.darkSurfaceContainerLow
-                            : StillwaterColors.lightSurfaceContainerLow,
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      size: 20,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    suffixIcon:
-                        _query.isEmpty
-                            ? null
-                            : IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _query = '');
-                              },
-                            ),
-                    hintText: 'Search categories...',
-                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceMd,
-                      vertical: StillwaterTokens.spaceSm,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusFull,
-                      ),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.35,
-                        ),
-                        width: StillwaterTokens.borderWidthHairline,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusFull,
-                      ),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.35,
-                        ),
-                        width: StillwaterTokens.borderWidthHairline,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusFull,
-                      ),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: StillwaterTokens.borderWidthFocus,
-                      ),
-                    ),
-                    isDense: true,
-                  ),
                 ),
                 const SizedBox(height: StillwaterTokens.spaceMd),
                 SizedBox(
@@ -466,7 +401,6 @@ class AccountPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return FfSheet(
       children: [
         Flexible(

@@ -18,6 +18,7 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_text_field.dart';
 
 class InvestmentDetailScreen extends ConsumerWidget {
   final Investment investment;
@@ -61,16 +62,14 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 top: StillwaterTokens.spaceMd,
                 bottom: StillwaterTokens.spaceMd,
               ),
-              child: TextFormField(
+              child: FfTextField(
                 controller: controller,
                 autofocus: true,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: InputDecoration(
-                  labelText: 'Current Value',
-                  prefixText: '${CurrencyFormatter.currencySymbol} ',
-                ),
+                label: 'Current Value',
+                prefixText: '${CurrencyFormatter.currencySymbol} ',
               ),
             ),
             FfSheetFooter(

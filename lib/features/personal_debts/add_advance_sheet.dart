@@ -16,6 +16,8 @@ import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddAdvanceSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -267,15 +269,9 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                         if (_recordInTransactions &&
                             activeAccounts.isNotEmpty) ...[
                           const SizedBox(height: StillwaterTokens.spaceSm),
-                          DropdownButtonFormField<String>(
+                          FfSelect<String>(
                             value: _selectedAccount?.id,
-                            decoration: InputDecoration(
-                              labelText: isLent ? 'Paid From' : 'Deposited To',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceMd,
-                                vertical: StillwaterTokens.spaceSm,
-                              ),
-                            ),
+                            label: isLent ? 'Paid From' : 'Deposited To',
                             items:
                                 activeAccounts.map((a) {
                                   return DropdownMenuItem(
@@ -302,12 +298,10 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                   const SizedBox(height: StillwaterTokens.spaceMd),
 
                   // Notes field
-                  TextFormField(
+                  FfTextField(
                     controller: _notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes (optional)',
-                      hintText: 'e.g. For dinner, taxi ride, groceries...',
-                    ),
+                    label: 'Notes (optional)',
+                    hint: 'e.g. For dinner, taxi ride, groceries...',
                     maxLines: 2,
                   ),
 

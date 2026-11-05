@@ -16,6 +16,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddEditMoneyRecordSheet extends ConsumerStatefulWidget {
   final MoneyRecord? initialRecord;
@@ -289,9 +291,9 @@ class _AddEditMoneyRecordSheetState
                               setState(() => _recordInTransactions = value),
                     ),
                     if (_recordInTransactions)
-                      DropdownButtonFormField<String>(
+                      FfSelect<String>(
                         value: _selectedAccountId,
-                        decoration: const InputDecoration(labelText: 'Account'),
+                        label: 'Account',
                         items:
                             accounts
                                 .map(
@@ -319,18 +321,11 @@ class _AddEditMoneyRecordSheetState
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Ahmed, Sarah, Uncle John',
-                      prefixIcon: const Icon(Icons.person_outline_rounded),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                      ),
-                    ),
+                    hint: 'e.g. Ahmed, Sarah, Uncle John',
+                    icon: Icons.person_outline_rounded,
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return "Person's name is required";
@@ -527,19 +522,12 @@ class _AddEditMoneyRecordSheetState
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _notesController,
                     maxLines: 2,
                     maxLength: 300,
-                    decoration: InputDecoration(
-                      hintText:
-                          'e.g. Emergency medical expense, will pay after salary',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                      ),
-                    ),
+                    hint:
+                        'e.g. Emergency medical expense, will pay after salary',
                   ),
 
                   const SizedBox(height: StillwaterTokens.spaceSm),

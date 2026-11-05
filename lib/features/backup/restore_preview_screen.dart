@@ -18,6 +18,7 @@ import '../../theme/ff.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_text_field.dart';
 
 class RestorePreviewScreen extends ConsumerStatefulWidget {
   final File backupFile;
@@ -233,15 +234,13 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
+                  FfTextField(
                     controller: _passphraseController,
                     obscureText: true,
                     autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'Passphrase',
-                      prefixIcon: const Icon(Icons.key_outlined, size: 20),
-                      errorText: _errorMessage,
-                    ),
+                    label: 'Passphrase',
+                    icon: Icons.key_outlined,
+                    errorText: _errorMessage,
                     onSubmitted: (_) => _decrypt(),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceLg),

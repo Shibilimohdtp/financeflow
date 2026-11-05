@@ -9,6 +9,8 @@ import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
 import '../../../shared/widgets/ff_sheet.dart';
+import '../../../shared/widgets/ff_text_field.dart';
+import '../../../shared/widgets/ff_select.dart';
 
 /// Edits every filter except the period (period bar) and search (app bar).
 /// Returns the new query, or null when dismissed.
@@ -161,30 +163,26 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: FfTextField(
                       key: const ValueKey('filter-min-amount'),
                       controller: _minController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Min',
-                        prefixText: '${CurrencyFormatter.currencySymbol} ',
-                      ),
+                      label: 'Min',
+                      prefixText: '${CurrencyFormatter.currencySymbol} ',
                     ),
                   ),
                   const SizedBox(width: StillwaterTokens.spaceSm),
                   Expanded(
-                    child: TextField(
+                    child: FfTextField(
                       key: const ValueKey('filter-max-amount'),
                       controller: _maxController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Max',
-                        prefixText: '${CurrencyFormatter.currencySymbol} ',
-                      ),
+                      label: 'Max',
+                      prefixText: '${CurrencyFormatter.currencySymbol} ',
                     ),
                   ),
                 ],
@@ -311,10 +309,9 @@ class _Dropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     // A filter that points at an archived/deleted entry still shows a value.
     final effective = items.containsKey(value) ? value : null;
-    return DropdownButtonFormField<T?>(
+    return FfSelect<T?>(
       key: ValueKey(keyName),
       value: effective,
-      isExpanded: true,
       items: [
         DropdownMenuItem<T?>(value: null, child: Text(allLabel)),
         for (final entry in items.entries)

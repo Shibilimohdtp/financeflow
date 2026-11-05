@@ -39,6 +39,8 @@ import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -1345,27 +1347,25 @@ class _AddEditTransactionScreenState
       key: _merchantFieldKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        FfTextField(
           controller: _merchantController,
           focusNode: _merchantFocusNode,
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: hint,
-            errorText: _merchantError,
-            prefixIcon: Icon(prefixIcon),
-            suffixIcon:
-                _merchantController.text.isEmpty
-                    ? null
-                    : IconButton(
-                      tooltip: 'Clear payee',
-                      icon: const Icon(Icons.clear_rounded, size: 20),
-                      onPressed: () {
-                        _merchantController.clear();
-                        setState(() => _merchantError = null);
-                      },
-                    ),
-          ),
+          label: label,
+          hint: hint,
+          errorText: _merchantError,
+          icon: prefixIcon,
+          suffix:
+              _merchantController.text.isEmpty
+                  ? null
+                  : IconButton(
+                    tooltip: 'Clear payee',
+                    icon: const Icon(Icons.clear_rounded, size: 20),
+                    onPressed: () {
+                      _merchantController.clear();
+                      setState(() => _merchantError = null);
+                    },
+                  ),
           onChanged: (text) {
             if (_merchantError != null) {
               setState(() => _merchantError = null);
@@ -1752,17 +1752,14 @@ class _AddEditTransactionScreenState
               ),
             )
           else
-            DropdownButtonFormField<String>(
+            FfSelect<String>(
               value: _selectedSubscription?.id ?? 'unlinked',
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: 'Subscription',
-                prefixIcon: const Icon(Icons.subscriptions_outlined),
-                helperText:
-                    _selectedSubscription == null
-                        ? 'Choose a tracked subscription to link this payment.'
-                        : null,
-              ),
+              label: 'Subscription',
+              icon: Icons.subscriptions_outlined,
+              helper:
+                  _selectedSubscription == null
+                      ? 'Choose a tracked subscription to link this payment.'
+                      : null,
               items: [
                 const DropdownMenuItem(
                   value: 'unlinked',
@@ -1857,9 +1854,9 @@ class _AddEditTransactionScreenState
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownButtonFormField<String>(
+          FfSelect<String>(
             value: _selectedLoan?.id ?? 'unlinked',
-            decoration: const InputDecoration(labelText: 'Tracked loan'),
+            label: 'Tracked loan',
             items: [
               const DropdownMenuItem(
                 value: 'unlinked',
@@ -1922,10 +1919,9 @@ class _AddEditTransactionScreenState
       }
       return Column(
         children: [
-          DropdownButtonFormField<String>(
+          FfSelect<String>(
             value: _selectedInvestment?.id ?? 'unlinked',
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Investment asset'),
+            label: 'Investment asset',
             items: [
               const DropdownMenuItem(
                 value: 'unlinked',
@@ -2010,11 +2006,10 @@ class _AddEditTransactionScreenState
                 )
                 .firstOrNull;
       }
-      return DropdownButtonFormField<String>(
+      return FfSelect<String>(
         value: _selectedMoneyRecord?.id,
-        isExpanded: true,
-        decoration: const InputDecoration(labelText: 'Debt record'),
-        hint: const Text('Select person and balance'),
+        label: 'Debt record',
+        hint: 'Select person and balance',
         items:
             eligible
                 .map(
@@ -2120,23 +2115,21 @@ class _AddEditTransactionScreenState
                   textEditingController.text.isEmpty) {
                 textEditingController.text = _counterpartyController.text;
               }
-              return TextFormField(
+              return FfTextField(
                 controller: textEditingController,
                 focusNode: focusNode,
                 textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  labelText: 'Person / counterparty',
-                  helperText:
-                      'Repeated advances to the same person combine into one active balance.',
-                  suffixIcon:
-                      matchingRecord != null
-                          ? Icon(
-                            Icons.check_circle_rounded,
-                            color: context.secColors.verified,
-                            size: 20,
-                          )
-                          : null,
-                ),
+                label: 'Person / counterparty',
+                helper:
+                    'Repeated advances to the same person combine into one active balance.',
+                suffix:
+                    matchingRecord != null
+                        ? Icon(
+                          Icons.check_circle_rounded,
+                          color: context.secColors.verified,
+                          size: 20,
+                        )
+                        : null,
                 onChanged: (val) {
                   _counterpartyController.text = val;
                   final found =
@@ -2270,13 +2263,11 @@ class _AddEditTransactionScreenState
     }
 
     if (_needsCounterparty) {
-      return TextFormField(
+      return FfTextField(
         controller: _counterpartyController,
         textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(
-          labelText: 'Person / counterparty',
-          helperText: 'A person is kept separate from accounts you own.',
-        ),
+        label: 'Person / counterparty',
+        helper: 'A person is kept separate from accounts you own.',
       );
     }
 
@@ -2284,14 +2275,12 @@ class _AddEditTransactionScreenState
   }
 
   Widget _componentField(TextEditingController controller, String label) {
-    return TextFormField(
+    return FfTextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-      decoration: InputDecoration(
-        labelText: label,
-        prefixText: '${CurrencyFormatter.currencySymbol} ',
-      ),
+      label: label,
+      prefixText: '${CurrencyFormatter.currencySymbol} ',
     );
   }
 
@@ -2692,12 +2681,10 @@ class _AddEditTransactionScreenState
             const SizedBox(height: StillwaterTokens.spaceMd),
 
             // Payment Method Selector
-            DropdownButtonFormField<String>(
+            FfSelect<String>(
               value: _selectedPaymentMethod,
-              decoration: const InputDecoration(
-                labelText: 'Payment method',
-                prefixIcon: Icon(Icons.payment_outlined),
-              ),
+              label: 'Payment method',
+              icon: Icons.payment_outlined,
               items:
                   {..._paymentMethods, _selectedPaymentMethod}
                       .map(
@@ -2716,25 +2703,21 @@ class _AddEditTransactionScreenState
             const SizedBox(height: StillwaterTokens.spaceMd),
 
             // Notes Input
-            TextField(
+            FfTextField(
               controller: _notesController,
               maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Notes',
-                hintText: 'Invoice number, reimbursement notes, or context',
-                prefixIcon: Icon(Icons.notes_rounded),
-              ),
+              label: 'Notes',
+              hint: 'Invoice number, reimbursement notes, or context',
+              icon: Icons.notes_rounded,
             ),
             const SizedBox(height: StillwaterTokens.spaceMd),
 
             // Tags Input
-            TextField(
+            FfTextField(
               controller: _tagsController,
-              decoration: const InputDecoration(
-                labelText: 'Tags',
-                hintText: 'e.g. trip, office, reimbursement (comma-separated)',
-                prefixIcon: Icon(Icons.tag_rounded),
-              ),
+              label: 'Tags',
+              hint: 'e.g. trip, office, reimbursement (comma-separated)',
+              icon: Icons.tag_rounded,
             ),
             const SizedBox(height: StillwaterTokens.spaceSm),
 

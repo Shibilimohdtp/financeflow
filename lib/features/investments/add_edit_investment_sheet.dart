@@ -13,6 +13,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddEditInvestmentSheet extends ConsumerStatefulWidget {
   final Investment? initialInvestment;
@@ -196,19 +198,8 @@ class _AddEditInvestmentSheetState
                   // Asset Type
                   _SectionLabel(label: 'Asset Class'),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  DropdownButtonFormField<AssetType>(
+                  FfSelect<AssetType>(
                     value: _assetType,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.spaceSm,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                      ),
-                    ),
                     items:
                         AssetType.values.map((type) {
                           return DropdownMenuItem(
@@ -228,13 +219,10 @@ class _AddEditInvestmentSheetState
                   // Holding Name
                   _SectionLabel(label: 'Holding / Asset Name'),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      hintText:
-                          'e.g. Parag Parikh Flexi Cap, HDFC Bank Shares, SGB',
-                    ),
+                    hint: 'e.g. Parag Parikh Flexi Cap, HDFC Bank Shares, SGB',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter holding name';
@@ -254,17 +242,15 @@ class _AddEditInvestmentSheetState
                           children: [
                             _SectionLabel(label: 'Invested Cost'),
                             const SizedBox(height: StillwaterTokens.spaceXs),
-                            TextFormField(
+                            FfTextField(
                               controller: _purchasePriceController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
-                              decoration: InputDecoration(
-                                hintText: '50000',
-                                prefixText:
-                                    '${CurrencyFormatter.currencySymbol} ',
-                              ),
+                              hint: '50000',
+                              prefixText:
+                                  '${CurrencyFormatter.currencySymbol} ',
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) {
                                   return 'Required';
@@ -282,17 +268,15 @@ class _AddEditInvestmentSheetState
                           children: [
                             _SectionLabel(label: 'Current Value'),
                             const SizedBox(height: StillwaterTokens.spaceXs),
-                            TextFormField(
+                            FfTextField(
                               controller: _currentValueController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
-                              decoration: InputDecoration(
-                                hintText: '55000',
-                                prefixText:
-                                    '${CurrencyFormatter.currencySymbol} ',
-                              ),
+                              hint: '55000',
+                              prefixText:
+                                  '${CurrencyFormatter.currencySymbol} ',
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) {
                                   return 'Required';
@@ -378,15 +362,13 @@ class _AddEditInvestmentSheetState
                   if (_showAdvanced) ...[
                     const SizedBox(height: StillwaterTokens.spaceSm),
                     // Quantity / Units
-                    TextFormField(
+                    FfTextField(
                       controller: _unitsController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: const InputDecoration(
-                        labelText: 'Units / Quantity',
-                        hintText: '1.0',
-                      ),
+                      label: 'Units / Quantity',
+                      hint: '1.0',
                     ),
 
                     const SizedBox(height: StillwaterTokens.spaceMd),
@@ -396,20 +378,9 @@ class _AddEditInvestmentSheetState
                       data: (accounts) {
                         final activeAccounts =
                             accounts.where((a) => !a.isArchived).toList();
-                        return DropdownButtonFormField<String>(
+                        return FfSelect<String>(
                           value: _selectedAccountId,
-                          decoration: InputDecoration(
-                            labelText: 'Purchased From Account',
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceMd,
-                              vertical: StillwaterTokens.spaceSm,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusMd,
-                              ),
-                            ),
-                          ),
+                          label: 'Purchased From Account',
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -433,13 +404,11 @@ class _AddEditInvestmentSheetState
                     const SizedBox(height: StillwaterTokens.spaceMd),
 
                     // Notes
-                    TextFormField(
+                    FfTextField(
                       controller: _notesController,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes',
-                        hintText: 'e.g. SIP started in 2024, Long term horizon',
-                      ),
+                      label: 'Notes',
+                      hint: 'e.g. SIP started in 2024, Long term horizon',
                     ),
                   ],
                   const SizedBox(height: StillwaterTokens.spaceMd),

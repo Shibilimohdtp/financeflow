@@ -17,6 +17,7 @@ import 'restore_preview_screen.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_text_field.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -293,24 +294,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
+                FfTextField(
                   controller: _passphraseController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Encryption Passphrase',
-                    hintText: 'Enter at least 6 characters',
-                    prefixIcon: Icon(Icons.key_outlined, size: 20),
-                  ),
+                  label: 'Encryption Passphrase',
+                  hint: 'Enter at least 6 characters',
+                  icon: Icons.key_outlined,
                 ),
                 const SizedBox(height: StillwaterTokens.spaceMd),
-                TextField(
+                FfTextField(
                   controller: _confirmPassphraseController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm Passphrase',
-                    hintText: 'Re-enter passphrase',
-                    prefixIcon: Icon(Icons.key_outlined, size: 20),
-                  ),
+                  label: 'Confirm Passphrase',
+                  hint: 'Re-enter passphrase',
+                  icon: Icons.key_outlined,
                 ),
                 const SizedBox(height: StillwaterTokens.spaceLg),
                 FfButton(

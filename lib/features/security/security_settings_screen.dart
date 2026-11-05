@@ -13,6 +13,7 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_text_field.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -52,27 +53,21 @@ class _SecuritySettingsScreenState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextField(
+                      FfTextField(
                         controller: pinController,
                         obscureText: true,
                         keyboardType: TextInputType.number,
                         maxLength: 6,
-                        decoration: const InputDecoration(
-                          labelText: 'Enter 4-6 Digit PIN',
-                          counterText: '',
-                        ),
+                        label: 'Enter 4-6 Digit PIN',
                       ),
                       const SizedBox(height: StillwaterTokens.spaceMd),
-                      TextField(
+                      FfTextField(
                         controller: confirmController,
                         obscureText: true,
                         keyboardType: TextInputType.number,
                         maxLength: 6,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm PIN',
-                          counterText: '',
-                          errorText: errorText,
-                        ),
+                        label: 'Confirm PIN',
+                        errorText: errorText,
                       ),
                     ],
                   ),

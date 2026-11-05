@@ -17,6 +17,8 @@ import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
   final Subscription? initialSubscription;
@@ -278,12 +280,10 @@ class _AddEditSubscriptionSheetState
                   const SizedBox(height: StillwaterTokens.spaceMd),
 
                   // ── 2. Service / Merchant Name ────────────────────
-                  TextFormField(
+                  FfTextField(
                     controller: _merchantController,
-                    decoration: const InputDecoration(
-                      labelText: 'Service or Merchant',
-                      hintText: 'e.g. Netflix, Spotify, iCloud, Gym',
-                    ),
+                    label: 'Service or Merchant',
+                    hint: 'e.g. Netflix, Spotify, iCloud, Gym',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter service name.';
@@ -393,14 +393,8 @@ class _AddEditSubscriptionSheetState
                       ),
                     ),
                     const SizedBox(height: StillwaterTokens.spaceXs),
-                    DropdownButtonFormField<String?>(
+                    FfSelect<String?>(
                       value: _selectedAccountId,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                          vertical: StillwaterTokens.spaceSm,
-                        ),
-                      ),
                       items: [
                         const DropdownMenuItem(
                           value: null,
@@ -433,12 +427,10 @@ class _AddEditSubscriptionSheetState
                   const SizedBox(height: StillwaterTokens.spaceMd),
 
                   // ── 7. Optional Notes ─────────────────────────────
-                  TextFormField(
+                  FfTextField(
                     controller: _notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes (Optional)',
-                      hintText: 'Plan type, family tier, renewal terms',
-                    ),
+                    label: 'Notes (Optional)',
+                    hint: 'Plan type, family tier, renewal terms',
                   ),
 
                   const SizedBox(height: StillwaterTokens.spaceMd),

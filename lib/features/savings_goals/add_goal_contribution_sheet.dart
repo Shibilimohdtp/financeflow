@@ -16,6 +16,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_select.dart';
 
 class AddGoalContributionSheet extends ConsumerStatefulWidget {
   final SavingsGoal goal;
@@ -142,16 +144,14 @@ class _AddGoalContributionSheetState
                   // Deposit Amount
                   _SectionLabel(label: 'Deposit Amount'),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _amountController,
                     autofocus: true,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: InputDecoration(
-                      hintText: '5000',
-                      prefixText: '${CurrencyFormatter.currencySymbol} ',
-                    ),
+                    hint: '5000',
+                    prefixText: '${CurrencyFormatter.currencySymbol} ',
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter amount';
@@ -202,19 +202,8 @@ class _AddGoalContributionSheetState
                     data: (accounts) {
                       final activeAccounts =
                           accounts.where((a) => !a.isArchived).toList();
-                      return DropdownButtonFormField<Account>(
+                      return FfSelect<Account>(
                         value: _selectedAccount,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: StillwaterTokens.spaceMd,
-                            vertical: StillwaterTokens.spaceSm,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusMd,
-                            ),
-                          ),
-                        ),
                         items: [
                           const DropdownMenuItem(
                             value: null,
@@ -238,11 +227,9 @@ class _AddGoalContributionSheetState
                   // Notes
                   _SectionLabel(label: 'Notes (Optional)'),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfTextField(
                     controller: _notesController,
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. Monthly salary savings transfer',
-                    ),
+                    hint: 'e.g. Monthly salary savings transfer',
                   ),
 
                   const SizedBox(height: StillwaterTokens.spaceMd),
