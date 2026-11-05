@@ -27,6 +27,7 @@ enum FfColorRole {
   onSurfaceInk,
   surfaceToast, // snackbars
   onSurfaceToast,
+  toastAction, // snackbar action such as Undo
   surfaceInverse,
   onSurfaceInverse,
 
@@ -48,7 +49,7 @@ enum FfColorRole {
   onActionPrimary,
   actionPrimaryContainer,
   onActionPrimaryContainer,
-  actionInverse, // primary on inverse or toast surfaces
+  actionInverse, // primary on surfaceInverse
   secondary,
   onSecondary,
   secondaryContainer,
@@ -124,6 +125,7 @@ class FfColors extends ThemeExtension<FfColors> {
   Color get onSurfaceInk => this[FfColorRole.onSurfaceInk];
   Color get surfaceToast => this[FfColorRole.surfaceToast];
   Color get onSurfaceToast => this[FfColorRole.onSurfaceToast];
+  Color get toastAction => this[FfColorRole.toastAction];
   Color get surfaceInverse => this[FfColorRole.surfaceInverse];
   Color get onSurfaceInverse => this[FfColorRole.onSurfaceInverse];
 
