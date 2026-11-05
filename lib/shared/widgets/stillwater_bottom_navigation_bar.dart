@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 /// The persistent, mobile-level destinations for the Stillwater shell.
 ///
@@ -26,11 +26,13 @@ class StillwaterBottomNavigationBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.navigationBarTheme.backgroundColor ?? theme.cardColor,
+        color:
+            theme.navigationBarTheme.backgroundColor ??
+            context.ff.color.surfaceCard,
         border: Border(
           top: BorderSide(
-            color: theme.dividerColor,
-            width: StillwaterTokens.borderWidthHairline,
+            color: context.ff.color.borderSubtle,
+            width: FfBorderWidth.hairline,
           ),
         ),
       ),
@@ -54,8 +56,8 @@ class StillwaterBottomNavigationBar extends StatelessWidget {
                 pendingReviewCount > 0
                     ? Badge.count(
                       count: pendingReviewCount,
-                      backgroundColor: theme.colorScheme.tertiary,
-                      textColor: theme.colorScheme.onTertiary,
+                      backgroundColor: context.ff.color.accent,
+                      textColor: context.ff.color.onAccent,
                       child: const Icon(Icons.receipt_long_outlined),
                     )
                     : const Icon(Icons.receipt_long_outlined),
@@ -63,8 +65,8 @@ class StillwaterBottomNavigationBar extends StatelessWidget {
                 pendingReviewCount > 0
                     ? Badge.count(
                       count: pendingReviewCount,
-                      backgroundColor: theme.colorScheme.tertiary,
-                      textColor: theme.colorScheme.onTertiary,
+                      backgroundColor: context.ff.color.accent,
+                      textColor: context.ff.color.onAccent,
                       child: const Icon(Icons.receipt_long_rounded),
                     )
                     : const Icon(Icons.receipt_long_rounded),
@@ -85,7 +87,7 @@ class StillwaterBottomNavigationBar extends StatelessWidget {
                 unreadAlertsCount > 0
                     ? Badge(
                       smallSize: 8,
-                      backgroundColor: theme.colorScheme.tertiary,
+                      backgroundColor: context.ff.color.accent,
                       child: const Icon(Icons.more_horiz_rounded),
                     )
                     : const Icon(Icons.more_horiz_rounded),
@@ -93,7 +95,7 @@ class StillwaterBottomNavigationBar extends StatelessWidget {
                 unreadAlertsCount > 0
                     ? Badge(
                       smallSize: 8,
-                      backgroundColor: theme.colorScheme.tertiary,
+                      backgroundColor: context.ff.color.accent,
                       child: const Icon(Icons.more_horiz_rounded),
                     )
                     : const Icon(Icons.more_horiz_rounded),

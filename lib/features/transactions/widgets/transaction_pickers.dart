@@ -9,12 +9,12 @@ import '../../../models/category.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_colors.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_text_field.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
 import '../../../shared/widgets/ff_icon_tile.dart';
+import '../../../theme/ff.dart';
 
 /// A compact, rich tile button for selecting an Account.
 class AccountTileButton extends StatelessWidget {
@@ -43,26 +43,24 @@ class AccountTileButton extends StatelessWidget {
       children: [
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+          borderRadius: BorderRadius.circular(FfRadius.md),
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceMd,
-              vertical: StillwaterTokens.spaceSm,
+              horizontal: FfSpace.md,
+              vertical: FfSpace.sm,
             ),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.md),
               border: Border.all(
                 color:
                     error != null
-                        ? theme.colorScheme.error
+                        ? context.ff.color.statusError
                         : (isDark
                             ? StillwaterColors.darkBorderDefault
                             : StillwaterColors.lightBorderDefault),
                 width:
-                    error != null
-                        ? StillwaterTokens.borderWidthFocus
-                        : StillwaterTokens.borderWidthDefault,
+                    error != null ? FfBorderWidth.focus : FfBorderWidth.regular,
               ),
             ),
             child: Row(
@@ -71,7 +69,7 @@ class AccountTileButton extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(
+                    color: context.ff.color.actionPrimaryContainer.withValues(
                       alpha: 0.4,
                     ),
                     shape: BoxShape.circle,
@@ -79,17 +77,17 @@ class AccountTileButton extends StatelessWidget {
                   child: Icon(
                     account == null ? icon : _accountIcon(account!.type),
                     size: 20,
-                    color: theme.colorScheme.primary,
+                    color: context.ff.color.actionPrimary,
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
                 Expanded(
                   child:
                       account == null
                           ? Text(
                             'Select $label',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            style: context.ff.text.body.copyWith(
+                              color: context.ff.color.textSecondary,
                             ),
                           )
                           : Column(
@@ -97,7 +95,7 @@ class AccountTileButton extends StatelessWidget {
                             children: [
                               Text(
                                 account!.name,
-                                style: theme.textTheme.bodyLarge?.copyWith(
+                                style: context.ff.text.bodyLg.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
@@ -105,8 +103,8 @@ class AccountTileButton extends StatelessWidget {
                               ),
                               Text(
                                 '${account!.displaySubtitle} • ${CurrencyFormatter.formatAmount(account!.currentBalance)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                style: context.ff.text.bodySm.copyWith(
+                                  color: context.ff.color.textSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -120,11 +118,11 @@ class AccountTileButton extends StatelessWidget {
           ),
         ),
         if (error != null) ...[
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             error!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.statusError,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -175,8 +173,6 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     final filtered =
         widget.categories
             .where((c) => c.name.toLowerCase().contains(_query.toLowerCase()))
@@ -187,10 +183,10 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
         Flexible(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceSm,
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceLg,
+              FfSpace.lg,
+              FfSpace.sm,
+              FfSpace.lg,
+              FfSpace.lg,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -200,13 +196,13 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                   padding: EdgeInsets.zero,
                   onClose: () => Navigator.pop(context),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 FfTextField.search(
                   controller: _searchController,
                   hint: 'Search categories...',
                   onChanged: (val) => setState(() => _query = val.trim()),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
                 SizedBox(
                   height: MediaQuery.sizeOf(context).height * 0.50,
                   child:
@@ -218,15 +214,13 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                                 Icon(
                                   Icons.search_off_rounded,
                                   size: 40,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  color: context.ff.color.textSecondary,
                                 ),
-                                const SizedBox(
-                                  height: StillwaterTokens.spaceXs,
-                                ),
+                                const SizedBox(height: FfSpace.xs),
                                 Text(
                                   'No matching category found',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                  style: context.ff.text.body.copyWith(
+                                    color: context.ff.color.textSecondary,
                                   ),
                                 ),
                               ],
@@ -244,9 +238,8 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                                 gridDelegate:
                                     SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: crossAxisCount,
-                                      crossAxisSpacing:
-                                          StillwaterTokens.spaceSm,
-                                      mainAxisSpacing: StillwaterTokens.spaceSm,
+                                      crossAxisSpacing: FfSpace.sm,
+                                      mainAxisSpacing: FfSpace.sm,
                                       childAspectRatio: 1.3,
                                     ),
                                 itemBuilder: (context, index) {
@@ -293,40 +286,43 @@ class _CategoryGridTile extends StatelessWidget {
 
     final selectedBg =
         isDark
-            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
-            : theme.colorScheme.primaryContainer.withValues(alpha: 0.45);
+            ? context.ff.color.actionPrimaryContainer.withValues(
+              alpha: FfTint.strong.alpha,
+            )
+            : context.ff.color.actionPrimaryContainer.withValues(
+              alpha: FfTint.strong.alpha,
+            );
     final unselectedBg =
         isDark
-            ? StillwaterColors.darkSurfaceContainerLow.withValues(alpha: 0.6)
-            : StillwaterColors.lightSurfaceContainerLow.withValues(alpha: 0.8);
+            ? StillwaterColors.darkSurfaceContainerLow.withValues(
+              alpha: FfOpacity.muted,
+            )
+            : StillwaterColors.lightSurfaceContainerLow.withValues(
+              alpha: FfOpacity.high,
+            );
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        borderRadius: BorderRadius.circular(FfRadius.lg),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: FfMotion.fast,
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
             color: isSelected ? selectedBg : unselectedBg,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
               color:
                   isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.35,
-                      ),
-              width:
-                  isSelected
-                      ? StillwaterTokens.borderWidthFocus
-                      : StillwaterTokens.borderWidthHairline,
+                      ? context.ff.color.actionPrimary
+                      : context.ff.color.borderSubtle.withValues(alpha: 0.35),
+              width: isSelected ? FfBorderWidth.focus : FfBorderWidth.hairline,
             ),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceXs,
-            vertical: StillwaterTokens.spaceSm,
+            horizontal: FfSpace.xs,
+            vertical: FfSpace.sm,
           ),
           child: Stack(
             clipBehavior: Clip.none,
@@ -341,20 +337,19 @@ class _CategoryGridTile extends StatelessWidget {
                       colorTokenIdentifier: category.colorTokenIdentifier,
                       size: 32,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: FfSpace.x2s),
                     Text(
                       category.name,
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: context.ff.text.label.copyWith(
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
                         color:
                             isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface,
-                        fontSize: 12,
+                                ? context.ff.color.actionPrimary
+                                : context.ff.color.textPrimary,
                       ),
                     ),
                   ],
@@ -368,13 +363,13 @@ class _CategoryGridTile extends StatelessWidget {
                     width: 16,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
+                      color: context.ff.color.actionPrimary,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.check_rounded,
                       size: 11,
-                      color: theme.colorScheme.onPrimary,
+                      color: context.ff.color.onActionPrimary,
                     ),
                   ),
                 ),
@@ -405,7 +400,7 @@ class AccountPickerSheet extends StatelessWidget {
       children: [
         Flexible(
           child: Padding(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.all(FfSpace.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -414,10 +409,10 @@ class AccountPickerSheet extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   onClose: () => Navigator.pop(context),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 if (accounts.isEmpty)
                   const Padding(
-                    padding: EdgeInsets.all(StillwaterTokens.spaceXl),
+                    padding: EdgeInsets.all(FfSpace.xl),
                     child: Text('No eligible account available.'),
                   )
                 else

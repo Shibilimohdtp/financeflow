@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/loan.dart';
 import '../../../repositories/loan_repository.dart';
 import '../../../services/loan_calculator.dart';
 import '../../../shared/widgets/ff_button.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../loans_controller.dart';
 import '../../accounts/accounts_controller.dart';
 import '../payment_account_picker.dart';
@@ -15,6 +13,7 @@ import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_dialog.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff.dart';
 
 class EmiScheduleView extends ConsumerWidget {
   final Loan loan;
@@ -178,7 +177,6 @@ class EmiScheduleView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final loans = ref.watch(allLoansStreamProvider).value ?? const [];
     final currentLoan = loans.firstWhere(
       (l) => l.id == loan.id,
@@ -198,36 +196,39 @@ class EmiScheduleView extends ConsumerWidget {
           // Summary Header Bar
           Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceMd,
-              vertical: StillwaterTokens.spaceSm,
+              horizontal: FfSpace.md,
+              vertical: FfSpace.sm,
             ),
-            color: theme.colorScheme.surface,
+            color: context.ff.color.surfaceCard,
             width: double.infinity,
             child: Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: StillwaterTokens.spaceSm,
-              runSpacing: StillwaterTokens.spaceXs,
+              spacing: FfSpace.sm,
+              runSpacing: FfSpace.xs,
               children: [
                 _buildStatBadge(
+                  context,
                   label: '${paidItems.length} Paid',
-                  color: context.secColors.verified,
-                  backgroundColor: context.secColors.verified.withValues(
+                  color: context.ff.color.statusSuccess,
+                  backgroundColor: context.ff.color.statusSuccess.withValues(
                     alpha: 0.12,
                   ),
                 ),
                 if (overdueItems.isNotEmpty)
                   _buildStatBadge(
+                    context,
                     label: '${overdueItems.length} Overdue',
-                    color: context.secColors.error,
-                    backgroundColor: context.secColors.error.withValues(
+                    color: context.ff.color.statusError,
+                    backgroundColor: context.ff.color.statusError.withValues(
                       alpha: 0.12,
                     ),
                   ),
                 _buildStatBadge(
+                  context,
                   label: '${upcomingItems.length} Upcoming',
-                  color: theme.colorScheme.secondary,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  color: context.ff.color.secondary,
+                  backgroundColor: context.ff.color.surfaceContainerHighest,
                 ),
               ],
             ),
@@ -237,25 +238,26 @@ class EmiScheduleView extends ConsumerWidget {
           if (overdueItems.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceMd,
-                vertical: StillwaterTokens.spaceSm,
+                horizontal: FfSpace.md,
+                vertical: FfSpace.sm,
               ),
-              color: context.secColors.error.withValues(alpha: 0.1),
+              color: context.ff.color.statusError.withValues(
+                alpha: FfTint.subtle.alpha,
+              ),
               child: Row(
                 children: [
                   Icon(
                     Icons.warning_amber_rounded,
-                    color: context.secColors.error,
+                    color: context.ff.color.statusError,
                     size: 20,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: Text(
                       '${overdueItems.length} overdue EMIs detected',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: context.ff.text.label.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: context.secColors.error,
+                        color: context.ff.color.statusError,
                       ),
                     ),
                   ),
@@ -278,16 +280,14 @@ class EmiScheduleView extends ConsumerWidget {
 
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               itemCount: schedule.length,
               separatorBuilder: (_, __) => const FfDivider(),
               itemBuilder: (context, index) {
                 final item = schedule[index];
 
                 return InkWell(
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusMd,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.md),
                   onTap:
                       item.isPaid
                           ? () => _markInstallmentUnpaid(
@@ -304,8 +304,8 @@ class EmiScheduleView extends ConsumerWidget {
                           ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.space2Xs,
-                      horizontal: StillwaterTokens.space2Xs,
+                      vertical: FfSpace.x2s,
+                      horizontal: FfSpace.x2s,
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -317,14 +317,14 @@ class EmiScheduleView extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color:
                                 item.isPaid
-                                    ? context.secColors.verified.withValues(
+                                    ? context.ff.color.statusSuccess.withValues(
                                       alpha: 0.15,
                                     )
                                     : item.isOverdue
-                                    ? context.secColors.error.withValues(
+                                    ? context.ff.color.statusError.withValues(
                                       alpha: 0.15,
                                     )
-                                    : theme.colorScheme.primary.withValues(
+                                    : context.ff.color.actionPrimary.withValues(
                                       alpha: 0.08,
                                     ),
                             shape: BoxShape.circle,
@@ -335,22 +335,24 @@ class EmiScheduleView extends ConsumerWidget {
                                     ? Icon(
                                       Icons.check_rounded,
                                       size: 16,
-                                      color: context.secColors.verified,
+                                      color: context.ff.color.statusSuccess,
                                     )
                                     : Text(
                                       '#${item.monthNumber}',
-                                      style: TextStyle(
-                                        fontSize: 11,
+                                      style: context.ff.text.labelSm.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color:
                                             item.isOverdue
-                                                ? context.secColors.error
-                                                : theme.colorScheme.primary,
+                                                ? context.ff.color.statusError
+                                                : context
+                                                    .ff
+                                                    .color
+                                                    .actionPrimary,
                                       ),
                                     ),
                           ),
                         ),
-                        const SizedBox(width: StillwaterTokens.spaceSm),
+                        const SizedBox(width: FfSpace.sm),
 
                         // Details Column (Date, Status pill, Principal & Interest breakdown)
                         Expanded(
@@ -360,29 +362,27 @@ class EmiScheduleView extends ConsumerWidget {
                             children: [
                               Wrap(
                                 crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: StillwaterTokens.spaceXs,
+                                spacing: FfSpace.xs,
                                 runSpacing: 2,
                                 children: [
                                   Text(
                                     DateFormatter.formatFullDate(item.dueDate),
-                                    style: theme.textTheme.titleSmall?.copyWith(
+                                    style: context.ff.text.bodySm.copyWith(
                                       fontWeight:
                                           item.isOverdue
                                               ? FontWeight.bold
                                               : FontWeight.w600,
-                                      fontSize: 13,
                                     ),
                                   ),
                                   if (item.isPaid || item.isOverdue)
                                     _buildStatusPill(context, item),
                                 ],
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: FfSpace.x3s),
                               Text(
                                 'P: ${CurrencyFormatter.formatAmount(item.principalPaid)} · I: ${CurrencyFormatter.formatAmount(item.interestPaid)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.labelSm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -391,7 +391,7 @@ class EmiScheduleView extends ConsumerWidget {
                           ),
                         ),
 
-                        const SizedBox(width: StillwaterTokens.spaceXs),
+                        const SizedBox(width: FfSpace.xs),
 
                         // EMI Amount & Balance
                         Column(
@@ -400,22 +400,20 @@ class EmiScheduleView extends ConsumerWidget {
                           children: [
                             Text(
                               CurrencyFormatter.formatAmount(item.emiAmount),
-                              style: theme.textTheme.titleSmall?.copyWith(
+                              style: context.ff.text.bodySm.copyWith(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
                               ),
                             ),
                             Text(
                               'Bal: ${CurrencyFormatter.formatAmount(item.closingBalance)}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 10,
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.labelSm.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ],
                         ),
 
-                        const SizedBox(width: StillwaterTokens.space2Xs),
+                        const SizedBox(width: FfSpace.x2s),
 
                         // Action button (Mark Paid / Mark Unpaid)
                         SizedBox(
@@ -432,7 +430,7 @@ class EmiScheduleView extends ConsumerWidget {
                                     ),
                                     tooltip:
                                         'Mark Installment #${item.monthNumber} Unpaid',
-                                    color: theme.colorScheme.secondary,
+                                    color: context.ff.color.secondary,
                                     onPressed:
                                         () => _markInstallmentUnpaid(
                                           context,
@@ -452,8 +450,8 @@ class EmiScheduleView extends ConsumerWidget {
                                         'Mark Installment #${item.monthNumber} Paid',
                                     color:
                                         item.isOverdue
-                                            ? context.secColors.error
-                                            : theme.colorScheme.primary,
+                                            ? context.ff.color.statusError
+                                            : context.ff.color.actionPrimary,
                                     onPressed:
                                         () => _markInstallmentPaid(
                                           context,
@@ -475,23 +473,26 @@ class EmiScheduleView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatBadge({
+  Widget _buildStatBadge(
+    BuildContext context, {
     required String label,
     required Color color,
     required Color backgroundColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: FfSpace.xs,
+        vertical: FfSpace.x2s,
+      ),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FfRadius.md),
       ),
       child: Text(
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 11,
+        style: context.ff.text.labelSm.copyWith(
           fontWeight: FontWeight.bold,
           color: color,
         ),
@@ -510,19 +511,23 @@ class EmiScheduleView extends ConsumerWidget {
       }
 
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        padding: const EdgeInsets.symmetric(
+          horizontal: FfSpace.x2s,
+          vertical: FfSpace.x3s,
+        ),
         decoration: BoxDecoration(
-          color: context.secColors.verified.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(8),
+          color: context.ff.color.statusSuccess.withValues(
+            alpha: FfTint.subtle.alpha,
+          ),
+          borderRadius: BorderRadius.circular(FfRadius.sm),
         ),
         child: Text(
           paidText,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 9,
+          style: context.ff.text.labelSm.copyWith(
             fontWeight: FontWeight.bold,
-            color: context.secColors.verified,
+            color: context.ff.color.statusSuccess,
           ),
         ),
       );
@@ -531,19 +536,23 @@ class EmiScheduleView extends ConsumerWidget {
     if (item.isOverdue) {
       final days = item.daysOverdue();
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        padding: const EdgeInsets.symmetric(
+          horizontal: FfSpace.x2s,
+          vertical: FfSpace.x3s,
+        ),
         decoration: BoxDecoration(
-          color: context.secColors.error.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(8),
+          color: context.ff.color.statusError.withValues(
+            alpha: FfTint.subtle.alpha,
+          ),
+          borderRadius: BorderRadius.circular(FfRadius.sm),
         ),
         child: Text(
           'OVERDUE ($days d)',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 9,
+          style: context.ff.text.labelSm.copyWith(
             fontWeight: FontWeight.bold,
-            color: context.secColors.error,
+            color: context.ff.color.statusError,
           ),
         ),
       );

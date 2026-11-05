@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
@@ -17,6 +15,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../theme/ff.dart';
 
 class AddEditSavingsGoalSheet extends ConsumerStatefulWidget {
   final SavingsGoal? initialGoal;
@@ -143,7 +142,6 @@ class _AddEditSavingsGoalSheetState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountsAsync = ref.watch(allAccountsStreamProvider);
 
     return FfSheet(
@@ -157,9 +155,7 @@ class _AddEditSavingsGoalSheetState
         // Form Content
         Flexible(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
             child: Form(
               key: _formKey,
               child: Column(
@@ -167,7 +163,7 @@ class _AddEditSavingsGoalSheetState
                 children: [
                   // Goal Name
                   _SectionLabel(label: 'Goal Name'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.words,
@@ -180,11 +176,11 @@ class _AddEditSavingsGoalSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Target Amount
                   _SectionLabel(label: 'Target Amount'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _amountController,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -200,26 +196,22 @@ class _AddEditSavingsGoalSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Target Date
                   _SectionLabel(label: 'Target Date'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   InkWell(
                     onTap: _selectTargetDate,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: InputDecorator(
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                          vertical: StillwaterTokens.spaceSm,
+                          horizontal: FfSpace.md,
+                          vertical: FfSpace.sm,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.md),
                         ),
                         suffixIcon: const Icon(
                           Icons.calendar_today_outlined,
@@ -228,23 +220,19 @@ class _AddEditSavingsGoalSheetState
                       ),
                       child: Text(
                         DateFormat('dd MMMM yyyy').format(_targetDate),
-                        style: theme.textTheme.bodyMedium,
+                        style: context.ff.text.body,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Optional Details toggle
                   InkWell(
                     onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: StillwaterTokens.spaceXs,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
                       child: Row(
                         children: [
                           Icon(
@@ -252,15 +240,15 @@ class _AddEditSavingsGoalSheetState
                                 ? Icons.keyboard_arrow_up_rounded
                                 : Icons.keyboard_arrow_down_rounded,
                             size: 20,
-                            color: theme.colorScheme.secondary,
+                            color: context.ff.color.secondary,
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceXs),
+                          const SizedBox(width: FfSpace.xs),
                           Text(
                             _showAdvanced
                                 ? 'Hide optional fields'
                                 : 'Dedicated Account & Notes (Optional)',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.actionPrimary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -270,7 +258,7 @@ class _AddEditSavingsGoalSheetState
                   ),
 
                   if (_showAdvanced) ...[
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     // Dedicated Target Account
                     accountsAsync.when(
                       data: (accounts) {
@@ -299,7 +287,7 @@ class _AddEditSavingsGoalSheetState
                       error: (_, __) => const SizedBox.shrink(),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
 
                     // Notes
                     FfTextField(
@@ -309,7 +297,7 @@ class _AddEditSavingsGoalSheetState
                       hint: 'e.g. Set aside 10% bonus each quarter',
                     ),
                   ],
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                 ],
               ),
             ),
@@ -333,13 +321,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

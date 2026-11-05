@@ -25,7 +25,6 @@ import '../../services/payee_suggestion_service.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../theme/stillwater_colors.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
@@ -43,6 +42,7 @@ import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_amount_field.dart';
 import '../../shared/widgets/ff_amount_text.dart';
+import '../../theme/ff.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -271,7 +271,7 @@ class _AddEditTransactionScreenState
         _showMerchantSuggestions = true;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 150), () {
+        Future.delayed(FfMotion.fast, () {
           if (mounted && _merchantFocusNode.hasFocus) {
             _scrollToMerchantField();
           }
@@ -290,7 +290,7 @@ class _AddEditTransactionScreenState
       Scrollable.ensureVisible(
         targetContext,
         alignment: 0.02,
-        duration: const Duration(milliseconds: 300),
+        duration: FfMotion.base,
         curve: Curves.easeOutCubic,
       );
     }
@@ -696,14 +696,14 @@ class _AddEditTransactionScreenState
   }
 
   Color _typeColor(BuildContext context, TransactionType type) {
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
     return switch (type) {
-      TransactionType.expense => finColors.expense,
-      TransactionType.income => finColors.income,
-      TransactionType.transfer => finColors.transfer,
-      TransactionType.investment => finColors.investment,
-      TransactionType.loanEmi => finColors.debt,
-      TransactionType.cash => finColors.savings,
+      TransactionType.expense => finColors.moneyExpense,
+      TransactionType.income => finColors.moneyIncome,
+      TransactionType.transfer => finColors.moneyTransfer,
+      TransactionType.investment => finColors.moneyInvestment,
+      TransactionType.loanEmi => finColors.moneyDebt,
+      TransactionType.cash => finColors.moneySavings,
     };
   }
 
@@ -816,15 +816,15 @@ class _AddEditTransactionScreenState
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(
-                        StillwaterTokens.spaceLg,
-                        StillwaterTokens.spaceSm,
-                        StillwaterTokens.spaceLg,
-                        StillwaterTokens.spaceXl,
+                        FfSpace.lg,
+                        FfSpace.sm,
+                        FfSpace.lg,
+                        FfSpace.xl,
                       ),
                       children: [
                         if (widget.sourceContext != null) ...[
                           widget.sourceContext!,
-                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          const SizedBox(height: FfSpace.md),
                         ],
                         // 1. Transaction Type Selector Bar
                         _buildTypeSelector(
@@ -832,7 +832,7 @@ class _AddEditTransactionScreenState
                           accounts: accounts,
                           history: history,
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        const SizedBox(height: FfSpace.sm),
 
                         // 2. Purpose & Amount in a Single Unified Row
                         _buildPurposeAndAmountRow(
@@ -841,7 +841,7 @@ class _AddEditTransactionScreenState
                           accounts: accounts,
                           history: history,
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceMd),
+                        const SizedBox(height: FfSpace.md),
 
                         // 3. Payee / Merchant Field with dynamic focused suggestions
                         _buildMerchantField(
@@ -849,7 +849,7 @@ class _AddEditTransactionScreenState
                           categories: categories,
                           history: history,
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceMd),
+                        const SizedBox(height: FfSpace.md),
 
                         // 4. Purpose-Specific Detailed Fields (Loans, Debts, Investments)
                         _buildPurposeFields(),
@@ -857,26 +857,26 @@ class _AddEditTransactionScreenState
                             _selectedPurpose != TransactionPurpose.income &&
                             _selectedPurpose !=
                                 TransactionPurpose.internalTransfer)
-                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          const SizedBox(height: FfSpace.md),
 
                         // 5. Category Section (Top 3 quick + All Categories button)
                         if (_needsCategory) ...[
                           _buildCategorySection(categoriesForType),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          const SizedBox(height: FfSpace.md),
                         ],
 
                         // 6. Account Section (Single or Directional Transfer)
                         _buildAccountSection(accounts),
-                        const SizedBox(height: StillwaterTokens.spaceMd),
+                        const SizedBox(height: FfSpace.md),
 
                         // 7. Single-Row Quick Date Selector
                         _buildDateSection(),
-                        const SizedBox(height: StillwaterTokens.spaceLg),
+                        const SizedBox(height: FfSpace.lg),
 
                         // 8. Progressive Disclosure: Expandable More Details
                         _buildMoreDetailsSection(),
 
-                        const SizedBox(height: StillwaterTokens.spaceXl),
+                        const SizedBox(height: FfSpace.xl),
                       ],
                     ),
                   ),
@@ -922,16 +922,18 @@ class _AddEditTransactionScreenState
 
     return Container(
       height: 46,
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(FfSpace.x3s),
       decoration: BoxDecoration(
         color:
             isDark
                 ? StillwaterColors.darkSurfaceContainerLow
                 : StillwaterColors.lightSurfaceContainerLow,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        borderRadius: BorderRadius.circular(FfRadius.lg),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-          width: StillwaterTokens.borderWidthHairline,
+          color: context.ff.color.borderSubtle.withValues(
+            alpha: FfTint.strong.alpha,
+          ),
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: Row(
@@ -948,40 +950,37 @@ class _AddEditTransactionScreenState
                     };
                     _changePurpose(purpose, categories, accounts, history);
                   },
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusMd,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.md),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
+                    duration: FfMotion.fast,
                     curve: Curves.easeOutCubic,
                     decoration: BoxDecoration(
                       color:
                           isSelected
                               ? (isDark
-                                  ? theme.colorScheme.primaryContainer
-                                      .withValues(alpha: 0.45)
-                                  : theme.colorScheme.primaryContainer
-                                      .withValues(alpha: 0.6))
+                                  ? context.ff.color.actionPrimaryContainer
+                                      .withValues(alpha: FfTint.strong.alpha)
+                                  : context.ff.color.actionPrimaryContainer
+                                      .withValues(alpha: FfOpacity.muted))
                               : Colors.transparent,
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusMd,
-                      ),
+                      borderRadius: BorderRadius.circular(FfRadius.md),
                       border: Border.all(
                         color:
                             isSelected
-                                ? theme.colorScheme.primary.withValues(
+                                ? context.ff.color.actionPrimary.withValues(
                                   alpha: 0.8,
                                 )
                                 : Colors.transparent,
-                        width:
-                            isSelected ? StillwaterTokens.borderWidthFocus : 0,
+                        width: isSelected ? FfBorderWidth.focus : 0,
                       ),
                     ),
                     child: Center(
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: FfSpace.x2s,
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
@@ -991,22 +990,21 @@ class _AddEditTransactionScreenState
                                 size: 15,
                                 color:
                                     isSelected
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.onSurfaceVariant,
+                                        ? context.ff.color.actionPrimary
+                                        : context.ff.color.textSecondary,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: FfSpace.x2s),
                               Text(
                                 tab.label,
-                                style: theme.textTheme.labelMedium?.copyWith(
+                                style: context.ff.text.label.copyWith(
                                   fontWeight:
                                       isSelected
                                           ? FontWeight.w700
                                           : FontWeight.w500,
                                   color:
                                       isSelected
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme.onSurfaceVariant,
-                                  fontSize: 12,
+                                          ? context.ff.color.actionPrimary
+                                          : context.ff.color.textSecondary,
                                 ),
                               ),
                             ],
@@ -1075,24 +1073,22 @@ class _AddEditTransactionScreenState
               child: Container(
                 height: 58,
                 padding: const EdgeInsets.fromLTRB(
-                  StillwaterTokens.spaceSm,
-                  6,
-                  StillwaterTokens.spaceXs,
-                  6,
+                  FfSpace.sm,
+                  FfSpace.x2s,
+                  FfSpace.xs,
+                  FfSpace.x2s,
                 ),
                 decoration: BoxDecoration(
                   color:
                       isDark
                           ? StillwaterColors.darkSurfaceContainerLow
                           : StillwaterColors.lightSurfaceContainerLow,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusLg,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.lg),
                   border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(
+                    color: context.ff.color.borderSubtle.withValues(
                       alpha: 0.35,
                     ),
-                    width: StillwaterTokens.borderWidthHairline,
+                    width: FfBorderWidth.hairline,
                   ),
                 ),
                 child: Column(
@@ -1101,9 +1097,8 @@ class _AddEditTransactionScreenState
                   children: [
                     Text(
                       'Purpose',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 10,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1119,12 +1114,11 @@ class _AddEditTransactionScreenState
                           icon: Icon(
                             Icons.keyboard_arrow_down_rounded,
                             size: 18,
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: context.ff.color.textSecondary,
                           ),
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: context.ff.text.bodySm.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurface,
-                            fontSize: 13,
+                            color: context.ff.color.textPrimary,
                           ),
                           items:
                               purposes.map((purpose) {
@@ -1154,7 +1148,7 @@ class _AddEditTransactionScreenState
                 ),
               ),
             ),
-            const SizedBox(width: StillwaterTokens.spaceSm),
+            const SizedBox(width: FfSpace.sm),
 
             // 2. Hero Amount Field (Right Column, ~58% width)
             Expanded(
@@ -1162,30 +1156,28 @@ class _AddEditTransactionScreenState
               child: Container(
                 height: 58,
                 padding: const EdgeInsets.fromLTRB(
-                  StillwaterTokens.spaceSm,
-                  6,
-                  StillwaterTokens.spaceSm,
-                  6,
+                  FfSpace.sm,
+                  FfSpace.x2s,
+                  FfSpace.sm,
+                  FfSpace.x2s,
                 ),
                 decoration: BoxDecoration(
                   color:
                       isDark
                           ? StillwaterColors.darkSurfaceContainerLow
                           : StillwaterColors.lightSurfaceContainerLow,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusLg,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.lg),
                   border: Border.all(
                     color:
                         _amountError != null
-                            ? theme.colorScheme.error
-                            : theme.colorScheme.outlineVariant.withValues(
+                            ? context.ff.color.statusError
+                            : context.ff.color.borderSubtle.withValues(
                               alpha: 0.35,
                             ),
                     width:
                         _amountError != null
-                            ? StillwaterTokens.borderWidthFocus
-                            : StillwaterTokens.borderWidthHairline,
+                            ? FfBorderWidth.focus
+                            : FfBorderWidth.hairline,
                   ),
                 ),
                 child: Column(
@@ -1197,9 +1189,8 @@ class _AddEditTransactionScreenState
                       children: [
                         Text(
                           'Amount',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontSize: 10,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1210,7 +1201,7 @@ class _AddEditTransactionScreenState
                             child: Icon(
                               Icons.close_rounded,
                               size: 14,
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: context.ff.color.textSecondary,
                             ),
                           ),
                       ],
@@ -1250,20 +1241,20 @@ class _AddEditTransactionScreenState
           ],
         ),
         if (_amountError != null) ...[
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             _amountError!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.statusError,
               fontWeight: FontWeight.w500,
             ),
           ),
         ],
         if (_selectedPurpose == TransactionPurpose.internalTransfer) ...[
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Text(
             'Move money between accounts you own. This is not income or spending.',
-            style: context.theme.textTheme.bodySmall,
+            style: context.ff.text.bodySm,
           ),
         ],
       ],
@@ -1347,21 +1338,23 @@ class _AddEditTransactionScreenState
         // Context-aware dynamic Payee suggestions surface
         if (isFocused &&
             (visibleSuggestions.isNotEmpty || typedText.isNotEmpty)) ...[
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Container(
             decoration: BoxDecoration(
               color:
                   isDark
                       ? StillwaterColors.darkSurfaceContainerLow
                       : StillwaterColors.lightSurfaceContainerLow,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-                width: StillwaterTokens.borderWidthDefault,
+                color: context.ff.color.borderSubtle.withValues(
+                  alpha: FfOpacity.muted,
+                ),
+                width: FfBorderWidth.regular,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(
+                  color: context.ff.color.shadow.withValues(
                     alpha: isDark ? 0.35 : 0.08,
                   ),
                   blurRadius: 12,
@@ -1370,8 +1363,8 @@ class _AddEditTransactionScreenState
               ],
             ),
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceSm,
-              vertical: StillwaterTokens.spaceXs,
+              horizontal: FfSpace.sm,
+              vertical: FfSpace.xs,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1387,8 +1380,8 @@ class _AddEditTransactionScreenState
                           : (typedText.isEmpty
                               ? 'Recent payees'
                               : 'Matching payees'),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.actionPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1406,7 +1399,7 @@ class _AddEditTransactionScreenState
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.space2Xs),
+                const SizedBox(height: FfSpace.x2s),
                 NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification notification) {
                     return true;
@@ -1456,13 +1449,11 @@ class _AddEditTransactionScreenState
                               });
                               _merchantFocusNode.unfocus();
                             },
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusMd,
-                            ),
+                            borderRadius: BorderRadius.circular(FfRadius.md),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceXs,
-                                vertical: StillwaterTokens.spaceSm,
+                                horizontal: FfSpace.xs,
+                                vertical: FfSpace.sm,
                               ),
                               child: Row(
                                 children: [
@@ -1473,14 +1464,12 @@ class _AddEditTransactionScreenState
                                     size: 18,
                                     color:
                                         suggestion.isCategoryMatch
-                                            ? theme.colorScheme.primary
+                                            ? context.ff.color.actionPrimary
                                             : theme
                                                 .colorScheme
                                                 .onSurfaceVariant,
                                   ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceSm,
-                                  ),
+                                  const SizedBox(width: FfSpace.sm),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -1489,16 +1478,15 @@ class _AddEditTransactionScreenState
                                       children: [
                                         Text(
                                           suggestion.displayName,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                          style: context.ff.text.body.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                         if (suggestion.reasonLabel != null)
                                           Text(
                                             suggestion.reasonLabel!,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
+                                            style: context.ff.text.bodySm
+                                                .copyWith(
                                                   color:
                                                       theme
                                                           .colorScheme
@@ -1515,8 +1503,8 @@ class _AddEditTransactionScreenState
                                           suggestion.primaryCategoryId)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: StillwaterTokens.spaceXs,
-                                        vertical: 2,
+                                        horizontal: FfSpace.xs,
+                                        vertical: FfSpace.x3s,
                                       ),
                                       decoration: BoxDecoration(
                                         color:
@@ -1524,19 +1512,18 @@ class _AddEditTransactionScreenState
                                                 .colorScheme
                                                 .surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(
-                                          StillwaterTokens.radiusSm,
+                                          FfRadius.sm,
                                         ),
                                       ),
                                       child: Text(
                                         suggestion.primaryCategoryName!,
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color:
-                                                  theme
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
-                                              fontSize: 11,
-                                            ),
+                                        style: context.ff.text.labelSm.copyWith(
+                                          color:
+                                              theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                          fontSize: 11,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -1558,38 +1545,33 @@ class _AddEditTransactionScreenState
                               });
                               _merchantFocusNode.unfocus();
                             },
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusMd,
-                            ),
+                            borderRadius: BorderRadius.circular(FfRadius.md),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceXs,
-                                vertical: StillwaterTokens.spaceSm,
+                                horizontal: FfSpace.xs,
+                                vertical: FfSpace.sm,
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.edit_note_rounded,
                                     size: 18,
-                                    color: theme.colorScheme.primary,
+                                    color: context.ff.color.actionPrimary,
                                   ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceSm,
-                                  ),
+                                  const SizedBox(width: FfSpace.sm),
                                   Expanded(
                                     child: Text(
                                       'Use "$typedText"',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: theme.colorScheme.primary,
-                                          ),
+                                      style: context.ff.text.body.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: context.ff.color.actionPrimary,
+                                      ),
                                     ),
                                   ),
                                   Text(
                                     'Enter',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.primary,
+                                    style: context.ff.text.labelSm.copyWith(
+                                      color: context.ff.color.actionPrimary,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -1609,7 +1591,7 @@ class _AddEditTransactionScreenState
 
         // Offline Categorization Suggestion Banner / Pill
         if (_suggestedCategory != null && _needsCategory) ...[
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           InkWell(
             onTap: () {
               final categories = ref.read(categoriesStreamProvider).value ?? [];
@@ -1624,20 +1606,22 @@ class _AddEditTransactionScreenState
                 });
               }
             },
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            borderRadius: BorderRadius.circular(FfRadius.md),
             child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceSm,
-                vertical: StillwaterTokens.spaceXs,
+                horizontal: FfSpace.sm,
+                vertical: FfSpace.xs,
               ),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(
+                color: context.ff.color.actionPrimaryContainer.withValues(
                   alpha: 0.45,
                 ),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                  width: StillwaterTokens.borderWidthDefault,
+                  color: context.ff.color.actionPrimary.withValues(
+                    alpha: FfTint.strong.alpha,
+                  ),
+                  width: FfBorderWidth.regular,
                 ),
               ),
               child: Row(
@@ -1645,25 +1629,25 @@ class _AddEditTransactionScreenState
                   Icon(
                     Icons.auto_awesome_rounded,
                     size: 16,
-                    color: theme.colorScheme.primary,
+                    color: context.ff.color.actionPrimary,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const SizedBox(width: FfSpace.xs),
                   Expanded(
                     child: Text(
                       'Suggested: ${_suggestedCategory!.categoryName} • ${_suggestedCategory!.reason}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.onActionPrimaryContainer,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  const SizedBox(width: FfSpace.x2s),
                   Text(
                     'Apply',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.actionPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1691,16 +1675,14 @@ class _AddEditTransactionScreenState
           // ── Subscription selector ──────────────────────────────────────────
           if (activeSubs.isEmpty)
             Container(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                color: context.ff.color.surfaceContainerHighest.withValues(
                   alpha: 0.5,
                 ),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: 0.5,
-                  ),
+                  color: context.ff.color.borderSubtle.withValues(alpha: 0.5),
                 ),
               ),
               child: Row(
@@ -1708,14 +1690,14 @@ class _AddEditTransactionScreenState
                   Icon(
                     Icons.subscriptions_outlined,
                     size: 20,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: context.ff.color.textSecondary,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: Text(
                       'No active subscriptions yet. Add subscriptions in the Subscriptions screen.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.textSecondary,
                       ),
                     ),
                   ),
@@ -1762,25 +1744,27 @@ class _AddEditTransactionScreenState
             ),
           // ── Info chip when subscription is linked ──────────────────────────
           if (_selectedSubscription != null) ...[
-            const SizedBox(height: StillwaterTokens.spaceXs),
+            const SizedBox(height: FfSpace.xs),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceSm,
-                vertical: StillwaterTokens.space2Xs + 2,
+                horizontal: FfSpace.sm,
+                vertical: FfSpace.x2s + 2,
               ),
               decoration: BoxDecoration(
                 color:
                     isDark
-                        ? theme.colorScheme.primaryContainer.withValues(
+                        ? context.ff.color.actionPrimaryContainer.withValues(
                           alpha: 0.3,
                         )
-                        : theme.colorScheme.primaryContainer.withValues(
+                        : context.ff.color.actionPrimaryContainer.withValues(
                           alpha: 0.45,
                         ),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                  width: StillwaterTokens.borderWidthDefault,
+                  color: context.ff.color.actionPrimary.withValues(
+                    alpha: FfTint.medium.alpha,
+                  ),
+                  width: FfBorderWidth.regular,
                 ),
               ),
               child: Row(
@@ -1788,14 +1772,14 @@ class _AddEditTransactionScreenState
                   Icon(
                     Icons.link_rounded,
                     size: 14,
-                    color: theme.colorScheme.primary,
+                    color: context.ff.color.actionPrimary,
                   ),
-                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  const SizedBox(width: FfSpace.x2s),
                   Expanded(
                     child: Text(
                       'This payment will appear in ${_selectedSubscription!.merchant}\'s payment history.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.onActionPrimaryContainer,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1845,25 +1829,25 @@ class _AddEditTransactionScreenState
                   loans.where((loan) => loan.id == id).firstOrNull,
                 ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Text(
             _selectedLoan == null
                 ? 'This payment will affect the account, but will not update a loan schedule.'
                 : 'Expected EMI ${CurrencyFormatter.formatAmount(_selectedLoan!.emiAmount)} · Principal left ${CurrencyFormatter.formatAmount(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
-            style: context.theme.textTheme.bodySmall,
+            style: context.ff.text.bodySm,
           ),
           if (_selectedLoan != null) ...[
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
             Row(
               children: [
                 Expanded(
                   child: _componentField(_principalController, 'Principal'),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 Expanded(
                   child: _componentField(_interestController, 'Interest'),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 Expanded(child: _componentField(_feeController, 'Fees')),
               ],
             ),
@@ -1921,7 +1905,7 @@ class _AddEditTransactionScreenState
                   }
                 }),
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           Row(
             children: [
               Expanded(
@@ -1932,13 +1916,13 @@ class _AddEditTransactionScreenState
                       : 'Asset value',
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceXs),
+              const SizedBox(width: FfSpace.xs),
               if (_selectedPurpose ==
                   TransactionPurpose.investmentRedemption) ...[
                 Expanded(
                   child: _componentField(_interestController, 'Realized gain'),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
               ],
               Expanded(child: _componentField(_feeController, 'Fees')),
             ],
@@ -2004,7 +1988,6 @@ class _AddEditTransactionScreenState
 
     if (_selectedPurpose == TransactionPurpose.lending ||
         _selectedPurpose == TransactionPurpose.borrowing) {
-      final theme = Theme.of(context);
       final records =
           ref.watch(allMoneyRecordsStreamProvider).valueOrNull ??
           const <MoneyRecord>[];
@@ -2097,7 +2080,7 @@ class _AddEditTransactionScreenState
                     matchingRecord != null
                         ? Icon(
                           Icons.check_circle_rounded,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                           size: 20,
                         )
                         : null,
@@ -2121,16 +2104,18 @@ class _AddEditTransactionScreenState
             },
           ),
           if (matchingRecord != null) ...[
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
             Container(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+              padding: const EdgeInsets.all(FfSpace.sm),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                color: context.ff.color.surfaceContainerHighest.withValues(
                   alpha: 0.5,
                 ),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                  color: context.ff.color.actionPrimary.withValues(
+                    alpha: FfTint.medium.alpha,
+                  ),
                 ),
               ),
               child: Column(
@@ -2141,32 +2126,32 @@ class _AddEditTransactionScreenState
                       Icon(
                         Icons.account_balance_wallet_outlined,
                         size: 18,
-                        color: theme.colorScheme.primary,
+                        color: context.ff.color.actionPrimary,
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      const SizedBox(width: FfSpace.xs),
                       Expanded(
                         child: Text(
                           _createAsSeparateDebt
                               ? 'Separate debt for ${matchingRecord.personName}'
                               : 'Adding to ${matchingRecord.personName}\'s active balance',
-                          style: context.theme.textTheme.bodyMedium?.copyWith(
+                          style: context.ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.primary,
+                            color: context.ff.color.actionPrimary,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: FfSpace.x2s),
                   Text(
                     _createAsSeparateDebt
                         ? 'This advance will be tracked as its own separate obligation card.'
                         : 'Current balance: ${CurrencyFormatter.formatAmount(existingRemaining)} → New balance: ${CurrencyFormatter.formatAmount(newTotal)}',
-                    style: context.theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: context.ff.text.bodySm.copyWith(
+                      color: context.ff.color.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   Row(
                     children: [
                       SizedBox(
@@ -2181,7 +2166,7 @@ class _AddEditTransactionScreenState
                           },
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      const SizedBox(width: FfSpace.xs),
                       GestureDetector(
                         onTap: () {
                           setState(() {
@@ -2190,7 +2175,7 @@ class _AddEditTransactionScreenState
                         },
                         child: Text(
                           'Create as separate debt record',
-                          style: context.theme.textTheme.bodySmall?.copyWith(
+                          style: context.ff.text.bodySm.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -2201,7 +2186,7 @@ class _AddEditTransactionScreenState
               ),
             ),
           ],
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           InkWell(
             onTap: () async {
               final picked = await pickFfDate(
@@ -2215,7 +2200,7 @@ class _AddEditTransactionScreenState
                 setState(() => _debtDueDate = picked);
               }
             },
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            borderRadius: BorderRadius.circular(FfRadius.md),
             child: InputDecorator(
               decoration: const InputDecoration(
                 labelText: 'Expected repayment date',
@@ -2225,7 +2210,7 @@ class _AddEditTransactionScreenState
                 DateFormat.yMMMd().format(
                   _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
                 ),
-                style: context.theme.textTheme.bodyMedium,
+                style: context.ff.text.body,
               ),
             ),
           ),
@@ -2277,8 +2262,8 @@ class _AddEditTransactionScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Category', style: theme.textTheme.labelLarge),
-        const SizedBox(height: StillwaterTokens.space2Xs),
+        Text('Category', style: context.ff.text.labelLg),
+        const SizedBox(height: FfSpace.x2s),
 
         // 4-Column Balanced Grid/Row: 3 Top Categories + 1 "All Categories" Tile
         Row(
@@ -2287,9 +2272,7 @@ class _AddEditTransactionScreenState
               final isSelected = cat.id == _selectedCategory?.id;
               return Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(
-                    right: StillwaterTokens.space2Xs,
-                  ),
+                  padding: const EdgeInsets.only(right: FfSpace.x2s),
                   child: InkWell(
                     onTap: () {
                       setState(() {
@@ -2297,41 +2280,37 @@ class _AddEditTransactionScreenState
                         _categoryError = null;
                       });
                     },
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: Container(
                       height: 68,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 2,
-                        vertical: StillwaterTokens.space2Xs,
+                        horizontal: FfSpace.x3s,
+                        vertical: FfSpace.x2s,
                       ),
                       decoration: BoxDecoration(
                         color:
                             isSelected
                                 ? (isDark
-                                    ? theme.colorScheme.primaryContainer
-                                        .withValues(alpha: 0.35)
-                                    : theme.colorScheme.primaryContainer
-                                        .withValues(alpha: 0.45))
+                                    ? context.ff.color.actionPrimaryContainer
+                                        .withValues(alpha: FfTint.strong.alpha)
+                                    : context.ff.color.actionPrimaryContainer
+                                        .withValues(alpha: FfTint.strong.alpha))
                                 : (isDark
                                     ? StillwaterColors.darkSurfaceContainerLow
                                     : StillwaterColors
                                         .lightSurfaceContainerLow),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
+                        borderRadius: BorderRadius.circular(FfRadius.md),
                         border: Border.all(
                           color:
                               isSelected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outlineVariant.withValues(
+                                  ? context.ff.color.actionPrimary
+                                  : context.ff.color.borderSubtle.withValues(
                                     alpha: 0.5,
                                   ),
                           width:
                               isSelected
-                                  ? StillwaterTokens.borderWidthFocus
-                                  : StillwaterTokens.borderWidthDefault,
+                                  ? FfBorderWidth.focus
+                                  : FfBorderWidth.regular,
                         ),
                       ),
                       child: Column(
@@ -2342,19 +2321,18 @@ class _AddEditTransactionScreenState
                             colorTokenIdentifier: cat.colorTokenIdentifier,
                             size: 26,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: FfSpace.x2s),
                           Text(
                             cat.name,
-                            style: theme.textTheme.labelSmall?.copyWith(
+                            style: context.ff.text.labelSm.copyWith(
                               fontWeight:
                                   isSelected
                                       ? FontWeight.w700
                                       : FontWeight.w500,
                               color:
                                   isSelected
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurface,
-                              fontSize: 11,
+                                      ? context.ff.color.actionPrimary
+                                      : context.ff.color.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2372,26 +2350,24 @@ class _AddEditTransactionScreenState
             Expanded(
               child: InkWell(
                 onTap: () => _showCategoryPicker(categoriesForType),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 child: Container(
                   height: 68,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 2,
-                    vertical: StillwaterTokens.space2Xs,
+                    horizontal: FfSpace.x3s,
+                    vertical: FfSpace.x2s,
                   ),
                   decoration: BoxDecoration(
                     color:
                         isDark
                             ? StillwaterColors.darkSurfaceContainerLow
                             : StillwaterColors.lightSurfaceContainerLow,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     border: Border.all(
-                      color: theme.colorScheme.outlineVariant.withValues(
+                      color: context.ff.color.borderSubtle.withValues(
                         alpha: 0.5,
                       ),
-                      width: StillwaterTokens.borderWidthDefault,
+                      width: FfBorderWidth.regular,
                     ),
                   ),
                   child: Column(
@@ -2401,22 +2377,21 @@ class _AddEditTransactionScreenState
                         width: 26,
                         height: 26,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
+                          color: context.ff.color.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.grid_view_rounded,
                           size: 16,
-                          color: theme.colorScheme.primary,
+                          color: context.ff.color.actionPrimary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: FfSpace.x2s),
                       Text(
                         'All Categories',
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        style: context.ff.text.labelSm.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.primary,
-                          fontSize: 11,
+                          color: context.ff.color.actionPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -2431,11 +2406,11 @@ class _AddEditTransactionScreenState
         ),
 
         if (_categoryError != null) ...[
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             _categoryError!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.statusError,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -2445,8 +2420,6 @@ class _AddEditTransactionScreenState
   }
 
   Widget _buildAccountSection(List<Account> accounts) {
-    final theme = context.theme;
-
     if (_selectedType == TransactionType.transfer) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2454,7 +2427,7 @@ class _AddEditTransactionScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Accounts', style: theme.textTheme.labelLarge),
+              Text('Accounts', style: context.ff.text.labelLg),
               IconButton(
                 tooltip: 'Swap accounts',
                 icon: const Icon(Icons.swap_vert_rounded, size: 20),
@@ -2462,9 +2435,9 @@ class _AddEditTransactionScreenState
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.space2Xs),
-          Text('From Account', style: theme.textTheme.labelSmall),
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.x2s),
+          Text('From Account', style: context.ff.text.labelSm),
+          const SizedBox(height: FfSpace.x2s),
           AccountTileButton(
             label: 'From Account',
             account: _selectedAccount,
@@ -2476,9 +2449,9 @@ class _AddEditTransactionScreenState
                   isDestination: false,
                 ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
-          Text('To Account', style: theme.textTheme.labelSmall),
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.sm),
+          Text('To Account', style: context.ff.text.labelSm),
+          const SizedBox(height: FfSpace.x2s),
           AccountTileButton(
             label: 'To Account',
             account: _selectedToAccount,
@@ -2495,8 +2468,8 @@ class _AddEditTransactionScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Account', style: theme.textTheme.labelLarge),
-        const SizedBox(height: StillwaterTokens.space2Xs),
+        Text('Account', style: context.ff.text.labelLg),
+        const SizedBox(height: FfSpace.x2s),
         AccountTileButton(
           label: 'Account',
           account: _selectedAccount,
@@ -2511,7 +2484,6 @@ class _AddEditTransactionScreenState
   }
 
   Widget _buildDateSection() {
-    final theme = context.theme;
     final now = DateTime.now();
     final isToday = _sameDay(_selectedDate, now);
     final isYesterday = _sameDay(
@@ -2524,16 +2496,16 @@ class _AddEditTransactionScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Date', style: theme.textTheme.labelLarge),
-        const SizedBox(height: StillwaterTokens.space2Xs),
+        Text('Date', style: context.ff.text.labelLg),
+        const SizedBox(height: FfSpace.x2s),
         LayoutBuilder(
           builder: (context, constraints) {
             final isVeryNarrow = constraints.maxWidth < 280;
 
             if (isVeryNarrow) {
               return Wrap(
-                spacing: StillwaterTokens.spaceXs,
-                runSpacing: StillwaterTokens.spaceXs,
+                spacing: FfSpace.xs,
+                runSpacing: FfSpace.xs,
                 children: [
                   ChoiceChip(
                     label: const Text('Today'),
@@ -2570,7 +2542,7 @@ class _AddEditTransactionScreenState
                     onSelected: (_) => _setDate(now),
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 Expanded(
                   flex: 4,
                   child: ChoiceChip(
@@ -2581,7 +2553,7 @@ class _AddEditTransactionScreenState
                         (_) => _setDate(now.subtract(const Duration(days: 1))),
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 Expanded(
                   flex: 5,
                   child: ChoiceChip(
@@ -2612,11 +2584,11 @@ class _AddEditTransactionScreenState
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        color: context.ff.color.surfaceCard,
+        borderRadius: BorderRadius.circular(FfRadius.lg),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-          width: StillwaterTokens.borderWidthHairline,
+          color: context.ff.color.borderSubtle,
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: Theme(
@@ -2627,29 +2599,27 @@ class _AddEditTransactionScreenState
           leading: Icon(
             Icons.tune_rounded,
             size: 20,
-            color: theme.colorScheme.primary,
+            color: context.ff.color.actionPrimary,
           ),
           title: Text(
             'More details',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: context.ff.text.title.copyWith(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
             hasActiveDetails
                 ? 'Payment method, notes & tags (Active)'
                 : 'Payment method, note, tags',
-            style: theme.textTheme.bodySmall,
+            style: context.ff.text.bodySm,
           ),
           childrenPadding: const EdgeInsets.fromLTRB(
-            StillwaterTokens.spaceMd,
+            FfSpace.md,
             0,
-            StillwaterTokens.spaceMd,
-            StillwaterTokens.spaceMd,
+            FfSpace.md,
+            FfSpace.md,
           ),
           children: [
             const FfDivider(),
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
 
             // Payment Method Selector
             FfSelect<String>(
@@ -2671,7 +2641,7 @@ class _AddEditTransactionScreenState
                 }
               },
             ),
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
 
             // Notes Input
             FfTextField(
@@ -2681,7 +2651,7 @@ class _AddEditTransactionScreenState
               hint: 'Invoice number, reimbursement notes, or context',
               icon: Icons.notes_rounded,
             ),
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
 
             // Tags Input
             FfTextField(
@@ -2690,7 +2660,7 @@ class _AddEditTransactionScreenState
               hint: 'e.g. trip, office, reimbursement (comma-separated)',
               icon: Icons.tag_rounded,
             ),
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
 
             // Future capabilities disclosure
             Row(
@@ -2698,15 +2668,14 @@ class _AddEditTransactionScreenState
                 Icon(
                   Icons.info_outline_rounded,
                   size: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: context.ff.color.textSecondary,
                 ),
-                const SizedBox(width: StillwaterTokens.space2Xs),
+                const SizedBox(width: FfSpace.x2s),
                 Expanded(
                   child: Text(
                     'Recurring schedules and split transactions will be saved when fully configured.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 11,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.textSecondary,
                     ),
                   ),
                 ),
@@ -2724,10 +2693,10 @@ class _AddEditTransactionScreenState
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        StillwaterTokens.spaceLg,
-        StillwaterTokens.spaceSm,
-        StillwaterTokens.spaceLg,
-        StillwaterTokens.spaceMd,
+        FfSpace.lg,
+        FfSpace.sm,
+        FfSpace.lg,
+        FfSpace.md,
       ),
       decoration: BoxDecoration(
         color:
@@ -2736,8 +2705,10 @@ class _AddEditTransactionScreenState
                 : StillwaterColors.lightSurfaceDefault,
         border: Border(
           top: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-            width: StillwaterTokens.borderWidthHairline,
+            color: context.ff.color.borderSubtle.withValues(
+              alpha: FfTint.strong.alpha,
+            ),
+            width: FfBorderWidth.hairline,
           ),
         ),
       ),

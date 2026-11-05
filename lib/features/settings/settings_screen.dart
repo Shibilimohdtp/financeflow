@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/formatting/app_currency.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../models/app_settings.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/financeflow_mark.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../services/ingestion/ingestion_coordinator.dart';
 import '../../services/ingestion/ingestion_platform.dart';
 import '../accounts/accounts_screen.dart';
@@ -77,7 +75,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final pendingCount = ref.watch(pendingReviewCountProvider);
 
     return Scaffold(
@@ -89,7 +86,7 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('More'),
             actions: const [
               Padding(
-                padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+                padding: EdgeInsets.only(right: FfSpace.md),
                 child: Center(
                   child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
                 ),
@@ -99,14 +96,14 @@ class SettingsScreen extends ConsumerWidget {
 
           SliverPadding(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceMd,
+              horizontal: FfSpace.lg,
+              vertical: FfSpace.md,
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Finance Modules ────────────────────────────────────────
                 const _SectionLabel(label: 'Finance Modules'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 FfGroupedContainer(
                   dividerInset: FfRowLeading.icon,
                   children: [
@@ -157,11 +154,11 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
 
-                const SizedBox(height: StillwaterTokens.space2Xl),
+                const SizedBox(height: FfSpace.x2l),
 
                 // ── Tools & Insights ───────────────────────────────────────
                 const _SectionLabel(label: 'Tools & Insights'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 FfGroupedContainer(
                   dividerInset: FfRowLeading.icon,
                   children: [
@@ -193,11 +190,11 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
 
-                const SizedBox(height: StillwaterTokens.space2Xl),
+                const SizedBox(height: FfSpace.x2l),
 
                 // ── Data & Backup ──────────────────────────────────────────
                 const _SectionLabel(label: 'Data & Backup'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 FfGroupedContainer(
                   dividerInset: FfRowLeading.icon,
                   children: [
@@ -216,11 +213,11 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
 
-                const SizedBox(height: StillwaterTokens.space2Xl),
+                const SizedBox(height: FfSpace.x2l),
 
                 // ── App settings ───────────────────────────────────────────
                 const _SectionLabel(label: 'App'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 FfGroupedContainer(
                   dividerInset: FfRowLeading.icon,
                   children: [
@@ -239,7 +236,7 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
 
-                const SizedBox(height: StillwaterTokens.space2Xl),
+                const SizedBox(height: FfSpace.x2l),
 
                 // ── About footer ───────────────────────────────────────────
                 Center(
@@ -250,22 +247,21 @@ class SettingsScreen extends ConsumerWidget {
                         fontSize: 20,
                         axis: Axis.vertical,
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      const SizedBox(height: FfSpace.xs),
                       Text(
                         AppConstants.appTagline,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.space2Xs),
+                      const SizedBox(height: FfSpace.x2s),
                       Text(
                         AppConstants.appVersion,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                          fontSize: 10,
+                        style: context.ff.text.labelSm.copyWith(
+                          color: context.ff.color.borderStrong,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.space4Xl),
+                      const SizedBox(height: FfSpace.x4l),
                     ],
                   ),
                 ),
@@ -299,7 +295,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final settings =
         ref.watch(settingsStreamProvider).value ?? const AppSettings();
     final ingestionStatus = ref.watch(ingestionPlatformStatusProvider).value;
@@ -309,13 +304,13 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
       appBar: FfAppBar(title: 'Settings', leading: const BackButton()),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Appearance ────────────────────────────────────────────────
           const _SectionLabel(label: 'Appearance'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -350,11 +345,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 2. Alerts & Notifications ────────────────────────────────────
           const _SectionLabel(label: 'Alerts & Notifications'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -490,11 +485,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 3. Privacy & Security ────────────────────────────────────────
           const _SectionLabel(label: 'Privacy & Security'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -507,11 +502,11 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 4. Transaction Ingestion ─────────────────────────────────────
           const _SectionLabel(label: 'Transaction Ingestion'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -578,20 +573,20 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
               Padding(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                padding: const EdgeInsets.all(FfSpace.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Ingestion diagnostics',
-                      style: theme.textTheme.titleSmall,
+                      style: context.ff.text.titleSm,
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Text(
                       'SMS permission: ${_smsStatusLabel(ingestionStatus)}\n'
                       'Notification access: ${ingestionStatus?.notificationAccess == true ? 'Allowed' : 'Not allowed'}\n'
@@ -602,19 +597,19 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       'Parsed: ${settings.ingestionParsedCount} · Rejected: ${settings.ingestionRejectedCount}\n'
                       'Duplicates: ${settings.ingestionDuplicateCount} · Awaiting review: $awaitingReview\n'
                       'Last error: ${settings.ingestionLastError ?? 'None'}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.secondary,
                         height: 1.55,
                       ),
                     ),
                     if (settings.isSmsDetectionEnabled &&
                         ingestionStatus?.smsPermission !=
                             IngestionPermissionState.granted) ...[
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       Text(
                         'Action: open Bank SMS Detection and grant Android access.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.statusError,
                         ),
                       ),
                     ],
@@ -624,7 +619,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 6. Developer Tools (collapsed) ───────────────────────────────
           _MoreOptionsToggle(
@@ -634,27 +629,24 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           ),
 
           if (_showDevTools) ...[
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
             FfGroupedContainer(
               dividerInset: FfRowLeading.icon,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Seed Demo Dataset',
-                        style: theme.textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: StillwaterTokens.space2Xs),
+                      Text('Seed Demo Dataset', style: context.ff.text.titleSm),
+                      const SizedBox(height: FfSpace.x2s),
                       Text(
                         'Load sample Indian transactions (Swiggy, Netflix, Salary, HDFC EMI) for UI review.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      const SizedBox(height: FfSpace.md),
                       FfButton(
                         label: 'Load Realistic Demo Data',
                         variant: FfButtonVariant.outlined,
@@ -671,10 +663,10 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                           }
                         },
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       Wrap(
-                        spacing: StillwaterTokens.spaceSm,
-                        runSpacing: StillwaterTokens.spaceSm,
+                        spacing: FfSpace.sm,
+                        runSpacing: FfSpace.sm,
                         children: [
                           FfButton(
                             label: 'Inject Sample SMS',
@@ -714,7 +706,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       FfButton(
                         label: 'Stillwater Brand Showcase',
                         variant: FfButtonVariant.text,
@@ -734,24 +726,28 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ),
           ],
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 7. Data Reset ────────────────────────────────────────────────
           const _SectionLabel(label: 'Data Reset'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
 
           // Danger zone — deliberately styled differently (no icon tint, no chip)
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.statusErrorContainer.withValues(
+                alpha: FfTint.faint.alpha,
+              ),
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.colorScheme.error.withValues(alpha: 0.20),
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.statusError.withValues(
+                  alpha: FfTint.medium.alpha,
+                ),
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -760,26 +756,26 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       Icon(
                         Icons.warning_amber_rounded,
                         size: 18,
-                        color: theme.colorScheme.error,
+                        color: context.ff.color.statusError,
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      const SizedBox(width: FfSpace.xs),
                       Text(
                         'Wipe All App Data',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.error,
+                        style: context.ff.text.titleSm.copyWith(
+                          color: context.ff.color.statusError,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   Text(
                     'Permanently deletes all stored transactions, accounts, loans, and security keys from this device. Cannot be undone.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.bodySm.copyWith(
+                      color: context.ff.color.secondary,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                   Semantics(
                     label: 'Delete all data on device — destructive action',
                     child: FfButton(
@@ -814,7 +810,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -884,8 +880,8 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             const FfDivider(),
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-                vertical: StillwaterTokens.spaceSm,
+                horizontal: FfSpace.lg,
+                vertical: FfSpace.sm,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -909,7 +905,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       },
                     );
                   }),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
+                  const SizedBox(height: FfSpace.sm),
                 ],
               ),
             ),
@@ -932,13 +928,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );
@@ -954,19 +949,18 @@ class _CountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceXs,
-        vertical: 2,
+        horizontal: FfSpace.xs,
+        vertical: FfSpace.x3s,
       ),
       decoration: BoxDecoration(
-        color: context.accentColors.accent.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        color: context.ff.color.accent.withValues(alpha: FfTint.subtle.alpha),
+        borderRadius: BorderRadius.circular(FfRadius.full),
       ),
       child: Text(
         '$count',
-        style: TextStyle(
-          fontSize: 11,
+        style: context.ff.text.labelSm.copyWith(
           fontWeight: FontWeight.w700,
-          color: context.accentColors.accent,
+          color: context.ff.color.accent,
         ),
       ),
     );
@@ -987,12 +981,11 @@ class _MoreOptionsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return InkWell(
       onTap: onToggle,
-      borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+      borderRadius: BorderRadius.circular(FfRadius.md),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: StillwaterTokens.spaceXs),
+        padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
         child: Row(
           children: [
             Icon(
@@ -1000,13 +993,13 @@ class _MoreOptionsToggle extends StatelessWidget {
                   ? Icons.keyboard_arrow_up_rounded
                   : Icons.keyboard_arrow_down_rounded,
               size: 20,
-              color: theme.colorScheme.secondary,
+              color: context.ff.color.secondary,
             ),
-            const SizedBox(width: StillwaterTokens.spaceXs),
+            const SizedBox(width: FfSpace.xs),
             Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
+              style: context.ff.text.bodySm.copyWith(
+                color: context.ff.color.actionPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),

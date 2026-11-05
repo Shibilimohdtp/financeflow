@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 enum FfButtonVariant { primary, filled, secondary, outlined, text, destructive }
 
@@ -30,27 +29,25 @@ class FfButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(
-        size == FfButtonSize.sm
-            ? StillwaterTokens.radiusSm
-            : StillwaterTokens.radiusMd,
+        size == FfButtonSize.sm ? FfRadius.sm : FfRadius.md,
       ),
     );
 
     final double minHeight = switch (size) {
       FfButtonSize.sm => 36.0,
-      FfButtonSize.md => StillwaterTokens.buttonHeightSecondary,
-      FfButtonSize.lg => StillwaterTokens.buttonHeightPrimary,
+      FfButtonSize.md => FfButtonTokens.heightMd,
+      FfButtonSize.lg => FfButtonTokens.heightLg,
     };
 
     final double fontSize = size == FfButtonSize.sm ? 12.0 : 14.0;
 
     final loadingColor = switch (variant) {
-      FfButtonVariant.primary || FfButtonVariant.filled =>
-        context.colorScheme.onPrimary,
-      FfButtonVariant.secondary => context.colorScheme.onSecondaryContainer,
-      FfButtonVariant.destructive => context.colorScheme.onError,
-      FfButtonVariant.outlined || FfButtonVariant.text =>
-        context.colorScheme.primary,
+      FfButtonVariant.primary ||
+      FfButtonVariant.filled => context.ff.color.onActionPrimary,
+      FfButtonVariant.secondary => context.ff.color.onSecondaryContainer,
+      FfButtonVariant.destructive => context.ff.color.onStatusError,
+      FfButtonVariant.outlined ||
+      FfButtonVariant.text => context.ff.color.actionPrimary,
     };
 
     Widget labelWidget =
@@ -69,7 +66,7 @@ class FfButton extends StatelessWidget {
               children: [
                 if (leadingIcon != null) ...[
                   leadingIcon!,
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const SizedBox(width: FfSpace.xs),
                 ],
                 Flexible(
                   child: Text(
@@ -90,8 +87,8 @@ class FfButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: context.theme.colorScheme.primary,
-            foregroundColor: context.theme.colorScheme.onPrimary,
+            backgroundColor: context.ff.color.actionPrimary,
+            foregroundColor: context.ff.color.onActionPrimary,
             minimumSize: Size(width ?? 0, minHeight),
             shape: shape,
           ),
@@ -103,8 +100,8 @@ class FfButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: context.theme.colorScheme.secondaryContainer,
-            foregroundColor: context.theme.colorScheme.onSecondaryContainer,
+            backgroundColor: context.ff.color.secondaryContainer,
+            foregroundColor: context.ff.color.onSecondaryContainer,
             minimumSize: Size(width ?? 0, minHeight),
             shape: shape,
             elevation: 0,
@@ -117,10 +114,10 @@ class FfButton extends StatelessWidget {
         button = OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: context.theme.colorScheme.primary,
+            foregroundColor: context.ff.color.actionPrimary,
             side: BorderSide(
-              color: context.theme.colorScheme.outline,
-              width: StillwaterTokens.borderWidthDefault,
+              color: context.ff.color.borderStrong,
+              width: FfBorderWidth.regular,
             ),
             minimumSize: Size(width ?? 0, minHeight),
             shape: shape,
@@ -133,7 +130,7 @@ class FfButton extends StatelessWidget {
         button = TextButton(
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
-            foregroundColor: context.theme.colorScheme.primary,
+            foregroundColor: context.ff.color.actionPrimary,
             minimumSize: Size(width ?? 0, minHeight),
             shape: shape,
           ),
@@ -145,8 +142,8 @@ class FfButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: context.theme.colorScheme.error,
-            foregroundColor: context.theme.colorScheme.onError,
+            backgroundColor: context.ff.color.statusError,
+            foregroundColor: context.ff.color.onStatusError,
             minimumSize: Size(width ?? 0, minHeight),
             shape: shape,
           ),

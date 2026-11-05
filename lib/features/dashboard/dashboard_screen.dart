@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../models/loan.dart';
 import '../../models/subscription.dart';
 import '../../models/transaction.dart';
@@ -8,7 +7,6 @@ import '../../repositories/alert_repository.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../alerts/alerts_inbox_screen.dart';
 import '../budgets/budgets_controller.dart';
@@ -33,6 +31,7 @@ import '../../core/period/period_format.dart';
 import '../../core/period/report_period_provider.dart';
 import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../theme/ff.dart';
 
 class DashboardScreen extends ConsumerWidget {
   final VoidCallback onAddTransaction;
@@ -70,7 +69,6 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final settings = ref.watch(settingsStreamProvider).valueOrNull;
     final isPrivacyBlur = settings?.isPrivacyBlurEnabled ?? false;
     final pendingCount = ref.watch(pendingReviewCountProvider);
@@ -139,7 +137,7 @@ class DashboardScreen extends ConsumerWidget {
         label: const Text('Add'),
       ),
       body: RefreshIndicator(
-        color: theme.colorScheme.primary,
+        color: context.ff.color.actionPrimary,
         onRefresh: () async {
           ref.invalidate(dashboardTransactionsProvider);
           ref.invalidate(dashboardPreviousTransactionsProvider);
@@ -158,9 +156,7 @@ class DashboardScreen extends ConsumerWidget {
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(
-            vertical: StillwaterTokens.spaceMd,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: FfSpace.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -178,7 +174,7 @@ class DashboardScreen extends ConsumerWidget {
                 onAddAccount: onAddAccount,
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceMd),
+              const SizedBox(height: FfSpace.md),
 
               // 3. Actionable & Upcoming Items
               ActionableItemsSection(
@@ -212,7 +208,7 @@ class DashboardScreen extends ConsumerWidget {
                   upcomingLoans.isNotEmpty ||
                   upcomingRenewals.isNotEmpty ||
                   overBudgetCount > 0)
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
               // 4. Period (shared with Insights) and its cash flow
               FfPeriodBar(
@@ -224,9 +220,7 @@ class DashboardScreen extends ConsumerWidget {
                 },
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
                 child: cashFlowAsync.when(
                   data:
                       (cashFlow) => CashFlowCard(
@@ -248,29 +242,25 @@ class DashboardScreen extends ConsumerWidget {
                         child: Container(
                           height: 160,
                           decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusXl,
-                            ),
+                            color: context.ff.color.surfaceCard,
+                            borderRadius: BorderRadius.circular(FfRadius.xl),
                             border: Border.all(
-                              color: theme.dividerColor,
-                              width: StillwaterTokens.borderWidthHairline,
+                              color: context.ff.color.borderSubtle,
+                              width: FfBorderWidth.hairline,
                             ),
                           ),
-                          padding: const EdgeInsets.all(
-                            StillwaterTokens.spaceLg,
-                          ),
+                          padding: const EdgeInsets.all(FfSpace.lg),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: const [
                               FfSkeletonBlock(width: 100, height: 12),
-                              SizedBox(height: StillwaterTokens.spaceSm),
+                              SizedBox(height: FfSpace.sm),
                               FfSkeletonBlock(width: 140, height: 28),
-                              SizedBox(height: StillwaterTokens.spaceMd),
+                              SizedBox(height: FfSpace.md),
                               Row(
                                 children: [
                                   Expanded(child: FfSkeletonBlock(height: 40)),
-                                  SizedBox(width: StillwaterTokens.spaceSm),
+                                  SizedBox(width: FfSpace.sm),
                                   Expanded(child: FfSkeletonBlock(height: 40)),
                                 ],
                               ),
@@ -281,17 +271,15 @@ class DashboardScreen extends ConsumerWidget {
                   error:
                       (e, _) => Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                          vertical: StillwaterTokens.spaceSm,
+                          horizontal: FfSpace.md,
+                          vertical: FfSpace.sm,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusLg,
-                          ),
+                          color: context.ff.color.surfaceCard,
+                          borderRadius: BorderRadius.circular(FfRadius.lg),
                           border: Border.all(
-                            color: theme.dividerColor,
-                            width: StillwaterTokens.borderWidthHairline,
+                            color: context.ff.color.borderSubtle,
+                            width: FfBorderWidth.hairline,
                           ),
                         ),
                         child: Row(
@@ -299,13 +287,13 @@ class DashboardScreen extends ConsumerWidget {
                             Icon(
                               Icons.wifi_off_rounded,
                               size: 16,
-                              color: theme.colorScheme.secondary,
+                              color: context.ff.color.secondary,
                             ),
-                            const SizedBox(width: StillwaterTokens.spaceSm),
+                            const SizedBox(width: FfSpace.sm),
                             Expanded(
                               child: Text(
                                 'Could not load cash flow data',
-                                style: theme.textTheme.bodySmall,
+                                style: context.ff.text.bodySm,
                               ),
                             ),
                           ],
@@ -314,7 +302,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // 5. Budgets & Spending Overview
               overallBudgetAsync.when(
@@ -323,9 +311,7 @@ class DashboardScreen extends ConsumerWidget {
                     return const SizedBox.shrink();
                   }
                   return Padding(
-                    padding: const EdgeInsets.only(
-                      top: StillwaterTokens.spaceLg,
-                    ),
+                    padding: const EdgeInsets.only(top: FfSpace.lg),
                     child: BudgetOverviewCard(
                       totalBudgeted: budgetSummary.totalBudgeted,
                       totalSpent: budgetSummary.totalSpent,
@@ -343,7 +329,7 @@ class DashboardScreen extends ConsumerWidget {
 
               // 6. Loans & EMIs Overview
               if (activeLoans.isNotEmpty) ...[
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
                 HomeLoansOverview(
                   activeLoans: activeLoans,
                   totalOutstanding: totalOutstanding,
@@ -368,9 +354,7 @@ class DashboardScreen extends ConsumerWidget {
                     return const SizedBox.shrink();
                   }
                   return Padding(
-                    padding: const EdgeInsets.only(
-                      top: StillwaterTokens.spaceLg,
-                    ),
+                    padding: const EdgeInsets.only(top: FfSpace.lg),
                     child: SavingsGoalsOverviewCard(
                       totalTarget: goalSummary.totalTarget,
                       totalSaved: goalSummary.totalSaved,
@@ -386,7 +370,7 @@ class DashboardScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceXl),
+              const SizedBox(height: FfSpace.xl),
 
               // 8. Recent Transactions List
               recentTxAsync.when(
@@ -401,18 +385,16 @@ class DashboardScreen extends ConsumerWidget {
                 loading:
                     () => Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceLg,
+                        horizontal: FfSpace.lg,
                       ),
                       child: FfSkeletonLoader(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusLg,
-                            ),
+                            color: context.ff.color.surfaceCard,
+                            borderRadius: BorderRadius.circular(FfRadius.lg),
                             border: Border.all(
-                              color: theme.dividerColor,
-                              width: StillwaterTokens.borderWidthHairline,
+                              color: context.ff.color.borderSubtle,
+                              width: FfBorderWidth.hairline,
                             ),
                           ),
                           child: Column(
@@ -430,18 +412,16 @@ class DashboardScreen extends ConsumerWidget {
                 error:
                     (e, _) => Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceLg,
+                        horizontal: FfSpace.lg,
                       ),
                       child: Container(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                        padding: const EdgeInsets.all(FfSpace.md),
                         decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusLg,
-                          ),
+                          color: context.ff.color.surfaceCard,
+                          borderRadius: BorderRadius.circular(FfRadius.lg),
                           border: Border.all(
-                            color: theme.dividerColor,
-                            width: StillwaterTokens.borderWidthHairline,
+                            color: context.ff.color.borderSubtle,
+                            width: FfBorderWidth.hairline,
                           ),
                         ),
                         child: Row(
@@ -449,13 +429,13 @@ class DashboardScreen extends ConsumerWidget {
                             Icon(
                               Icons.error_outline_rounded,
                               size: 18,
-                              color: theme.colorScheme.secondary,
+                              color: context.ff.color.secondary,
                             ),
-                            const SizedBox(width: StillwaterTokens.spaceSm),
+                            const SizedBox(width: FfSpace.sm),
                             Expanded(
                               child: Text(
                                 'Could not load transactions',
-                                style: theme.textTheme.bodySmall,
+                                style: context.ff.text.bodySm,
                               ),
                             ),
                           ],
@@ -464,13 +444,11 @@ class DashboardScreen extends ConsumerWidget {
                     ),
               ),
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
 
               // 13. Reassuring Offline Status Badge Footer
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
                 child: Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -479,14 +457,14 @@ class DashboardScreen extends ConsumerWidget {
                       Icon(
                         Icons.shield_outlined,
                         size: 14,
-                        color: theme.colorScheme.secondary,
+                        color: context.ff.color.secondary,
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      const SizedBox(width: FfSpace.xs),
                       Flexible(
                         child: Text(
                           'On-device & private — offline first.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -496,7 +474,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.space4Xl),
+              const SizedBox(height: FfSpace.x4l),
             ],
           ),
         ),

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/money_record.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'money_records_controller.dart';
 import '../accounts/accounts_controller.dart';
@@ -18,6 +16,7 @@ import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../theme/ff.dart';
 
 class AddRepaymentSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -145,7 +144,6 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final isLent = widget.record.type == MoneyRecordType.lent;
     final accounts =
         ref
@@ -173,22 +171,22 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-                vertical: StillwaterTokens.spaceMd,
+                horizontal: FfSpace.lg,
+                vertical: FfSpace.md,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Outstanding balance banner
                   Container(
-                    padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                    padding: const EdgeInsets.all(FfSpace.md),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusMd,
-                      ),
+                      color: context.ff.color.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(FfRadius.md),
                       border: Border.all(
-                        color: theme.dividerColor.withValues(alpha: 0.4),
+                        color: context.ff.color.borderSubtle.withValues(
+                          alpha: FfTint.strong.alpha,
+                        ),
                       ),
                     ),
                     child: Row(
@@ -199,16 +197,16 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                           children: [
                             Text(
                               'OUTSTANDING BALANCE',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.labelSm.copyWith(
+                                color: context.ff.color.secondary,
                                 letterSpacing: 0.8,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: StillwaterTokens.space2Xs),
+                            const SizedBox(height: FfSpace.x2s),
                             Text(
                               CurrencyFormatter.format(widget.remainingBalance),
-                              style: theme.textTheme.titleMedium?.copyWith(
+                              style: context.ff.text.title.copyWith(
                                 fontWeight: FontWeight.w800,
                                 fontFeatures:
                                     StillwaterTypography.tabularFeatures,
@@ -223,8 +221,8 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                           style: TextButton.styleFrom(
                             visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceSm,
-                              vertical: StillwaterTokens.spaceXs,
+                              horizontal: FfSpace.sm,
+                              vertical: FfSpace.xs,
                             ),
                           ),
                         ),
@@ -232,7 +230,7 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   FfRow.toggle(
                     title: 'Record in transactions and update balance',
@@ -261,17 +259,17 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                       onChanged:
                           (value) => setState(() => _selectedAccountId = value),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceLg),
+                    const SizedBox(height: FfSpace.lg),
                   ],
 
                   // Repayment Amount Input
                   Text(
                     'Repayment Amount',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: context.ff.text.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfAmountField(
                     controller: _amountController,
                     hint: '0.00',
@@ -290,51 +288,49 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Repayment Date
                   Text(
                     'Payment Date',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: context.ff.text.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   InkWell(
                     onTap: _pickDate,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.spaceMd,
+                        horizontal: FfSpace.md,
+                        vertical: FfSpace.md,
                       ),
                       decoration: BoxDecoration(
-                        border: Border.all(color: theme.dividerColor),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
+                        border: Border.all(
+                          color: context.ff.color.borderSubtle,
                         ),
+                        borderRadius: BorderRadius.circular(FfRadius.md),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.calendar_today_outlined,
                             size: 18,
-                            color: theme.colorScheme.primary,
+                            color: context.ff.color.actionPrimary,
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceSm),
+                          const SizedBox(width: FfSpace.sm),
                           Text(
                             DateFormatter.formatShortDate(_repaymentDate),
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: context.ff.text.body.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const Spacer(),
                           Text(
                             'Change',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.primary,
+                            style: context.ff.text.labelSm.copyWith(
+                              color: context.ff.color.actionPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -343,16 +339,16 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Optional Notes
                   Text(
                     'Notes (Optional)',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: context.ff.text.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _notesController,
                     maxLines: 2,

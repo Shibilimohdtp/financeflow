@@ -70,7 +70,6 @@ class _FfBarChartState extends State<FfBarChart> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final colors = context.finColors;
     if (widget.items.isEmpty) {
       return SizedBox(
@@ -136,8 +135,8 @@ class _FfBarChartState extends State<FfBarChart> {
                   selectedIndex: index,
                   primaryColor: colors.expense,
                   secondaryColor: colors.income,
-                  gridColor: theme.dividerColor,
-                  highlightColor: theme.colorScheme.onSurface,
+                  gridColor: context.ff.color.borderSubtle,
+                  highlightColor: context.ff.color.textPrimary,
                   textStyle: textStyle,
                   textScaler: scaler,
                   showYAxis: widget.showYAxis,
@@ -169,12 +168,12 @@ class _FfBarChartState extends State<FfBarChart> {
           ),
           if (widget.showSelectionDetails && selected != null)
             Padding(
-              padding: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.only(top: FfSpace.sm),
               child: Wrap(
                 spacing: 12,
                 runSpacing: 6,
                 children: [
-                  Text(selected.label, style: theme.textTheme.labelMedium),
+                  Text(selected.label, style: context.ff.text.label),
                   Text('${widget.primaryLabel}: ${amount(selected.value)}'),
                   if (selected.secondaryValue != null)
                     Text(

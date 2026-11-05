@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/account.dart';
 import '../../../models/category.dart';
 import '../../../shared/widgets/ff_chip.dart';
 import '../../../shared/widgets/ff_sheet_footer.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_text_field.dart';
 import '../../../shared/widgets/ff_select.dart';
+import '../../../theme/ff.dart';
 
 /// Edits every filter except the period (period bar) and search (app bar).
 /// Returns the new query, or null when dismissed.
@@ -99,7 +98,6 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final activeCategories =
         widget.categories.where((c) => !c.isArchived).toList();
     final activeAccounts = widget.accounts.where((a) => !a.isArchived).toList();
@@ -111,14 +109,12 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
         Flexible(
           child: ListView(
             shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
             children: [
               const _Label('Show'),
               Wrap(
-                spacing: StillwaterTokens.spaceXs,
-                runSpacing: StillwaterTokens.spaceXs,
+                spacing: FfSpace.xs,
+                runSpacing: FfSpace.xs,
                 children: [
                   for (final kind in TransactionKind.values)
                     FfChip(
@@ -173,7 +169,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                       prefixText: '${CurrencyFormatter.currencySymbol} ',
                     ),
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: FfTextField(
                       key: const ValueKey('filter-max-amount'),
@@ -223,8 +219,8 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
               ],
               const _Label('Sort'),
               Wrap(
-                spacing: StillwaterTokens.spaceXs,
-                runSpacing: StillwaterTokens.spaceXs,
+                spacing: FfSpace.xs,
+                runSpacing: FfSpace.xs,
                 children: [
                   for (final sort in TransactionSort.values)
                     FfChip(
@@ -237,14 +233,14 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                     ),
                 ],
               ),
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
               Text(
                 'Use the period bar to change dates.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.textSecondary,
                 ),
               ),
-              const SizedBox(height: StillwaterTokens.spaceMd),
+              const SizedBox(height: FfSpace.md),
             ],
           ),
         ),
@@ -276,15 +272,10 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: StillwaterTokens.spaceMd,
-        bottom: StillwaterTokens.spaceXs,
-      ),
+      padding: const EdgeInsets.only(top: FfSpace.md, bottom: FfSpace.xs),
       child: Text(
         text,
-        style: context.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: context.ff.text.labelLg.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

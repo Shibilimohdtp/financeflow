@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/investment.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'investments_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
@@ -15,6 +13,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../theme/ff.dart';
 
 class AddEditInvestmentSheet extends ConsumerStatefulWidget {
   final Investment? initialInvestment;
@@ -173,7 +172,6 @@ class _AddEditInvestmentSheetState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountsAsync = ref.watch(allAccountsStreamProvider);
 
     return FfSheet(
@@ -187,9 +185,7 @@ class _AddEditInvestmentSheetState
         // Form Content
         Flexible(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
             child: Form(
               key: _formKey,
               child: Column(
@@ -197,7 +193,7 @@ class _AddEditInvestmentSheetState
                 children: [
                   // Asset Type
                   _SectionLabel(label: 'Asset Class'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfSelect<AssetType>(
                     value: _assetType,
                     items:
@@ -214,11 +210,11 @@ class _AddEditInvestmentSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Holding Name
                   _SectionLabel(label: 'Holding / Asset Name'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.words,
@@ -231,7 +227,7 @@ class _AddEditInvestmentSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Invested Amount & Current Valuation Row
                   Row(
@@ -241,7 +237,7 @@ class _AddEditInvestmentSheetState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SectionLabel(label: 'Invested Cost'),
-                            const SizedBox(height: StillwaterTokens.spaceXs),
+                            const SizedBox(height: FfSpace.xs),
                             FfTextField(
                               controller: _purchasePriceController,
                               keyboardType:
@@ -261,13 +257,13 @@ class _AddEditInvestmentSheetState
                           ],
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      const SizedBox(width: FfSpace.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SectionLabel(label: 'Current Value'),
-                            const SizedBox(height: StillwaterTokens.spaceXs),
+                            const SizedBox(height: FfSpace.xs),
                             FfTextField(
                               controller: _currentValueController,
                               keyboardType:
@@ -290,26 +286,22 @@ class _AddEditInvestmentSheetState
                     ],
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Purchase Date
                   _SectionLabel(label: 'Purchase Date'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   InkWell(
                     onTap: _selectDate,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: InputDecorator(
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                          vertical: StillwaterTokens.spaceSm,
+                          horizontal: FfSpace.md,
+                          vertical: FfSpace.sm,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.md),
                         ),
                         suffixIcon: const Icon(
                           Icons.calendar_today_outlined,
@@ -318,23 +310,19 @@ class _AddEditInvestmentSheetState
                       ),
                       child: Text(
                         DateFormatter.formatTransactionDate(_purchaseDate),
-                        style: theme.textTheme.bodyMedium,
+                        style: context.ff.text.body,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // More options
                   InkWell(
                     onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: StillwaterTokens.spaceXs,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
                       child: Row(
                         children: [
                           Icon(
@@ -342,15 +330,15 @@ class _AddEditInvestmentSheetState
                                 ? Icons.keyboard_arrow_up_rounded
                                 : Icons.keyboard_arrow_down_rounded,
                             size: 20,
-                            color: theme.colorScheme.secondary,
+                            color: context.ff.color.secondary,
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceXs),
+                          const SizedBox(width: FfSpace.xs),
                           Text(
                             _showAdvanced
                                 ? 'Hide units, account & notes'
                                 : 'Units, Source Account & Notes (Optional)',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.actionPrimary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -360,7 +348,7 @@ class _AddEditInvestmentSheetState
                   ),
 
                   if (_showAdvanced) ...[
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     // Quantity / Units
                     FfTextField(
                       controller: _unitsController,
@@ -371,7 +359,7 @@ class _AddEditInvestmentSheetState
                       hint: '1.0',
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
 
                     // Linked Account
                     accountsAsync.when(
@@ -401,7 +389,7 @@ class _AddEditInvestmentSheetState
                       error: (_, __) => const SizedBox.shrink(),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
 
                     // Notes
                     FfTextField(
@@ -411,7 +399,7 @@ class _AddEditInvestmentSheetState
                       hint: 'e.g. SIP started in 2024, Long term horizon',
                     ),
                   ],
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                 ],
               ),
             ),
@@ -435,13 +423,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

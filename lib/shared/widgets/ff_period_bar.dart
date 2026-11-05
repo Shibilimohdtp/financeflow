@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/period/period.dart';
 import '../../core/period/period_format.dart';
 import 'ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'ff_pickers.dart';
 import 'ff_sheet.dart';
 import 'ff_row.dart';
+import '../../theme/ff.dart';
 
 /// "‹ November 2026 ›" with a tap target that opens the period chooser.
 /// Used by Home, Insights and the transaction list. A null period means all
@@ -31,7 +30,7 @@ class FfPeriodBar extends StatelessWidget {
     final canGoForward = p != null && !p.next().start.isAfter(now);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceXs),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
       child: Row(
         children: [
           IconButton(
@@ -52,7 +51,7 @@ class FfPeriodBar extends StatelessWidget {
               excludeSemantics: true,
               child: InkWell(
                 key: const ValueKey('period-chooser'),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                borderRadius: BorderRadius.circular(FfRadius.sm),
                 onTap: () => _choose(context),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 48),
@@ -64,12 +63,12 @@ class FfPeriodBar extends StatelessWidget {
                           periodLabel(p, now: now),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: context.textTheme.titleSmall?.copyWith(
+                          style: context.ff.text.titleSm.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.space2Xs),
+                      const SizedBox(width: FfSpace.x2s),
                       const Icon(Icons.expand_more_rounded, size: 18),
                     ],
                   ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 /// Animated shimmer skeleton loader for loading states.
 ///
@@ -24,7 +24,7 @@ class _FfSkeletonLoaderState extends State<FfSkeletonLoader>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: FfMotion.deliberate,
     )..repeat(reverse: true);
     _opacity = Tween<double>(
       begin: 0.4,
@@ -59,12 +59,12 @@ class FfSkeletonBlock extends StatelessWidget {
     super.key,
     this.width,
     this.height = 16,
-    this.borderRadius = StillwaterTokens.radiusSm,
+    this.borderRadius = FfRadius.sm,
   });
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHigh;
+    final baseColor = context.ff.color.surfaceContainerHigh;
 
     return Container(
       width: width,
@@ -83,34 +83,31 @@ class FfHeroSkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return FfSkeletonLoader(
       child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-        ),
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        margin: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+        padding: const EdgeInsets.all(FfSpace.lg),
         decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusXl),
+          color: context.ff.color.surfaceCard,
+          borderRadius: BorderRadius.circular(FfRadius.xl),
           border: Border.all(
-            color: theme.dividerColor,
-            width: StillwaterTokens.borderWidthHairline,
+            color: context.ff.color.borderSubtle,
+            width: FfBorderWidth.hairline,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const FfSkeletonBlock(width: 100, height: 12),
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
             const FfSkeletonBlock(width: 220, height: 44),
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
             Row(
               children: const [
                 FfSkeletonBlock(width: 88, height: 30, borderRadius: 20),
-                SizedBox(width: StillwaterTokens.spaceSm),
+                SizedBox(width: FfSpace.sm),
                 FfSkeletonBlock(width: 88, height: 30, borderRadius: 20),
-                SizedBox(width: StillwaterTokens.spaceSm),
+                SizedBox(width: FfSpace.sm),
                 FfSkeletonBlock(width: 88, height: 30, borderRadius: 20),
               ],
             ),
@@ -129,24 +126,24 @@ class FfTransactionSkeletonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.sm,
       ),
       child: Row(
         children: [
           const FfSkeletonBlock(width: 36, height: 36, borderRadius: 10),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 FfSkeletonBlock(height: 13),
-                SizedBox(height: StillwaterTokens.space3Xs),
+                SizedBox(height: FfSpace.x3s),
                 FfSkeletonBlock(width: 90, height: 11),
               ],
             ),
           ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           const FfSkeletonBlock(width: 60, height: 14),
         ],
       ),
@@ -160,19 +157,16 @@ class FfMetricSkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return FfSkeletonLoader(
       child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-        ),
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        margin: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+        padding: const EdgeInsets.all(FfSpace.lg),
         decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+          color: context.ff.color.surfaceCard,
+          borderRadius: BorderRadius.circular(FfRadius.lg),
           border: Border.all(
-            color: theme.dividerColor,
-            width: StillwaterTokens.borderWidthHairline,
+            color: context.ff.color.borderSubtle,
+            width: FfBorderWidth.hairline,
           ),
         ),
         child: Column(
@@ -180,19 +174,19 @@ class FfMetricSkeletonCard extends StatelessWidget {
             Row(
               children: const [
                 Expanded(child: FfSkeletonBlock(height: 52)),
-                SizedBox(width: StillwaterTokens.spaceSm),
+                SizedBox(width: FfSpace.sm),
                 Expanded(child: FfSkeletonBlock(height: 52)),
-                SizedBox(width: StillwaterTokens.spaceSm),
+                SizedBox(width: FfSpace.sm),
                 Expanded(child: FfSkeletonBlock(height: 52)),
               ],
             ),
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
             Row(
               children: const [
                 Expanded(child: FfSkeletonBlock(height: 52)),
-                SizedBox(width: StillwaterTokens.spaceSm),
+                SizedBox(width: FfSpace.sm),
                 Expanded(child: FfSkeletonBlock(height: 52)),
-                SizedBox(width: StillwaterTokens.spaceSm),
+                SizedBox(width: FfSpace.sm),
                 Expanded(child: FfSkeletonBlock(height: 52)),
               ],
             ),

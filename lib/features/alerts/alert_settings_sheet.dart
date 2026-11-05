@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/extensions/context_extensions.dart';
 import '../../models/app_settings.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
@@ -10,7 +9,6 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../services/notifications/local_notification_service.dart';
 import '../../services/notifications/notification_coordinator.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../theme/ff.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
@@ -68,15 +67,15 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
         Flexible(
           child: ListView(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceMd,
+              horizontal: FfSpace.lg,
+              vertical: FfSpace.md,
             ),
             children: [
               // ── 1. System Permission Banner ──────────────────────────────
               if (!isPermissionGranted && !kIsWeb) ...[
                 FfCard(
                   variant: FfCardVariant.elevated,
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -84,29 +83,29 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         children: [
                           Icon(
                             Icons.notifications_off_outlined,
-                            color: context.secColors.verified,
+                            color: context.ff.color.statusSuccess,
                             size: 22,
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceSm),
+                          const SizedBox(width: FfSpace.sm),
                           Expanded(
                             child: Text(
                               'System Notifications Disabled',
-                              style: context.textTheme.titleSmall?.copyWith(
+                              style: context.ff.text.titleSm.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      const SizedBox(height: FfSpace.xs),
                       Text(
                         'Enable Android notification permissions so FinanceFlow can alert you about budget thresholds, pending transaction reviews, and upcoming EMIs.',
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: context.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                           height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      const SizedBox(height: FfSpace.md),
                       FfButton(
                         label:
                             _isRequestingPermission
@@ -146,7 +145,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ],
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
               ],
 
               // ── 2. Master Switch ─────────────────────────────────────────
@@ -172,7 +171,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 ],
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // ── 3. Category Triggers ─────────────────────────────────────
               if (settings.isAlertsEnabled &&
@@ -265,7 +264,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // ── 4. Privacy Settings ───────────────────────────────────
                 const FfSectionHeader(title: 'Lock Screen Privacy'),
@@ -287,51 +286,49 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceSm,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: FfSpace.sm),
                   child: Text(
                     settings.hideSensitiveNotificationContent
                         ? 'Preview: "1 imported transaction is waiting for your review."'
                         : 'Preview: "Swiggy · ${CurrencyFormatter.formatAmount(450)} is waiting for review."',
-                    style: context.textTheme.labelSmall?.copyWith(
-                      color: context.colorScheme.outline,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.borderStrong,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
               ],
 
               // ── 5. Privacy & Battery Guarantee ───────────────────────────
               FfCard(
                 variant: FfCardVariant.tinted,
-                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                padding: const EdgeInsets.all(FfSpace.md),
                 child: Row(
                   children: [
                     Icon(
                       Icons.lock_outline_rounded,
                       size: 24,
-                      color: context.secColors.verified,
+                      color: context.ff.color.statusSuccess,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceMd),
+                    const SizedBox(width: FfSpace.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '100% Local & Battery Friendly',
-                            style: context.textTheme.titleSmall?.copyWith(
+                            style: context.ff.text.titleSm.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: FfSpace.x3s),
                           Text(
                             'All notifications are scheduled locally without background network drain or cloud trackers. The in-app Alerts inbox always stays up to date.',
-                            style: context.textTheme.bodySmall?.copyWith(
-                              color: context.colorScheme.secondary,
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.secondary,
                             ),
                           ),
                         ],
@@ -341,7 +338,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // ── 6. Developer Tools (Test Notification) ───────────────────
               if (kDebugMode) ...[
@@ -371,10 +368,10 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
               ],
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
             ],
           ),
         ),

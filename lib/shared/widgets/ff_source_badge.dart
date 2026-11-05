@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../models/transaction.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 class FfSourceBadge extends StatelessWidget {
   final TransactionSource source;
@@ -52,25 +51,25 @@ class FfSourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = context.statusColors.info;
+    final accentColor = context.ff.color.statusInfo;
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceXs,
-        vertical: StillwaterTokens.space3Xs,
+        horizontal: FfSpace.xs,
+        vertical: FfSpace.x3s,
       ),
       decoration: BoxDecoration(
         color:
             isMerged
-                ? accentColor.withValues(alpha: 0.12)
-                : context.theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusXs),
+                ? accentColor.withValues(alpha: FfTint.subtle.alpha)
+                : context.ff.color.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(FfRadius.xs),
         border: Border.all(
           color:
               isMerged
-                  ? accentColor.withValues(alpha: 0.3)
-                  : context.theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
+                  ? accentColor.withValues(alpha: FfTint.strong.alpha)
+                  : context.ff.color.borderSubtle,
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: ClipRect(
@@ -80,21 +79,14 @@ class FfSourceBadge extends StatelessWidget {
             Icon(
               _getIcon(),
               size: 11,
-              color:
-                  isMerged
-                      ? accentColor
-                      : context.theme.textTheme.bodySmall?.color,
+              color: isMerged ? accentColor : context.ff.text.bodySm.color,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: FfSpace.x2s),
             Flexible(
               child: Text(
                 _displayLabel,
-                style: context.textTheme.labelSmall?.copyWith(
-                  fontSize: 10,
-                  color:
-                      isMerged
-                          ? accentColor
-                          : context.theme.textTheme.bodySmall?.color,
+                style: context.ff.text.labelSm.copyWith(
+                  color: isMerged ? accentColor : context.ff.text.bodySm.color,
                   fontWeight: isMerged ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 1,

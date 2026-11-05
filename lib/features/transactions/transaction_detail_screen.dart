@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/transaction.dart';
@@ -11,7 +10,6 @@ import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../subscriptions/subscription_detail_screen.dart';
 import 'add_edit_transaction_screen.dart';
@@ -20,6 +18,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../theme/ff.dart';
 
 class TransactionDetailScreen extends ConsumerWidget {
   final Transaction transaction;
@@ -28,7 +27,6 @@ class TransactionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
     final subscriptions = ref.watch(allSubscriptionsStreamProvider).value ?? [];
     final account =
@@ -61,7 +59,7 @@ class TransactionDetailScreen extends ConsumerWidget {
           IconButton(
             icon: Icon(
               Icons.delete_outline_rounded,
-              color: theme.colorScheme.error,
+              color: context.ff.color.statusError,
             ),
             tooltip: 'Delete transaction',
             onPressed: () async {
@@ -102,7 +100,7 @@ class TransactionDetailScreen extends ConsumerWidget {
             },
           ),
           const Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            padding: EdgeInsets.only(right: FfSpace.md),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -111,10 +109,10 @@ class TransactionDetailScreen extends ConsumerWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.spaceMd,
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.space4Xl,
+          FfSpace.lg,
+          FfSpace.md,
+          FfSpace.lg,
+          FfSpace.x4l,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,8 +121,8 @@ class TransactionDetailScreen extends ConsumerWidget {
             FfCard(
               variant: FfCardVariant.elevated,
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-                vertical: StillwaterTokens.spaceXl,
+                horizontal: FfSpace.lg,
+                vertical: FfSpace.xl,
               ),
               child: Center(
                 child: Column(
@@ -134,38 +132,36 @@ class TransactionDetailScreen extends ConsumerWidget {
                       colorTokenIdentifier: transaction.categoryColor,
                       size: 56,
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
                     Text(
                       transaction.merchant,
-                      style: theme.textTheme.titleLarge?.copyWith(
+                      style: context.ff.text.titleLg.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    const SizedBox(height: FfSpace.xs),
                     FfAmountText(
                       amount: transaction.amount,
                       type: transaction.type,
                       size: FfAmountSize.hero,
                       showSign: true,
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
-                        vertical: 3,
+                        horizontal: FfSpace.sm,
+                        vertical: FfSpace.x3s,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusFull,
-                        ),
+                        color: context.ff.color.surfaceContainerHighest
+                            .withValues(alpha: FfOpacity.half),
+                        borderRadius: BorderRadius.circular(FfRadius.full),
                       ),
                       child: Text(
                         transaction.effectivePurpose.displayName,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.labelSm.copyWith(
+                          color: context.ff.color.secondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -175,12 +171,12 @@ class TransactionDetailScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
 
             // ── 2. Provenance Card ────────────────────────────────────
             FfCard(
               variant: FfCardVariant.tinted,
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Row(
                 children: [
                   Icon(
@@ -190,10 +186,10 @@ class TransactionDetailScreen extends ConsumerWidget {
                     size: 20,
                     color:
                         transaction.mergedSources.length > 1
-                            ? context.accentColors.accent
-                            : context.secColors.verified,
+                            ? context.ff.color.accent
+                            : context.ff.color.statusSuccess,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,20 +198,19 @@ class TransactionDetailScreen extends ConsumerWidget {
                           TransactionMergeService.formatProvenanceSummary(
                             transaction,
                           ),
-                          style: theme.textTheme.labelMedium?.copyWith(
+                          style: context.ff.text.label.copyWith(
                             fontWeight: FontWeight.w700,
                             color:
                                 transaction.mergedSources.length > 1
-                                    ? context.accentColors.accent
-                                    : context.secColors.verified,
+                                    ? context.ff.color.accent
+                                    : context.ff.color.statusSuccess,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: FfSpace.x3s),
                         Text(
                           'Processed 100% locally on this device · 0 bytes sent off-device',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                       ],
@@ -225,7 +220,7 @@ class TransactionDetailScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.spaceLg),
+            const SizedBox(height: FfSpace.lg),
 
             // ── 3. Detail Fields Table ────────────────────────────────
             FfCard(
@@ -365,7 +360,7 @@ class TransactionDetailScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.spaceXl),
+            const SizedBox(height: FfSpace.xl),
 
             // ── 4. Quick Actions ──────────────────────────────────────
             Row(
@@ -397,12 +392,10 @@ class TransactionDetailScreen extends ConsumerWidget {
     required String value,
     Widget? leading,
   }) {
-    final theme = context.theme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceLg,
-        vertical: StillwaterTokens.spaceMd,
+        horizontal: FfSpace.lg,
+        vertical: FfSpace.md,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -411,22 +404,17 @@ class TransactionDetailScreen extends ConsumerWidget {
             width: 120,
             child: Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.secondary,
+              style: context.ff.text.bodySm.copyWith(
+                color: context.ff.color.secondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          if (leading != null) ...[
-            leading,
-            const SizedBox(width: StillwaterTokens.spaceXs),
-          ],
+          if (leading != null) ...[leading, const SizedBox(width: FfSpace.xs)],
           Expanded(
             child: Text(
               value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: context.ff.text.body.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.end,
             ),
           ),
@@ -441,7 +429,6 @@ class TransactionDetailScreen extends ConsumerWidget {
     required String subscriptionId,
     required VoidCallback? onTap,
   }) {
-    final theme = context.theme;
     final name =
         linkedSubscription?.merchant as String? ??
         'Subscription no longer tracked';
@@ -451,8 +438,8 @@ class TransactionDetailScreen extends ConsumerWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -461,8 +448,8 @@ class TransactionDetailScreen extends ConsumerWidget {
               width: 120,
               child: Text(
                 'Subscription',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.secondary,
+                style: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.secondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -472,29 +459,29 @@ class TransactionDetailScreen extends ConsumerWidget {
               size: 16,
               color:
                   isResolved
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
+                      ? context.ff.color.actionPrimary
+                      : context.ff.color.textSecondary,
             ),
-            const SizedBox(width: StillwaterTokens.spaceXs),
+            const SizedBox(width: FfSpace.xs),
             Expanded(
               child: Text(
                 name,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: context.ff.text.body.copyWith(
                   fontWeight: FontWeight.w600,
                   color:
                       isResolved
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
+                          ? context.ff.color.actionPrimary
+                          : context.ff.color.textSecondary,
                 ),
                 textAlign: TextAlign.end,
               ),
             ),
             if (isResolved) ...[
-              const SizedBox(width: StillwaterTokens.space2Xs),
+              const SizedBox(width: FfSpace.x2s),
               Icon(
                 Icons.chevron_right_rounded,
                 size: 16,
-                color: theme.colorScheme.primary,
+                color: context.ff.color.actionPrimary,
               ),
             ],
           ],

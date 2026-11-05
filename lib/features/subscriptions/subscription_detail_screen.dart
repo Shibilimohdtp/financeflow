@@ -13,7 +13,6 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../transactions/add_edit_transaction_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
@@ -25,6 +24,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../theme/ff_tone.dart';
+import '../../theme/ff.dart';
 
 class SubscriptionDetailScreen extends ConsumerWidget {
   final Subscription subscription;
@@ -138,7 +138,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             onPressed: () => _edit(context, currentSub),
           ),
           const Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            padding: EdgeInsets.only(right: FfSpace.md),
             child: Center(
               child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
             ),
@@ -147,8 +147,8 @@ class SubscriptionDetailScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Top Amount & Status Hero Card ────────────────────────
@@ -162,86 +162,84 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'RECURRING COMMITMENT',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
-                        vertical: 2,
+                        horizontal: FfSpace.sm,
+                        vertical: FfSpace.x3s,
                       ),
                       decoration: BoxDecoration(
                         color:
                             isActive
-                                ? context.finColors.incomeContainer
-                                : theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusFull,
-                        ),
+                                ? context.ff.color.moneyIncomeContainer
+                                : context.ff.color.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(FfRadius.full),
                       ),
                       child: Text(
                         currentSub.status.displayName,
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        style: context.ff.text.labelSm.copyWith(
                           color:
                               isActive
-                                  ? context.finColors.income
-                                  : theme.colorScheme.secondary,
+                                  ? context.ff.color.moneyIncome
+                                  : context.ff.color.secondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 Text(
                   CurrencyFormatter.formatAmount(currentSub.amount),
                   style: StillwaterTypography.numHero(
-                    color: theme.colorScheme.onSurface,
+                    color: context.ff.color.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: FfSpace.x3s),
                 Text(
                   'Billed ${currentSub.billingFrequency.displayName.toLowerCase()}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.body.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 2. Schedule & Financial Metrics ─────────────────────────
           Row(
             children: [
               Expanded(
                 child: FfCard(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'NEXT RENEWAL',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.labelSm.copyWith(
+                          color: context.ff.color.secondary,
                           letterSpacing: 1.0,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      const SizedBox(height: FfSpace.xs),
                       Text(
                         DateFormatter.formatShortDate(
                           currentSub.nextRenewalDate,
                         ),
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: context.ff.text.titleSm.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         isActive
                             ? (days == 0
@@ -250,11 +248,11 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                                     ? 'In $days days'
                                     : '${days.abs()}d ago'))
                             : 'Plan inactive',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: context.ff.text.bodySm.copyWith(
                           color:
                               isActive && days <= 3
-                                  ? context.statusColors.warning
-                                  : theme.colorScheme.secondary,
+                                  ? context.ff.color.statusWarning
+                                  : context.ff.color.secondary,
                           fontWeight:
                               isActive && days <= 3
                                   ? FontWeight.w600
@@ -265,35 +263,35 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceSm),
+              const SizedBox(width: FfSpace.sm),
               Expanded(
                 child: FfCard(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'ANNUAL COST',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.labelSm.copyWith(
+                          color: context.ff.color.secondary,
                           letterSpacing: 1.0,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      const SizedBox(height: FfSpace.xs),
                       Text(
                         CurrencyFormatter.formatAmount(
                           currentSub.yearlyEquivalentAmount,
                         ),
                         style: StillwaterTypography.numMd(
-                          color: theme.colorScheme.primary,
+                          color: context.ff.color.actionPrimary,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         'Projected pace',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ],
@@ -303,7 +301,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 3. Plan Configuration Details ───────────────────────────
           const FfSectionHeader(title: 'Plan Details'),
@@ -344,7 +342,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXl),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 4. Payment History ─────────────────────────────────────
           const FfSectionHeader(title: 'Payment History'),
@@ -356,10 +354,10 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 // Summary row
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    StillwaterTokens.spaceLg,
-                    StillwaterTokens.spaceMd,
-                    StillwaterTokens.spaceLg,
-                    StillwaterTokens.spaceSm,
+                    FfSpace.lg,
+                    FfSpace.md,
+                    FfSpace.lg,
+                    FfSpace.sm,
                   ),
                   child: Row(
                     children: [
@@ -372,7 +370,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                                 paymentTotals.totalPaid,
                               ),
                               style: StillwaterTypography.numHero(
-                                color: theme.colorScheme.onSurface,
+                                color: context.ff.color.textPrimary,
                               ).copyWith(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -380,8 +378,8 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                             ),
                             Text(
                               'Total paid · ${paymentTotals.count} payment${paymentTotals.count == 1 ? '' : 's'}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.bodySm.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ],
@@ -393,8 +391,8 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               'Last paid',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.labelSm.copyWith(
+                                color: context.ff.color.secondary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -402,7 +400,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                               DateFormatter.formatShortDate(
                                 paymentTotals.lastPaymentDate!,
                               ),
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                              style: context.ff.text.body.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -414,15 +412,15 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 if (displayPayments.isEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
-                      StillwaterTokens.spaceLg,
-                      StillwaterTokens.space2Xs,
-                      StillwaterTokens.spaceLg,
-                      StillwaterTokens.spaceMd,
+                      FfSpace.lg,
+                      FfSpace.x2s,
+                      FfSpace.lg,
+                      FfSpace.md,
                     ),
                     child: Text(
                       'No payments recorded yet. Use "Record payment" to link a manual payment.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.textSecondary,
                       ),
                     ),
                   )
@@ -434,7 +432,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // Record Payment button
           FfButton(
@@ -464,7 +462,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             },
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXl),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 5. Action Buttons ───────────────────────────────────────
           Row(
@@ -476,7 +474,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                   onPressed: () => _toggleStatus(context, ref, currentSub),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceSm),
+              const SizedBox(width: FfSpace.sm),
               Expanded(
                 child: FfButton(
                   label: 'Delete Plan',
@@ -487,7 +485,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space3Xl),
+          const SizedBox(height: FfSpace.x3l),
         ],
       ),
     );
@@ -508,8 +506,8 @@ class SubscriptionDetailScreen extends ConsumerWidget {
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceSm,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.sm,
         ),
         child: Row(
           children: [
@@ -519,15 +517,15 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     DateFormatter.formatShortDate(tx.date),
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: context.ff.text.body.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   if (tx.notes != null && tx.notes!.isNotEmpty)
                     Text(
                       tx.notes!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.secondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -540,11 +538,11 @@ class SubscriptionDetailScreen extends ConsumerWidget {
               type: TransactionType.expense,
               size: FfAmountSize.sm,
             ),
-            const SizedBox(width: StillwaterTokens.space2Xs),
+            const SizedBox(width: FfSpace.x2s),
             Icon(
               Icons.chevron_right_rounded,
               size: 16,
-              color: theme.colorScheme.onSurfaceVariant,
+              color: context.ff.color.textSecondary,
             ),
           ],
         ),

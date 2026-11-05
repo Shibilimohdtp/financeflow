@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
@@ -11,7 +10,6 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'loans_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../theme/ff.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon map for each loan type
@@ -340,7 +339,6 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accounts = ref.watch(allAccountsStreamProvider).value ?? [];
     final pastInstallments = _getPastInstallmentsPreview();
     final previewData = _preview();
@@ -364,11 +362,9 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
           child: Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
               children: [
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
 
                 // ── 1. Loan type selector ──────────────────────────
                 _LoanTypeSelector(
@@ -376,11 +372,11 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   onChanged: (t) => setState(() => _loanType = t),
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // ── 2. Loan details ────────────────────────────────
                 _SectionLabel(label: 'Loan Details'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
 
                 _inputField(
                   controller: _nameController,
@@ -394,7 +390,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                               : null,
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 _inputField(
                   controller: _lenderController,
@@ -409,11 +405,11 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                               : null,
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // ── 3. Amount and repayment ────────────────────────
                 _SectionLabel(label: 'Amount & Repayment'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
 
                 // Principal
                 _NumericInputField(
@@ -431,7 +427,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   },
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 // Rate + Tenure row
                 Row(
@@ -452,7 +448,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                         },
                       ),
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceMd),
+                    const SizedBox(width: FfSpace.md),
                     Expanded(
                       child: _NumericInputField(
                         controller: _tenureController,
@@ -469,7 +465,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   ],
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 // ── 4. Interest type ───────────────────────────────
                 _InterestTypeSelector(
@@ -480,7 +476,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   },
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 // Monthly EMI
                 _NumericInputField(
@@ -496,17 +492,17 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   onChanged: (_) => setState(() => _emiError = null),
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // ── 5. Repayment preview ───────────────────────────
                 if (previewData != null) ...[
                   _RepaymentPreview(data: previewData),
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
                 ],
 
                 // ── 6. Schedule ────────────────────────────────────
                 _SectionLabel(label: 'Schedule'),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
 
                 _DateAndPaymentDayRow(
                   startDate: _startDate,
@@ -517,7 +513,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
                 // ── Past loan notice ───────────────────────────────
                 if (pastInstallments.isNotEmpty) ...[
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                   _PastLoanNotice(
                     installments: pastInstallments,
                     markPaid: _markPastPaid,
@@ -525,7 +521,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   ),
                 ],
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // ── 7. More options ────────────────────────────────
                 _MoreOptionsToggle(
@@ -536,7 +532,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                 ),
 
                 if (_showMoreOptions) ...[
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // Linked account
                   _AccountSelector(
@@ -545,7 +541,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                     onChanged: (v) => setState(() => _selectedAccountId = v),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // Notes
                   _inputField(
@@ -557,29 +553,28 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   ),
                 ],
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // ── Trust notice ───────────────────────────────────
                 FfCard(
                   variant: FfCardVariant.tinted,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceMd,
-                    vertical: StillwaterTokens.spaceSm,
+                    horizontal: FfSpace.md,
+                    vertical: FfSpace.sm,
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.lock_outline_rounded,
                         size: 16,
-                        color: context.secColors.verified,
+                        color: context.ff.color.statusSuccess,
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceXs),
+                      const SizedBox(width: FfSpace.xs),
                       Expanded(
                         child: Text(
                           'Entered by you · Calculated locally · FinanceFlow does not access lender servers.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                       ),
@@ -587,7 +582,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   ),
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
               ],
             ),
           ),
@@ -638,13 +633,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );
@@ -664,10 +658,10 @@ class _LoanTypeSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionLabel(label: 'Loan Type'),
-        const SizedBox(height: StillwaterTokens.spaceXs),
+        const SizedBox(height: FfSpace.xs),
         Wrap(
-          spacing: StillwaterTokens.spaceXs,
-          runSpacing: StillwaterTokens.spaceXs,
+          spacing: FfSpace.xs,
+          runSpacing: FfSpace.xs,
           children:
               LoanType.values.map((t) {
                 return FfChip(
@@ -678,8 +672,8 @@ class _LoanTypeSelector extends StatelessWidget {
                     size: 15,
                     color:
                         selected == t
-                            ? context.theme.colorScheme.onPrimaryContainer
-                            : context.theme.colorScheme.secondary,
+                            ? context.ff.color.onActionPrimaryContainer
+                            : context.ff.color.secondary,
                   ),
                   onSelected: () => onChanged(t),
                 );
@@ -746,20 +740,19 @@ class _InterestTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+          padding: const EdgeInsets.only(left: FfSpace.x2s),
           child: Text(
             'Interest Type',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.secondary,
             ),
           ),
         ),
-        const SizedBox(height: StillwaterTokens.spaceXs),
+        const SizedBox(height: FfSpace.xs),
         Row(
           children:
               InterestType.values.map((t) {
@@ -771,43 +764,33 @@ class _InterestTypeSelector extends StatelessWidget {
                 return Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(
-                      right:
-                          t == InterestType.reducingBalance
-                              ? StillwaterTokens.spaceXs
-                              : 0,
-                      left:
-                          t == InterestType.flatRate
-                              ? StillwaterTokens.spaceXs
-                              : 0,
+                      right: t == InterestType.reducingBalance ? FfSpace.xs : 0,
+                      left: t == InterestType.flatRate ? FfSpace.xs : 0,
                     ),
                     child: InkWell(
                       onTap: () => onChanged(t),
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusMd,
-                      ),
+                      borderRadius: BorderRadius.circular(FfRadius.md),
                       child: AnimatedContainer(
-                        duration: StillwaterTokens.durationFast,
+                        duration: FfMotion.fast,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                          vertical: StillwaterTokens.spaceSm,
+                          horizontal: FfSpace.md,
+                          vertical: FfSpace.sm,
                         ),
                         decoration: BoxDecoration(
                           color:
                               isSelected
-                                  ? theme.colorScheme.primaryContainer
-                                  : theme.colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
+                                  ? context.ff.color.actionPrimaryContainer
+                                  : context.ff.color.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(FfRadius.md),
                           border: Border.all(
                             color:
                                 isSelected
-                                    ? theme.colorScheme.primary
-                                    : theme.dividerColor,
+                                    ? context.ff.color.actionPrimary
+                                    : context.ff.color.borderSubtle,
                             width:
                                 isSelected
-                                    ? StillwaterTokens.borderWidthDefault
-                                    : StillwaterTokens.borderWidthHairline,
+                                    ? FfBorderWidth.regular
+                                    : FfBorderWidth.hairline,
                           ),
                         ),
                         child: Column(
@@ -815,24 +798,29 @@ class _InterestTypeSelector extends StatelessWidget {
                           children: [
                             Text(
                               t.displayName,
-                              style: theme.textTheme.labelMedium?.copyWith(
+                              style: context.ff.text.label.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color:
                                     isSelected
-                                        ? theme.colorScheme.onPrimaryContainer
-                                        : theme.colorScheme.onSurface,
+                                        ? context
+                                            .ff
+                                            .color
+                                            .onActionPrimaryContainer
+                                        : context.ff.color.textPrimary,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: FfSpace.x3s),
                             Text(
                               description,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontSize: 10,
+                              style: context.ff.text.labelSm.copyWith(
                                 color:
                                     isSelected
-                                        ? theme.colorScheme.onPrimaryContainer
-                                            .withValues(alpha: 0.75)
-                                        : theme.colorScheme.secondary,
+                                        ? context
+                                            .ff
+                                            .color
+                                            .onActionPrimaryContainer
+                                            .withValues(alpha: FfOpacity.muted)
+                                        : context.ff.color.secondary,
                               ),
                             ),
                           ],
@@ -856,12 +844,11 @@ class _RepaymentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Container(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        color: context.ff.color.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(FfRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -871,19 +858,19 @@ class _RepaymentPreview extends StatelessWidget {
               Icon(
                 Icons.calculate_outlined,
                 size: 14,
-                color: theme.colorScheme.secondary,
+                color: context.ff.color.secondary,
               ),
-              const SizedBox(width: StillwaterTokens.space2Xs),
+              const SizedBox(width: FfSpace.x2s),
               Text(
                 'Repayment Preview',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.secondary,
+                style: context.ff.text.labelSm.copyWith(
+                  color: context.ff.color.secondary,
                   letterSpacing: 0.3,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           // Three stat columns
           IntrinsicHeight(
             child: Row(
@@ -897,10 +884,10 @@ class _RepaymentPreview extends StatelessWidget {
                 ),
                 VerticalDivider(
                   width: 1,
-                  thickness: StillwaterTokens.borderWidthHairline,
+                  thickness: FfBorderWidth.hairline,
                   indent: 4,
                   endIndent: 4,
-                  color: theme.dividerColor,
+                  color: context.ff.color.borderSubtle,
                 ),
                 Expanded(
                   child: _PreviewStat(
@@ -910,10 +897,10 @@ class _RepaymentPreview extends StatelessWidget {
                 ),
                 VerticalDivider(
                   width: 1,
-                  thickness: StillwaterTokens.borderWidthHairline,
+                  thickness: FfBorderWidth.hairline,
                   indent: 4,
                   endIndent: 4,
-                  color: theme.dividerColor,
+                  color: context.ff.color.borderSubtle,
                 ),
                 Expanded(
                   child: _PreviewStat(
@@ -924,24 +911,22 @@ class _RepaymentPreview extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           const FfDivider(),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Row(
             children: [
               Text(
                 'Est. completion',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.secondary,
-                  fontSize: 10,
+                style: context.ff.text.labelSm.copyWith(
+                  color: context.ff.color.secondary,
                 ),
               ),
               const Spacer(),
               Text(
                 DateFormatter.formatMonthYear(data.endDate),
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: context.ff.text.labelSm.copyWith(
                   fontWeight: FontWeight.w600,
-                  fontSize: 10,
                 ),
               ),
             ],
@@ -965,25 +950,23 @@ class _PreviewStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceXs),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.secondary,
-              fontSize: 10,
+            style: context.ff.text.labelSm.copyWith(
+              color: context.ff.color.secondary,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: FfSpace.x3s),
           Text(
             value,
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: context.ff.text.bodySm.copyWith(
               fontWeight: FontWeight.w600,
-              color: isPrimary ? theme.colorScheme.primary : null,
+              color: isPrimary ? context.ff.color.actionPrimary : null,
               fontSize: isPrimary ? 13 : 12,
             ),
             overflow: TextOverflow.ellipsis,
@@ -1011,7 +994,6 @@ class _DateAndPaymentDayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1020,24 +1002,24 @@ class _DateAndPaymentDayRow extends StatelessWidget {
           flex: 3,
           child: InkWell(
             onTap: onSelectDate,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            borderRadius: BorderRadius.circular(FfRadius.md),
             child: InputDecorator(
               decoration: InputDecoration(
                 labelText: 'Start date',
-                labelStyle: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.secondary,
+                labelStyle: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.secondary,
                 ),
                 suffixIcon: const Icon(Icons.event_outlined, size: 18),
               ),
               child: Text(
                 DateFormatter.formatShortDate(startDate),
-                style: theme.textTheme.bodyMedium,
+                style: context.ff.text.body,
               ),
             ),
           ),
         ),
 
-        const SizedBox(width: StillwaterTokens.spaceMd),
+        const SizedBox(width: FfSpace.md),
 
         // Due day of month
         Expanded(
@@ -1074,11 +1056,10 @@ class _PastLoanNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final total = installments.fold<double>(0.0, (s, it) => s + it.emiAmount);
 
     return FfCard(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1087,31 +1068,30 @@ class _PastLoanNotice extends StatelessWidget {
               Icon(
                 Icons.history_rounded,
                 size: 16,
-                color: theme.colorScheme.primary,
+                color: context.ff.color.actionPrimary,
               ),
-              const SizedBox(width: StillwaterTokens.spaceXs),
+              const SizedBox(width: FfSpace.xs),
               Expanded(
                 child: Text(
                   'Past Loan Detected',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.ff.text.titleSm.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Text(
             '${installments.length} past installment${installments.length > 1 ? "s" : ""} found '
             '(${DateFormatter.formatShortDate(installments.first.dueDate)} – '
             '${DateFormatter.formatShortDate(installments.last.dueDate)}) '
             'totaling ${CurrencyFormatter.formatAmount(total)}.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
-              fontSize: 11,
+            style: context.ff.text.labelSm.copyWith(
+              color: context.ff.color.secondary,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           Row(
             children: [
               Expanded(
@@ -1119,7 +1099,7 @@ class _PastLoanNotice extends StatelessWidget {
                   markPaid
                       ? 'Mark past ${installments.length} EMIs as already paid — next due date will advance.'
                       : 'Keep past installments as overdue until manually paid.',
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                  style: context.ff.text.labelSm.copyWith(),
                 ),
               ),
               Switch(value: markPaid, onChanged: onChanged),
@@ -1140,12 +1120,11 @@ class _MoreOptionsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return InkWell(
       onTap: onToggle,
-      borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+      borderRadius: BorderRadius.circular(FfRadius.md),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: StillwaterTokens.spaceXs),
+        padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
         child: Row(
           children: [
             Icon(
@@ -1153,22 +1132,21 @@ class _MoreOptionsToggle extends StatelessWidget {
                   ? Icons.keyboard_arrow_up_rounded
                   : Icons.keyboard_arrow_down_rounded,
               size: 20,
-              color: theme.colorScheme.secondary,
+              color: context.ff.color.secondary,
             ),
-            const SizedBox(width: StillwaterTokens.spaceXs),
+            const SizedBox(width: FfSpace.xs),
             Text(
               isExpanded ? 'Fewer options' : 'More options',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
+              style: context.ff.text.bodySm.copyWith(
+                color: context.ff.color.actionPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const Spacer(),
             Text(
               isExpanded ? '' : 'Linked account, notes',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.secondary,
-                fontSize: 10,
+              style: context.ff.text.labelSm.copyWith(
+                color: context.ff.color.secondary,
               ),
             ),
           ],

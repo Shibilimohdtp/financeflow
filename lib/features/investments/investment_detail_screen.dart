@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/investment.dart';
@@ -10,7 +9,6 @@ import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'add_edit_investment_sheet.dart';
 import 'investments_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
@@ -20,6 +18,7 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_key_value_row.dart';
+import '../../theme/ff.dart';
 
 class InvestmentDetailScreen extends ConsumerWidget {
   final Investment investment;
@@ -58,10 +57,10 @@ class InvestmentDetailScreen extends ConsumerWidget {
             const FfDivider(),
             Padding(
               padding: EdgeInsets.only(
-                left: StillwaterTokens.spaceLg,
-                right: StillwaterTokens.spaceLg,
-                top: StillwaterTokens.spaceMd,
-                bottom: StillwaterTokens.spaceMd,
+                left: FfSpace.lg,
+                right: FfSpace.lg,
+                top: FfSpace.md,
+                bottom: FfSpace.md,
               ),
               child: FfTextField(
                 controller: controller,
@@ -123,8 +122,6 @@ class InvestmentDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-
     // Watch live stream
     final allInvsAsync = ref.watch(allInvestmentsStreamProvider);
     final currentInv =
@@ -150,7 +147,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
             onPressed: () => _edit(context, currentInv),
           ),
           const Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            padding: EdgeInsets.only(right: FfSpace.md),
             child: Center(
               child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
             ),
@@ -159,19 +156,19 @@ class InvestmentDetailScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Valuation Hero Card ──────────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.all(FfSpace.lg),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -182,64 +179,60 @@ class InvestmentDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'CURRENT VALUATION',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: context.ff.text.labelSm.copyWith(
                         letterSpacing: 0.8,
-                        color: theme.colorScheme.secondary,
-                        fontSize: 10,
+                        color: context.ff.color.secondary,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
-                        vertical: 2,
+                        horizontal: FfSpace.sm,
+                        vertical: FfSpace.x3s,
                       ),
                       decoration: BoxDecoration(
                         color:
                             currentInv.isProfitable
-                                ? context.secColors.verified.withValues(
+                                ? context.ff.color.statusSuccess.withValues(
                                   alpha: 0.15,
                                 )
-                                : context.secColors.error.withValues(
+                                : context.ff.color.statusError.withValues(
                                   alpha: 0.15,
                                 ),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusFull,
-                        ),
+                        borderRadius: BorderRadius.circular(FfRadius.full),
                       ),
                       child: Text(
                         '${currentInv.isProfitable ? "+" : ""}${CurrencyFormatter.formatAmount(currentInv.absoluteReturn)} (${currentInv.percentageReturn.toStringAsFixed(1)}%)',
-                        style: TextStyle(
-                          fontSize: 11,
+                        style: context.ff.text.labelSm.copyWith(
                           fontWeight: FontWeight.bold,
                           color:
                               currentInv.isProfitable
-                                  ? context.secColors.verified
-                                  : context.secColors.error,
+                                  ? context.ff.color.statusSuccess
+                                  : context.ff.color.statusError,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 Text(
                   CurrencyFormatter.formatAmount(currentInv.currentValue),
-                  style: theme.textTheme.headlineLarge?.copyWith(
+                  style: context.ff.text.headlineLg.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                    color: context.ff.color.actionPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: FfSpace.x3s),
                 Text(
                   'Cost basis: ${CurrencyFormatter.formatAmount(currentInv.investedAmount)} · Manual Entry',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.bodySm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // Quick Action to update value
           FfButton(
@@ -248,18 +241,18 @@ class InvestmentDetailScreen extends ConsumerWidget {
             onPressed: () => _updateValuation(context, ref, currentInv),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 2. Holding Details Group ────────────────────────────────────
           _SectionLabel(label: 'Holding Details'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Container(
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -313,11 +306,11 @@ class InvestmentDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 3. Actions ──────────────────────────────────────────────────
           _SectionLabel(label: 'Manage Holding'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Row(
             children: [
               Expanded(
@@ -328,7 +321,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                   onPressed: () => _edit(context, currentInv),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceMd),
+              const SizedBox(width: FfSpace.md),
               Expanded(
                 child: FfButton(
                   label: 'Delete Holding',
@@ -343,7 +336,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -383,13 +376,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../models/budget.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../theme/ff_tone.dart';
 import '../../../shared/widgets/ff_progress.dart';
+import '../../../theme/ff.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
   final double totalBudgeted;
@@ -30,8 +29,7 @@ class BudgetOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
 
     if (totalBudgeted <= 0) return const SizedBox.shrink();
 
@@ -40,7 +38,7 @@ class BudgetOverviewCard extends StatelessWidget {
     final isExceeded = totalSpent > totalBudgeted;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -50,7 +48,7 @@ class BudgetOverviewCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Budgets & Spending',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.ff.text.titleSm.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
                   ),
@@ -67,7 +65,7 @@ class BudgetOverviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Semantics(
             container: true,
             label:
@@ -77,20 +75,18 @@ class BudgetOverviewCard extends StatelessWidget {
                     ? 'Budget exceeded by ${totalSpent - totalBudgeted}'
                     : 'Budget remaining: $totalRemaining out of $totalBudgeted',
             child: Material(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               child: InkWell(
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 onTap: onViewBudgets,
                 child: Container(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusLg,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.lg),
                     border: Border.all(
-                      color: theme.dividerColor,
-                      width: StillwaterTokens.borderWidthHairline,
+                      color: context.ff.color.borderSubtle,
+                      width: FfBorderWidth.hairline,
                     ),
                   ),
                   child: Column(
@@ -103,64 +99,62 @@ class BudgetOverviewCard extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(
-                                  StillwaterTokens.space2Xs,
-                                ),
+                                padding: const EdgeInsets.all(FfSpace.x2s),
                                 decoration: BoxDecoration(
                                   color: (isExceeded
-                                          ? finColors.expense
-                                          : theme.colorScheme.primary)
-                                      .withValues(alpha: 0.12),
+                                          ? finColors.moneyExpense
+                                          : context.ff.color.actionPrimary)
+                                      .withValues(alpha: FfTint.subtle.alpha),
                                   borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusSm,
+                                    FfRadius.sm,
                                   ),
                                 ),
                                 child: Icon(
                                   Icons.pie_chart_outline_rounded,
                                   color:
                                       isExceeded
-                                          ? finColors.expense
-                                          : theme.colorScheme.primary,
+                                          ? finColors.moneyExpense
+                                          : context.ff.color.actionPrimary,
                                   size: 16,
                                 ),
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceSm),
+                              const SizedBox(width: FfSpace.sm),
                               Text(
                                 isExceeded
                                     ? 'Over planned budget'
                                     : 'Remaining budget',
-                                style: theme.textTheme.bodyMedium?.copyWith(
+                                style: context.ff.text.body.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color:
                                       isExceeded
-                                          ? finColors.expense
-                                          : theme.colorScheme.onSurface,
+                                          ? finColors.moneyExpense
+                                          : context.ff.color.textPrimary,
                                 ),
                               ),
                             ],
                           ),
                           Text(
                             '${(percentage * 100).toStringAsFixed(0)}% used',
-                            style: theme.textTheme.labelSmall?.copyWith(
+                            style: context.ff.text.labelSm.copyWith(
                               color:
                                   isExceeded
-                                      ? finColors.expense
-                                      : theme.colorScheme.secondary,
+                                      ? finColors.moneyExpense
+                                      : context.ff.color.secondary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       FfProgressBar(
                         value: percentage,
                         color:
                             isExceeded
-                                ? finColors.expense
-                                : theme.colorScheme.primary,
+                                ? finColors.moneyExpense
+                                : context.ff.color.actionPrimary,
                         size: FfProgressSize.md,
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -168,8 +162,8 @@ class BudgetOverviewCard extends StatelessWidget {
                             children: [
                               Text(
                                 'Spent: ',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.bodySm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
                               FfAmountText(
@@ -185,8 +179,8 @@ class BudgetOverviewCard extends StatelessWidget {
                             children: [
                               Text(
                                 'Limit: ',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.bodySm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
                               FfAmountText(
@@ -204,23 +198,23 @@ class BudgetOverviewCard extends StatelessWidget {
                       // Optional Individual Active Budgets Breakdown
                       if (activeBudgets != null &&
                           activeBudgets!.isNotEmpty) ...[
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        const SizedBox(height: FfSpace.sm),
                         const FfDivider(),
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        const SizedBox(height: FfSpace.sm),
                         ...activeBudgets!.take(3).map((summary) {
                           final pct = summary.percentageUsed.clamp(0.0, 1.0);
                           final isOver = summary.isExceeded;
                           final isNear = summary.isApproachingThreshold;
                           final barColor =
                               isOver
-                                  ? finColors.expense
+                                  ? finColors.moneyExpense
                                   : isNear
-                                  ? context.statusColors.warning
-                                  : theme.colorScheme.primary;
+                                  ? context.ff.color.statusWarning
+                                  : context.ff.color.actionPrimary;
 
                           return Padding(
                             padding: const EdgeInsets.symmetric(
-                              vertical: StillwaterTokens.space3Xs,
+                              vertical: FfSpace.x3s,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,17 +231,14 @@ class BudgetOverviewCard extends StatelessWidget {
                                             'blue',
                                         size: 24,
                                       ),
-                                      const SizedBox(
-                                        width: StillwaterTokens.spaceXs,
-                                      ),
+                                      const SizedBox(width: FfSpace.xs),
                                     ],
                                     Expanded(
                                       child: Text(
                                         summary.budget.name,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        style: context.ff.text.bodySm.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -260,11 +251,10 @@ class BudgetOverviewCard extends StatelessWidget {
                                     ),
                                     Text(
                                       ' / ',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                            fontSize: 10,
-                                          ),
+                                      style: context.ff.text.bodySm.copyWith(
+                                        color: context.ff.color.secondary,
+                                        fontSize: 10,
+                                      ),
                                     ),
                                     FfAmountText(
                                       amount: summary.budget.amountLimit,
@@ -275,9 +265,7 @@ class BudgetOverviewCard extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(
-                                  height: StillwaterTokens.space3Xs,
-                                ),
+                                const SizedBox(height: FfSpace.x3s),
                                 FfProgressBar(
                                   value: pct,
                                   color: barColor,

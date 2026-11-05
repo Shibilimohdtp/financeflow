@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/subscription.dart';
@@ -12,7 +11,6 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'add_edit_subscription_sheet.dart';
 import 'recurring_suggestions_sheet.dart';
@@ -22,6 +20,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   const SubscriptionsScreen({super.key});
@@ -48,7 +47,6 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final summary = ref.watch(subscriptionsSummaryProvider);
     final subsAsync = ref.watch(allSubscriptionsStreamProvider);
     final suggestionsAsync = ref.watch(recurringSuggestionsProvider);
@@ -59,7 +57,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
         title: 'Subscriptions',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -87,9 +85,9 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
               104,
             ),
             children: [
@@ -101,32 +99,32 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                   children: [
                     Text(
                       'MONTHLY RECURRING COMMITMENT',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    const SizedBox(height: FfSpace.xs),
                     Text(
                       CurrencyFormatter.formatAmount(summary.monthlyTotal),
                       style: StillwaterTypography.numHero(
-                        color: theme.colorScheme.primary,
+                        color: context.ff.color.actionPrimary,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Annual pace: ${CurrencyFormatter.formatAmount(summary.yearlyTotal)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                         Text(
                           '${summary.activeCount} active ${summary.activeCount == 1 ? 'plan' : 'plans'}',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: context.ff.text.bodySm.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -136,13 +134,13 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // ── 2. Recurring Suggestions Alert Banner ───────────────────
               if (suggestionCount > 0) ...[
                 FfCard(
                   variant: FfCardVariant.tinted,
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -156,35 +154,33 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(
+                          color: context.ff.color.actionPrimary.withValues(
                             alpha: 0.15,
                           ),
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusSm,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.sm),
                         ),
                         child: Icon(
                           Icons.auto_awesome,
-                          color: theme.colorScheme.primary,
+                          color: context.ff.color.actionPrimary,
                           size: 20,
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      const SizedBox(width: FfSpace.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               '$suggestionCount recurring $suggestionCount == 1 ? "pattern" : "patterns" detected',
-                              style: theme.textTheme.titleSmall?.copyWith(
+                              style: context.ff.text.titleSm.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: FfSpace.x3s),
                             Text(
                               'Tap to review and add to subscription tracker',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.bodySm.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ],
@@ -193,12 +189,12 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                       Icon(
                         Icons.chevron_right_rounded,
                         size: 20,
-                        color: theme.colorScheme.primary,
+                        color: context.ff.color.actionPrimary,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
               ],
 
               // ── 3. Segmented Pill Tab Bar ────────────────────────────────
@@ -221,7 +217,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                 },
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // ── 4. Subscriptions List ────────────────────────────────────
               FfSectionHeader(
@@ -231,9 +227,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
               if (displaySubs.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.space2Xl,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.x2l),
                   child: FfEmptyState(
                     icon:
                         _showInactive
@@ -275,19 +269,17 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
                         return FfRow(
                           leading: Container(
-                            width: StillwaterTokens.iconTileSize,
-                            height: StillwaterTokens.iconTileSize,
+                            width: FfRowTokens.iconTile,
+                            height: FfRowTokens.iconTile,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusSm,
-                              ),
+                              color: context.ff.color.actionPrimaryContainer
+                                  .withValues(alpha: FfTint.strong.alpha),
+                              borderRadius: BorderRadius.circular(FfRadius.sm),
                             ),
                             child: Icon(
                               _getSubscriptionIcon(sub.merchant),
                               size: 20,
-                              color: theme.colorScheme.primary,
+                              color: context.ff.color.actionPrimary,
                             ),
                           ),
                           title: sub.merchant,
@@ -305,24 +297,25 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                               if (isDueSoon &&
                                   sub.status == SubscriptionStatus.active)
                                 Container(
-                                  margin: const EdgeInsets.only(top: 2),
+                                  margin: const EdgeInsets.only(
+                                    top: FfSpace.x3s,
+                                  ),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 1,
+                                    horizontal: FfSpace.x2s,
+                                    vertical: FfSpace.x3s,
                                   ),
                                   decoration: BoxDecoration(
                                     color:
-                                        context.statusColors.warningContainer,
+                                        context.ff.color.statusWarningContainer,
                                     borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusXs,
+                                      FfRadius.xs,
                                     ),
                                   ),
                                   child: Text(
                                     'Due Soon',
-                                    style: TextStyle(
-                                      fontSize: 10,
+                                    style: context.ff.text.labelSm.copyWith(
                                       fontWeight: FontWeight.w600,
-                                      color: context.statusColors.warning,
+                                      color: context.ff.color.statusWarning,
                                     ),
                                   ),
                                 ),
@@ -338,7 +331,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
         loading:
             () => const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                padding: EdgeInsets.all(FfSpace.x4l),
                 child: FfLoading(),
               ),
             ),

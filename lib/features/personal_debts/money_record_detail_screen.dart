@@ -8,7 +8,6 @@ import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
 import 'add_advance_sheet.dart';
@@ -22,6 +21,7 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_key_value_row.dart';
+import '../../theme/ff.dart';
 
 class MoneyRecordDetailScreen extends ConsumerWidget {
   final MoneyRecord record;
@@ -123,8 +123,6 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-
     // Watch live record from database
     final allRecords = ref.watch(allMoneyRecordsStreamProvider).value ?? [];
     final liveRecord = allRecords.firstWhere(
@@ -174,7 +172,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
 
     final isLent = liveRecord.type == MoneyRecordType.lent;
     final typeColor =
-        isLent ? context.finColors.income : context.finColors.expense;
+        isLent ? context.ff.color.moneyIncome : context.ff.color.moneyExpense;
 
     return Scaffold(
       appBar: FfAppBar(
@@ -194,37 +192,41 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.spaceMd,
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.space3Xl,
+          FfSpace.lg,
+          FfSpace.md,
+          FfSpace.lg,
+          FfSpace.x3l,
         ),
         children: [
           // ── 1. Status Banner ──────────────────────────────────────────────
           if (isSettled)
             Container(
-              margin: const EdgeInsets.only(bottom: StillwaterTokens.spaceMd),
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              margin: const EdgeInsets.only(bottom: FfSpace.md),
+              padding: const EdgeInsets.all(FfSpace.md),
               decoration: BoxDecoration(
-                color: context.finColors.income.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                color: context.ff.color.moneyIncome.withValues(
+                  alpha: FfTint.subtle.alpha,
+                ),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: context.finColors.income.withValues(alpha: 0.3),
+                  color: context.ff.color.moneyIncome.withValues(
+                    alpha: FfTint.strong.alpha,
+                  ),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.check_circle_rounded,
-                    color: context.finColors.income,
+                    color: context.ff.color.moneyIncome,
                     size: 20,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: Text(
                       'Fully Settled · No balance remaining',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: context.finColors.income,
+                      style: context.ff.text.body.copyWith(
+                        color: context.ff.color.moneyIncome,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -234,28 +236,32 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
             )
           else if (isOverdue)
             Container(
-              margin: const EdgeInsets.only(bottom: StillwaterTokens.spaceMd),
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              margin: const EdgeInsets.only(bottom: FfSpace.md),
+              padding: const EdgeInsets.all(FfSpace.md),
               decoration: BoxDecoration(
-                color: context.finColors.expense.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                color: context.ff.color.moneyExpense.withValues(
+                  alpha: FfTint.subtle.alpha,
+                ),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: context.finColors.expense.withValues(alpha: 0.3),
+                  color: context.ff.color.moneyExpense.withValues(
+                    alpha: FfTint.strong.alpha,
+                  ),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.warning_amber_rounded,
-                    color: context.finColors.expense,
+                    color: context.ff.color.moneyExpense,
                     size: 20,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: Text(
                       'Overdue · Repayment was expected by ${DateFormatter.formatShortDate(effectiveDueDate)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: context.finColors.expense,
+                      style: context.ff.text.body.copyWith(
+                        color: context.ff.color.moneyExpense,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -265,28 +271,32 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
             )
           else if (isDueSoon)
             Container(
-              margin: const EdgeInsets.only(bottom: StillwaterTokens.spaceMd),
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              margin: const EdgeInsets.only(bottom: FfSpace.md),
+              padding: const EdgeInsets.all(FfSpace.md),
               decoration: BoxDecoration(
-                color: context.finColors.debt.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+                color: context.ff.color.moneyDebt.withValues(
+                  alpha: FfTint.subtle.alpha,
+                ),
+                borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: context.finColors.debt.withValues(alpha: 0.3),
+                  color: context.ff.color.moneyDebt.withValues(
+                    alpha: FfTint.strong.alpha,
+                  ),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.schedule_rounded,
-                    color: context.finColors.debt,
+                    color: context.ff.color.moneyDebt,
                     size: 20,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: Text(
                       'Due Soon · Expected by ${DateFormatter.formatShortDate(effectiveDueDate)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: context.finColors.debt,
+                      style: context.ff.text.body.copyWith(
+                        color: context.ff.color.moneyDebt,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -307,14 +317,12 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
-                        vertical: StillwaterTokens.space2Xs,
+                        horizontal: FfSpace.sm,
+                        vertical: FfSpace.x2s,
                       ),
                       decoration: BoxDecoration(
-                        color: typeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusSm,
-                        ),
+                        color: typeColor.withValues(alpha: FfTint.subtle.alpha),
+                        borderRadius: BorderRadius.circular(FfRadius.sm),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -324,10 +332,10 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                             size: 14,
                             color: typeColor,
                           ),
-                          const SizedBox(width: StillwaterTokens.space2Xs),
+                          const SizedBox(width: FfSpace.x2s),
                           Text(
                             liveRecord.type.directionLabel,
-                            style: theme.textTheme.labelSmall?.copyWith(
+                            style: context.ff.text.labelSm.copyWith(
                               color: typeColor,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
@@ -338,20 +346,18 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
-                        vertical: StillwaterTokens.space2Xs,
+                        horizontal: FfSpace.sm,
+                        vertical: FfSpace.x2s,
                       ),
                       decoration: BoxDecoration(
                         color: status
                             .colorFor(isDark: context.isDarkMode)
-                            .withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusSm,
-                        ),
+                            .withValues(alpha: FfTint.subtle.alpha),
+                        borderRadius: BorderRadius.circular(FfRadius.sm),
                       ),
                       child: Text(
                         status.displayName,
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        style: context.ff.text.labelSm.copyWith(
                           color: status.colorFor(isDark: context.isDarkMode),
                           fontWeight: FontWeight.w700,
                         ),
@@ -360,37 +366,37 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   ],
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
                 // Remaining balance
                 Text(
                   'REMAINING BALANCE',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                     letterSpacing: 1.1,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.space2Xs),
+                const SizedBox(height: FfSpace.x2s),
                 Text(
                   CurrencyFormatter.format(remaining),
-                  style: theme.textTheme.headlineMedium?.copyWith(
+                  style: context.ff.text.headline.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: isSettled ? context.finColors.income : typeColor,
+                    color: isSettled ? context.ff.color.moneyIncome : typeColor,
                     fontFeatures: StillwaterTypography.tabularFeatures,
                   ),
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 // Progress Bar
                 FfProgressBar(
                   value: progress,
-                  color: isSettled ? context.finColors.income : typeColor,
+                  color: isSettled ? context.ff.color.moneyIncome : typeColor,
                   size: FfProgressSize.lg,
                 ),
 
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 // Metrics row: Total Advanced vs Total Repaid
                 Row(
@@ -401,13 +407,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'Total Advanced',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                         Text(
                           CurrencyFormatter.format(totalAdvanced),
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: context.ff.text.titleSm.copyWith(
                             fontWeight: FontWeight.w700,
                             fontFeatures: StillwaterTypography.tabularFeatures,
                           ),
@@ -419,15 +425,15 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'Total Repaid',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                         Text(
                           '${CurrencyFormatter.format(totalRepaid)} (${(progress * 100).toInt()}%)',
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: context.ff.text.titleSm.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: context.finColors.income,
+                            color: context.ff.color.moneyIncome,
                             fontFeatures: StillwaterTypography.tabularFeatures,
                           ),
                         ),
@@ -439,7 +445,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 3. Quick Actions ──────────────────────────────────────────────
           Row(
@@ -455,7 +461,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                             _openRepaymentSheet(context, liveRecord, remaining),
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceSm),
+                const SizedBox(width: FfSpace.sm),
                 Expanded(
                   child: FfButton(
                     label: isLent ? 'Lend More' : 'Borrow More',
@@ -488,7 +494,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXl),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 4. Advance History Section ─────────────────────────────────────
           _SectionHeader(
@@ -504,22 +510,20 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     )
                     : null,
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
 
           if (advances.isEmpty)
             FfCard(
               variant: FfCardVariant.standard,
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Row(
                 children: [
                   Container(
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: typeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusSm,
-                      ),
+                      color: typeColor.withValues(alpha: FfTint.subtle.alpha),
+                      borderRadius: BorderRadius.circular(FfRadius.sm),
                     ),
                     child: Icon(
                       liveRecord.type.icon,
@@ -527,22 +531,22 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceMd),
+                  const SizedBox(width: FfSpace.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           CurrencyFormatter.format(liveRecord.originalAmount),
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: context.ff.text.titleSm.copyWith(
                             fontWeight: FontWeight.w700,
                             fontFeatures: StillwaterTypography.tabularFeatures,
                           ),
                         ),
                         Text(
                           '${DateFormatter.formatShortDate(liveRecord.transactionDate)} · Due ${DateFormatter.formatShortDate(liveRecord.dueDate)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                       ],
@@ -570,8 +574,8 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
 
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceMd,
-                      vertical: StillwaterTokens.space2Xs,
+                      horizontal: FfSpace.md,
+                      vertical: FfSpace.x2s,
                     ),
                     leading: Container(
                       width: 38,
@@ -579,13 +583,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color:
                             alloc.isFullyPaid
-                                ? context.finColors.income.withValues(
+                                ? context.ff.color.moneyIncome.withValues(
                                   alpha: 0.12,
                                 )
-                                : typeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusSm,
-                        ),
+                                : typeColor.withValues(
+                                  alpha: FfTint.subtle.alpha,
+                                ),
+                        borderRadius: BorderRadius.circular(FfRadius.sm),
                       ),
                       child: Icon(
                         alloc.isFullyPaid
@@ -593,7 +597,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                             : liveRecord.type.icon,
                         color:
                             alloc.isFullyPaid
-                                ? context.finColors.income
+                                ? context.ff.color.moneyIncome
                                 : typeColor,
                         size: 20,
                       ),
@@ -603,32 +607,29 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       children: [
                         Text(
                           CurrencyFormatter.format(item.amount),
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: context.ff.text.titleSm.copyWith(
                             fontWeight: FontWeight.w700,
                             fontFeatures: StillwaterTypography.tabularFeatures,
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                            horizontal: FfSpace.x2s,
+                            vertical: FfSpace.x3s,
                           ),
                           decoration: BoxDecoration(
                             color:
                                 alloc.isFullyPaid
-                                    ? context.finColors.income.withValues(
+                                    ? context.ff.color.moneyIncome.withValues(
                                       alpha: 0.12,
                                     )
                                     : (alloc.allocatedRepaid > 0.001
-                                        ? context.finColors.debt.withValues(
+                                        ? context.ff.color.moneyDebt.withValues(
                                           alpha: 0.12,
                                         )
-                                        : theme.dividerColor.withValues(
-                                          alpha: 0.3,
-                                        )),
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusSm,
-                            ),
+                                        : context.ff.color.borderSubtle
+                                            .withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(FfRadius.sm),
                           ),
                           child: Text(
                             alloc.isFullyPaid
@@ -636,15 +637,14 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                                 : (alloc.allocatedRepaid > 0.001
                                     ? 'Paid ${CurrencyFormatter.format(alloc.allocatedRepaid)}'
                                     : 'Unpaid'),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: 10,
+                            style: context.ff.text.labelSm.copyWith(
                               fontWeight: FontWeight.w700,
                               color:
                                   alloc.isFullyPaid
-                                      ? context.finColors.income
+                                      ? context.ff.color.moneyIncome
                                       : (alloc.allocatedRepaid > 0.001
-                                          ? context.finColors.debt
-                                          : theme.colorScheme.secondary),
+                                          ? context.ff.color.moneyDebt
+                                          : context.ff.color.secondary),
                             ),
                           ),
                         ),
@@ -653,18 +653,18 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 2),
+                        const SizedBox(height: FfSpace.x3s),
                         Text(
                           '${DateFormatter.formatShortDate(item.date)} · Due ${DateFormatter.formatShortDate(item.dueDate)}${accountName != null ? ' · $accountName' : ''}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                         if (item.notes != null && item.notes!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                          const SizedBox(height: FfSpace.x3s),
                           Text(
                             item.notes!,
-                            style: theme.textTheme.bodySmall?.copyWith(
+                            style: context.ff.text.bodySm.copyWith(
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -676,7 +676,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
               ),
             ),
 
-          const SizedBox(height: StillwaterTokens.spaceXl),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 5. Repayment History Section ──────────────────────────────────
           _SectionHeader(
@@ -695,35 +695,35 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     )
                     : null,
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
 
           if (repayments.isEmpty)
             FfCard(
               variant: FfCardVariant.standard,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: StillwaterTokens.spaceLg,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: FfSpace.lg),
                 child: Column(
                   children: [
                     Icon(
                       Icons.history_toggle_off_rounded,
                       size: 36,
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.5),
+                      color: context.ff.color.secondary.withValues(
+                        alpha: FfOpacity.half,
+                      ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Text(
                       'No repayments recorded yet',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.body.copyWith(
+                        color: context.ff.color.secondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.space2Xs),
+                    const SizedBox(height: FfSpace.x2s),
                     Text(
                       'Tap "Record Repayment" above when a payment is made.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary.withValues(
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.secondary.withValues(
                           alpha: 0.8,
                         ),
                       ),
@@ -745,35 +745,35 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                   final item = repayments[index];
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceMd,
-                      vertical: StillwaterTokens.space2Xs,
+                      horizontal: FfSpace.md,
+                      vertical: FfSpace.x2s,
                     ),
                     leading: Container(
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: context.finColors.income.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusSm,
+                        color: context.ff.color.moneyIncome.withValues(
+                          alpha: FfTint.subtle.alpha,
                         ),
+                        borderRadius: BorderRadius.circular(FfRadius.sm),
                       ),
                       child: Icon(
                         Icons.check_rounded,
-                        color: context.finColors.income,
+                        color: context.ff.color.moneyIncome,
                         size: 20,
                       ),
                     ),
                     title: Text(
                       CurrencyFormatter.format(item.amount),
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      style: context.ff.text.titleSm.copyWith(
                         fontWeight: FontWeight.w700,
                         fontFeatures: StillwaterTypography.tabularFeatures,
                       ),
                     ),
                     subtitle: Text(
                       '${DateFormatter.formatShortDate(item.repaymentDate)}${item.notes != null ? ' · ${item.notes}' : ''}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.secondary,
                       ),
                     ),
                     trailing: IconButton(
@@ -787,11 +787,11 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
               ),
             ),
 
-          const SizedBox(height: StillwaterTokens.spaceXl),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 6. Dates & Details Info ───────────────────────────────────────
           _SectionHeader(title: 'Relationship Details'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfCard(
             variant: FfCardVariant.standard,
             padding: EdgeInsets.zero,
@@ -845,15 +845,14 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: theme.textTheme.titleSmall?.copyWith(
+          style: context.ff.text.titleSm.copyWith(
             fontWeight: FontWeight.w700,
-            color: theme.colorScheme.primary,
+            color: context.ff.color.actionPrimary,
           ),
         ),
         if (trailing != null) trailing!,

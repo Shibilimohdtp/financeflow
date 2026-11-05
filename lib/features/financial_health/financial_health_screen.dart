@@ -6,11 +6,11 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'financial_health_controller.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class FinancialHealthScreen extends ConsumerWidget {
   const FinancialHealthScreen({super.key});
@@ -18,7 +18,7 @@ class FinancialHealthScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
     final reportAsync = ref.watch(financialHealthReportProvider);
 
     return Scaffold(
@@ -26,7 +26,7 @@ class FinancialHealthScreen extends ConsumerWidget {
         title: 'Financial Health',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -39,25 +39,25 @@ class FinancialHealthScreen extends ConsumerWidget {
           switch (report.grade) {
             case HealthScoreGrade.excellent:
             case HealthScoreGrade.strong:
-              scoreColor = finColors.income;
+              scoreColor = finColors.moneyIncome;
               break;
             case HealthScoreGrade.balanced:
-              scoreColor = theme.colorScheme.primary;
+              scoreColor = context.ff.color.actionPrimary;
               break;
             case HealthScoreGrade.needsAttention:
-              scoreColor = finColors.expense;
+              scoreColor = finColors.moneyExpense;
               break;
             case HealthScoreGrade.insufficientData:
-              scoreColor = theme.colorScheme.secondary;
+              scoreColor = context.ff.color.secondary;
               break;
           }
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.space4Xl,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
+              FfSpace.x4l,
             ),
             children: [
               // ── 1. Overall Health Score Hero ────────────────────────────
@@ -65,7 +65,7 @@ class FinancialHealthScreen extends ConsumerWidget {
                 variant: FfCardVariant.elevated,
                 child: Column(
                   children: [
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     // Circular Score Ring
                     Stack(
                       alignment: Alignment.center,
@@ -80,7 +80,7 @@ class FinancialHealthScreen extends ConsumerWidget {
                                     : 0.0,
                             strokeWidth: 8,
                             backgroundColor:
-                                theme.colorScheme.surfaceContainerHighest,
+                                context.ff.color.surfaceContainerHighest,
                             color: scoreColor,
                           ),
                         ),
@@ -97,8 +97,8 @@ class FinancialHealthScreen extends ConsumerWidget {
                             ),
                             Text(
                               'out of 100',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.labelSm.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ],
@@ -106,49 +106,49 @@ class FinancialHealthScreen extends ConsumerWidget {
                       ],
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceLg),
+                    const SizedBox(height: FfSpace.lg),
 
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.space2Xs,
+                        horizontal: FfSpace.md,
+                        vertical: FfSpace.x2s,
                       ),
                       decoration: BoxDecoration(
-                        color: scoreColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusFull,
+                        color: scoreColor.withValues(
+                          alpha: FfTint.subtle.alpha,
                         ),
+                        borderRadius: BorderRadius.circular(FfRadius.full),
                       ),
                       child: Text(
                         report.grade.label,
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: context.ff.text.titleSm.copyWith(
                           color: scoreColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
 
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
+                        horizontal: FfSpace.sm,
                       ),
                       child: Text(
                         report.grade.description,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.body.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
 
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                   ],
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
 
               // ── 2. Component Explanations Header ────────────────────────
               const FfSectionHeader(
@@ -166,14 +166,14 @@ class FinancialHealthScreen extends ConsumerWidget {
                       final Color barColor =
                           comp.hasSufficientData
                               ? (scorePct >= 0.75
-                                  ? finColors.income
+                                  ? finColors.moneyIncome
                                   : scorePct >= 0.5
-                                  ? theme.colorScheme.primary
-                                  : finColors.expense)
-                              : theme.colorScheme.secondary;
+                                  ? context.ff.color.actionPrimary
+                                  : finColors.moneyExpense)
+                              : context.ff.color.secondary;
 
                       return Padding(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                        padding: const EdgeInsets.all(FfSpace.md),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -183,17 +183,17 @@ class FinancialHealthScreen extends ConsumerWidget {
                                 Expanded(
                                   child: Text(
                                     comp.title,
-                                    style: theme.textTheme.titleSmall?.copyWith(
+                                    style: context.ff.text.titleSm.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: StillwaterTokens.spaceSm),
+                                const SizedBox(width: FfSpace.sm),
                                 if (!comp.hasSufficientData)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: StillwaterTokens.spaceSm,
-                                      vertical: 2,
+                                      horizontal: FfSpace.sm,
+                                      vertical: FfSpace.x3s,
                                     ),
                                     decoration: BoxDecoration(
                                       color:
@@ -201,15 +201,14 @@ class FinancialHealthScreen extends ConsumerWidget {
                                               .colorScheme
                                               .surfaceContainerHighest,
                                       borderRadius: BorderRadius.circular(
-                                        StillwaterTokens.radiusFull,
+                                        FfRadius.full,
                                       ),
                                     ),
                                     child: Text(
                                       'Not enough data',
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                          ),
+                                      style: context.ff.text.labelSm.copyWith(
+                                        color: context.ff.color.secondary,
+                                      ),
                                     ),
                                   )
                                 else
@@ -221,24 +220,24 @@ class FinancialHealthScreen extends ConsumerWidget {
                                   ),
                               ],
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceSm),
+                            const SizedBox(height: FfSpace.sm),
                             FfProgressBar(
                               value: scorePct,
                               color: barColor,
                               size: FfProgressSize.md,
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceSm),
+                            const SizedBox(height: FfSpace.sm),
                             Text(
                               comp.summary,
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              style: context.ff.text.bodySm.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: FfSpace.x3s),
                             Text(
                               comp.detail,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.bodySm.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ],
@@ -247,35 +246,35 @@ class FinancialHealthScreen extends ConsumerWidget {
                     }).toList(),
               ),
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
 
               // ── 4. Privacy Guarantee Footer ─────────────────────────────
               FfCard(
                 variant: FfCardVariant.tinted,
-                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                padding: const EdgeInsets.all(FfSpace.md),
                 child: Row(
                   children: [
                     Icon(
                       Icons.shield_outlined,
                       size: 24,
-                      color: context.secColors.verified,
+                      color: context.ff.color.statusSuccess,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceMd),
+                    const SizedBox(width: FfSpace.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'On-Device Analysis',
-                            style: theme.textTheme.titleSmall?.copyWith(
+                            style: context.ff.text.titleSm.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: FfSpace.x3s),
                           Text(
                             'Your wellness score is computed strictly on your device using local transactions, budgets, and savings goals.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.secondary,
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.secondary,
                             ),
                           ),
                         ],
@@ -290,7 +289,7 @@ class FinancialHealthScreen extends ConsumerWidget {
         loading:
             () => const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                padding: EdgeInsets.all(FfSpace.x4l),
                 child: FfLoading(),
               ),
             ),

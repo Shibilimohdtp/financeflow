@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/subscription.dart';
@@ -8,7 +7,6 @@ import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../theme/ff.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
   final Subscription? initialSubscription;
@@ -174,7 +173,6 @@ class _AddEditSubscriptionSheetState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountsAsync = ref.watch(allAccountsStreamProvider);
     final accounts = accountsAsync.value ?? [];
 
@@ -188,10 +186,10 @@ class _AddEditSubscriptionSheetState
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
+              FfSpace.md,
             ),
             child: Form(
               key: _formKey,
@@ -201,17 +199,15 @@ class _AddEditSubscriptionSheetState
                   // ── 1. Amount Hero Field ──────────────────────────
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceMd,
-                      vertical: StillwaterTokens.spaceSm,
+                      horizontal: FfSpace.md,
+                      vertical: FfSpace.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusLg,
-                      ),
+                      color: context.ff.color.surfaceCard,
+                      borderRadius: BorderRadius.circular(FfRadius.lg),
                       border: Border.all(
-                        color: theme.dividerColor,
-                        width: StillwaterTokens.borderWidthHairline,
+                        color: context.ff.color.borderSubtle,
+                        width: FfBorderWidth.hairline,
                       ),
                     ),
                     child: Column(
@@ -219,23 +215,23 @@ class _AddEditSubscriptionSheetState
                       children: [
                         Text(
                           'RECURRING AMOUNT',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.secondary,
                             letterSpacing: 1.0,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        const SizedBox(height: FfSpace.xs),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               CurrencyFormatter.currencySymbol,
                               style: StillwaterTypography.numLg(
-                                color: theme.colorScheme.primary,
+                                color: context.ff.color.actionPrimary,
                               ),
                             ),
-                            const SizedBox(width: StillwaterTokens.spaceXs),
+                            const SizedBox(width: FfSpace.xs),
                             Expanded(
                               child: FfAmountField.bare(
                                 controller: _amountController,
@@ -253,7 +249,7 @@ class _AddEditSubscriptionSheetState
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // ── 2. Service / Merchant Name ────────────────────
                   FfTextField(
@@ -268,18 +264,18 @@ class _AddEditSubscriptionSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 3. Billing Frequency Selector ─────────────────
                   Text(
                     'BILLING FREQUENCY',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.secondary,
                       letterSpacing: 1.0,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfSegmentedPill<SubscriptionFrequency>(
                     options: const [
                       FfSegmentOption(
@@ -305,24 +301,20 @@ class _AddEditSubscriptionSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 4. Next Renewal Date ──────────────────────────
                   InkWell(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     onTap: _selectDate,
                     child: Container(
-                      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                      padding: const EdgeInsets.all(FfSpace.md),
                       decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
+                        color: context.ff.color.surfaceCard,
+                        borderRadius: BorderRadius.circular(FfRadius.md),
                         border: Border.all(
-                          color: theme.dividerColor,
-                          width: StillwaterTokens.borderWidthHairline,
+                          color: context.ff.color.borderSubtle,
+                          width: FfBorderWidth.hairline,
                         ),
                       ),
                       child: Row(
@@ -333,14 +325,14 @@ class _AddEditSubscriptionSheetState
                             children: [
                               Text(
                                 'Next Renewal Date',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.bodySm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: FfSpace.x3s),
                               Text(
                                 DateFormatter.formatShortDate(_nextRenewalDate),
-                                style: theme.textTheme.titleSmall?.copyWith(
+                                style: context.ff.text.titleSm.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -349,26 +341,26 @@ class _AddEditSubscriptionSheetState
                           Icon(
                             Icons.calendar_today_outlined,
                             size: 20,
-                            color: theme.colorScheme.primary,
+                            color: context.ff.color.actionPrimary,
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 5. Linked Payment Account ─────────────────────
                   if (accounts.isNotEmpty) ...[
                     Text(
                       'LINKED PAYMENT ACCOUNT (OPTIONAL)',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                         letterSpacing: 1.0,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    const SizedBox(height: FfSpace.xs),
                     FfSelect<String?>(
                       value: _selectedAccountId,
                       items: [
@@ -387,7 +379,7 @@ class _AddEditSubscriptionSheetState
                         setState(() => _selectedAccountId = val);
                       },
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceLg),
+                    const SizedBox(height: FfSpace.lg),
                   ],
 
                   // ── 6. Reminder Settings ──────────────────────────
@@ -400,7 +392,7 @@ class _AddEditSubscriptionSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // ── 7. Optional Notes ─────────────────────────────
                   FfTextField(
@@ -409,7 +401,7 @@ class _AddEditSubscriptionSheetState
                     hint: 'Plan type, family tier, renewal terms',
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                 ],
               ),
             ),

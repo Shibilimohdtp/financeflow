@@ -14,7 +14,6 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../settings/settings_controller.dart';
 import 'accounts_controller.dart';
@@ -28,6 +27,7 @@ import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_menu.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -58,7 +58,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         title: 'Financial Accounts',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
             ),
@@ -87,9 +87,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
               104,
             ),
             children: [
@@ -105,8 +105,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                         children: [
                           Text(
                             'NET FINANCIAL BALANCE',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.secondary,
+                            style: context.ff.text.labelSm.copyWith(
+                              color: context.ff.color.secondary,
                               letterSpacing: 1.1,
                               fontWeight: FontWeight.w700,
                             ),
@@ -117,7 +117,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
                               size: 20,
-                              color: theme.colorScheme.secondary,
+                              color: context.ff.color.secondary,
                             ),
                             tooltip:
                                 isPrivacyBlur ? 'Show balance' : 'Hide balance',
@@ -130,32 +130,32 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceXs),
+                      const SizedBox(height: FfSpace.xs),
                       if (isPrivacyBlur)
                         Text(
                           '${CurrencyFormatter.currencySymbol} ••••••',
                           style: StillwaterTypography.numHero(
-                            color: theme.colorScheme.onSurface,
+                            color: context.ff.color.textPrimary,
                           ),
                         )
                       else
                         Text(
                           CurrencyFormatter.formatAmount(visibleBalance),
                           style: StillwaterTypography.numHero(
-                            color: theme.colorScheme.onSurface,
+                            color: context.ff.color.textPrimary,
                           ),
                         ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       Text(
                         'Across ${activeAccounts.length} active on-device ${activeAccounts.length == 1 ? 'account' : 'accounts'}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
               ],
 
               // ── 2. Segmented Pill Tab Bar ────────────────────────────────
@@ -178,7 +178,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                 },
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // ── 3. Accounts List Section ─────────────────────────────────
               FfSectionHeader(
@@ -187,9 +187,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
               if (displayAccounts.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.space2Xl,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.x2l),
                   child: FfEmptyState(
                     icon:
                         _showArchived
@@ -233,19 +231,17 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
                         return FfRow(
                           leading: Container(
-                            width: StillwaterTokens.iconTileSize,
-                            height: StillwaterTokens.iconTileSize,
+                            width: FfRowTokens.iconTile,
+                            height: FfRowTokens.iconTile,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusSm,
-                              ),
+                              color: context.ff.color.actionPrimaryContainer
+                                  .withValues(alpha: FfTint.strong.alpha),
+                              borderRadius: BorderRadius.circular(FfRadius.sm),
                             ),
                             child: Icon(
                               _getAccountTypeIcon(acc.type),
                               size: 20,
-                              color: theme.colorScheme.primary,
+                              color: context.ff.color.actionPrimary,
                             ),
                           ),
                           title: acc.name,
@@ -256,11 +252,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                               if (acc.isArchived)
                                 Container(
                                   margin: const EdgeInsets.only(
-                                    right: StillwaterTokens.spaceSm,
+                                    right: FfSpace.sm,
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: StillwaterTokens.spaceSm,
-                                    vertical: 2,
+                                    horizontal: FfSpace.sm,
+                                    vertical: FfSpace.x3s,
                                   ),
                                   decoration: BoxDecoration(
                                     color:
@@ -268,13 +264,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                             .colorScheme
                                             .surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusFull,
+                                      FfRadius.full,
                                     ),
                                   ),
                                   child: Text(
                                     'Archived',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.secondary,
+                                    style: context.ff.text.labelSm.copyWith(
+                                      color: context.ff.color.secondary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -285,7 +281,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 showSign: false,
                                 isBlurred: isPrivacyBlur,
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceXs),
+                              const SizedBox(width: FfSpace.xs),
                               FfMenuButton<String>(
                                 tooltip: 'Account options',
                                 items: [
@@ -371,7 +367,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         loading:
             () => const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                padding: EdgeInsets.all(FfSpace.x4l),
                 child: FfLoading(),
               ),
             ),
@@ -500,8 +496,6 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return FfSheet(
       children: [
         FfSheetHeader(
@@ -512,10 +506,10 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
+              FfSpace.md,
             ),
             child: Form(
               key: _formKey,
@@ -525,13 +519,13 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                   // Account Type selector
                   Text(
                     'ACCOUNT TYPE',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.secondary,
                       letterSpacing: 1.0,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfSelect<AccountType>(
                     value: _selectedType,
                     items:
@@ -545,9 +539,9 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                                     type,
                                   ),
                                   size: 18,
-                                  color: theme.colorScheme.secondary,
+                                  color: context.ff.color.secondary,
                                 ),
-                                const SizedBox(width: StillwaterTokens.spaceSm),
+                                const SizedBox(width: FfSpace.sm),
                                 Text(type.displayName),
                               ],
                             ),
@@ -560,7 +554,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Account Name field
                   FfTextField(
@@ -575,7 +569,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Opening Balance field
                   FfTextField(
@@ -601,7 +595,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Optional Details (Institution & Masked ID)
                   FfTextField(
@@ -610,7 +604,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                     hint: 'e.g. HDFC Bank, SBI, ICICI, Zerodha',
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   FfTextField(
                     controller: _maskedController,
@@ -618,7 +612,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
                     hint: 'e.g. •••• 4235, user@okhdfcbank',
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                 ],
               ),
             ),

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_colors.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
+import '../../theme/ff.dart';
 
 class LockScreen extends ConsumerStatefulWidget {
   final VoidCallback onUnlocked;
@@ -89,9 +89,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       body: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.space2Xl,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.x2l),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -100,10 +98,14 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.1),
+                    color: StillwaterColors.darkOnSecInk.withValues(
+                      alpha: FfTint.subtle.alpha,
+                    ),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.2),
+                      color: StillwaterColors.darkOnSecInk.withValues(
+                        alpha: FfTint.medium.alpha,
+                      ),
                       width: 1.5,
                     ),
                   ),
@@ -114,27 +116,27 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
 
-                const Text(
+                Text(
                   'FinanceFlow Locked',
-                  style: TextStyle(
+                  style: context.ff.text.headline.copyWith(
                     color: StillwaterColors.darkOnSecInk,
-                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 Text(
                   'Your financial data is protected on this device.',
-                  style: TextStyle(
-                    color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.7),
-                    fontSize: 13,
+                  style: context.ff.text.bodySm.copyWith(
+                    color: StillwaterColors.darkOnSecInk.withValues(
+                      alpha: FfOpacity.muted,
+                    ),
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: StillwaterTokens.space2Xl),
+                const SizedBox(height: FfSpace.x2l),
 
                 if (isPin) ...[
                   // PIN Dots
@@ -143,7 +145,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     children: List.generate(
                       6,
                       (index) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: FfSpace.x2s,
+                        ),
                         width: 14,
                         height: 14,
                         decoration: BoxDecoration(
@@ -165,18 +169,17 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   ),
 
                   if (_errorMessage != null) ...[
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
                     Text(
                       _errorMessage!,
-                      style: const TextStyle(
+                      style: context.ff.text.bodySm.copyWith(
                         color: StillwaterColors.darkError,
-                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
 
-                  const SizedBox(height: StillwaterTokens.space2Xl),
+                  const SizedBox(height: FfSpace.x2l),
 
                   // PIN Pad Grid
                   SizedBox(
@@ -184,11 +187,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     child: Column(
                       children: [
                         _buildPadRow(['1', '2', '3']),
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        const SizedBox(height: FfSpace.sm),
                         _buildPadRow(['4', '5', '6']),
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        const SizedBox(height: FfSpace.sm),
                         _buildPadRow(['7', '8', '9']),
-                        const SizedBox(height: StillwaterTokens.spaceSm),
+                        const SizedBox(height: FfSpace.sm),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -204,14 +207,14 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     ),
                   ),
                 ] else if (isBiometric) ...[
-                  const SizedBox(height: StillwaterTokens.space2Xl),
+                  const SizedBox(height: FfSpace.x2l),
                   FfButton(
                     label: 'Unlock with Biometrics',
                     onPressed: _tryBiometricUnlock,
                     width: 240,
                   ),
                 ] else ...[
-                  const SizedBox(height: StillwaterTokens.space2Xl),
+                  const SizedBox(height: FfSpace.x2l),
                   FfButton(
                     label: 'Unlock',
                     onPressed: widget.onUnlocked,
@@ -238,7 +241,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       width: 64,
       height: 64,
       child: Material(
-        color: StillwaterColors.darkOnSecInk.withValues(alpha: 0.08),
+        color: StillwaterColors.darkOnSecInk.withValues(
+          alpha: FfTint.faint.alpha,
+        ),
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -246,9 +251,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           child: Center(
             child: Text(
               digit,
-              style: const TextStyle(
+              style: context.ff.text.headline.copyWith(
                 color: StillwaterColors.darkOnSecInk,
-                fontSize: 22,
                 fontWeight: FontWeight.w600,
               ),
             ),

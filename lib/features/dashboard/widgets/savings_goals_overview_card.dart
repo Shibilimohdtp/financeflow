@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/ff_tone.dart';
 import '../../../shared/widgets/ff_progress.dart';
+import '../../../theme/ff.dart';
 
 class SavingsGoalsOverviewCard extends StatelessWidget {
   final double totalTarget;
@@ -27,8 +26,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
 
     if (totalTarget <= 0) return const SizedBox.shrink();
 
@@ -36,7 +34,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
         totalTarget > 0 ? (totalSaved / totalTarget).clamp(0.0, 1.0) : 0.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -46,7 +44,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Savings Goals',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.ff.text.titleSm.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
                   ),
@@ -63,7 +61,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Semantics(
             container: true,
             label:
@@ -71,20 +69,18 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                     ? 'Savings goals hidden'
                     : 'Savings Goals: $totalSaved saved towards $totalTarget, $completedCount of $totalGoals reached',
             child: Material(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               child: InkWell(
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 onTap: onViewGoals,
                 child: Container(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusLg,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.lg),
                     border: Border.all(
-                      color: theme.dividerColor,
-                      width: StillwaterTokens.borderWidthHairline,
+                      color: context.ff.color.borderSubtle,
+                      width: FfBorderWidth.hairline,
                     ),
                   ),
                   child: Column(
@@ -96,24 +92,22 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(
-                                  StillwaterTokens.space2Xs,
-                                ),
+                                padding: const EdgeInsets.all(FfSpace.x2s),
                                 decoration: BoxDecoration(
-                                  color: finColors.income.withValues(
+                                  color: finColors.moneyIncome.withValues(
                                     alpha: 0.12,
                                   ),
                                   borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusSm,
+                                    FfRadius.sm,
                                   ),
                                 ),
                                 child: Icon(
                                   Icons.flag_rounded,
-                                  color: finColors.income,
+                                  color: finColors.moneyIncome,
                                   size: 16,
                                 ),
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceSm),
+                              const SizedBox(width: FfSpace.sm),
                               Row(
                                 children: [
                                   FfAmountText(
@@ -123,13 +117,11 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                                     showSign: false,
                                     tone: FfTone.income,
                                   ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.space3Xs,
-                                  ),
+                                  const SizedBox(width: FfSpace.x3s),
                                   Text(
                                     'Saved',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: finColors.income,
+                                    style: context.ff.text.body.copyWith(
+                                      color: finColors.moneyIncome,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -139,34 +131,34 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                           ),
                           Text(
                             '$completedCount of $totalGoals reached',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.secondary,
+                            style: context.ff.text.labelSm.copyWith(
+                              color: context.ff.color.secondary,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       FfProgressBar(
                         value: progress,
-                        color: finColors.income,
+                        color: finColors.moneyIncome,
                         size: FfProgressSize.md,
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceSm),
+                      const SizedBox(height: FfSpace.sm),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             '${(progress * 100).toStringAsFixed(0)}% of target',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.secondary,
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.secondary,
                             ),
                           ),
                           Row(
                             children: [
                               Text(
                                 'Goal: ',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.bodySm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
                               FfAmountText(

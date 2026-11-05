@@ -4,9 +4,9 @@ import '../../../models/category_colors.dart';
 import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/charts/ff_donut_chart.dart';
 import '../../../shared/widgets/ff_card.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_progress.dart';
+import '../../../theme/ff.dart';
 
 /// The ring and its numbered, directly labeled comparison rows share one order.
 /// Rows also provide large, keyboard/screen-reader accessible drill-down targets.
@@ -36,7 +36,6 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final categories =
         widget.categories
             .where((c) => c.amount.isFinite && c.amount > 0)
@@ -44,7 +43,7 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
     if (categories.isEmpty) {
       return const FfCard(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: StillwaterTokens.spaceLg),
+          padding: EdgeInsets.symmetric(vertical: FfSpace.lg),
           child: Text('No expenses recorded for this period.'),
         ),
       );
@@ -61,32 +60,32 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
     final share = _percentage(selected.amount / total);
 
     return FfCard(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'Total expenses',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             CurrencyFormatter.format(total),
             key: const ValueKey('category-expense-total'),
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: context.ff.text.headlineSm.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             '$count ${count == 1 ? 'payment' : 'payments'} in this period',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
           FfDonutChart(
             slices:
                 categories
@@ -104,14 +103,14 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
                 (value) =>
                     setState(() => _selectedId = categories[value].categoryId),
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           Semantics(
             liveRegion: true,
             child: Text(
               '${selected == largest ? 'Largest category' : 'Selected category'} · ${selected.categoryName} · $share',
               key: const ValueKey('category-selection-summary'),
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: context.ff.text.bodySm.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -131,20 +130,20 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
           Text(
             'Tap a segment to explore. Tap a category for payments.',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           const FfDivider(),
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           Text(
             'Share of total spending',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.label.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           for (var i = 0; i < categories.length; i++)
             _CategoryRow(
               category: categories[i],
@@ -201,19 +200,19 @@ class _CategoryRow extends StatelessWidget {
       onTap: onTap,
       excludeSemantics: true,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.only(bottom: FfSpace.x2s),
         child: Material(
           color:
               selected
-                  ? theme.colorScheme.onSurface.withValues(alpha: .045)
+                  ? context.ff.color.textPrimary.withValues(
+                    alpha: FfTint.whisper.alpha,
+                  )
                   : Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            borderRadius: BorderRadius.circular(FfRadius.md),
             side: BorderSide(
               color:
-                  selected
-                      ? theme.colorScheme.outlineVariant
-                      : Colors.transparent,
+                  selected ? context.ff.color.borderSubtle : Colors.transparent,
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -221,7 +220,10 @@ class _CategoryRow extends StatelessWidget {
             key: ValueKey('category-row-${category.categoryId}'),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: FfSpace.xs,
+                vertical: FfSpace.sm,
+              ),
               child: Row(
                 children: [
                   Container(
@@ -229,17 +231,17 @@ class _CategoryRow extends StatelessWidget {
                     height: 28,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: .16),
+                      color: color.withValues(alpha: FfTint.subtle.alpha),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       '$number',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: context.ff.text.label.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: FfSpace.xs),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
@@ -248,13 +250,13 @@ class _CategoryRow extends StatelessWidget {
                             MediaQuery.textScalerOf(context).scale(14) > 19;
                         final name = Text(
                           category.categoryName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: context.ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         );
                         final value = Text(
                           amount,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: context.ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         );
@@ -268,11 +270,11 @@ class _CategoryRow extends StatelessWidget {
                               Row(
                                 children: [
                                   Expanded(child: name),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: FfSpace.xs),
                                   value,
                                 ],
                               ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: FfSpace.x2s),
                             Wrap(
                               alignment: WrapAlignment.spaceBetween,
                               spacing: 8,
@@ -280,19 +282,19 @@ class _CategoryRow extends StatelessWidget {
                               children: [
                                 Text(
                                   payments,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                  style: context.ff.text.bodySm.copyWith(
+                                    color: context.ff.color.textSecondary,
                                   ),
                                 ),
                                 Text(
                                   percent,
-                                  style: theme.textTheme.labelMedium?.copyWith(
+                                  style: context.ff.text.label.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: FfSpace.xs),
                             ExcludeSemantics(
                               child: FfProgressBar(
                                 value: fraction,
@@ -305,11 +307,11 @@ class _CategoryRow extends StatelessWidget {
                       },
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: FfSpace.x2s),
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: context.ff.color.textSecondary,
                   ),
                 ],
               ),

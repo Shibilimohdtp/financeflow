@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'backup_controller.dart';
 import 'restore_preview_screen.dart';
 import '../../shared/widgets/ff_toast.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -177,14 +176,12 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Scaffold(
       appBar: FfAppBar(
         title: 'Full Backup & Migration',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'AES-256 CTR', iconOnly: true),
             ),
@@ -193,48 +190,48 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. AES Encryption Guarantee ───────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: context.secColors.verified.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
+                    color: context.ff.color.statusSuccess.withValues(
+                      alpha: FfTint.subtle.alpha,
                     ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                   ),
                   child: Icon(
                     Icons.lock_outline_rounded,
-                    color: context.secColors.verified,
+                    color: context.ff.color.statusSuccess,
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Zero-Knowledge Encrypted Backups',
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: context.ff.text.titleSm.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         'Full disaster-recovery archive. Encrypted with AES-256 CTR + PBKDF2. Contains 100% of accounts, loans, settings, and histories.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ],
@@ -244,11 +241,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 2. Universal File Picker for Restore ───────────────────────
           FfCard(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -256,26 +253,26 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   children: [
                     Icon(
                       Icons.file_open_rounded,
-                      color: theme.colorScheme.primary,
+                      color: context.ff.color.actionPrimary,
                       size: 20,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
+                    const SizedBox(width: FfSpace.sm),
                     Text(
                       'Restore from File on Device',
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      style: context.ff.text.titleSm.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 Text(
                   'Restore a .ffbackup file from your phone’s Downloads folder, Google Drive, WhatsApp, or SD Card.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.bodySm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
                 FfButton(
                   label: 'Browse & Select Backup File',
                   variant: FfButtonVariant.secondary,
@@ -286,12 +283,12 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 3. Create Encrypted Backup Form ──────────────────────────
           const FfSectionHeader(title: 'Create New Backup'),
           FfCard(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -302,7 +299,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   hint: 'Enter at least 6 characters',
                   icon: Icons.key_outlined,
                 ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
                 FfTextField(
                   controller: _confirmPassphraseController,
                   obscureText: true,
@@ -310,7 +307,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   hint: 'Re-enter passphrase',
                   icon: Icons.key_outlined,
                 ),
-                const SizedBox(height: StillwaterTokens.spaceLg),
+                const SizedBox(height: FfSpace.lg),
                 FfButton(
                   label: 'Generate Encrypted Backup',
                   isLoading: _isCreatingBackup,
@@ -321,7 +318,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 4. Existing Local Backups ─────────────────────────────────
           FfSectionHeader(
@@ -332,34 +329,30 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             const FfLoading()
           else if (_existingBackups.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: StillwaterTokens.spaceLg,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: FfSpace.lg),
               child: Container(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                padding: const EdgeInsets.all(FfSpace.md),
                 decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusMd,
-                  ),
+                  color: context.ff.color.surfaceCard,
+                  borderRadius: BorderRadius.circular(FfRadius.md),
                   border: Border.all(
-                    color: theme.dividerColor,
-                    width: StillwaterTokens.borderWidthHairline,
+                    color: context.ff.color.borderSubtle,
+                    width: FfBorderWidth.hairline,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.info_outline_rounded,
-                      color: theme.colorScheme.secondary,
+                      color: context.ff.color.secondary,
                       size: 20,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
+                    const SizedBox(width: FfSpace.sm),
                     Expanded(
                       child: Text(
                         'No backups in local app storage. Use "Browse & Select" above to pick a backup from Downloads or Drive.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ),
@@ -378,7 +371,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               ],
             ),
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -393,32 +386,31 @@ class _BackupFileRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final stat = file.statSync();
     final sizeKb = (stat.size / 1024).toStringAsFixed(1);
     final filename = file.path.split(Platform.pathSeparator).last;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.sm,
       ),
       child: Row(
         children: [
           Container(
-            width: StillwaterTokens.iconTileSize,
-            height: StillwaterTokens.iconTileSize,
+            width: FfRowTokens.iconTile,
+            height: FfRowTokens.iconTile,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+              color: context.ff.color.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(FfRadius.sm),
             ),
             child: Icon(
               Icons.archive_outlined,
               size: 20,
-              color: theme.colorScheme.primary,
+              color: context.ff.color.actionPrimary,
             ),
           ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,15 +419,14 @@ class _BackupFileRow extends StatelessWidget {
                   filename,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: context.ff.text.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   '${DateFormatter.formatTransactionDate(stat.modified)} · $sizeKb KB',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
-                    fontSize: 11,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
               ],
@@ -453,7 +444,7 @@ class _BackupFileRow extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(width: StillwaterTokens.space2Xs),
+          const SizedBox(width: FfSpace.x2s),
           FfButton(
             label: 'Restore',
             size: FfButtonSize.sm,

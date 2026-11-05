@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 class FfSegmentOption<T> {
   final T value;
@@ -27,17 +26,15 @@ class FfSegmentedPill<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Container(
       margin: margin,
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(FfSpace.x2s),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        color: context.ff.color.surfaceCard,
+        borderRadius: BorderRadius.circular(FfRadius.full),
         border: Border.all(
-          color: theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
+          color: context.ff.color.borderSubtle,
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: Row(
@@ -48,22 +45,19 @@ class FfSegmentedPill<T> extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => onSelected(option.value),
                   child: AnimatedContainer(
-                    duration: StillwaterTokens.durationFast,
-                    curve: StillwaterTokens.easeEmphasized,
+                    duration: FfMotion.fast,
+                    curve: FfMotion.emphasized,
                     padding: const EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.spaceXs,
-                      horizontal: StillwaterTokens.spaceSm,
+                      vertical: FfSpace.xs,
+                      horizontal: FfSpace.sm,
                     ),
                     decoration: BoxDecoration(
                       color:
                           isSelected
-                              ? theme.colorScheme.primaryContainer.withValues(
-                                alpha: 0.6,
-                              )
+                              ? context.ff.color.actionPrimaryContainer
+                                  .withValues(alpha: 0.6)
                               : Colors.transparent,
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusFull,
-                      ),
+                      borderRadius: BorderRadius.circular(FfRadius.full),
                     ),
                     child: Center(
                       child: FittedBox(
@@ -77,22 +71,22 @@ class FfSegmentedPill<T> extends StatelessWidget {
                                 size: 16,
                                 color:
                                     isSelected
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.secondary,
+                                        ? context.ff.color.actionPrimary
+                                        : context.ff.color.secondary,
                               ),
-                              const SizedBox(width: StillwaterTokens.space2Xs),
+                              const SizedBox(width: FfSpace.x2s),
                             ],
                             Text(
                               option.label,
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: context.ff.text.labelSm.copyWith(
                                 fontWeight:
                                     isSelected
                                         ? FontWeight.w700
                                         : FontWeight.w500,
                                 color:
                                     isSelected
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.secondary,
+                                        ? context.ff.color.actionPrimary
+                                        : context.ff.color.secondary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

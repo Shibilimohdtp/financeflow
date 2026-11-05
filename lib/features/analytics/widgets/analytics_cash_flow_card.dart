@@ -5,9 +5,9 @@ import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_card.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../cash_flow_chart_data.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff.dart';
 
 enum _FlowView { compare, expenses, income }
 
@@ -46,7 +46,6 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final colors = context.finColors;
     final data = CashFlowChartData.fromPoints(
       points: widget.points,
@@ -58,7 +57,7 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
         data.buckets.every((b) => b.income == 0 && b.expense == 0)) {
       return const FfCard(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
+          padding: EdgeInsets.symmetric(vertical: FfSpace.xl),
           child: Text('No income or expenses in this period.'),
         ),
       );
@@ -83,28 +82,26 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
             : '${DateFormat('MMM yyyy').format(widget.start)} – ${DateFormat('MMM yyyy').format(widget.end)}';
 
     return FfCard(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             '${data.groupingLabel} · $period',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             net == 0
                 ? 'Income matched expenses'
                 : net > 0
                 ? '${CurrencyFormatter.format(net)} more in than out'
                 : '${CurrencyFormatter.format(-net)} more out than in',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: context.ff.text.title.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: FfSpace.sm),
           Wrap(
             spacing: 8,
             runSpacing: 4,
@@ -118,20 +115,20 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                     _FlowView.income => 'Income',
                   }),
                   selected: _view == view,
-                  selectedColor: theme.colorScheme.primaryContainer,
-                  checkmarkColor: theme.colorScheme.primary,
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(
+                  selectedColor: context.ff.color.actionPrimaryContainer,
+                  checkmarkColor: context.ff.color.actionPrimary,
+                  labelStyle: context.ff.text.label.copyWith(
                     color:
                         _view == view
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface,
+                            ? context.ff.color.actionPrimary
+                            : context.ff.color.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                   onSelected: (_) => setState(() => _view = view),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: FfSpace.sm),
           Wrap(
             spacing: 18,
             runSpacing: 8,
@@ -150,7 +147,7 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FfSpace.md),
           FfBarChart(
             items:
                 buckets
@@ -176,23 +173,30 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
             primaryLabel: _view == _FlowView.income ? 'Income' : 'Expenses',
             semanticsSummary: '${data.groupingLabel} cash flow chart',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: FfSpace.xs),
           Text(
             _view == _FlowView.compare
                 ? 'Same scale · Tap a period for exact values'
                 : '${_view == _FlowView.expenses ? 'Expense' : 'Income'} scale · Tap a period for exact values',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: FfSpace.sm),
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.sm,
+              0,
+              FfSpace.sm,
+              FfSpace.sm,
+            ),
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: .035),
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-              border: Border.all(color: theme.dividerColor),
+              color: context.ff.color.textPrimary.withValues(
+                alpha: FfTint.whisper.alpha,
+              ),
+              borderRadius: BorderRadius.circular(FfRadius.md),
+              border: Border.all(color: context.ff.color.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -205,7 +209,7 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                         child: Text(
                           selected.dateLabel,
                           key: const ValueKey('flow-selected-period'),
-                          style: theme.textTheme.labelLarge?.copyWith(
+                          style: context.ff.text.labelLg.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -255,7 +259,7 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               values[0],
-                              const SizedBox(height: 8),
+                              const SizedBox(height: FfSpace.xs),
                               values[1],
                             ],
                           )
@@ -263,20 +267,20 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(child: values[0]),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: FfSpace.sm),
                               Expanded(child: values[1]),
                             ],
                           );
                     },
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: FfSpace.xs),
                 const FfDivider(),
-                const SizedBox(height: 10),
+                const SizedBox(height: FfSpace.xs),
                 Text(
                   'Net ${CurrencyFormatter.format(selected.net, showSign: selected.net != 0)}',
                   key: const ValueKey('flow-selected-net'),
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: context.ff.text.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -304,8 +308,8 @@ class _FlowLegend extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       Icon(icon, size: 14, color: color),
-      const SizedBox(width: 5),
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
+      const SizedBox(width: FfSpace.x2s),
+      Text(label, style: context.ff.text.bodySm),
     ],
   );
 }
@@ -324,11 +328,11 @@ class _FlowValue extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: 4),
+      Text(label, style: context.ff.text.bodySm),
+      const SizedBox(height: FfSpace.x2s),
       Text(
         CurrencyFormatter.format(amount),
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        style: context.ff.text.title.copyWith(
           color: color,
           fontWeight: FontWeight.w700,
         ),

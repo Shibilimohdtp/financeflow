@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 /// A standard Stillwater section header with uppercase label style.
 class FfSectionHeader extends StatelessWidget {
@@ -15,16 +14,14 @@ class FfSectionHeader extends StatelessWidget {
     this.trailing,
     this.isUppercase = false,
     this.padding = const EdgeInsets.only(
-      left: StillwaterTokens.spaceXs,
-      right: StillwaterTokens.spaceXs,
-      bottom: StillwaterTokens.spaceXs,
+      left: FfSpace.xs,
+      right: FfSpace.xs,
+      bottom: FfSpace.xs,
     ),
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Padding(
       padding: padding,
       child: Row(
@@ -35,12 +32,12 @@ class FfSectionHeader extends StatelessWidget {
               isUppercase ? title.toUpperCase() : title,
               style:
                   isUppercase
-                      ? theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      ? context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
                       )
-                      : theme.textTheme.titleMedium?.copyWith(
+                      : context.ff.text.title.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
             ),

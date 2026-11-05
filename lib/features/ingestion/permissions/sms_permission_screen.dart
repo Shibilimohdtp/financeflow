@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_button.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
 import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../services/ingestion/ingestion_platform.dart';
@@ -11,6 +9,7 @@ import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
 import '../../../shared/widgets/ff_row.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff.dart';
 
 class SmsPermissionScreen extends ConsumerStatefulWidget {
   const SmsPermissionScreen({super.key});
@@ -34,7 +33,6 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final status = ref.watch(ingestionPlatformStatusProvider).value;
     final permission =
         status?.smsPermission ?? IngestionPermissionState.unavailable;
@@ -43,19 +41,19 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
       appBar: FfAppBar(title: 'Bank SMS Detection'),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Privacy Guarantee Hero ─────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.all(FfSpace.lg),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -68,15 +66,15 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                       children: [
                         Icon(
                           Icons.shield_outlined,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                           size: 20,
                         ),
-                        const SizedBox(width: StillwaterTokens.spaceSm),
+                        const SizedBox(width: FfSpace.sm),
                         Text(
                           'Privacy & SMS Security',
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: context.ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: context.secColors.verified,
+                            color: context.ff.color.statusSuccess,
                           ),
                         ),
                       ],
@@ -84,19 +82,17 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                     const FfPrivacyBadge(label: '100% Offline'),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 Padding(
-                  padding: const EdgeInsets.only(
-                    left: StillwaterTokens.spaceLg,
-                  ),
+                  padding: const EdgeInsets.only(left: FfSpace.lg),
                   child: Text(
                     '• Only transactional debit/credit bank SMS are parsed.\n'
                     '• OTPs, login verification codes, and personal chats are NEVER parsed or stored.\n'
                     '• All regex parsing happens strictly on this device in memory.\n'
                     '• New financial sender IDs are reviewed locally when their format is unfamiliar.\n'
                     '• You can disable SMS detection anytime in Settings.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.bodySm.copyWith(
+                      color: context.ff.color.secondary,
                       height: 1.5,
                     ),
                   ),
@@ -105,7 +101,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           FfRow(
             icon:
@@ -116,18 +112,18 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
             subtitle: _permissionExplanation(permission),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // ── 2. Supported Indian Banks List ───────────────────────────
           _SectionLabel(label: 'Supported Banking Templates'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Container(
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -135,21 +131,21 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                 for (int i = 0; i < _supportedBanks.length; i++) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.spaceMd,
-                      vertical: StillwaterTokens.spaceSm,
+                      horizontal: FfSpace.md,
+                      vertical: FfSpace.sm,
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.check_circle_rounded,
                           size: 18,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                         ),
-                        const SizedBox(width: StillwaterTokens.spaceMd),
+                        const SizedBox(width: FfSpace.md),
                         Expanded(
                           child: Text(
                             _supportedBanks[i],
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: context.ff.text.body.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -164,7 +160,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 3. Enable Button ─────────────────────────────────────────
           FfButton(
@@ -209,7 +205,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
             },
           ),
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -253,13 +249,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

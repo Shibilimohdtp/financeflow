@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/account.dart';
 import '../../../models/category.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
+import '../../../theme/ff.dart';
 
 /// One removable chip per active filter, plus "Clear all". Renders nothing
 /// when no filter is active.
@@ -83,13 +83,11 @@ class ActiveFilterChips extends StatelessWidget {
       height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
         children: [
           for (final chip in chips)
             Padding(
-              padding: const EdgeInsets.only(right: StillwaterTokens.spaceXs),
+              padding: const EdgeInsets.only(right: FfSpace.xs),
               child: InputChip(
                 label: Text(chip.label),
                 onDeleted: () => onChanged(chip.without),

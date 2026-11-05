@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/transaction.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_empty_state.dart';
 import '../../../shared/widgets/ff_source_badge.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff.dart';
 
 class HomeRecentTransactions extends StatelessWidget {
   final List<Transaction> transactions;
@@ -27,10 +26,8 @@ class HomeRecentTransactions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -40,7 +37,7 @@ class HomeRecentTransactions extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Recent Transactions',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.ff.text.titleSm.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
                   ),
@@ -57,16 +54,16 @@ class HomeRecentTransactions extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           if (transactions.isEmpty)
             Container(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+              padding: const EdgeInsets.all(FfSpace.lg),
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                color: context.ff.color.surfaceCard,
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 border: Border.all(
-                  color: theme.dividerColor,
-                  width: StillwaterTokens.borderWidthHairline,
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
                 ),
               ),
               child: FfEmptyState(
@@ -81,11 +78,11 @@ class HomeRecentTransactions extends StatelessWidget {
           else
             Container(
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                color: context.ff.color.surfaceCard,
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 border: Border.all(
-                  color: theme.dividerColor,
-                  width: StillwaterTokens.borderWidthHairline,
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
                 ),
               ),
               child: ListView.separated(
@@ -100,17 +97,17 @@ class HomeRecentTransactions extends StatelessWidget {
                     borderRadius: BorderRadius.vertical(
                       top:
                           index == 0
-                              ? const Radius.circular(StillwaterTokens.radiusLg)
+                              ? const Radius.circular(FfRadius.lg)
                               : Radius.zero,
                       bottom:
                           index == transactions.length - 1
-                              ? const Radius.circular(StillwaterTokens.radiusLg)
+                              ? const Radius.circular(FfRadius.lg)
                               : Radius.zero,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.spaceSm,
+                        horizontal: FfSpace.md,
+                        vertical: FfSpace.sm,
                       ),
                       child: Row(
                         children: [
@@ -119,7 +116,7 @@ class HomeRecentTransactions extends StatelessWidget {
                             colorTokenIdentifier: tx.categoryColor,
                             size: 36,
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceSm),
+                          const SizedBox(width: FfSpace.sm),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,15 +126,13 @@ class HomeRecentTransactions extends StatelessWidget {
                                   tx.merchant.isNotEmpty
                                       ? tx.merchant
                                       : tx.categoryName,
-                                  style: theme.textTheme.titleSmall?.copyWith(
+                                  style: context.ff.text.titleSm.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(
-                                  height: StillwaterTokens.space3Xs,
-                                ),
+                                const SizedBox(height: FfSpace.x3s),
                                 Row(
                                   children: [
                                     Flexible(
@@ -145,19 +140,15 @@ class HomeRecentTransactions extends StatelessWidget {
                                         DateFormatter.formatTransactionDate(
                                           tx.date,
                                         ),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              fontSize: 11,
-                                              color:
-                                                  theme.colorScheme.secondary,
-                                            ),
+                                        style: context.ff.text.bodySm.copyWith(
+                                          fontSize: 11,
+                                          color: context.ff.color.secondary,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const SizedBox(
-                                      width: StillwaterTokens.spaceXs,
-                                    ),
+                                    const SizedBox(width: FfSpace.xs),
                                     Flexible(
                                       child: FfSourceBadge(
                                         source: tx.source,
@@ -170,7 +161,7 @@ class HomeRecentTransactions extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceSm),
+                          const SizedBox(width: FfSpace.sm),
                           FfAmountText(
                             amount: tx.amount,
                             type: tx.type,

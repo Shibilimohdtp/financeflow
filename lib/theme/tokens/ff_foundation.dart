@@ -74,12 +74,18 @@ abstract final class FfMotion {
 abstract final class FfOpacity {
   static const double disabled = 0.38;
   static const double overlay = 0.48;
+
+  /// De-emphasised foregrounds (secondary marks on coloured surfaces).
+  static const double half = 0.5;
+  static const double muted = 0.7;
+  static const double high = 0.85;
   static const double blur = 0.92;
 }
 
 /// The only alpha levels for tinted backgrounds (icon tiles, selected rows,
 /// soft status fills).
 enum FfTint {
+  whisper(0.04),
   faint(0.08),
   subtle(0.12),
   medium(0.2),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_button.dart';
-import '../../../theme/stillwater_tokens.dart';
+import '../../../theme/ff.dart';
 
 /// An inline task card displayed on the Money/Transactions screen when
 /// imported transactions require review before joining the official ledger.
@@ -21,9 +20,8 @@ class PendingReviewTaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
 
-    final theme = context.theme;
-    final warningColor = context.statusColors.warning;
-    final warningBg = context.statusColors.warningContainer;
+    final warningColor = context.ff.color.statusWarning;
+    final warningBg = context.ff.color.statusWarningContainer;
 
     final titleText =
         count == 1
@@ -35,22 +33,22 @@ class PendingReviewTaskCard extends StatelessWidget {
       label: '$titleText. Verify merchant and category.',
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.spaceXs,
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.spaceXs,
+          FfSpace.lg,
+          FfSpace.xs,
+          FfSpace.lg,
+          FfSpace.xs,
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
-              color: warningColor.withValues(alpha: 0.4),
-              width: StillwaterTokens.borderWidthDefault,
+              color: warningColor.withValues(alpha: FfTint.strong.alpha),
+              width: FfBorderWidth.regular,
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -62,10 +60,8 @@ class PendingReviewTaskCard extends StatelessWidget {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: warningBg.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusSm,
-                        ),
+                        color: warningBg.withValues(alpha: FfOpacity.muted),
+                        borderRadius: BorderRadius.circular(FfRadius.sm),
                       ),
                       child: Icon(
                         Icons.pending_actions_rounded,
@@ -73,14 +69,13 @@ class PendingReviewTaskCard extends StatelessWidget {
                         color: warningColor,
                       ),
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceXs),
+                    const SizedBox(width: FfSpace.xs),
                     Text(
                       'NEEDS REVIEW · $count ${count == 1 ? 'ITEM' : 'ITEMS'}',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: context.ff.text.labelSm.copyWith(
                         color: warningColor,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        fontSize: 10,
                       ),
                     ),
                     const Spacer(),
@@ -97,27 +92,29 @@ class PendingReviewTaskCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
 
                 // Headline
                 Text(
                   titleText,
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: context.ff.text.title.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
+                    color: context.ff.color.textPrimary,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.space2Xs),
+                const SizedBox(height: FfSpace.x2s),
 
                 // Explanation of why it matters
                 Text(
                   'Verify merchant and category so your ledger balances and spending trends stay accurate.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                  style: context.ff.text.bodySm.copyWith(
+                    color: context.ff.color.textPrimary.withValues(
+                      alpha: FfOpacity.muted,
+                    ),
                     height: 1.35,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
 
                 // Actions: Review now (primary) + Later (text)
                 Row(
@@ -132,7 +129,7 @@ class PendingReviewTaskCard extends StatelessWidget {
                       ),
                       onPressed: onReviewNow,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceXs),
+                    const SizedBox(width: FfSpace.xs),
                     FfButton(
                       label: 'Later',
                       size: FfButtonSize.sm,

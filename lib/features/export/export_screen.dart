@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../services/export_service.dart';
 import '../../shared/widgets/ff_button.dart';
@@ -10,7 +9,6 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../backup/backup_screen.dart';
 import 'export_controller.dart';
 import '../accounts/accounts_controller.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../theme/ff.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
@@ -91,7 +90,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final transactions = ref.watch(allTransactionsStreamProvider).value ?? [];
 
     return Scaffold(
@@ -99,7 +97,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         title: 'Export Reports',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
             ),
@@ -108,19 +106,23 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── Device Migration & Disaster Recovery Notice ───────────────
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.actionPrimaryContainer.withValues(
+                alpha: FfTint.strong.alpha,
+              ),
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.actionPrimary.withValues(
+                  alpha: FfTint.strong.alpha,
+                ),
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -131,53 +133,50 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     Icon(
                       Icons.phonelink_setup_rounded,
                       size: 20,
-                      color: theme.colorScheme.primary,
+                      color: context.ff.color.actionPrimary,
                     ),
-                    const SizedBox(width: StillwaterTokens.spaceSm),
+                    const SizedBox(width: FfSpace.sm),
                     Text(
                       'Migrating to a New Phone?',
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      style: context.ff.text.titleSm.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
+                        color: context.ff.color.actionPrimary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceXs),
+                const SizedBox(height: FfSpace.xs),
                 Text(
                   'Exports below are designed for external spreadsheets and reports. To transfer 100% of your data (all accounts, loans, settings, and histories) to another device, use Encrypted Backup & Restore.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: context.ff.text.bodySm.copyWith(
+                    color: context.ff.color.textSecondary,
                   ),
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 InkWell(
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const BackupScreen()),
                     );
                   },
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.sm),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: FfSpace.x2s),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           'Open Backup & Restore',
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: context.ff.text.label.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+                            color: context.ff.color.actionPrimary,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: FfSpace.x2s),
                         Icon(
                           Icons.arrow_forward_rounded,
                           size: 14,
-                          color: theme.colorScheme.primary,
+                          color: context.ff.color.actionPrimary,
                         ),
                       ],
                     ),
@@ -187,46 +186,46 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 1. Local Processing Guarantee ─────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: context.secColors.verified.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
+                    color: context.ff.color.statusSuccess.withValues(
+                      alpha: FfTint.subtle.alpha,
                     ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                   ),
                   child: Icon(
                     Icons.shield_outlined,
-                    color: context.secColors.verified,
+                    color: context.ff.color.statusSuccess,
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'On-Device Report Generator',
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: context.ff.text.titleSm.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         'Spreadsheets and summaries are compiled strictly on this device without uploading to remote servers.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ],
@@ -236,7 +235,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 2. Format Selection ───────────────────────────────────────
           const FfSectionHeader(title: 'Export Format'),
@@ -257,7 +256,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             },
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 3. Export Scope ───────────────────────────────────────────
           const FfSectionHeader(title: 'Data Scope'),
@@ -291,7 +290,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 4. Export Action Button ───────────────────────────────────
           FfButton(
@@ -302,10 +301,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           ),
 
           if (_exportedPath != null) ...[
-            const SizedBox(height: StillwaterTokens.spaceLg),
+            const SizedBox(height: FfSpace.lg),
             FfCard(
               variant: FfCardVariant.elevated,
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -313,36 +312,36 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     children: [
                       Icon(
                         Icons.check_circle_outline_rounded,
-                        color: context.finColors.income,
+                        color: context.ff.color.moneyIncome,
                         size: 20,
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceSm),
+                      const SizedBox(width: FfSpace.sm),
                       Expanded(
                         child: Text(
                           'Export Report Generated',
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: context.ff.text.titleSm.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: context.finColors.income,
+                            color: context.ff.color.moneyIncome,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
+                  const SizedBox(height: FfSpace.sm),
                   Text(
                     'File: ${_exportedPath!.split(RegExp(r'[/\\]')).last}',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: context.ff.text.bodySm.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: FfSpace.x3s),
                   Text(
                     'Reports are for external analysis (Excel/Sheets/Tax). To move all data to a new device, use Full Backup & Migration.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.bodySm.copyWith(
+                      color: context.ff.color.secondary,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                   FfButton(
                     label: 'Share / Save to Downloads',
                     leadingIcon: const Icon(Icons.share_rounded, size: 16),
@@ -360,7 +359,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ],
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );

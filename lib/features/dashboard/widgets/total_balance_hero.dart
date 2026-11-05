@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/stillwater_typography.dart';
+import '../../../theme/ff.dart';
 
 /// A compact account-balance summary. Period cash flow belongs in its own card.
 class TotalBalanceHero extends StatelessWidget {
@@ -27,7 +26,6 @@ class TotalBalanceHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountLabel =
         activeAccountsCount == 1
             ? '1 account'
@@ -39,17 +37,17 @@ class TotalBalanceHero extends StatelessWidget {
 
     return Container(
       key: const ValueKey('total-balance-card'),
-      margin: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      margin: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.sm,
       ),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        color: context.ff.color.surfaceCard,
+        borderRadius: BorderRadius.circular(FfRadius.lg),
         border: Border.all(
-          color: theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
+          color: context.ff.color.borderSubtle,
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: Column(
@@ -61,30 +59,32 @@ class TotalBalanceHero extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Total Balance',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: context.ff.text.bodySm.copyWith(
+                    color: context.ff.color.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceXs),
+              const SizedBox(width: FfSpace.xs),
               Flexible(
                 child:
                     onManageAccounts == null
                         ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: FfSpace.md,
+                          ),
                           child: Text(
                             accountLabel,
-                            style: theme.textTheme.bodySmall,
+                            style: context.ff.text.bodySm,
                           ),
                         )
                         : TextButton(
                           key: const ValueKey('balance-accounts'),
                           onPressed: onManageAccounts,
                           style: TextButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                            foregroundColor: context.ff.color.textSecondary,
                             minimumSize: const Size(48, 48),
-                            padding: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.only(left: FfSpace.xs),
                             tapTargetSize: MaterialTapTargetSize.padded,
                           ),
                           child: Row(
@@ -93,12 +93,12 @@ class TotalBalanceHero extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   accountLabel,
-                                  style: theme.textTheme.bodySmall?.copyWith(
+                                  style: context.ff.text.bodySm.copyWith(
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: FfSpace.x2s),
                               const Icon(Icons.chevron_right_rounded, size: 16),
                             ],
                           ),
@@ -127,8 +127,8 @@ class TotalBalanceHero extends StatelessWidget {
                       style: StillwaterTypography.numHero(
                         color:
                             !isPrivacyBlur && totalBalance < 0
-                                ? context.finColors.expense
-                                : theme.colorScheme.onSurface,
+                                ? context.ff.color.moneyExpense
+                                : context.ff.color.textPrimary,
                       ).copyWith(
                         fontSize: 34,
                         height: 1.2,
@@ -138,7 +138,7 @@ class TotalBalanceHero extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceXs),
+              const SizedBox(width: FfSpace.xs),
               IconButton(
                 key: const ValueKey('balance-privacy'),
                 tooltip: isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
@@ -150,7 +150,7 @@ class TotalBalanceHero extends StatelessWidget {
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
                   size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: context.ff.color.textSecondary,
                 ),
               ),
             ],

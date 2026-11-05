@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/extensions/context_extensions.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_pickers.dart';
+import '../../../theme/ff.dart';
 
 class MonthSelectorHeader extends StatelessWidget {
   final DateTime selectedMonth;
@@ -16,10 +15,8 @@ class MonthSelectorHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -36,7 +33,7 @@ class MonthSelectorHeader extends StatelessWidget {
             },
           ),
           InkWell(
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+            borderRadius: BorderRadius.circular(FfRadius.sm),
             onTap: () async {
               final picked = await pickFfDate(
                 context,
@@ -50,20 +47,20 @@ class MonthSelectorHeader extends StatelessWidget {
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceSm,
-                vertical: StillwaterTokens.space2Xs,
+                horizontal: FfSpace.sm,
+                vertical: FfSpace.x2s,
               ),
               child: Row(
                 children: [
                   const Icon(Icons.calendar_today_outlined, size: 16),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const SizedBox(width: FfSpace.xs),
                   Text(
                     DateFormat('MMMM yyyy').format(selectedMonth),
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: context.ff.text.title.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  const SizedBox(width: FfSpace.x2s),
                   const Icon(Icons.arrow_drop_down_rounded, size: 20),
                 ],
               ),

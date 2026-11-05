@@ -13,7 +13,6 @@ import '../../models/transaction.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import 'csv_import_controller.dart';
@@ -23,6 +22,7 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -139,8 +139,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceLg,
-                        vertical: StillwaterTokens.spaceMd,
+                        horizontal: FfSpace.lg,
+                        vertical: FfSpace.md,
                       ),
                       children: [
                         _buildDropdownRow(
@@ -264,20 +264,18 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     List<String> headers,
     ValueChanged<int?> onChanged,
   ) {
-    final theme = context.theme;
-
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: StillwaterTokens.space2Xs),
+      margin: const EdgeInsets.symmetric(vertical: FfSpace.x2s),
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceXs,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.xs,
       ),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        color: context.ff.color.surfaceCard,
+        borderRadius: BorderRadius.circular(FfRadius.md),
         border: Border.all(
-          color: theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
+          color: context.ff.color.borderSubtle,
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: Row(
@@ -286,9 +284,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           Expanded(
             child: Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: context.ff.text.body.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
           DropdownButton<int?>(
@@ -335,7 +331,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         title: 'Import CSV Statement',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: '100% Offline', iconOnly: true),
             ),
@@ -348,24 +344,25 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceSm,
+              horizontal: FfSpace.lg,
+              vertical: FfSpace.sm,
             ),
-            color: context.secColors.verified.withValues(alpha: 0.1),
+            color: context.ff.color.statusSuccess.withValues(
+              alpha: FfTint.subtle.alpha,
+            ),
             child: Row(
               children: [
                 Icon(
                   Icons.shield_outlined,
                   size: 18,
-                  color: context.secColors.verified,
+                  color: context.ff.color.statusSuccess,
                 ),
-                const SizedBox(width: StillwaterTokens.spaceSm),
+                const SizedBox(width: FfSpace.sm),
                 Expanded(
                   child: Text(
                     'Files are read locally on this device. Statement data never leaves your phone.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: context.secColors.verified,
-                      fontSize: 11,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.statusSuccess,
                     ),
                   ),
                 ),
@@ -377,16 +374,16 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           if (state.isLoading) ...[
             FfProgressBar(
               value: null,
-              color: theme.colorScheme.primary,
+              color: context.ff.color.actionPrimary,
               size: FfProgressSize.md,
             ),
             if (state.progressStep != null)
               Padding(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+                padding: const EdgeInsets.all(FfSpace.sm),
                 child: Text(
                   state.progressStep!,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
               ),
@@ -395,24 +392,24 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           // ── 3. Error Banner ──────────────────────────────────────────
           if (state.errorMessage != null)
             Container(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-              margin: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.sm),
+              margin: const EdgeInsets.all(FfSpace.md),
               decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                color: context.ff.color.statusErrorContainer,
+                borderRadius: BorderRadius.circular(FfRadius.sm),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.error_outline,
-                    color: theme.colorScheme.error,
+                    color: context.ff.color.statusError,
                     size: 18,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const SizedBox(width: FfSpace.xs),
                   Expanded(
                     child: Text(
                       state.errorMessage!,
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: context.ff.text.bodySm.copyWith(
                         color: theme.colorScheme.onErrorContainer,
                       ),
                     ),
@@ -442,19 +439,17 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   }
 
   Widget _buildInitialFileSelectionView(BuildContext context) {
-    final theme = context.theme;
-
     return ListView(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.all(FfSpace.lg),
       children: [
         Container(
-          padding: const EdgeInsets.all(StillwaterTokens.spaceXl),
+          padding: const EdgeInsets.all(FfSpace.xl),
           decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
-              color: theme.dividerColor,
-              width: StillwaterTokens.borderWidthHairline,
+              color: context.ff.color.borderSubtle,
+              width: FfBorderWidth.hairline,
             ),
           ),
           child: Column(
@@ -463,33 +458,33 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusMd,
+                  color: context.ff.color.actionPrimary.withValues(
+                    alpha: FfTint.subtle.alpha,
                   ),
+                  borderRadius: BorderRadius.circular(FfRadius.md),
                 ),
                 child: Icon(
                   Icons.file_upload_outlined,
                   size: 24,
-                  color: theme.colorScheme.primary,
+                  color: context.ff.color.actionPrimary,
                 ),
               ),
-              const SizedBox(height: StillwaterTokens.spaceMd),
+              const SizedBox(height: FfSpace.md),
               Text(
                 'Select Bank Statement CSV',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: context.ff.text.title.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: StillwaterTokens.spaceXs),
+              const SizedBox(height: FfSpace.xs),
               Text(
                 'Supports HDFC, ICICI, SBI, Axis, and custom CSV statement formats.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.secondary,
+                style: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.secondary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
               FfButton(
                 label: 'Choose CSV File',
                 leadingIcon: const Icon(Icons.folder_open_rounded, size: 18),
@@ -499,10 +494,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ),
         ),
 
-        const SizedBox(height: StillwaterTokens.space2Xl),
+        const SizedBox(height: FfSpace.x2l),
 
         _SectionLabel(label: 'Or Test with Sample Data'),
-        const SizedBox(height: StillwaterTokens.spaceXs),
+        const SizedBox(height: FfSpace.xs),
         Row(
           children: [
             Expanded(
@@ -512,7 +507,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 onPressed: () => _loadSampleData('hdfc'),
               ),
             ),
-            const SizedBox(width: StillwaterTokens.spaceSm),
+            const SizedBox(width: FfSpace.sm),
             Expanded(
               child: FfButton(
                 label: 'ICICI Sample',
@@ -520,7 +515,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 onPressed: () => _loadSampleData('icici'),
               ),
             ),
-            const SizedBox(width: StillwaterTokens.spaceSm),
+            const SizedBox(width: FfSpace.sm),
             Expanded(
               child: FfButton(
                 label: 'General CSV',
@@ -531,17 +526,17 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ],
         ),
 
-        const SizedBox(height: StillwaterTokens.space2Xl),
+        const SizedBox(height: FfSpace.x2l),
 
         _SectionLabel(label: 'Or Paste Raw CSV Text'),
-        const SizedBox(height: StillwaterTokens.spaceXs),
+        const SizedBox(height: FfSpace.xs),
         Container(
           decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
-              color: theme.dividerColor,
-              width: StillwaterTokens.borderWidthHairline,
+              color: context.ff.color.borderSubtle,
+              width: FfBorderWidth.hairline,
             ),
           ),
           child: Column(
@@ -559,7 +554,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               if (_showPasteArea) ...[
                 const FfDivider(),
                 Padding(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   child: Column(
                     children: [
                       TextField(
@@ -574,7 +569,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      const SizedBox(height: FfSpace.md),
                       FfButton(
                         label: 'Parse Pasted CSV',
                         onPressed: () {
@@ -597,7 +592,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ),
         ),
 
-        const SizedBox(height: StillwaterTokens.space4Xl),
+        const SizedBox(height: FfSpace.x4l),
       ],
     );
   }
@@ -608,23 +603,21 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     List<Category> categories,
     List<Account> accounts,
   ) {
-    final theme = context.theme;
-
     return ListView(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceLg,
-        vertical: StillwaterTokens.spaceMd,
+        horizontal: FfSpace.lg,
+        vertical: FfSpace.md,
       ),
       children: [
         // Session Summary Card
         Container(
-          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+          padding: const EdgeInsets.all(FfSpace.lg),
           decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
-              color: theme.dividerColor,
-              width: StillwaterTokens.borderWidthHairline,
+              color: context.ff.color.borderSubtle,
+              width: FfBorderWidth.hairline,
             ),
           ),
           child: Column(
@@ -636,7 +629,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   Expanded(
                     child: Text(
                       session.sourceName,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: context.ff.text.title.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -650,23 +643,23 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
+              const SizedBox(height: FfSpace.sm),
               Row(
                 children: [
                   _SummaryPill(
                     label: '${session.totalCount} Total',
-                    color: theme.colorScheme.primary,
+                    color: context.ff.color.actionPrimary,
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const SizedBox(width: FfSpace.xs),
                   _SummaryPill(
                     label: '${session.validCount} Valid',
-                    color: context.secColors.verified,
+                    color: context.ff.color.statusSuccess,
                   ),
                   if (session.duplicateCount > 0) ...[
-                    const SizedBox(width: StillwaterTokens.spaceXs),
+                    const SizedBox(width: FfSpace.xs),
                     _SummaryPill(
                       label: '${session.duplicateCount} Duplicates',
-                      color: context.theme.colorScheme.error,
+                      color: context.ff.color.statusError,
                     ),
                   ],
                 ],
@@ -675,18 +668,18 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ),
         ),
 
-        const SizedBox(height: StillwaterTokens.space2Xl),
+        const SizedBox(height: FfSpace.x2l),
 
         // Parsed Rows Preview
         _SectionLabel(label: 'Parsed Transactions (${session.items.length})'),
-        const SizedBox(height: StillwaterTokens.spaceXs),
+        const SizedBox(height: FfSpace.xs),
         Container(
           decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
-              color: theme.dividerColor,
-              width: StillwaterTokens.borderWidthHairline,
+              color: context.ff.color.borderSubtle,
+              width: FfBorderWidth.hairline,
             ),
           ),
           child: Column(
@@ -702,7 +695,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ),
         ),
 
-        const SizedBox(height: StillwaterTokens.space4Xl),
+        const SizedBox(height: FfSpace.x4l),
       ],
     );
   }
@@ -711,16 +704,14 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     BuildContext context,
     ImportReviewSession session,
   ) {
-    final theme = context.theme;
-
     return Container(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: context.ff.color.surfaceCard,
         border: Border(
           top: BorderSide(
-            color: theme.dividerColor,
-            width: StillwaterTokens.borderWidthHairline,
+            color: context.ff.color.borderSubtle,
+            width: FfBorderWidth.hairline,
           ),
         ),
       ),
@@ -736,7 +727,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 },
               ),
             ),
-            const SizedBox(width: StillwaterTokens.spaceMd),
+            const SizedBox(width: FfSpace.md),
             Expanded(
               flex: 2,
               child: FfButton(
@@ -773,15 +764,14 @@ class _ParsedTransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final isIncome = item.type == TransactionType.income;
     final amountColor =
-        isIncome ? context.finColors.income : context.finColors.expense;
+        isIncome ? context.ff.color.moneyIncome : context.ff.color.moneyExpense;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.sm,
       ),
       child: Row(
         children: [
@@ -789,7 +779,7 @@ class _ParsedTransactionRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: amountColor.withValues(alpha: 0.12),
+              color: amountColor.withValues(alpha: FfTint.subtle.alpha),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -800,14 +790,14 @@ class _ParsedTransactionRow extends StatelessWidget {
               color: amountColor,
             ),
           ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   item.normalizedMerchant,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: context.ff.text.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -815,9 +805,8 @@ class _ParsedTransactionRow extends StatelessWidget {
                 ),
                 Text(
                   '${DateFormatter.formatTransactionDate(item.date)} · ${item.categoryName}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
-                    fontSize: 11,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
               ],
@@ -828,7 +817,7 @@ class _ParsedTransactionRow extends StatelessWidget {
             children: [
               Text(
                 '${isIncome ? '+' : '−'} ${CurrencyFormatter.formatAmount(item.amount)}',
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: context.ff.text.body.copyWith(
                   fontWeight: FontWeight.w700,
                   color: amountColor,
                 ),
@@ -836,10 +825,9 @@ class _ParsedTransactionRow extends StatelessWidget {
               if (item.duplicateStatus != DuplicateMatchLevel.none)
                 Text(
                   'Duplicate',
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: context.ff.text.labelSm.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: context.theme.colorScheme.error,
+                    color: context.ff.color.statusError,
                   ),
                 ),
             ],
@@ -860,17 +848,16 @@ class _SummaryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceSm,
-        vertical: 3,
+        horizontal: FfSpace.sm,
+        vertical: FfSpace.x3s,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        color: color.withValues(alpha: FfTint.subtle.alpha),
+        borderRadius: BorderRadius.circular(FfRadius.full),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
+        style: context.ff.text.labelSm.copyWith(
           fontWeight: FontWeight.w600,
           color: color,
         ),
@@ -886,13 +873,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

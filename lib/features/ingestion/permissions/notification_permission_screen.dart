@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_button.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
 import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
+import '../../../theme/ff.dart';
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -42,7 +41,6 @@ class _NotificationPermissionScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final hasAccess =
         ref.watch(ingestionPlatformStatusProvider).value?.notificationAccess ??
         false;
@@ -51,19 +49,19 @@ class _NotificationPermissionScreenState
       appBar: FfAppBar(title: 'Notification Detection'),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Privacy Guarantee Hero ─────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.all(FfSpace.lg),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -76,15 +74,15 @@ class _NotificationPermissionScreenState
                       children: [
                         Icon(
                           Icons.shield_outlined,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                           size: 20,
                         ),
-                        const SizedBox(width: StillwaterTokens.spaceSm),
+                        const SizedBox(width: FfSpace.sm),
                         Text(
                           '100% On-Device Reading',
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: context.ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: context.secColors.verified,
+                            color: context.ff.color.statusSuccess,
                           ),
                         ),
                       ],
@@ -92,18 +90,16 @@ class _NotificationPermissionScreenState
                     const FfPrivacyBadge(label: 'Zero Upload'),
                   ],
                 ),
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 Padding(
-                  padding: const EdgeInsets.only(
-                    left: StillwaterTokens.spaceLg,
-                  ),
+                  padding: const EdgeInsets.only(left: FfSpace.lg),
                   child: Text(
                     '• Notification text is parsed locally in memory on your phone.\n'
                     '• No notification content is ever sent to any remote server.\n'
                     '• Non-financial notifications (WhatsApp, social media) are strictly ignored.\n'
                     '• You can revoke or disable this permission at any time.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.bodySm.copyWith(
+                      color: context.ff.color.secondary,
                       height: 1.5,
                     ),
                   ),
@@ -112,7 +108,7 @@ class _NotificationPermissionScreenState
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           FfRow(
             icon: hasAccess ? Icons.check_circle_outline : Icons.info_outline,
@@ -124,18 +120,18 @@ class _NotificationPermissionScreenState
                     : 'Android requires a separate action in Notification Access settings.',
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // ── 2. Supported Apps List ────────────────────────────────────
           _SectionLabel(label: 'Select Payment Apps to Monitor'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Container(
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -166,7 +162,7 @@ class _NotificationPermissionScreenState
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 3. Save Controls ─────────────────────────────────────────
           FfButton(
@@ -204,7 +200,7 @@ class _NotificationPermissionScreenState
             },
           ),
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -218,13 +214,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

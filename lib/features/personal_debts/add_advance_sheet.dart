@@ -6,7 +6,6 @@ import '../../models/account.dart';
 import '../../models/money_record.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import 'money_records_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
@@ -18,6 +17,7 @@ import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_amount_field.dart';
 import '../../theme/ff_tone.dart';
+import '../../theme/ff.dart';
 
 class AddAdvanceSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -107,7 +107,6 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isLent = widget.record.type == MoneyRecordType.lent;
     final accounts =
         ref.watch(rawAccountsStreamProvider).valueOrNull ?? const <Account>[];
@@ -129,10 +128,10 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
-                StillwaterTokens.spaceLg,
+                FfSpace.lg,
                 0,
-                StillwaterTokens.spaceLg,
-                StillwaterTokens.spaceLg,
+                FfSpace.lg,
+                FfSpace.lg,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +154,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // Dates Row
                   Row(
@@ -180,9 +179,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                               });
                             }
                           },
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.md),
                           child: InputDecorator(
                             decoration: const InputDecoration(
                               labelText: 'Advance Date',
@@ -190,12 +187,12 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                             ),
                             child: Text(
                               DateFormat.yMMMd().format(_advanceDate),
-                              style: theme.textTheme.bodyMedium,
+                              style: context.ff.text.body,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      const SizedBox(width: FfSpace.md),
                       Expanded(
                         child: InkWell(
                           onTap: () async {
@@ -209,9 +206,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                               setState(() => _dueDate = picked);
                             }
                           },
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.md),
                           child: InputDecorator(
                             decoration: const InputDecoration(
                               labelText: 'Due Date',
@@ -219,7 +214,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                             ),
                             child: Text(
                               DateFormat.yMMMd().format(_dueDate),
-                              style: theme.textTheme.bodyMedium,
+                              style: context.ff.text.body,
                             ),
                           ),
                         ),
@@ -227,12 +222,12 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                     ],
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // Transaction linking toggle
                   FfCard(
                     variant: FfCardVariant.standard,
-                    padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
+                    padding: const EdgeInsets.all(FfSpace.sm),
                     child: Column(
                       children: [
                         FfRow.toggle(
@@ -250,7 +245,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                         ),
                         if (_recordInTransactions &&
                             activeAccounts.isNotEmpty) ...[
-                          const SizedBox(height: StillwaterTokens.spaceSm),
+                          const SizedBox(height: FfSpace.sm),
                           FfSelect<String>(
                             value: _selectedAccount?.id,
                             label: isLent ? 'Paid From' : 'Deposited To',
@@ -277,7 +272,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
 
                   // Notes field
                   FfTextField(
@@ -287,7 +282,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                     maxLines: 2,
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Action button
                   FfButton(

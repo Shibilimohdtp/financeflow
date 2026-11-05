@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../shared/widgets/ff_button.dart';
@@ -9,20 +8,19 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class RecurringSuggestionsSheet extends ConsumerWidget {
   const RecurringSuggestionsSheet({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final suggestionsAsync = ref.watch(recurringSuggestionsProvider);
 
     return FfSheet(
@@ -39,7 +37,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
               if (suggestions.isEmpty) {
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(StillwaterTokens.space2Xl),
+                    padding: EdgeInsets.all(FfSpace.x2l),
                     child: FfEmptyState(
                       icon: Icons.check_circle_outline_rounded,
                       title: 'No unconfirmed recurring patterns',
@@ -52,8 +50,8 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
 
               return ListView(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceLg,
-                  vertical: StillwaterTokens.spaceMd,
+                  horizontal: FfSpace.lg,
+                  vertical: FfSpace.md,
                 ),
                 children: [
                   FfSectionHeader(
@@ -63,9 +61,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                     children:
                         suggestions.map((sug) {
                           return Padding(
-                            padding: const EdgeInsets.all(
-                              StillwaterTokens.spaceMd,
-                            ),
+                            padding: const EdgeInsets.all(FfSpace.md),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -76,10 +72,9 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                     Expanded(
                                       child: Text(
                                         sug.merchant,
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                        style: context.ff.text.titleSm.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -87,23 +82,19 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                     Text(
                                       '${CurrencyFormatter.formatAmount(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
                                       style: StillwaterTypography.numMd(
-                                        color: theme.colorScheme.primary,
+                                        color: context.ff.color.actionPrimary,
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(
-                                  height: StillwaterTokens.space2Xs,
-                                ),
+                                const SizedBox(height: FfSpace.x2s),
                                 Text(
                                   'Matched ${sug.matchingTransactions.length} past payments · Last: ${DateFormatter.formatShortDate(sug.lastPaymentDate)}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.secondary,
+                                  style: context.ff.text.bodySm.copyWith(
+                                    color: context.ff.color.secondary,
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: StillwaterTokens.spaceMd,
-                                ),
+                                const SizedBox(height: FfSpace.md),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
@@ -146,7 +137,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
             loading:
                 () => const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                    padding: EdgeInsets.all(FfSpace.x4l),
                     child: FfLoading(),
                   ),
                 ),

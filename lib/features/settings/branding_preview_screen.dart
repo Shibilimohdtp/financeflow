@@ -3,9 +3,9 @@ import '../../core/extensions/context_extensions.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_colors.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../theme/ff.dart';
 
 /// Internal Branding & Stillwater Design System Preview Screen
 class BrandingPreviewScreen extends StatelessWidget {
@@ -21,7 +21,7 @@ class BrandingPreviewScreen extends StatelessWidget {
         title: 'Stillwater Branding Showcase',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'Design Showcase', iconOnly: true),
             ),
@@ -30,36 +30,36 @@ class BrandingPreviewScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Hero Brand Presentation ──────────────────────────────
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceXl),
+            padding: const EdgeInsets.all(FfSpace.xl),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: StillwaterTokens.spaceSm),
+                const SizedBox(height: FfSpace.sm),
                 const FinanceFlowLogo(
                   markSize: 64,
                   fontSize: 28,
                   showTagline: true,
                   axis: Axis.vertical,
                 ),
-                const SizedBox(height: StillwaterTokens.spaceMd),
+                const SizedBox(height: FfSpace.md),
                 Text(
                   'The Stillwater Mark · Calm Financial Control',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.bodySm.copyWith(
+                    color: context.ff.color.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -67,98 +67,89 @@ class BrandingPreviewScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 2. Multi-Theme Variants ──────────────────────────────────
           _SectionLabel(label: 'Theme Variants'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Row(
             children: [
               // Daylight Variant
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
                     color: StillwaterColors.lightSurfaceApp,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     border: Border.all(
                       color: StillwaterColors.lightBorderHairline,
                     ),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       FinanceFlowMark(size: 44, variant: MarkVariant.daylight),
-                      SizedBox(height: StillwaterTokens.spaceSm),
+                      SizedBox(height: FfSpace.sm),
                       Text(
                         'Daylight',
-                        style: TextStyle(
+                        style: context.ff.text.label.copyWith(
                           color: StillwaterColors.lightTextPrimary,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceMd),
+              const SizedBox(width: FfSpace.md),
 
               // Deep Water Variant
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
                     color: StillwaterColors.darkSurfaceApp,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     border: Border.all(
                       color: StillwaterColors.darkBorderHairline,
                     ),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       FinanceFlowMark(size: 44, variant: MarkVariant.deepWater),
-                      SizedBox(height: StillwaterTokens.spaceSm),
+                      SizedBox(height: FfSpace.sm),
                       Text(
                         'Lichen Ledger · Dark',
-                        style: TextStyle(
+                        style: context.ff.text.label.copyWith(
                           color: StillwaterColors.darkTextPrimary,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceMd),
+              const SizedBox(width: FfSpace.md),
 
               // Monochrome Variant
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
                     color: StillwaterColors.lightSecInk,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       FinanceFlowMark(
                         size: 44,
                         variant: MarkVariant.monochrome,
                       ),
-                      SizedBox(height: StillwaterTokens.spaceSm),
+                      SizedBox(height: FfSpace.sm),
                       Text(
                         'Monochrome',
-                        style: TextStyle(
+                        style: context.ff.text.label.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -168,19 +159,19 @@ class BrandingPreviewScreen extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 3. Sizing Ladder ─────────────────────────────────────────
           _SectionLabel(label: 'Sizing & Legibility Ladder'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -200,18 +191,18 @@ class BrandingPreviewScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 4. Platform Safe Zones ───────────────────────────────────
           _SectionLabel(label: 'Platform Icons & Safe Zones'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Container(
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Column(
@@ -222,7 +213,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: StillwaterColors.lightPrimary,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(FfRadius.md),
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
@@ -265,7 +256,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                           isDark
                               ? const Color(0xFF1E2624)
                               : const Color(0xFF37413E),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(FfRadius.sm),
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
@@ -281,7 +272,7 @@ class BrandingPreviewScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -289,14 +280,14 @@ class BrandingPreviewScreen extends StatelessWidget {
 
   Widget _buildSizeRow(double size, String label) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: StillwaterTokens.spaceXs),
+      padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
       child: Row(
         children: [
           SizedBox(
             width: 96,
             child: Center(child: FinanceFlowMark(size: size)),
           ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           Expanded(
             child: Text(
               label,
@@ -323,12 +314,10 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label,
-        style: context.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: context.ff.text.titleSm.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

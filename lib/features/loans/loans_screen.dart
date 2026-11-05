@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
@@ -10,7 +9,6 @@ import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loan_detail_screen.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class LoansScreen extends ConsumerWidget {
   const LoansScreen({super.key});
@@ -35,7 +34,6 @@ class LoansScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final summary = ref.watch(loansSummaryProvider);
     final loansAsync = ref.watch(allLoansStreamProvider);
 
@@ -44,7 +42,7 @@ class LoansScreen extends ConsumerWidget {
         title: 'Loans & EMIs',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -67,9 +65,9 @@ class LoansScreen extends ConsumerWidget {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
               104,
             ),
             children: [
@@ -84,8 +82,8 @@ class LoansScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'TOTAL OUTSTANDING DEBT',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.secondary,
                             letterSpacing: 1.1,
                             fontWeight: FontWeight.w700,
                           ),
@@ -93,50 +91,49 @@ class LoansScreen extends ConsumerWidget {
                         if (summary.activeLoansCount > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceSm,
-                              vertical: 2,
+                              horizontal: FfSpace.sm,
+                              vertical: FfSpace.x3s,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(
+                              color: context.ff.color.actionPrimary.withValues(
                                 alpha: 0.12,
                               ),
                               borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusFull,
+                                FfRadius.full,
                               ),
                             ),
                             child: Text(
                               '${summary.activeLoansCount} active',
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: context.ff.text.labelSm.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.primary,
+                                color: context.ff.color.actionPrimary,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    const SizedBox(height: FfSpace.xs),
                     Text(
                       CurrencyFormatter.formatAmount(summary.totalOutstanding),
                       style: StillwaterTypography.numHero(
-                        color: theme.colorScheme.onSurface,
+                        color: context.ff.color.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Monthly EMI: ${CurrencyFormatter.formatAmount(summary.totalMonthlyEmi)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
                           '${loans.length} total ${loans.length == 1 ? 'record' : 'records'}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                       ],
@@ -145,13 +142,11 @@ class LoansScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               if (loans.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.space2Xl,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.x2l),
                   child: FfEmptyState(
                     icon: Icons.account_balance_outlined,
                     title: 'No loans or EMIs recorded',
@@ -170,8 +165,7 @@ class LoansScreen extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: activeLoans.length,
                     separatorBuilder:
-                        (_, __) =>
-                            const SizedBox(height: StillwaterTokens.spaceSm),
+                        (_, __) => const SizedBox(height: FfSpace.sm),
                     itemBuilder: (context, index) {
                       final loan = activeLoans[index];
                       final isOverdue = loan.nextDueDate.isBefore(
@@ -191,22 +185,25 @@ class LoansScreen extends ConsumerWidget {
                             Row(
                               children: [
                                 Container(
-                                  width: StillwaterTokens.iconTileSize,
-                                  height: StillwaterTokens.iconTileSize,
+                                  width: FfRowTokens.iconTile,
+                                  height: FfRowTokens.iconTile,
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer
-                                        .withValues(alpha: 0.4),
+                                    color: context
+                                        .ff
+                                        .color
+                                        .actionPrimaryContainer
+                                        .withValues(alpha: FfTint.strong.alpha),
                                     borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusSm,
+                                      FfRadius.sm,
                                     ),
                                   ),
                                   child: Icon(
                                     _getLoanTypeIcon(loan.loanType),
                                     size: 20,
-                                    color: theme.colorScheme.primary,
+                                    color: context.ff.color.actionPrimary,
                                   ),
                                 ),
-                                const SizedBox(width: StillwaterTokens.spaceMd),
+                                const SizedBox(width: FfSpace.md),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -214,19 +211,16 @@ class LoansScreen extends ConsumerWidget {
                                     children: [
                                       Text(
                                         loan.name,
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        style: context.ff.text.titleSm.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: FfSpace.x3s),
                                       Text(
                                         '${loan.lender} · ${loan.interestRate}% ${loan.interestType.displayName.toLowerCase()}',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  theme.colorScheme.secondary,
-                                            ),
+                                        style: context.ff.text.bodySm.copyWith(
+                                          color: context.ff.color.secondary,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -245,63 +239,65 @@ class LoansScreen extends ConsumerWidget {
                                             .total,
                                       ),
                                       style: StillwaterTypography.numMd(
-                                        color: theme.colorScheme.onSurface,
+                                        color: context.ff.color.textPrimary,
                                       ),
                                     ),
                                     Text(
                                       'EMI: ${CurrencyFormatter.formatAmount(loan.emiAmount)}',
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                          ),
+                                      style: context.ff.text.labelSm.copyWith(
+                                        color: context.ff.color.secondary,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceMd),
+                            const SizedBox(height: FfSpace.md),
                             FfProgressBar(
                               value: paidProgress,
-                              color: theme.colorScheme.primary,
+                              color: context.ff.color.actionPrimary,
                               size: FfProgressSize.md,
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceSm),
+                            const SizedBox(height: FfSpace.sm),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   '${(paidProgress * 100).toStringAsFixed(0)}% paid off',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.secondary,
+                                  style: context.ff.text.bodySm.copyWith(
+                                    color: context.ff.color.secondary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 if (isOverdue)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 1,
+                                      horizontal: FfSpace.x2s,
+                                      vertical: FfSpace.x3s,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: context.finColors.expenseContainer,
+                                      color:
+                                          context
+                                              .ff
+                                              .color
+                                              .moneyExpenseContainer,
                                       borderRadius: BorderRadius.circular(
-                                        StillwaterTokens.radiusXs,
+                                        FfRadius.xs,
                                       ),
                                     ),
                                     child: Text(
                                       'Overdue',
-                                      style: TextStyle(
-                                        fontSize: 10,
+                                      style: context.ff.text.labelSm.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: context.finColors.expense,
+                                        color: context.ff.color.moneyExpense,
                                       ),
                                     ),
                                   )
                                 else
                                   Text(
                                     'Due on ${loan.paymentDay}th',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.secondary,
+                                    style: context.ff.text.bodySm.copyWith(
+                                      color: context.ff.color.secondary,
                                     ),
                                   ),
                               ],
@@ -315,26 +311,25 @@ class LoansScreen extends ConsumerWidget {
 
                 // ── 3. Closed / Archived Loans ──────────────────────────────
                 if (closedLoans.isNotEmpty) ...[
-                  const SizedBox(height: StillwaterTokens.space2Xl),
+                  const SizedBox(height: FfSpace.x2l),
                   const FfSectionHeader(title: 'Paid Off & Archived'),
                   FfGroupedContainer(
                     children:
                         closedLoans.map((loan) {
                           return FfRow(
                             leading: Container(
-                              width: StillwaterTokens.iconTileSize,
-                              height: StillwaterTokens.iconTileSize,
+                              width: FfRowTokens.iconTile,
+                              height: FfRowTokens.iconTile,
                               decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
+                                color: context.ff.color.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(
-                                  StillwaterTokens.radiusSm,
+                                  FfRadius.sm,
                                 ),
                               ),
                               child: Icon(
                                 Icons.check_circle_outline_rounded,
                                 size: 20,
-                                color: context.finColors.income,
+                                color: context.ff.color.moneyIncome,
                               ),
                             ),
                             title: loan.name,
@@ -350,14 +345,14 @@ class LoansScreen extends ConsumerWidget {
                 ],
               ],
 
-              const SizedBox(height: StillwaterTokens.space4Xl),
+              const SizedBox(height: FfSpace.x4l),
             ],
           );
         },
         loading:
             () => const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                padding: EdgeInsets.all(FfSpace.x4l),
                 child: FfLoading(),
               ),
             ),

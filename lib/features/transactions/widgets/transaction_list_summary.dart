@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../services/ledger_totals.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/ff_tone.dart';
+import '../../../theme/ff.dart';
 
 /// Spent / Income / Net for exactly the transactions in the list below it.
 class TransactionListSummary extends StatelessWidget {
@@ -20,19 +19,18 @@ class TransactionListSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      margin: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.sm,
       ),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+        color: context.ff.color.surfaceCard,
+        borderRadius: BorderRadius.circular(FfRadius.lg),
         border: Border.all(
-          color: theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
+          color: context.ff.color.borderSubtle,
+          width: FfBorderWidth.hairline,
         ),
       ),
       child: Column(
@@ -68,11 +66,11 @@ class TransactionListSummary extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             count == 1 ? '1 transaction' : '$count transactions',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.labelSm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
         ],
@@ -95,11 +93,11 @@ class _Figure extends StatelessWidget {
         children: [
           Text(
             label,
-            style: context.textTheme.labelSmall?.copyWith(
-              color: context.theme.colorScheme.onSurfaceVariant,
+            style: context.ff.text.labelSm.copyWith(
+              color: context.ff.color.textSecondary,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.space3Xs),
+          const SizedBox(height: FfSpace.x3s),
           FittedBox(fit: BoxFit.scaleDown, child: child),
         ],
       ),

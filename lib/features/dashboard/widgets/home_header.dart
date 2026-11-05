@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
+import '../../../theme/ff.dart';
 
 class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
   final int unreadAlerts;
@@ -33,7 +32,6 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final now = DateTime.now();
     final formattedDate = DateFormatter.formatFullDate(now);
 
@@ -50,26 +48,27 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 Text(
                   _getGreeting(),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.1,
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.space2Xs),
+                const SizedBox(width: FfSpace.x2s),
                 Text(
                   '· $formattedDate',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.75),
-                    fontSize: 10.5,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary.withValues(
+                      alpha: FfOpacity.muted,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: StillwaterTokens.space3Xs),
+            const SizedBox(height: FfSpace.x3s),
             Text(
               'FinanceFlow',
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: context.ff.text.title.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
               ),
@@ -91,7 +90,7 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
         // On-Device Privacy Badge
         const Padding(
-          padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+          padding: EdgeInsets.only(right: FfSpace.lg),
           child: Center(child: FfPrivacyBadge(label: 'On-device')),
         ),
       ],

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/ledger_totals.dart';
-import '../../../theme/stillwater_tokens.dart';
+import '../../../theme/ff.dart';
 
 /// Pinned day header: "Today" on the left, that day's spending and income on
 /// the right. Transfers and lending are excluded, as in every other total.
@@ -33,9 +32,8 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final theme = context.theme;
-    final muted = theme.textTheme.labelMedium?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
+    final muted = context.ff.text.label.copyWith(
+      color: context.ff.color.textSecondary,
       fontWeight: FontWeight.w600,
     );
     String money(double v) =>
@@ -47,20 +45,20 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
       if (totals.spending > 0)
         TextSpan(
           text: '−${money(totals.spending)}',
-          style: muted?.copyWith(color: context.finColors.expense),
+          style: muted.copyWith(color: context.ff.color.moneyExpense),
         ),
       if (totals.spending > 0 && totals.income > 0)
         TextSpan(text: '  ', style: muted),
       if (totals.income > 0)
         TextSpan(
           text: '+${money(totals.income)}',
-          style: muted?.copyWith(color: context.finColors.income),
+          style: muted.copyWith(color: context.ff.color.moneyIncome),
         ),
     ];
 
     return Container(
       color: background,
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       alignment: Alignment.centerLeft,
       child: Semantics(
         header: true,
@@ -69,7 +67,7 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
             Expanded(
               child: Text(
                 label,
-                style: muted?.copyWith(color: theme.colorScheme.onSurface),
+                style: muted.copyWith(color: context.ff.color.textPrimary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

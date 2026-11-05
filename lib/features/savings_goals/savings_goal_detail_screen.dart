@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/savings_goal.dart';
@@ -10,7 +9,6 @@ import '../../services/savings_goal_calculator.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'add_edit_savings_goal_sheet.dart';
 import 'add_goal_contribution_sheet.dart';
 import 'savings_goals_controller.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class SavingsGoalDetailScreen extends ConsumerWidget {
   final SavingsGoal goal;
@@ -76,8 +75,6 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-
     // Watch live goal stream
     final allGoalsAsync = ref.watch(allSavingsGoalsStreamProvider);
     final currentGoal =
@@ -104,7 +101,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
             onPressed: () => _openEdit(context, currentGoal),
           ),
           const Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            padding: EdgeInsets.only(right: FfSpace.md),
             child: Center(
               child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
             ),
@@ -121,21 +118,19 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
 
           return ListView(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceMd,
+              horizontal: FfSpace.lg,
+              vertical: FfSpace.md,
             ),
             children: [
               // ── 1. Goal Progress Hero ───────────────────────────────────
               Container(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+                padding: const EdgeInsets.all(FfSpace.lg),
                 decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusLg,
-                  ),
+                  color: context.ff.color.surfaceCard,
+                  borderRadius: BorderRadius.circular(FfRadius.lg),
                   border: Border.all(
-                    color: theme.dividerColor,
-                    width: StillwaterTokens.borderWidthHairline,
+                    color: context.ff.color.borderSubtle,
+                    width: FfBorderWidth.hairline,
                   ),
                 ),
                 child: Column(
@@ -146,91 +141,85 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'TOTAL ACCUMULATED',
-                          style: theme.textTheme.labelSmall?.copyWith(
+                          style: context.ff.text.labelSm.copyWith(
                             letterSpacing: 0.8,
-                            color: theme.colorScheme.secondary,
-                            fontSize: 10,
+                            color: context.ff.color.secondary,
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: StillwaterTokens.spaceSm,
-                            vertical: 2,
+                            horizontal: FfSpace.sm,
+                            vertical: FfSpace.x3s,
                           ),
                           decoration: BoxDecoration(
                             color:
                                 summary.isTargetReached
-                                    ? context.secColors.verified.withValues(
+                                    ? context.ff.color.statusSuccess.withValues(
                                       alpha: 0.15,
                                     )
-                                    : theme.colorScheme.primary.withValues(
+                                    : context.ff.color.actionPrimary.withValues(
                                       alpha: 0.12,
                                     ),
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusFull,
-                            ),
+                            borderRadius: BorderRadius.circular(FfRadius.full),
                           ),
                           child: Text(
                             summary.isTargetReached
                                 ? 'Target Reached'
                                 : '${(progress * 100).toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: context.ff.text.labelSm.copyWith(
                               fontWeight: FontWeight.w600,
                               color:
                                   summary.isTargetReached
-                                      ? context.secColors.verified
-                                      : theme.colorScheme.primary,
+                                      ? context.ff.color.statusSuccess
+                                      : context.ff.color.actionPrimary,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    const SizedBox(height: FfSpace.xs),
                     Text(
                       CurrencyFormatter.formatAmount(summary.currentAmount),
-                      style: theme.textTheme.headlineLarge?.copyWith(
+                      style: context.ff.text.headlineLg.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                        color: context.ff.color.actionPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: FfSpace.x3s),
                     Text(
                       'Target: ${CurrencyFormatter.formatAmount(currentGoal.targetAmount)} · Due ${DateFormat('dd MMM yyyy').format(currentGoal.targetDate)} (${daysRemaining > 0 ? "$daysRemaining days left" : "Reached"})',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.secondary,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
                     FfProgressBar(
                       value: progress,
                       color:
                           summary.isTargetReached
-                              ? context.secColors.verified
-                              : theme.colorScheme.primary,
+                              ? context.ff.color.statusSuccess
+                              : context.ff.color.actionPrimary,
                       size: FfProgressSize.lg,
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               // ── 2. Savings Pace & Guidance ──────────────────────────────
               if (!summary.isTargetReached &&
                   summary.suggestedMonthlyContribution > 0)
                 Container(
-                  padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                  padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    color: context.ff.color.surfaceContainerHighest.withValues(
                       alpha: 0.4,
                     ),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     border: Border.all(
-                      color: theme.dividerColor,
-                      width: StillwaterTokens.borderWidthHairline,
+                      color: context.ff.color.borderSubtle,
+                      width: FfBorderWidth.hairline,
                     ),
                   ),
                   child: Row(
@@ -238,23 +227,23 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                       Icon(
                         Icons.savings_outlined,
                         size: 20,
-                        color: theme.colorScheme.primary,
+                        color: context.ff.color.actionPrimary,
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      const SizedBox(width: FfSpace.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Required Savings Pace',
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                              style: context.ff.text.body.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               'Save ${CurrencyFormatter.formatAmount(summary.suggestedMonthlyContribution)} / month to hit your goal on schedule.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
+                              style: context.ff.text.bodySm.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ],
@@ -264,7 +253,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                   ),
                 ),
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
 
               // ── 3. Actions ──────────────────────────────────────────────
               FfButton(
@@ -273,19 +262,17 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                 onPressed: () => _openAddContribution(context, currentGoal),
               ),
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
 
               // ── 4. Contribution History ─────────────────────────────────
               _SectionLabel(
                 label: 'Contribution History (${contributions.length})',
               ),
-              const SizedBox(height: StillwaterTokens.spaceXs),
+              const SizedBox(height: FfSpace.xs),
 
               if (contributions.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.spaceXl,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.xl),
                   child: FfEmptyState(
                     icon: Icons.history_rounded,
                     title: 'No contributions recorded',
@@ -298,13 +285,11 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
               else
                 Container(
                   decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusLg,
-                    ),
+                    color: context.ff.color.surfaceCard,
+                    borderRadius: BorderRadius.circular(FfRadius.lg),
                     border: Border.all(
-                      color: theme.dividerColor,
-                      width: StillwaterTokens.borderWidthHairline,
+                      color: context.ff.color.borderSubtle,
+                      width: FfBorderWidth.hairline,
                     ),
                   ),
                   child: Column(
@@ -338,15 +323,15 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                         if (i < contributions.length - 1)
                           Divider(
                             height: 1,
-                            thickness: StillwaterTokens.borderWidthHairline,
-                            indent: StillwaterTokens.spaceMd,
+                            thickness: FfBorderWidth.hairline,
+                            indent: FfSpace.md,
                           ),
                       ],
                     ],
                   ),
                 ),
 
-              const SizedBox(height: StillwaterTokens.space2Xl),
+              const SizedBox(height: FfSpace.x2l),
 
               // Destructive Delete Goal
               FfButton(
@@ -356,7 +341,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                 onPressed: () => _deleteGoal(context, ref, currentGoal),
               ),
 
-              const SizedBox(height: StillwaterTokens.space4Xl),
+              const SizedBox(height: FfSpace.x4l),
             ],
           );
         },
@@ -380,7 +365,6 @@ class _ContributionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountName =
         accounts
             .firstWhere(
@@ -392,8 +376,8 @@ class _ContributionRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
+        horizontal: FfSpace.md,
+        vertical: FfSpace.sm,
       ),
       child: Row(
         children: [
@@ -401,31 +385,32 @@ class _ContributionRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: context.secColors.verified.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+              color: context.ff.color.statusSuccess.withValues(
+                alpha: FfTint.subtle.alpha,
+              ),
+              borderRadius: BorderRadius.circular(FfRadius.sm),
             ),
             child: Icon(
               Icons.arrow_downward_rounded,
               size: 16,
-              color: context.secColors.verified,
+              color: context.ff.color.statusSuccess,
             ),
           ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   accountName,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: context.ff.text.body.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
                   DateFormatter.formatTransactionDate(contribution.date),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
-                    fontSize: 11,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
               ],
@@ -433,16 +418,16 @@ class _ContributionRow extends StatelessWidget {
           ),
           Text(
             '+ ${CurrencyFormatter.formatAmount(contribution.amount)}',
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: context.ff.text.body.copyWith(
               fontWeight: FontWeight.w600,
-              color: context.secColors.verified,
+              color: context.ff.color.statusSuccess,
             ),
           ),
           IconButton(
             icon: Icon(
               Icons.delete_outline_rounded,
               size: 16,
-              color: theme.colorScheme.secondary,
+              color: context.ff.color.secondary,
             ),
             tooltip: 'Remove contribution',
             visualDensity: VisualDensity.compact,
@@ -461,13 +446,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

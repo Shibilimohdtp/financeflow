@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/savings_goal.dart';
@@ -8,7 +7,6 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'add_edit_savings_goal_sheet.dart';
 import 'savings_goal_detail_screen.dart';
@@ -16,6 +14,7 @@ import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class SavingsGoalsScreen extends ConsumerWidget {
   const SavingsGoalsScreen({super.key});
@@ -32,7 +31,6 @@ class SavingsGoalsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final goalsSummariesAsync = ref.watch(savingsGoalSummariesProvider);
     final overallSummaryAsync = ref.watch(overallSavingsGoalSummaryProvider);
 
@@ -41,7 +39,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
         title: 'Savings Goals',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -56,7 +54,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
         label: const Text('Add Goal'),
       ),
       body: RefreshIndicator(
-        color: theme.colorScheme.primary,
+        color: context.ff.color.actionPrimary,
         onRefresh: () async {
           ref.invalidate(allSavingsGoalsStreamProvider);
           ref.invalidate(allGoalContributionsStreamProvider);
@@ -64,9 +62,9 @@ class SavingsGoalsScreen extends ConsumerWidget {
         },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceMd,
-            StillwaterTokens.spaceLg,
+            FfSpace.lg,
+            FfSpace.md,
+            FfSpace.lg,
             104,
           ),
           children: [
@@ -95,22 +93,22 @@ class SavingsGoalsScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 'TOTAL SAVINGS PROGRESS',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.labelSm.copyWith(
+                                  color: context.ff.color.secondary,
                                   letterSpacing: 1.1,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               Text(
                                 '${overall.completedCount} of ${overall.totalGoals} Completed',
-                                style: theme.textTheme.labelSmall?.copyWith(
+                                style: context.ff.text.labelSm.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.primary,
+                                  color: context.ff.color.actionPrimary,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceSm),
+                          const SizedBox(height: FfSpace.sm),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -124,42 +122,41 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                         overall.totalSaved,
                                       ),
                                       style: StillwaterTypography.numLg(
-                                        color: theme.colorScheme.onSurface,
+                                        color: context.ff.color.textPrimary,
                                       ),
                                     ),
                                     TextSpan(
                                       text:
                                           ' of ${CurrencyFormatter.formatAmount(overall.totalTarget)}',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                          ),
+                                      style: context.ff.text.body.copyWith(
+                                        color: context.ff.color.secondary,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          const SizedBox(height: FfSpace.md),
                           FfProgressBar(
                             value: overallProgress,
-                            color: theme.colorScheme.primary,
+                            color: context.ff.color.actionPrimary,
                             size: FfProgressSize.lg,
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceSm),
+                          const SizedBox(height: FfSpace.sm),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 '${(overallProgress * 100).toStringAsFixed(0)}% reached',
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: context.ff.text.bodySm.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
                                 '${CurrencyFormatter.formatAmount(overall.totalRemaining)} remaining',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: context.finColors.savings,
+                                style: context.ff.text.bodySm.copyWith(
+                                  color: context.ff.color.moneySavings,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -168,7 +165,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceLg),
+                    const SizedBox(height: FfSpace.lg),
                   ],
                 );
               },
@@ -183,9 +180,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
               data: (summaries) {
                 if (summaries.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.space2Xl,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: FfSpace.x2l),
                     child: FfEmptyState(
                       icon: Icons.flag_outlined,
                       title: 'No savings goals yet',
@@ -202,8 +197,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: summaries.length,
                   separatorBuilder:
-                      (_, __) =>
-                          const SizedBox(height: StillwaterTokens.spaceSm),
+                      (_, __) => const SizedBox(height: FfSpace.sm),
                   itemBuilder: (context, index) {
                     final summary = summaries[index];
                     final goal = summary.goal;
@@ -223,11 +217,19 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color:
                                       isComplete
-                                          ? context.finColors.incomeContainer
-                                          : theme.colorScheme.primaryContainer
-                                              .withValues(alpha: 0.4),
+                                          ? context
+                                              .ff
+                                              .color
+                                              .moneyIncomeContainer
+                                          : context
+                                              .ff
+                                              .color
+                                              .actionPrimaryContainer
+                                              .withValues(
+                                                alpha: FfTint.strong.alpha,
+                                              ),
                                   borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusSm,
+                                    FfRadius.sm,
                                   ),
                                 ),
                                 child: Icon(
@@ -236,30 +238,28 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                       : Icons.flag_rounded,
                                   color:
                                       isComplete
-                                          ? context.finColors.income
-                                          : theme.colorScheme.primary,
+                                          ? context.ff.color.moneyIncome
+                                          : context.ff.color.actionPrimary,
                                   size: 20,
                                 ),
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceMd),
+                              const SizedBox(width: FfSpace.md),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       goal.name,
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                      style: context.ff.text.titleSm.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                    const SizedBox(height: 2),
+                                    const SizedBox(height: FfSpace.x3s),
                                     Text(
                                       'Target: ${DateFormatter.formatShortDate(goal.targetDate)}',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                          ),
+                                      style: context.ff.text.bodySm.copyWith(
+                                        color: context.ff.color.secondary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -274,36 +274,36 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                     style: StillwaterTypography.numMd(
                                       color:
                                           isComplete
-                                              ? context.finColors.income
-                                              : theme.colorScheme.onSurface,
+                                              ? context.ff.color.moneyIncome
+                                              : context.ff.color.textPrimary,
                                     ),
                                   ),
                                   Text(
                                     'of ${CurrencyFormatter.formatAmount(goal.targetAmount)}',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.secondary,
+                                    style: context.ff.text.labelSm.copyWith(
+                                      color: context.ff.color.secondary,
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceMd),
+                          const SizedBox(height: FfSpace.md),
                           FfProgressBar(
                             value: progress,
                             color:
                                 isComplete
-                                    ? context.finColors.income
-                                    : theme.colorScheme.primary,
+                                    ? context.ff.color.moneyIncome
+                                    : context.ff.color.actionPrimary,
                             size: FfProgressSize.md,
                           ),
-                          const SizedBox(height: StillwaterTokens.spaceSm),
+                          const SizedBox(height: FfSpace.sm),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 '${(progress * 100).toStringAsFixed(0)}%',
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: context.ff.text.bodySm.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -311,11 +311,11 @@ class SavingsGoalsScreen extends ConsumerWidget {
                                 isComplete
                                     ? 'Goal Reached 🎉'
                                     : '${CurrencyFormatter.formatAmount(summary.remainingAmount)} left',
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: context.ff.text.bodySm.copyWith(
                                   color:
                                       isComplete
-                                          ? context.finColors.income
-                                          : theme.colorScheme.secondary,
+                                          ? context.ff.color.moneyIncome
+                                          : context.ff.color.secondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -330,7 +330,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
               loading:
                   () => const Center(
                     child: Padding(
-                      padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                      padding: EdgeInsets.all(FfSpace.x4l),
                       child: FfLoading(),
                     ),
                   ),

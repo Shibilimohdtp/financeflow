@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
@@ -14,6 +12,7 @@ import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_text_field.dart';
+import '../../theme/ff.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -44,10 +43,10 @@ class _SecuritySettingsScreenState
                 const FfDivider(),
                 Padding(
                   padding: EdgeInsets.only(
-                    left: StillwaterTokens.spaceLg,
-                    right: StillwaterTokens.spaceLg,
-                    top: StillwaterTokens.spaceMd,
-                    bottom: StillwaterTokens.spaceMd,
+                    left: FfSpace.lg,
+                    right: FfSpace.lg,
+                    top: FfSpace.md,
+                    bottom: FfSpace.md,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -60,7 +59,7 @@ class _SecuritySettingsScreenState
                         maxLength: 6,
                         label: 'Enter 4-6 Digit PIN',
                       ),
-                      const SizedBox(height: StillwaterTokens.spaceMd),
+                      const SizedBox(height: FfSpace.md),
                       FfTextField(
                         controller: confirmController,
                         obscureText: true,
@@ -133,7 +132,6 @@ class _SecuritySettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final settings = ref.watch(settingsStreamProvider).value;
     final isBiometric = settings?.isBiometricEnabled ?? false;
     final isPin = settings?.isPinEnabled ?? false;
@@ -146,7 +144,7 @@ class _SecuritySettingsScreenState
         title: 'Security & Privacy',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'Hardware Keystore', iconOnly: true),
             ),
@@ -155,19 +153,19 @@ class _SecuritySettingsScreenState
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Hardware Keystore Banner ──────────────────────────────
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+            padding: const EdgeInsets.all(FfSpace.lg),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              color: context.ff.color.surfaceCard,
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Row(
@@ -176,35 +174,34 @@ class _SecuritySettingsScreenState
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: context.secColors.verified.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
+                    color: context.ff.color.statusSuccess.withValues(
+                      alpha: FfTint.subtle.alpha,
                     ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                   ),
                   child: Icon(
                     Icons.security_rounded,
-                    color: context.secColors.verified,
+                    color: context.ff.color.statusSuccess,
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'On-Device Storage Architecture',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: context.ff.text.body.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: context.secColors.verified,
+                          color: context.ff.color.statusSuccess,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         'All database files reside in private app sandbox storage. No financial records ever leave your phone.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontSize: 11,
+                        style: context.ff.text.labelSm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ],
@@ -214,11 +211,11 @@ class _SecuritySettingsScreenState
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 2. App Authentication ────────────────────────────────────
           _SectionLabel(label: 'App Authentication & Lock'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -275,11 +272,11 @@ class _SecuritySettingsScreenState
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
 
           // ── 3. Privacy Safeguards ────────────────────────────────────
           _SectionLabel(label: 'Privacy & Screen Protection'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -313,7 +310,7 @@ class _SecuritySettingsScreenState
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -327,13 +324,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

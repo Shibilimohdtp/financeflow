@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 /// A standard Stillwater bottom sheet header with drag handle, title, optional subtitle, and actions.
 class FfSheetHeader extends StatelessWidget {
@@ -21,17 +20,15 @@ class FfSheetHeader extends StatelessWidget {
     this.showDragHandle = true,
     this.onClose,
     this.padding = const EdgeInsets.fromLTRB(
-      StillwaterTokens.spaceLg,
-      StillwaterTokens.spaceSm,
-      StillwaterTokens.spaceSm,
-      StillwaterTokens.spaceMd,
+      FfSpace.lg,
+      FfSpace.sm,
+      FfSpace.sm,
+      FfSpace.md,
     ),
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Padding(
       padding: padding,
       child: Column(
@@ -44,12 +41,10 @@ class FfSheetHeader extends StatelessWidget {
               child: Container(
                 width: 36,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: StillwaterTokens.spaceSm),
+                margin: const EdgeInsets.only(bottom: FfSpace.sm),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
+                  color: context.ff.color.borderSubtle,
+                  borderRadius: BorderRadius.circular(FfRadius.full),
                 ),
               ),
             ),
@@ -64,16 +59,16 @@ class FfSheetHeader extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: theme.textTheme.titleLarge?.copyWith(
+                      style: context.ff.text.titleLg.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         subtitle!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                       ),
                     ],
@@ -81,7 +76,7 @@ class FfSheetHeader extends StatelessWidget {
                 ),
               ),
               if (trailing != null) ...[
-                const SizedBox(width: StillwaterTokens.spaceSm),
+                const SizedBox(width: FfSpace.sm),
                 trailing!,
               ],
               if (showCloseButton && trailing == null) ...[
@@ -92,7 +87,7 @@ class FfSheetHeader extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
               ] else if (showCloseButton && trailing != null) ...[
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
                   tooltip: 'Close',

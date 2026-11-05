@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 class FfPrivacyBadge extends StatelessWidget {
   final String label;
@@ -14,42 +13,45 @@ class FfPrivacyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secColors = context.secColors;
+    final secColors = context.ff.color;
 
     final badge = Container(
       padding:
           iconOnly
-              ? const EdgeInsets.all(StillwaterTokens.space2Xs + 2)
+              ? const EdgeInsets.all(FfSpace.x2s + 2)
               : const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceSm,
-                vertical: StillwaterTokens.space2Xs,
+                horizontal: FfSpace.sm,
+                vertical: FfSpace.x2s,
               ),
       decoration: BoxDecoration(
-        color: secColors.surface,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        color: secColors.surfaceSecure,
+        borderRadius: BorderRadius.circular(FfRadius.full),
         border: Border.all(
-          color: secColors.verified.withValues(alpha: 0.25),
-          width: StillwaterTokens.borderWidthHairline,
+          color: secColors.statusSuccess.withValues(alpha: FfTint.medium.alpha),
+          width: FfBorderWidth.hairline,
         ),
       ),
       child:
           iconOnly
-              ? Icon(Icons.shield_outlined, size: 14, color: secColors.verified)
+              ? Icon(
+                Icons.shield_outlined,
+                size: 14,
+                color: secColors.statusSuccess,
+              )
               : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.shield_outlined,
                     size: 14,
-                    color: secColors.verified,
+                    color: secColors.statusSuccess,
                   ),
-                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  const SizedBox(width: FfSpace.x2s),
                   Text(
                     label,
-                    style: context.textTheme.labelSmall?.copyWith(
-                      color: secColors.verified,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: secColors.statusSuccess,
                       fontWeight: FontWeight.w600,
-                      fontSize: 11,
                     ),
                   ),
                 ],

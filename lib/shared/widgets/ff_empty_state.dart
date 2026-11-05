@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'ff_button.dart';
+import '../../theme/ff.dart';
 
 class FfEmptyState extends StatelessWidget {
   final IconData icon;
@@ -23,7 +22,7 @@ class FfEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(StillwaterTokens.space2Xl),
+        padding: const EdgeInsets.all(FfSpace.x2l),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -32,7 +31,7 @@ class FfEmptyState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: context.theme.colorScheme.primaryContainer.withValues(
+                color: context.ff.color.actionPrimaryContainer.withValues(
                   alpha: 0.4,
                 ),
                 shape: BoxShape.circle,
@@ -40,25 +39,25 @@ class FfEmptyState extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 36,
-                color: context.theme.colorScheme.primary,
+                color: context.ff.color.actionPrimary,
               ),
             ),
-            const SizedBox(height: StillwaterTokens.spaceLg),
+            const SizedBox(height: FfSpace.lg),
             Text(
               title,
-              style: context.textTheme.headlineSmall,
+              style: context.ff.text.headlineSm,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: StillwaterTokens.spaceXs),
+            const SizedBox(height: FfSpace.xs),
             Text(
               description,
-              style: context.textTheme.bodyMedium?.copyWith(
-                color: context.theme.textTheme.bodySmall?.color,
+              style: context.ff.text.body.copyWith(
+                color: context.ff.text.bodySm.color,
               ),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: StillwaterTokens.spaceXl),
+              const SizedBox(height: FfSpace.xl),
               FfButton(label: actionLabel!, onPressed: onAction!, width: 220),
             ],
           ],

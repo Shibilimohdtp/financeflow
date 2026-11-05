@@ -144,8 +144,8 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                     textAlign: TextAlign.center,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
+                                    style: context.ff.text.bodySm.copyWith(
+                                      color: context.ff.color.textSecondary,
                                     ),
                                   ),
                                   const SizedBox(height: FfSpace.x2s),
@@ -155,10 +155,9 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                       CurrencyFormatter.format(
                                         selected?.value ?? total,
                                       ),
-                                      style: theme.textTheme.titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                      style: context.ff.text.titleLg.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                   if (selected != null) ...[
@@ -166,7 +165,7 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                     Text(
                                       '${_share(selected.value / total)} of total',
                                       textAlign: TextAlign.center,
-                                      style: theme.textTheme.labelMedium,
+                                      style: context.ff.text.label,
                                     ),
                                   ],
                                 ],
@@ -265,7 +264,7 @@ class _DonutChartPainter extends CustomPainter {
           arc.sweep,
           false,
           Paint()
-            ..color = theme.colorScheme.onSurface
+            ..color = _colors.textPrimary
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2,
         );

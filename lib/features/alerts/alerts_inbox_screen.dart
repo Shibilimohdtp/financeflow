@@ -8,11 +8,11 @@ import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'alert_settings_sheet.dart';
 import 'alerts_controller.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class AlertsInboxScreen extends ConsumerStatefulWidget {
   const AlertsInboxScreen({super.key});
@@ -33,11 +33,11 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
   Color _getSeverityColor(BuildContext context, AlertSeverity severity) {
     switch (severity) {
       case AlertSeverity.urgent:
-        return context.secColors.error;
+        return context.ff.color.statusError;
       case AlertSeverity.attention:
-        return context.accentColors.accent;
+        return context.ff.color.accent;
       case AlertSeverity.informational:
-        return Theme.of(context).colorScheme.primary;
+        return context.ff.color.actionPrimary;
     }
   }
 
@@ -85,7 +85,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
             onPressed: () => AlertSettingsSheet.show(context),
           ),
           const Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+            padding: EdgeInsets.only(right: FfSpace.md),
             child: Center(
               child: FfPrivacyBadge(label: 'Local Rules', iconOnly: true),
             ),
@@ -97,7 +97,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
           if (alerts.isEmpty) {
             return const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.spaceXl),
+                padding: EdgeInsets.all(FfSpace.xl),
                 child: FfEmptyState(
                   icon: Icons.notifications_none_rounded,
                   title: 'No active alerts',
@@ -110,8 +110,8 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
 
           return ListView(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceMd,
+              horizontal: FfSpace.lg,
+              vertical: FfSpace.md,
             ),
             children: [
               FfSectionHeader(title: 'Active Notifications (${alerts.length})'),
@@ -129,17 +129,15 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
                         direction: DismissDirection.endToStart,
                         background: Container(
                           alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(
-                            right: StillwaterTokens.spaceLg,
-                          ),
+                          padding: const EdgeInsets.only(right: FfSpace.lg),
                           decoration: BoxDecoration(
-                            color: context.secColors.error.withValues(
+                            color: context.ff.color.statusError.withValues(
                               alpha: 0.15,
                             ),
                           ),
                           child: Icon(
                             Icons.archive_outlined,
-                            color: context.secColors.error,
+                            color: context.ff.color.statusError,
                           ),
                         ),
                         onDismissed: (_) {
@@ -154,19 +152,19 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
                                 .markAsRead(alert.id);
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(
-                              StillwaterTokens.spaceMd,
-                            ),
+                            padding: const EdgeInsets.all(FfSpace.md),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  width: StillwaterTokens.iconTileSize,
-                                  height: StillwaterTokens.iconTileSize,
+                                  width: FfRowTokens.iconTile,
+                                  height: FfRowTokens.iconTile,
                                   decoration: BoxDecoration(
-                                    color: iconColor.withValues(alpha: 0.12),
+                                    color: iconColor.withValues(
+                                      alpha: FfTint.subtle.alpha,
+                                    ),
                                     borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusSm,
+                                      FfRadius.sm,
                                     ),
                                   ),
                                   child: Icon(
@@ -175,7 +173,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
                                     size: 20,
                                   ),
                                 ),
-                                const SizedBox(width: StillwaterTokens.spaceMd),
+                                const SizedBox(width: FfSpace.md),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -202,7 +200,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
                                               width: 8,
                                               height: 8,
                                               margin: const EdgeInsets.only(
-                                                left: 6,
+                                                left: FfSpace.x2s,
                                               ),
                                               decoration: BoxDecoration(
                                                 color: iconColor,
@@ -211,26 +209,22 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
                                             ),
                                         ],
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: FfSpace.x3s),
                                       Text(
                                         alert.message,
-                                        style: context.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  context.colorScheme.secondary,
-                                            ),
+                                        style: context.ff.text.bodySm.copyWith(
+                                          color: context.ff.color.secondary,
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: FfSpace.x2s),
                                       Text(
                                         DateFormatter.formatTransactionDate(
                                           alert.createdAt,
                                         ),
-                                        style: context.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color:
-                                                  context.colorScheme.outline,
-                                              fontSize: 10,
-                                            ),
+                                        style: context.ff.text.labelSm.copyWith(
+                                          color: context.ff.color.borderStrong,
+                                          fontSize: 10,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -242,14 +236,14 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
                       );
                     }).toList(),
               ),
-              const SizedBox(height: StillwaterTokens.space4Xl),
+              const SizedBox(height: FfSpace.x4l),
             ],
           );
         },
         loading:
             () => const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                padding: EdgeInsets.all(FfSpace.x4l),
                 child: FfLoading(),
               ),
             ),

@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/backup_payload.dart';
 import '../../services/backup_service.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../transactions/transactions_controller.dart';
 import 'backup_controller.dart';
@@ -162,7 +160,6 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final filename = widget.backupFile.path.split(Platform.pathSeparator).last;
 
     return Scaffold(
@@ -170,7 +167,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
         title: 'Restore Encrypted Backup',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'AES Decryption', iconOnly: true),
             ),
@@ -179,21 +176,21 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // File Name Pill
           Container(
-            padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+            padding: const EdgeInsets.all(FfSpace.md),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
+              color: context.ff.color.surfaceContainerHighest.withValues(
                 alpha: 0.4,
               ),
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+              borderRadius: BorderRadius.circular(FfRadius.md),
               border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+                color: context.ff.color.borderSubtle,
+                width: FfBorderWidth.hairline,
               ),
             ),
             child: Row(
@@ -201,13 +198,13 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                 Icon(
                   Icons.description_outlined,
                   size: 20,
-                  color: theme.colorScheme.primary,
+                  color: context.ff.color.actionPrimary,
                 ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
                 Expanded(
                   child: Text(
                     filename,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: context.ff.text.body.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -216,20 +213,20 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // Passphrase Input Card
           if (_decryptedPayload == null) ...[
             _SectionLabel(label: 'Enter Passphrase to Unlock'),
-            const SizedBox(height: StillwaterTokens.spaceXs),
+            const SizedBox(height: FfSpace.xs),
             Container(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+              padding: const EdgeInsets.all(FfSpace.lg),
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                color: context.ff.color.surfaceCard,
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 border: Border.all(
-                  color: theme.dividerColor,
-                  width: StillwaterTokens.borderWidthHairline,
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
                 ),
               ),
               child: Column(
@@ -244,7 +241,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                     errorText: _errorMessage,
                     onSubmitted: (_) => _decrypt(),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
                   FfButton(
                     label: 'Decrypt & Inspect Contents',
                     isLoading: _isDecrypting,
@@ -257,15 +254,15 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
           ] else ...[
             // Decrypted Contents Overview
             _SectionLabel(label: 'Decrypted Backup Contents'),
-            const SizedBox(height: StillwaterTokens.spaceXs),
+            const SizedBox(height: FfSpace.xs),
             Container(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+              padding: const EdgeInsets.all(FfSpace.lg),
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                color: context.ff.color.surfaceCard,
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 border: Border.all(
-                  color: theme.dividerColor,
-                  width: StillwaterTokens.borderWidthHairline,
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
                 ),
               ),
               child: Column(
@@ -276,37 +273,33 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                     children: [
                       Text(
                         'PAYLOAD METRICS',
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        style: context.ff.text.labelSm.copyWith(
                           letterSpacing: 0.8,
-                          color: theme.colorScheme.secondary,
-                          fontSize: 10,
+                          color: context.ff.color.secondary,
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceSm,
-                          vertical: 2,
+                          horizontal: FfSpace.sm,
+                          vertical: FfSpace.x3s,
                         ),
                         decoration: BoxDecoration(
-                          color: context.secColors.verified.withValues(
+                          color: context.ff.color.statusSuccess.withValues(
                             alpha: 0.15,
                           ),
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusFull,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.full),
                         ),
                         child: Text(
                           'Verified AES',
-                          style: TextStyle(
-                            fontSize: 10,
+                          style: context.ff.text.labelSm.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: context.secColors.verified,
+                            color: context.ff.color.statusSuccess,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                   _MetricRow(
                     label: 'Transactions',
                     count: _decryptedPayload!.transactions.length,
@@ -358,30 +351,29 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                     label: 'Application Settings',
                     count: _decryptedPayload!.appSettings != null ? 1 : 0,
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceSm),
+                  const SizedBox(height: FfSpace.sm),
                   Text(
                     'Exported on ${DateFormatter.formatTransactionDate(_decryptedPayload!.metadata.createdAt)} · App v${_decryptedPayload!.metadata.appVersion}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                      fontSize: 11,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.secondary,
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.space2Xl),
+            const SizedBox(height: FfSpace.x2l),
 
             // Restore Mode Selector
             _SectionLabel(label: 'Choose Restore Method'),
-            const SizedBox(height: StillwaterTokens.spaceXs),
+            const SizedBox(height: FfSpace.xs),
             Container(
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+                color: context.ff.color.surfaceCard,
+                borderRadius: BorderRadius.circular(FfRadius.lg),
                 border: Border.all(
-                  color: theme.dividerColor,
-                  width: StillwaterTokens.borderWidthHairline,
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
                 ),
               ),
               child: Column(
@@ -408,7 +400,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
               ),
             ),
 
-            const SizedBox(height: StillwaterTokens.space2Xl),
+            const SizedBox(height: FfSpace.x2l),
 
             FfButton(
               label:
@@ -428,7 +420,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
             ),
           ],
 
-          const SizedBox(height: StillwaterTokens.space4Xl),
+          const SizedBox(height: FfSpace.x4l),
         ],
       ),
     );
@@ -454,13 +446,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

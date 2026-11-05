@@ -8,13 +8,13 @@ import '../../../models/transaction.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
 import '../../../shared/widgets/ff_dialog.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
 import '../../../theme/ff_tone.dart';
+import '../../../theme/ff.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -109,7 +109,7 @@ class TransactionTile extends StatelessWidget {
                   }
                 },
               ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
+              const SizedBox(height: FfSpace.sm),
             ],
           ),
     );
@@ -117,7 +117,6 @@ class TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final isDark = context.isDarkMode;
 
     final fromAccount =
@@ -146,14 +145,14 @@ class TransactionTile extends StatelessWidget {
         icon: Icons.edit_outlined,
         label: 'Edit',
         alignment: Alignment.centerLeft,
-        color: theme.colorScheme.primary,
+        color: context.ff.color.actionPrimary,
         onActionTriggered: () => HapticFeedback.selectionClick(),
       ),
       secondaryBackground: _SwipeActionBackground(
         icon: Icons.delete_outline_rounded,
         label: 'Delete',
         alignment: Alignment.centerRight,
-        color: theme.colorScheme.error,
+        color: context.ff.color.statusError,
         onActionTriggered: () => HapticFeedback.mediumImpact(),
       ),
       confirmDismiss: (direction) async {
@@ -178,15 +177,17 @@ class TransactionTile extends StatelessWidget {
       child: Material(
         color:
             isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                ? context.ff.color.actionPrimary.withValues(
+                  alpha: FfTint.subtle.alpha,
+                )
                 : Colors.transparent,
         child: InkWell(
           onTap: selectionMode ? onToggleSelected : onOpen,
           onLongPress: onToggleSelected ?? () => _showActionSheet(context),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-              vertical: StillwaterTokens.spaceSm,
+              horizontal: FfSpace.lg,
+              vertical: FfSpace.sm,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -202,8 +203,8 @@ class TransactionTile extends StatelessWidget {
                           : Icons.radio_button_unchecked_rounded,
                       color:
                           isSelected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outline,
+                              ? context.ff.color.actionPrimary
+                              : context.ff.color.borderStrong,
                     ),
                   )
                 else
@@ -212,7 +213,7 @@ class TransactionTile extends StatelessWidget {
                     colorTokenIdentifier: transaction.categoryColor,
                     size: 42,
                   ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
 
                 // Center Information
                 Expanded(
@@ -225,12 +226,12 @@ class TransactionTile extends StatelessWidget {
                         titleText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: context.textTheme.titleSmall?.copyWith(
+                        style: context.ff.text.titleSm.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: StillwaterTokens.space3Xs),
+                      const SizedBox(height: FfSpace.x3s),
 
                       // Metadata Row (Time/Date, Account chip, Method, Tags)
                       Row(
@@ -240,9 +241,8 @@ class TransactionTile extends StatelessWidget {
                               showDate ? dateStr : timeStr,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.secondary,
-                                fontSize: 12,
+                              style: context.ff.text.label.copyWith(
+                                color: context.ff.color.secondary,
                               ),
                             ),
                           ),
@@ -250,7 +250,7 @@ class TransactionTile extends StatelessWidget {
                             Text(
                               ' · ',
                               style: TextStyle(
-                                color: theme.colorScheme.secondary.withValues(
+                                color: context.ff.color.secondary.withValues(
                                   alpha: 0.5,
                                 ),
                               ),
@@ -260,9 +260,8 @@ class TransactionTile extends StatelessWidget {
                                 fromAccount.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: context.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
-                                  fontSize: 12,
+                                style: context.ff.text.label.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
                             ),
@@ -272,44 +271,45 @@ class TransactionTile extends StatelessWidget {
                             Text(
                               ' · ',
                               style: TextStyle(
-                                color: theme.colorScheme.secondary.withValues(
+                                color: context.ff.color.secondary.withValues(
                                   alpha: 0.5,
                                 ),
                               ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1.5,
+                                horizontal: FfSpace.x2s,
+                                vertical: FfSpace.x3s,
                               ),
                               decoration: BoxDecoration(
                                 color:
                                     isDark
-                                        ? Colors.white.withValues(alpha: 0.08)
-                                        : Colors.black.withValues(alpha: 0.05),
+                                        ? Colors.white.withValues(
+                                          alpha: FfTint.faint.alpha,
+                                        )
+                                        : Colors.black.withValues(
+                                          alpha: FfTint.whisper.alpha,
+                                        ),
                                 borderRadius: BorderRadius.circular(
-                                  StillwaterTokens.radiusXs,
+                                  FfRadius.xs,
                                 ),
                               ),
                               child: Text(
                                 transaction.paymentMethod!,
-                                style: context.textTheme.labelSmall?.copyWith(
-                                  fontSize: 10,
+                                style: context.ff.text.labelSm.copyWith(
                                   fontWeight: FontWeight.w500,
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.75,
-                                  ),
+                                  color: context.ff.color.textPrimary
+                                      .withValues(alpha: 0.75),
                                 ),
                               ),
                             ),
                           ],
                           if (transaction.tags.isNotEmpty) ...[
-                            const SizedBox(width: StillwaterTokens.space2Xs),
+                            const SizedBox(width: FfSpace.x2s),
                             Text(
                               '#${transaction.tags.first}',
-                              style: context.textTheme.labelSmall?.copyWith(
-                                fontSize: 10.5,
-                                color: theme.colorScheme.primary,
+                              style: context.ff.text.labelSm.copyWith(
+                                color: context.ff.color.actionPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -319,7 +319,7 @@ class TransactionTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
+                const SizedBox(width: FfSpace.md),
 
                 // Amount Section
                 _amount(context),
@@ -380,18 +380,17 @@ class _SwipeActionBackground extends StatelessWidget {
     return Container(
       alignment: alignment,
       color: color,
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: Colors.white, size: 20),
-          const SizedBox(width: StillwaterTokens.spaceXs),
+          const SizedBox(width: FfSpace.xs),
           Text(
             label,
-            style: const TextStyle(
+            style: context.ff.text.bodySm.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w600,
-              fontSize: 13,
             ),
           ),
         ],

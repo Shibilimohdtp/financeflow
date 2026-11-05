@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'ff_button.dart';
+import '../../theme/ff.dart';
 
 /// A standard sticky bottom sheet footer with top divider hairline, safe-area insets,
 /// and support for a single full-width primary CTA or dual (secondary + primary) actions.
@@ -27,16 +26,15 @@ class FfSheetFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     final effectivePadding =
         padding ??
         EdgeInsets.fromLTRB(
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.spaceSm,
-          StillwaterTokens.spaceLg,
-          StillwaterTokens.spaceSm + bottomInset,
+          FfSpace.lg,
+          FfSpace.sm,
+          FfSpace.lg,
+          FfSpace.sm + bottomInset,
         );
 
     Widget content;
@@ -53,7 +51,7 @@ class FfSheetFooter extends StatelessWidget {
                   onSecondaryPressed ?? () => Navigator.of(context).pop(),
             ),
           ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
           Expanded(
             child: FfButton(
               label: primaryLabel!,
@@ -78,11 +76,13 @@ class FfSheetFooter extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: context.ff.color.surfacePage,
         border: Border(
           top: BorderSide(
-            color: theme.dividerColor.withValues(alpha: 0.5),
-            width: StillwaterTokens.borderWidthHairline,
+            color: context.ff.color.borderSubtle.withValues(
+              alpha: FfOpacity.half,
+            ),
+            width: FfBorderWidth.hairline,
           ),
         ),
       ),

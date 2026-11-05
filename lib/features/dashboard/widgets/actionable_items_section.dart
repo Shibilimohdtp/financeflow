@@ -4,8 +4,8 @@ import '../../../models/alert_item.dart';
 import '../../../models/loan.dart';
 import '../../../models/subscription.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/ff_tone.dart';
+import '../../../theme/ff.dart';
 
 class ActionableItemData {
   final String id;
@@ -62,9 +62,8 @@ class ActionableItemsSection extends StatelessWidget {
   });
 
   List<ActionableItemData> _buildActionableItems(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
-    final accentColors = context.accentColors;
+    final finColors = context.ff.color;
+    final accentColors = context.ff.color;
     final items = <ActionableItemData>[];
 
     // 1. Pending Review Imports
@@ -74,7 +73,9 @@ class ActionableItemsSection extends StatelessWidget {
           id: 'pending_review',
           icon: Icons.rate_review_outlined,
           iconColor: accentColors.accent,
-          backgroundColor: accentColors.accent.withValues(alpha: 0.10),
+          backgroundColor: accentColors.accent.withValues(
+            alpha: FfTint.subtle.alpha,
+          ),
           title:
               pendingReviewCount == 1
                   ? '1 imported transaction needs review'
@@ -102,9 +103,11 @@ class ActionableItemsSection extends StatelessWidget {
         ActionableItemData(
           id: 'loan_${loan.id}',
           icon: Icons.account_balance_outlined,
-          iconColor: isOverdue ? finColors.expense : finColors.debt,
-          backgroundColor: (isOverdue ? finColors.expense : finColors.debt)
-              .withValues(alpha: 0.10),
+          iconColor: isOverdue ? finColors.moneyExpense : finColors.moneyDebt,
+          backgroundColor: (isOverdue
+                  ? finColors.moneyExpense
+                  : finColors.moneyDebt)
+              .withValues(alpha: FfTint.subtle.alpha),
           title: '${loan.name} (${loan.lender})',
           subtitle: badge,
           amount: loan.emiAmount,
@@ -128,8 +131,10 @@ class ActionableItemsSection extends StatelessWidget {
         ActionableItemData(
           id: 'sub_${sub.id}',
           icon: Icons.repeat_rounded,
-          iconColor: theme.colorScheme.secondary,
-          backgroundColor: theme.colorScheme.secondary.withValues(alpha: 0.10),
+          iconColor: context.ff.color.secondary,
+          backgroundColor: context.ff.color.secondary.withValues(
+            alpha: FfTint.subtle.alpha,
+          ),
           title: sub.merchant,
           subtitle: dueText,
           amount: sub.amount,
@@ -144,8 +149,10 @@ class ActionableItemsSection extends StatelessWidget {
         ActionableItemData(
           id: 'over_budget',
           icon: Icons.pie_chart_outline_rounded,
-          iconColor: finColors.expense,
-          backgroundColor: finColors.expense.withValues(alpha: 0.10),
+          iconColor: finColors.moneyExpense,
+          backgroundColor: finColors.moneyExpense.withValues(
+            alpha: FfTint.subtle.alpha,
+          ),
           title:
               overBudgetCount == 1
                   ? '1 budget reached limit'
@@ -167,7 +174,7 @@ class ActionableItemsSection extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -176,7 +183,7 @@ class ActionableItemsSection extends StatelessWidget {
             children: [
               Text(
                 'Actionable & Upcoming',
-                style: theme.textTheme.titleSmall?.copyWith(
+                style: context.ff.text.titleSm.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.1,
                 ),
@@ -184,20 +191,19 @@ class ActionableItemsSection extends StatelessWidget {
               if (items.length > 2)
                 Text(
                   '${items.length} items',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.secondary,
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: items.length,
             separatorBuilder:
-                (context, index) =>
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                (context, index) => const SizedBox(height: FfSpace.xs),
             itemBuilder: (context, index) {
               final item = items[index];
               return _buildItemCard(context, theme, item);
@@ -214,21 +220,21 @@ class ActionableItemsSection extends StatelessWidget {
     ActionableItemData item,
   ) {
     return Material(
-      color: theme.cardColor,
-      borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+      color: context.ff.color.surfaceCard,
+      borderRadius: BorderRadius.circular(FfRadius.md),
       child: InkWell(
         onTap: item.onTap,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        borderRadius: BorderRadius.circular(FfRadius.md),
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceMd,
-            vertical: StillwaterTokens.spaceSm,
+            horizontal: FfSpace.md,
+            vertical: FfSpace.sm,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+            borderRadius: BorderRadius.circular(FfRadius.md),
             border: Border.all(
-              color: theme.dividerColor,
-              width: StillwaterTokens.borderWidthHairline,
+              color: context.ff.color.borderSubtle,
+              width: FfBorderWidth.hairline,
             ),
           ),
           child: Row(
@@ -239,14 +245,12 @@ class ActionableItemsSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       item.backgroundColor ??
-                      item.iconColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
-                  ),
+                      item.iconColor.withValues(alpha: FfTint.subtle.alpha),
+                  borderRadius: BorderRadius.circular(FfRadius.sm),
                 ),
                 child: Icon(item.icon, size: 18, color: item.iconColor),
               ),
-              const SizedBox(width: StillwaterTokens.spaceSm),
+              const SizedBox(width: FfSpace.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,19 +258,18 @@ class ActionableItemsSection extends StatelessWidget {
                   children: [
                     Text(
                       item.title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: context.ff.text.body.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (item.subtitle != null) ...[
-                      const SizedBox(height: StillwaterTokens.space3Xs),
+                      const SizedBox(height: FfSpace.x3s),
                       Text(
                         item.subtitle!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontSize: 12,
+                        style: context.ff.text.label.copyWith(
+                          color: context.ff.color.secondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -276,7 +279,7 @@ class ActionableItemsSection extends StatelessWidget {
                 ),
               ),
               if (item.amount != null) ...[
-                const SizedBox(width: StillwaterTokens.spaceSm),
+                const SizedBox(width: FfSpace.sm),
                 FfAmountText(
                   amount: item.amount!,
                   size: FfAmountSize.sm,
@@ -285,11 +288,11 @@ class ActionableItemsSection extends StatelessWidget {
                   tone: FfTone.neutral,
                 ),
               ],
-              const SizedBox(width: StillwaterTokens.spaceXs),
+              const SizedBox(width: FfSpace.xs),
               Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: theme.colorScheme.secondary,
+                color: context.ff.color.secondary,
               ),
             ],
           ),

@@ -10,7 +10,6 @@ import '../../services/money_lending_calculator.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'add_edit_money_record_sheet.dart';
 import 'money_record_detail_screen.dart';
@@ -19,6 +18,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class LendingBorrowingScreen extends ConsumerWidget {
   const LendingBorrowingScreen({super.key});
@@ -63,7 +63,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
         title: 'Lending & Borrowing',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -83,10 +83,10 @@ class LendingBorrowingScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                StillwaterTokens.spaceLg,
-                StillwaterTokens.spaceMd,
-                StillwaterTokens.spaceLg,
-                StillwaterTokens.spaceSm,
+                FfSpace.lg,
+                FfSpace.md,
+                FfSpace.lg,
+                FfSpace.sm,
               ),
               child: Column(
                 children: [
@@ -99,7 +99,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                           amount: summary.totalOwedToMe,
                           subtitle:
                               '${summary.activeLentCount} active${summary.overdueOwedToMe > 0 ? ' · ${CurrencyFormatter.format(summary.overdueOwedToMe)} overdue' : ''}',
-                          color: context.finColors.income,
+                          color: context.ff.color.moneyIncome,
                           icon: Icons.call_made_rounded,
                           onAddTap:
                               () => _openAddSheet(
@@ -108,7 +108,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                               ),
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      const SizedBox(width: FfSpace.md),
                       // I Owe (Borrowed)
                       Expanded(
                         child: _SummaryBox(
@@ -116,7 +116,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                           amount: summary.totalIOwe,
                           subtitle:
                               '${summary.activeBorrowedCount} active${summary.overdueIOwe > 0 ? ' · ${CurrencyFormatter.format(summary.overdueIOwe)} overdue' : ''}',
-                          color: context.finColors.expense,
+                          color: context.ff.color.moneyExpense,
                           icon: Icons.call_received_rounded,
                           onAddTap:
                               () => _openAddSheet(
@@ -137,8 +137,8 @@ class LendingBorrowingScreen extends ConsumerWidget {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-                vertical: StillwaterTokens.spaceSm,
+                horizontal: FfSpace.lg,
+                vertical: FfSpace.sm,
               ),
               child: Row(
                 children: [
@@ -150,7 +150,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                           MoneyRecordFilter.all;
                     },
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   _FilterChipItem(
                     label: 'Owed to Me',
                     count: summary.activeLentCount,
@@ -160,7 +160,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                           MoneyRecordFilter.owedToMe;
                     },
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   _FilterChipItem(
                     label: 'I Owe',
                     count: summary.activeBorrowedCount,
@@ -170,29 +170,29 @@ class LendingBorrowingScreen extends ConsumerWidget {
                           MoneyRecordFilter.iOwe;
                     },
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   _FilterChipItem(
                     label: 'Overdue',
                     count: summary.overdueCount,
-                    color: context.finColors.expense,
+                    color: context.ff.color.moneyExpense,
                     isSelected: currentFilter == MoneyRecordFilter.overdue,
                     onTap: () {
                       ref.read(moneyRecordFilterProvider.notifier).state =
                           MoneyRecordFilter.overdue;
                     },
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   _FilterChipItem(
                     label: 'Due Soon',
                     count: summary.dueSoonCount,
-                    color: context.finColors.debt,
+                    color: context.ff.color.moneyDebt,
                     isSelected: currentFilter == MoneyRecordFilter.dueSoon,
                     onTap: () {
                       ref.read(moneyRecordFilterProvider.notifier).state =
                           MoneyRecordFilter.dueSoon;
                     },
                   ),
-                  const SizedBox(width: StillwaterTokens.spaceSm),
+                  const SizedBox(width: FfSpace.sm),
                   _FilterChipItem(
                     label: 'Settled',
                     count: summary.settledCount,
@@ -213,7 +213,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
               hasScrollBody: false,
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(StillwaterTokens.space2Xl),
+                  padding: const EdgeInsets.all(FfSpace.x2l),
                   child: FfEmptyState(
                     icon: Icons.handshake_outlined,
                     title:
@@ -239,9 +239,9 @@ class LendingBorrowingScreen extends ConsumerWidget {
           else
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
-                StillwaterTokens.spaceLg,
-                StillwaterTokens.spaceSm,
-                StillwaterTokens.spaceLg,
+                FfSpace.lg,
+                FfSpace.sm,
+                FfSpace.lg,
                 104, // Space for FAB and bottom padding
               ),
               sliver: SliverList(
@@ -250,9 +250,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                   final reps = repaymentsByRecord[record.id] ?? const [];
                   final advs = advancesByRecord[record.id] ?? const [];
                   return Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: StillwaterTokens.spaceSm,
-                    ),
+                    padding: const EdgeInsets.only(bottom: FfSpace.sm),
                     child: _MoneyRecordCard(
                       record: record,
                       advances: advs,
@@ -288,10 +286,9 @@ class _SummaryBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return FfCard(
       variant: FfCardVariant.standard,
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -301,10 +298,10 @@ class _SummaryBox extends StatelessWidget {
               Row(
                 children: [
                   Icon(icon, color: color, size: 16),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
+                  const SizedBox(width: FfSpace.xs),
                   Text(
                     title,
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    style: context.ff.text.labelSm.copyWith(
                       color: color,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
@@ -314,9 +311,9 @@ class _SummaryBox extends StatelessWidget {
               ),
               InkWell(
                 onTap: onAddTap,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                borderRadius: BorderRadius.circular(FfRadius.sm),
                 child: Padding(
-                  padding: const EdgeInsets.all(StillwaterTokens.space2Xs),
+                  padding: const EdgeInsets.all(FfSpace.x2s),
                   child: Icon(
                     Icons.add_circle_outline_rounded,
                     size: 18,
@@ -326,20 +323,19 @@ class _SummaryBox extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           Text(
             CurrencyFormatter.format(amount),
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: context.ff.text.titleLg.copyWith(
               fontWeight: FontWeight.w800,
               fontFeatures: StillwaterTypography.tabularFeatures,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.space2Xs),
+          const SizedBox(height: FfSpace.x2s),
           Text(
             subtitle,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
-              fontSize: 11,
+            style: context.ff.text.labelSm.copyWith(
+              color: context.ff.color.secondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -367,8 +363,7 @@ class _FilterChipItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final activeColor = color ?? context.theme.colorScheme.primary;
+    final activeColor = color ?? context.ff.color.actionPrimary;
 
     return FilterChip(
       selected: isSelected,
@@ -377,27 +372,29 @@ class _FilterChipItem extends StatelessWidget {
         children: [
           Text(label),
           if (count != null && count! > 0) ...[
-            const SizedBox(width: StillwaterTokens.space2Xs),
+            const SizedBox(width: FfSpace.x2s),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.space2Xs,
-                vertical: 1,
+                horizontal: FfSpace.x2s,
+                vertical: FfSpace.x3s,
               ),
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? theme.colorScheme.onPrimary.withValues(alpha: 0.2)
-                        : activeColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusFull,
-                ),
+                        ? context.ff.color.onActionPrimary.withValues(
+                          alpha: FfTint.medium.alpha,
+                        )
+                        : activeColor.withValues(alpha: FfTint.subtle.alpha),
+                borderRadius: BorderRadius.circular(FfRadius.full),
               ),
               child: Text(
                 count.toString(),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
+                style: context.ff.text.labelSm.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? theme.colorScheme.onPrimary : activeColor,
+                  color:
+                      isSelected
+                          ? context.ff.color.onActionPrimary
+                          : activeColor,
                 ),
               ),
             ),
@@ -406,29 +403,30 @@ class _FilterChipItem extends StatelessWidget {
       ),
       onSelected: (_) => onTap(),
       selectedColor: activeColor,
-      labelStyle: TextStyle(
+      labelStyle: context.ff.text.label.copyWith(
         color:
             isSelected
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurface,
+                ? context.ff.color.onActionPrimary
+                : context.ff.color.textPrimary,
         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-        fontSize: 12,
       ),
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: context.ff.color.surfaceCard,
       side: BorderSide(
         color:
             isSelected
                 ? activeColor
-                : theme.dividerColor.withValues(alpha: 0.4),
+                : context.ff.color.borderSubtle.withValues(
+                  alpha: FfTint.strong.alpha,
+                ),
         width: 1,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        borderRadius: BorderRadius.circular(FfRadius.full),
       ),
       showCheckmark: false,
       padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceSm,
-        vertical: StillwaterTokens.space2Xs,
+        horizontal: FfSpace.sm,
+        vertical: FfSpace.x2s,
       ),
     );
   }
@@ -449,10 +447,9 @@ class _MoneyRecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isLent = record.type == MoneyRecordType.lent;
     final typeColor =
-        isLent ? context.finColors.income : context.finColors.expense;
+        isLent ? context.ff.color.moneyIncome : context.ff.color.moneyExpense;
     final totalAdvanced = record.calculateTotalAdvanced(advances);
     final totalRepaid = record.calculateTotalRepaid(repayments);
     final remaining = record.calculateRemainingAmount(
@@ -480,7 +477,7 @@ class _MoneyRecordCard extends StatelessWidget {
     return FfCard(
       variant: FfCardVariant.standard,
       onTap: onTap,
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -493,14 +490,12 @@ class _MoneyRecordCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusMd,
-                  ),
+                  color: typeColor.withValues(alpha: FfTint.subtle.alpha),
+                  borderRadius: BorderRadius.circular(FfRadius.md),
                 ),
                 child: Icon(record.type.icon, color: typeColor, size: 20),
               ),
-              const SizedBox(width: StillwaterTokens.spaceMd),
+              const SizedBox(width: FfSpace.md),
 
               // Person name, direction subtitle, and advance count pill
               Expanded(
@@ -512,7 +507,7 @@ class _MoneyRecordCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             record.personName,
-                            style: theme.textTheme.titleSmall?.copyWith(
+                            style: context.ff.text.titleSm.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
                             maxLines: 1,
@@ -520,44 +515,41 @@ class _MoneyRecordCard extends StatelessWidget {
                           ),
                         ),
                         if (advanceCount > 1) ...[
-                          const SizedBox(width: StillwaterTokens.spaceXs),
+                          const SizedBox(width: FfSpace.xs),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: FfSpace.x2s,
+                              vertical: FfSpace.x3s,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusSm,
-                              ),
+                              color: context.ff.color.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(FfRadius.sm),
                             ),
                             child: Text(
                               '$advanceCount advances',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 10,
+                              style: context.ff.text.labelSm.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurfaceVariant,
+                                color: context.ff.color.textSecondary,
                               ),
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: FfSpace.x3s),
                     Row(
                       children: [
                         Text(
                           isLent ? 'Lent' : 'Borrowed',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: context.ff.text.bodySm.copyWith(
                             color: typeColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           ' · ${DateFormatter.formatShortDate(record.transactionDate)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                       ],
@@ -572,18 +564,18 @@ class _MoneyRecordCard extends StatelessWidget {
                 children: [
                   Text(
                     CurrencyFormatter.format(remaining),
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: context.ff.text.title.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: isSettled ? context.finColors.income : typeColor,
+                      color:
+                          isSettled ? context.ff.color.moneyIncome : typeColor,
                       fontFeatures: StillwaterTypography.tabularFeatures,
                     ),
                   ),
                   if (totalRepaid > 0.001 || totalAdvanced > remaining)
                     Text(
                       'Total: ${CurrencyFormatter.format(totalAdvanced)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                        fontSize: 11,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                         fontFeatures: StillwaterTypography.tabularFeatures,
                       ),
                     ),
@@ -594,7 +586,7 @@ class _MoneyRecordCard extends StatelessWidget {
 
           // Row 2: Progress bar (if partially repaid)
           if (totalRepaid > 0.001 && !isSettled) ...[
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
             FfProgressBar(
               value: progress,
               color: typeColor,
@@ -602,9 +594,9 @@ class _MoneyRecordCard extends StatelessWidget {
             ),
           ],
 
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           const FfDivider(),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
 
           // Row 3: Due date with relative badge & status pill
           Row(
@@ -622,25 +614,25 @@ class _MoneyRecordCard extends StatelessWidget {
                     size: 14,
                     color:
                         isOverdue
-                            ? context.finColors.expense
+                            ? context.ff.color.moneyExpense
                             : (isDueSoon
-                                ? context.finColors.debt
-                                : theme.colorScheme.secondary),
+                                ? context.ff.color.moneyDebt
+                                : context.ff.color.secondary),
                   ),
-                  const SizedBox(width: StillwaterTokens.space2Xs),
+                  const SizedBox(width: FfSpace.x2s),
                   Text(
                     isSettled
                         ? 'Settled'
                         : (isOverdue
                             ? 'Overdue (${DateFormatter.formatShortDate(effectiveDueDate)})'
                             : 'Due ${DateFormatter.formatShortDate(effectiveDueDate)}'),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: context.ff.text.bodySm.copyWith(
                       color:
                           isOverdue
-                              ? context.finColors.expense
+                              ? context.ff.color.moneyExpense
                               : (isDueSoon
-                                  ? context.finColors.debt
-                                  : theme.colorScheme.secondary),
+                                  ? context.ff.color.moneyDebt
+                                  : context.ff.color.secondary),
                       fontWeight:
                           (isOverdue || isDueSoon)
                               ? FontWeight.w700
@@ -653,23 +645,20 @@ class _MoneyRecordCard extends StatelessWidget {
               // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceSm,
-                  vertical: StillwaterTokens.space2Xs,
+                  horizontal: FfSpace.sm,
+                  vertical: FfSpace.x2s,
                 ),
                 decoration: BoxDecoration(
                   color: status
                       .colorFor(isDark: context.isDarkMode)
-                      .withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
+                      .withValues(alpha: FfTint.subtle.alpha),
+                  borderRadius: BorderRadius.circular(FfRadius.full),
                 ),
                 child: Text(
                   status.displayName,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: context.ff.text.labelSm.copyWith(
                     color: status.colorFor(isDark: context.isDarkMode),
                     fontWeight: FontWeight.w700,
-                    fontSize: 11,
                   ),
                 ),
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 class FfChip extends StatelessWidget {
   final String label;
@@ -20,37 +19,35 @@ class FfChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     final backgroundColor =
         isSelected
-            ? theme.colorScheme.primaryContainer
-            : theme.colorScheme.surfaceContainerLow;
+            ? context.ff.color.actionPrimaryContainer
+            : context.ff.color.surfaceContainerLow;
 
     final borderColor =
-        isSelected ? theme.colorScheme.primary : theme.dividerColor;
+        isSelected
+            ? context.ff.color.actionPrimary
+            : context.ff.color.borderSubtle;
 
     final textColor =
         isSelected
-            ? theme.colorScheme.onPrimaryContainer
-            : theme.textTheme.bodyMedium?.color;
+            ? context.ff.color.onActionPrimaryContainer
+            : context.ff.text.body.color;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onSelected,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+        borderRadius: BorderRadius.circular(FfRadius.full),
         child: Container(
-          height: StillwaterTokens.chipHeight,
-          padding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceMd,
-          ),
+          height: FfChipTokens.height,
+          padding: const EdgeInsets.symmetric(horizontal: FfSpace.md),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+            borderRadius: BorderRadius.circular(FfRadius.full),
             border: Border.all(
               color: borderColor,
-              width: StillwaterTokens.borderWidthDefault,
+              width: FfBorderWidth.regular,
             ),
           ),
           child: Row(
@@ -58,17 +55,17 @@ class FfChip extends StatelessWidget {
             children: [
               if (leading != null) ...[
                 leading!,
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
               ],
               Text(
                 label,
-                style: theme.textTheme.labelMedium?.copyWith(
+                style: context.ff.text.label.copyWith(
                   color: textColor,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
               if (trailing != null) ...[
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 trailing!,
               ],
             ],

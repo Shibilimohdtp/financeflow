@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/ff_card.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/stillwater_typography.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff.dart';
 
 /// A 3x2 grid card showing all key summary metrics from [AnalyticsReport].
 class AnalyticsMetricsHero extends StatelessWidget {
@@ -15,17 +14,18 @@ class AnalyticsMetricsHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
 
     final savingsColor =
-        report.netSavings >= 0 ? finColors.savings : finColors.expense;
+        report.netSavings >= 0
+            ? finColors.moneySavings
+            : finColors.moneyExpense;
     final savingsRateColor =
         report.savingsRate >= 0.2
-            ? finColors.savings
+            ? finColors.moneySavings
             : report.savingsRate >= 0.05
-            ? theme.colorScheme.primary
-            : finColors.expense;
+            ? context.ff.color.actionPrimary
+            : finColors.moneyExpense;
 
     return FfCard(
       variant: FfCardVariant.elevated,
@@ -37,21 +37,23 @@ class AnalyticsMetricsHero extends StatelessWidget {
                 child: _MetricBlock(
                   label: 'Total Inflow',
                   value: CurrencyFormatter.formatAmount(report.totalIncome),
-                  color: finColors.income,
+                  color: finColors.moneyIncome,
                   trendPct: report.incomeChangePercentage,
                   isIncome: true,
                 ),
               ),
-              Container(width: 1, height: 48, color: theme.dividerColor),
+              Container(
+                width: 1,
+                height: 48,
+                color: context.ff.color.borderSubtle,
+              ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: StillwaterTokens.spaceMd,
-                  ),
+                  padding: const EdgeInsets.only(left: FfSpace.md),
                   child: _MetricBlock(
                     label: 'Total Outflow',
                     value: CurrencyFormatter.formatAmount(report.totalExpense),
-                    color: finColors.expense,
+                    color: finColors.moneyExpense,
                     trendPct: report.expenseChangePercentage,
                     isIncome: false,
                   ),
@@ -59,9 +61,9 @@ class AnalyticsMetricsHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           const FfDivider(),
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           Row(
             children: [
               Expanded(
@@ -71,12 +73,14 @@ class AnalyticsMetricsHero extends StatelessWidget {
                   color: savingsColor,
                 ),
               ),
-              Container(width: 1, height: 48, color: theme.dividerColor),
+              Container(
+                width: 1,
+                height: 48,
+                color: context.ff.color.borderSubtle,
+              ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: StillwaterTokens.spaceMd,
-                  ),
+                  padding: const EdgeInsets.only(left: FfSpace.md),
                   child: _MetricBlock(
                     label: 'Savings Rate',
                     value: '${(report.savingsRate * 100).toStringAsFixed(0)}%',
@@ -88,9 +92,9 @@ class AnalyticsMetricsHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           const FfDivider(),
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
           Row(
             children: [
               Expanded(
@@ -101,12 +105,14 @@ class AnalyticsMetricsHero extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(width: 1, height: 48, color: theme.dividerColor),
+              Container(
+                width: 1,
+                height: 48,
+                color: context.ff.color.borderSubtle,
+              ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: StillwaterTokens.spaceMd,
-                  ),
+                  padding: const EdgeInsets.only(left: FfSpace.md),
                   child: _MetricBlock(
                     label: 'Transactions',
                     value: '${report.transactionCount}',
@@ -150,8 +156,7 @@ class _MetricBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,8 +167,8 @@ class _MetricBlock extends StatelessWidget {
             Flexible(
               child: Text(
                 label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.secondary,
+                style: context.ff.text.labelSm.copyWith(
+                  color: context.ff.color.secondary,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w600,
                 ),
@@ -172,17 +177,22 @@ class _MetricBlock extends StatelessWidget {
               ),
             ),
             if (trendPct != null) ...[
-              const SizedBox(width: StillwaterTokens.space3Xs),
+              const SizedBox(width: FfSpace.x3s),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: FfSpace.x2s,
+                  vertical: FfSpace.x3s,
+                ),
                 decoration: BoxDecoration(
                   color:
                       (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                          ? finColors.savings.withValues(alpha: 0.1)
-                          : finColors.expense.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
-                  ),
+                          ? finColors.moneySavings.withValues(
+                            alpha: FfTint.subtle.alpha,
+                          )
+                          : finColors.moneyExpense.withValues(
+                            alpha: FfTint.subtle.alpha,
+                          ),
+                  borderRadius: BorderRadius.circular(FfRadius.sm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -194,18 +204,17 @@ class _MetricBlock extends StatelessWidget {
                       size: 9,
                       color:
                           (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                              ? finColors.savings
-                              : finColors.expense,
+                              ? finColors.moneySavings
+                              : finColors.moneyExpense,
                     ),
                     Text(
                       '${trendPct!.abs().toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 9,
+                      style: context.ff.text.labelSm.copyWith(
                         fontWeight: FontWeight.w700,
                         color:
                             (isIncome ? trendPct! >= 0 : trendPct! <= 0)
-                                ? finColors.savings
-                                : finColors.expense,
+                                ? finColors.moneySavings
+                                : finColors.moneyExpense,
                       ),
                     ),
                   ],
@@ -213,36 +222,42 @@ class _MetricBlock extends StatelessWidget {
               ),
             ],
             if (badgeText != null && trendPct == null) ...[
-              const SizedBox(width: StillwaterTokens.space3Xs),
+              const SizedBox(width: FfSpace.x3s),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: FfSpace.x2s,
+                  vertical: FfSpace.x3s,
+                ),
                 decoration: BoxDecoration(
                   color:
                       badgePositive
-                          ? finColors.savings.withValues(alpha: 0.12)
-                          : finColors.expense.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusSm,
-                  ),
+                          ? finColors.moneySavings.withValues(
+                            alpha: FfTint.subtle.alpha,
+                          )
+                          : finColors.moneyExpense.withValues(
+                            alpha: FfTint.subtle.alpha,
+                          ),
+                  borderRadius: BorderRadius.circular(FfRadius.sm),
                 ),
                 child: Text(
                   badgeText!,
-                  style: TextStyle(
-                    fontSize: 9,
+                  style: context.ff.text.labelSm.copyWith(
                     fontWeight: FontWeight.w700,
                     color:
-                        badgePositive ? finColors.savings : finColors.expense,
+                        badgePositive
+                            ? finColors.moneySavings
+                            : finColors.moneyExpense,
                   ),
                 ),
               ),
             ],
           ],
         ),
-        const SizedBox(height: StillwaterTokens.space2Xs),
+        const SizedBox(height: FfSpace.x2s),
         Text(
           value,
           style: StillwaterTypography.numMd(
-            color: color ?? theme.colorScheme.onSurface,
+            color: color ?? context.ff.color.textPrimary,
           ),
         ),
       ],

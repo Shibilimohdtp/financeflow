@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/goal_contribution.dart';
@@ -10,7 +9,6 @@ import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
@@ -18,6 +16,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../theme/ff.dart';
 
 class AddGoalContributionSheet extends ConsumerStatefulWidget {
   final SavingsGoal goal;
@@ -119,7 +118,6 @@ class _AddGoalContributionSheetState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountsAsync = ref.watch(allAccountsStreamProvider);
 
     return FfSheet(
@@ -133,9 +131,7 @@ class _AddGoalContributionSheetState
         // Form Content
         Flexible(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceLg,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
             child: Form(
               key: _formKey,
               child: Column(
@@ -143,7 +139,7 @@ class _AddGoalContributionSheetState
                 children: [
                   // Deposit Amount
                   _SectionLabel(label: 'Deposit Amount'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _amountController,
                     autofocus: true,
@@ -160,26 +156,22 @@ class _AddGoalContributionSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Date
                   _SectionLabel(label: 'Deposit Date'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   InkWell(
                     onTap: _selectDate,
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusMd,
-                    ),
+                    borderRadius: BorderRadius.circular(FfRadius.md),
                     child: InputDecorator(
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                          vertical: StillwaterTokens.spaceSm,
+                          horizontal: FfSpace.md,
+                          vertical: FfSpace.sm,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusMd,
-                          ),
+                          borderRadius: BorderRadius.circular(FfRadius.md),
                         ),
                         suffixIcon: const Icon(
                           Icons.calendar_today_outlined,
@@ -188,16 +180,16 @@ class _AddGoalContributionSheetState
                       ),
                       child: Text(
                         DateFormat('dd MMMM yyyy').format(_date),
-                        style: theme.textTheme.bodyMedium,
+                        style: context.ff.text.body,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Source Account
                   _SectionLabel(label: 'Source Account (Optional)'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   accountsAsync.when(
                     data: (accounts) {
                       final activeAccounts =
@@ -222,17 +214,17 @@ class _AddGoalContributionSheetState
                     error: (_, __) => const SizedBox.shrink(),
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // Notes
                   _SectionLabel(label: 'Notes (Optional)'),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _notesController,
                     hint: 'e.g. Monthly salary savings transfer',
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceMd),
+                  const SizedBox(height: FfSpace.md),
                 ],
               ),
             ),
@@ -256,13 +248,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: StillwaterTokens.space2Xs),
+      padding: const EdgeInsets.only(left: FfSpace.x2s),
       child: Text(
         label.toUpperCase(),
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.ff.text.labelSm.copyWith(
           letterSpacing: 0.8,
-          color: context.theme.colorScheme.secondary,
-          fontSize: 10,
+          color: context.ff.color.secondary,
         ),
       ),
     );

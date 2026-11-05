@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/loan.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/ff_tone.dart';
+import '../../../theme/ff.dart';
 
 class HomeLoansOverview extends StatelessWidget {
   final List<Loan> activeLoans;
@@ -26,8 +25,7 @@ class HomeLoansOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
+    final finColors = context.ff.color;
 
     if (activeLoans.isEmpty) return const SizedBox.shrink();
 
@@ -37,7 +35,7 @@ class HomeLoansOverview extends StatelessWidget {
     final nextLoan = sortedLoans.first;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -47,7 +45,7 @@ class HomeLoansOverview extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Loans & EMI',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.ff.text.titleSm.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
                   ),
@@ -64,25 +62,23 @@ class HomeLoansOverview extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
           Material(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             child: InkWell(
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+              borderRadius: BorderRadius.circular(FfRadius.lg),
               onTap:
                   onOpenLoanDetail != null
                       ? () => onOpenLoanDetail!(nextLoan)
                       : onViewLoans,
               child: Container(
-                padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                padding: const EdgeInsets.all(FfSpace.md),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusLg,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.lg),
                   border: Border.all(
-                    color: theme.dividerColor,
-                    width: StillwaterTokens.borderWidthHairline,
+                    color: context.ff.color.borderSubtle,
+                    width: FfBorderWidth.hairline,
                   ),
                 ),
                 child: Column(
@@ -95,26 +91,26 @@ class HomeLoansOverview extends StatelessWidget {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(
-                                  StillwaterTokens.space2Xs,
-                                ),
+                                padding: const EdgeInsets.all(FfSpace.x2s),
                                 decoration: BoxDecoration(
-                                  color: finColors.debt.withValues(alpha: 0.12),
+                                  color: finColors.moneyDebt.withValues(
+                                    alpha: FfTint.subtle.alpha,
+                                  ),
                                   borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusSm,
+                                    FfRadius.sm,
                                   ),
                                 ),
                                 child: Icon(
                                   Icons.account_balance_outlined,
                                   size: 16,
-                                  color: finColors.debt,
+                                  color: finColors.moneyDebt,
                                 ),
                               ),
-                              const SizedBox(width: StillwaterTokens.spaceSm),
+                              const SizedBox(width: FfSpace.sm),
                               Flexible(
                                 child: Text(
                                   nextLoan.name,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                  style: context.ff.text.body.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
@@ -124,16 +120,16 @@ class HomeLoansOverview extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: StillwaterTokens.spaceXs),
+                        const SizedBox(width: FfSpace.xs),
                         Text(
                           '${activeLoans.length} active',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
                     Row(
                       children: [
                         Expanded(
@@ -142,11 +138,11 @@ class HomeLoansOverview extends StatelessWidget {
                             children: [
                               Text(
                                 'Next EMI Due',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.labelSm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
-                              const SizedBox(height: StillwaterTokens.space3Xs),
+                              const SizedBox(height: FfSpace.x3s),
                               FfAmountText(
                                 amount: nextLoan.emiAmount,
                                 size: FfAmountSize.md,
@@ -154,14 +150,13 @@ class HomeLoansOverview extends StatelessWidget {
                                 showSign: false,
                                 tone: FfTone.debt,
                               ),
-                              const SizedBox(height: StillwaterTokens.space3Xs),
+                              const SizedBox(height: FfSpace.x3s),
                               Text(
                                 DateFormatter.formatTransactionDate(
                                   nextLoan.nextDueDate,
                                 ),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.labelSm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
                             ],
@@ -170,20 +165,20 @@ class HomeLoansOverview extends StatelessWidget {
                         Container(
                           width: 1,
                           height: 40,
-                          color: theme.dividerColor,
+                          color: context.ff.color.borderSubtle,
                         ),
-                        const SizedBox(width: StillwaterTokens.spaceMd),
+                        const SizedBox(width: FfSpace.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Left to pay',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.labelSm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
-                              const SizedBox(height: StillwaterTokens.space3Xs),
+                              const SizedBox(height: FfSpace.x3s),
                               FfAmountText(
                                 amount: totalOutstanding,
                                 size: FfAmountSize.md,
@@ -191,12 +186,11 @@ class HomeLoansOverview extends StatelessWidget {
                                 showSign: false,
                                 tone: FfTone.neutral,
                               ),
-                              const SizedBox(height: StillwaterTokens.space3Xs),
+                              const SizedBox(height: FfSpace.x3s),
                               Text(
                                 'Principal + interest',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                  color: theme.colorScheme.secondary,
+                                style: context.ff.text.labelSm.copyWith(
+                                  color: context.ff.color.secondary,
                                 ),
                               ),
                             ],

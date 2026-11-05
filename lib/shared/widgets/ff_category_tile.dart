@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../models/category_colors.dart';
 import '../../models/category_icons.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 class FfCategoryTile extends StatelessWidget {
   final String iconIdentifier;
@@ -13,7 +13,7 @@ class FfCategoryTile extends StatelessWidget {
     super.key,
     required this.iconIdentifier,
     required this.colorTokenIdentifier,
-    this.size = StillwaterTokens.iconTileSize,
+    this.size = FfRowTokens.iconTile,
   });
 
   @override
@@ -26,8 +26,8 @@ class FfCategoryTile extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: StillwaterTokens.opacityTint),
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        color: color.withValues(alpha: FfTint.subtle.alpha),
+        borderRadius: BorderRadius.circular(FfRadius.md),
       ),
       child: Center(child: Icon(iconData, size: size * 0.55, color: color)),
     );

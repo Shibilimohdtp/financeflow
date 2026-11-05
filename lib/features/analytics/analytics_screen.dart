@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../core/period/period.dart';
@@ -16,7 +15,6 @@ import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../transactions/transaction_detail_screen.dart';
 import '../transactions/transaction_list_utils.dart';
 import 'analytics_controller.dart';
@@ -26,6 +24,7 @@ import 'widgets/expense_category_breakdown.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../theme/ff_tone.dart';
+import '../../theme/ff.dart';
 
 /// "Where did my money go" for the shared report period. Every category and
 /// payee opens the Money tab filtered to exactly the transactions behind it.
@@ -45,7 +44,6 @@ class AnalyticsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
     final period = ref.watch(reportPeriodProvider);
     final reportAsync = ref.watch(analyticsReportProvider);
 
@@ -57,7 +55,7 @@ class AnalyticsScreen extends ConsumerWidget {
         title: 'Insights',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -65,14 +63,14 @@ class AnalyticsScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        color: theme.colorScheme.primary,
+        color: context.ff.color.actionPrimary,
         onRefresh: () async => ref.invalidate(analyticsRawTransactionsProvider),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceXs,
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.space4Xl,
+            FfSpace.lg,
+            FfSpace.xs,
+            FfSpace.lg,
+            FfSpace.x4l,
           ),
           children: [
             FfPeriodBar(
@@ -83,7 +81,7 @@ class AnalyticsScreen extends ConsumerWidget {
                 }
               },
             ),
-            const SizedBox(height: StillwaterTokens.spaceSm),
+            const SizedBox(height: FfSpace.sm),
             reportAsync.when(
               data:
                   (report) =>
@@ -101,7 +99,7 @@ class AnalyticsScreen extends ConsumerWidget {
                   () => const Column(
                     children: [
                       FfMetricSkeletonCard(),
-                      SizedBox(height: StillwaterTokens.spaceLg),
+                      SizedBox(height: FfSpace.lg),
                       FfMetricSkeletonCard(),
                     ],
                   ),
@@ -126,7 +124,6 @@ class AnalyticsScreen extends ConsumerWidget {
     Period period,
     VoidCallback? Function(TransactionQuery) show,
   ) {
-    final theme = context.theme;
     final categoryRows =
         report.categoryBreakdown
             .where((c) => c.categoryId != 'cat_other_grouped')
@@ -137,7 +134,7 @@ class AnalyticsScreen extends ConsumerWidget {
       children: [
         // 1. How much came in and went out, vs the same point last period.
         AnalyticsMetricsHero(report: report),
-        const SizedBox(height: StillwaterTokens.space2Xl),
+        const SizedBox(height: FfSpace.x2l),
 
         // 2. Trend through the period.
         const FfSectionHeader(title: 'Spending & income'),
@@ -150,7 +147,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
         // 3. Where it went.
         if (report.categoryBreakdown.isNotEmpty) ...[
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
           const FfSectionHeader(title: 'Where your money went'),
           ExpenseCategoryBreakdown(
             categories: report.categoryBreakdown,
@@ -175,11 +172,11 @@ class AnalyticsScreen extends ConsumerWidget {
           ),
           if (categoryRows.length < report.categoryBreakdown.length)
             Padding(
-              padding: const EdgeInsets.only(top: StillwaterTokens.spaceXs),
+              padding: const EdgeInsets.only(top: FfSpace.xs),
               child: Text(
                 'Smaller categories are grouped as “Other”.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.textSecondary,
                 ),
               ),
             ),
@@ -187,7 +184,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
         // 4. Where it came from.
         if (report.incomeSources.isNotEmpty) ...[
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
           const FfSectionHeader(title: 'Income'),
           FfGroupedContainer(
             children: [
@@ -217,7 +214,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
         // 5. Who it went to.
         if (report.topMerchants.isNotEmpty) ...[
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
           const FfSectionHeader(title: 'Top payees'),
           FfGroupedContainer(
             children: [
@@ -246,7 +243,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
         // 6. The biggest single items.
         if (report.largestTransactions.isNotEmpty) ...[
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
           const FfSectionHeader(title: 'Largest expenses'),
           FfGroupedContainer(
             children: [

@@ -1,8 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../theme/stillwater_colors.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../theme/ff.dart';
 
 /// Branding variants for the Stillwater Mark
 enum MarkVariant { auto, daylight, deepWater, monochrome, security }
@@ -58,8 +57,8 @@ class FinanceFlowMark extends StatelessWidget {
         accentColor = customAccentColor ?? Colors.white;
         break;
       case MarkVariant.security:
-        primaryColor = customPrimaryColor ?? context.secColors.verified;
-        accentColor = customAccentColor ?? context.secColors.boundary;
+        primaryColor = customPrimaryColor ?? context.ff.color.statusSuccess;
+        accentColor = customAccentColor ?? context.ff.color.privacyBoundary;
         break;
     }
 
@@ -210,7 +209,7 @@ class FinanceFlowWordmark extends StatelessWidget {
           ),
         ),
         if (showTagline) ...[
-          const SizedBox(height: 2),
+          const SizedBox(height: FfSpace.x3s),
           Text(
             'PRIVATE · LOCAL-FIRST',
             style: TextStyle(
@@ -253,7 +252,7 @@ class FinanceFlowLogo extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           FinanceFlowMark(size: markSize),
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
           FinanceFlowWordmark(fontSize: fontSize, showTagline: showTagline),
         ],
       );
@@ -264,7 +263,7 @@ class FinanceFlowLogo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         FinanceFlowMark(size: markSize),
-        const SizedBox(width: StillwaterTokens.spaceMd),
+        const SizedBox(width: FfSpace.md),
         FinanceFlowWordmark(fontSize: fontSize, showTagline: showTagline),
       ],
     );

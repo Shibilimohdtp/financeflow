@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/money_record.dart';
@@ -8,7 +7,6 @@ import '../../models/account.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'money_records_controller.dart';
 import '../accounts/accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
@@ -19,6 +17,7 @@ import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_amount_field.dart';
 import '../../theme/ff_tone.dart';
+import '../../theme/ff.dart';
 
 class AddEditMoneyRecordSheet extends ConsumerStatefulWidget {
   final MoneyRecord? initialRecord;
@@ -220,7 +219,6 @@ class _AddEditMoneyRecordSheetState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accounts =
         ref
             .watch(accountsWithBalancesProvider)
@@ -252,8 +250,8 @@ class _AddEditMoneyRecordSheetState
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceLg,
-                vertical: StillwaterTokens.spaceMd,
+                horizontal: FfSpace.lg,
+                vertical: FfSpace.md,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +277,7 @@ class _AddEditMoneyRecordSheetState
                   ),
 
                   if (!isEditing) ...[
-                    const SizedBox(height: StillwaterTokens.spaceMd),
+                    const SizedBox(height: FfSpace.md),
                     FfRow.toggle(
                       title: 'Record in transactions and update balance',
                       subtitle:
@@ -310,18 +308,18 @@ class _AddEditMoneyRecordSheetState
                       ),
                   ],
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 2. Person's Name ──────────────────────────────────
                   Text(
                     _type == MoneyRecordType.lent
                         ? 'Lent to (Person Name)'
                         : 'Borrowed from (Person Name)',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: context.ff.text.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.words,
@@ -335,16 +333,16 @@ class _AddEditMoneyRecordSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 3. Original Amount ────────────────────────────────
                   Text(
                     'Amount',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: context.ff.text.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfAmountField(
                     controller: _amountController,
                     hint: '0.00',
@@ -364,7 +362,7 @@ class _AddEditMoneyRecordSheetState
                     },
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 4. Transaction Date & Due Date ────────────────────
                   Row(
@@ -375,25 +373,25 @@ class _AddEditMoneyRecordSheetState
                           children: [
                             Text(
                               'Date',
-                              style: theme.textTheme.labelMedium?.copyWith(
+                              style: context.ff.text.label.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceXs),
+                            const SizedBox(height: FfSpace.xs),
                             InkWell(
                               onTap: _pickTransactionDate,
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusMd,
-                              ),
+                              borderRadius: BorderRadius.circular(FfRadius.md),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: StillwaterTokens.spaceMd,
-                                  vertical: StillwaterTokens.spaceMd,
+                                  horizontal: FfSpace.md,
+                                  vertical: FfSpace.md,
                                 ),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: theme.dividerColor),
+                                  border: Border.all(
+                                    color: context.ff.color.borderSubtle,
+                                  ),
                                   borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusMd,
+                                    FfRadius.md,
                                   ),
                                 ),
                                 child: Row(
@@ -401,20 +399,17 @@ class _AddEditMoneyRecordSheetState
                                     Icon(
                                       Icons.calendar_today_outlined,
                                       size: 16,
-                                      color: theme.colorScheme.primary,
+                                      color: context.ff.color.actionPrimary,
                                     ),
-                                    const SizedBox(
-                                      width: StillwaterTokens.spaceSm,
-                                    ),
+                                    const SizedBox(width: FfSpace.sm),
                                     Expanded(
                                       child: Text(
                                         DateFormatter.formatShortDate(
                                           _transactionDate,
                                         ),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        style: context.ff.text.bodySm.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
@@ -425,32 +420,32 @@ class _AddEditMoneyRecordSheetState
                           ],
                         ),
                       ),
-                      const SizedBox(width: StillwaterTokens.spaceMd),
+                      const SizedBox(width: FfSpace.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Expected Due Date',
-                              style: theme.textTheme.labelMedium?.copyWith(
+                              style: context.ff.text.label.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: StillwaterTokens.spaceXs),
+                            const SizedBox(height: FfSpace.xs),
                             InkWell(
                               onTap: _pickDueDate,
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusMd,
-                              ),
+                              borderRadius: BorderRadius.circular(FfRadius.md),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: StillwaterTokens.spaceMd,
-                                  vertical: StillwaterTokens.spaceMd,
+                                  horizontal: FfSpace.md,
+                                  vertical: FfSpace.md,
                                 ),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: theme.dividerColor),
+                                  border: Border.all(
+                                    color: context.ff.color.borderSubtle,
+                                  ),
                                   borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusMd,
+                                    FfRadius.md,
                                   ),
                                 ),
                                 child: Row(
@@ -458,18 +453,15 @@ class _AddEditMoneyRecordSheetState
                                     Icon(
                                       Icons.event_available_outlined,
                                       size: 16,
-                                      color: theme.colorScheme.primary,
+                                      color: context.ff.color.actionPrimary,
                                     ),
-                                    const SizedBox(
-                                      width: StillwaterTokens.spaceSm,
-                                    ),
+                                    const SizedBox(width: FfSpace.sm),
                                     Expanded(
                                       child: Text(
                                         DateFormatter.formatShortDate(_dueDate),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        style: context.ff.text.bodySm.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
@@ -483,16 +475,16 @@ class _AddEditMoneyRecordSheetState
                     ],
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
 
                   // ── 5. Notes ──────────────────────────────────────────
                   Text(
                     'Notes (Optional)',
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: context.ff.text.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceXs),
+                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _notesController,
                     maxLines: 2,
@@ -501,7 +493,7 @@ class _AddEditMoneyRecordSheetState
                         'e.g. Emergency medical expense, will pay after salary',
                   ),
 
-                  const SizedBox(height: StillwaterTokens.spaceSm),
+                  const SizedBox(height: FfSpace.sm),
 
                   // ── 6. Reminder Settings ──────────────────────────────
                   FfRow.toggle(
@@ -514,31 +506,29 @@ class _AddEditMoneyRecordSheetState
                   ),
 
                   if (_isReminderEnabled) ...[
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceSm,
-                        vertical: StillwaterTokens.space2Xs,
+                        horizontal: FfSpace.sm,
+                        vertical: FfSpace.x2s,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
+                        color: context.ff.color.surfaceContainerHighest
+                            .withValues(alpha: FfTint.strong.alpha),
+                        borderRadius: BorderRadius.circular(FfRadius.md),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.notifications_none_rounded,
                             size: 18,
-                            color: theme.colorScheme.primary,
+                            color: context.ff.color.actionPrimary,
                           ),
-                          const SizedBox(width: StillwaterTokens.spaceXs),
+                          const SizedBox(width: FfSpace.xs),
                           Expanded(
                             child: Text(
                               'Remind me in',
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              style: context.ff.text.bodySm.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

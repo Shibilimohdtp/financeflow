@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
@@ -8,7 +7,6 @@ import '../../repositories/loan_repository.dart';
 import '../../services/loan_calculator.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../theme/stillwater_tokens.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loans_controller.dart';
 import '../accounts/accounts_controller.dart';
@@ -20,6 +18,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_key_value_row.dart';
+import '../../theme/ff.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
   final Loan loan;
@@ -237,14 +236,14 @@ class LoanDetailScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
+          horizontal: FfSpace.lg,
+          vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Balance Hero ──────────────────────────────────────────────
           _BalanceHeroSection(loan: currentLoan),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 2. Overdue Banner (calm, factual) ────────────────────────────
           if (overdueItems.isNotEmpty &&
@@ -268,7 +267,7 @@ class LoanDetailScreen extends ConsumerWidget {
                       )
                       : null,
             ),
-            const SizedBox(height: StillwaterTokens.spaceMd),
+            const SizedBox(height: FfSpace.md),
           ],
 
           // ── 3. Next EMI ──────────────────────────────────────────────────
@@ -281,7 +280,7 @@ class LoanDetailScreen extends ConsumerWidget {
                   () =>
                       _markNextPaid(context, ref, currentLoan, nextInstallment),
             ),
-            const SizedBox(height: StillwaterTokens.spaceLg),
+            const SizedBox(height: FfSpace.lg),
           ],
 
           // ── 4. Repayment Summary ─────────────────────────────────────────
@@ -292,7 +291,7 @@ class LoanDetailScreen extends ConsumerWidget {
             totalMonths: currentLoan.tenureMonths,
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 5. Loan Information ──────────────────────────────────────────
           _LoanInfoSection(
@@ -301,7 +300,7 @@ class LoanDetailScreen extends ConsumerWidget {
             totalInterest: totalInterest,
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceLg),
+          const SizedBox(height: FfSpace.lg),
 
           // ── 6. Amortization Schedule Access ─────────────────────────────
           FfButton(
@@ -310,29 +309,28 @@ class LoanDetailScreen extends ConsumerWidget {
             onPressed: () => _openSchedule(context, currentLoan),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // ── 7. Trust Statement ───────────────────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
             padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceMd,
-              vertical: StillwaterTokens.spaceSm,
+              horizontal: FfSpace.md,
+              vertical: FfSpace.sm,
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.privacy_tip_outlined,
                   size: 16,
-                  color: context.secColors.verified,
+                  color: context.ff.color.statusSuccess,
                 ),
-                const SizedBox(width: StillwaterTokens.spaceXs),
+                const SizedBox(width: FfSpace.xs),
                 Expanded(
                   child: Text(
                     'Values entered by you. Amortization and repayment calculated locally on this device.',
-                    style: context.textTheme.bodySmall?.copyWith(
-                      fontSize: 11,
-                      color: context.theme.colorScheme.secondary,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.secondary,
                     ),
                   ),
                 ),
@@ -340,7 +338,7 @@ class LoanDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.space2Xl),
+          const SizedBox(height: FfSpace.x2l),
         ],
       ),
     );
@@ -361,24 +359,26 @@ class _BalanceHeroSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-    final secColors = context.secColors;
+    final secColors = context.ff.color;
     final remaining = ref.watch(loanRemainingBalanceProvider(loan));
     final paidPct = remaining.paidFraction;
     final isActive = loan.status == LoanStatus.active;
 
     // Status chip colors
-    final chipColor = isActive ? theme.colorScheme.primary : secColors.verified;
+    final chipColor =
+        isActive ? context.ff.color.actionPrimary : secColors.statusSuccess;
     final chipBg =
         isActive
-            ? theme.colorScheme.primary.withValues(alpha: 0.10)
-            : secColors.verified.withValues(alpha: 0.12);
+            ? context.ff.color.actionPrimary.withValues(
+              alpha: FfTint.subtle.alpha,
+            )
+            : secColors.statusSuccess.withValues(alpha: FfTint.subtle.alpha);
 
     return Container(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+      padding: const EdgeInsets.all(FfSpace.lg),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusXl),
+        color: context.ff.color.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(FfRadius.xl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,27 +388,24 @@ class _BalanceHeroSection extends ConsumerWidget {
             children: [
               Text(
                 'Left to pay',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.secondary,
+                style: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.secondary,
                   letterSpacing: 0.2,
                 ),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceXs,
-                  vertical: StillwaterTokens.space2Xs,
+                  horizontal: FfSpace.xs,
+                  vertical: FfSpace.x2s,
                 ),
                 decoration: BoxDecoration(
                   color: chipBg,
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
+                  borderRadius: BorderRadius.circular(FfRadius.full),
                 ),
                 child: Text(
                   loan.status.displayName,
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: context.ff.text.labelSm.copyWith(
                     fontWeight: FontWeight.w600,
                     color: chipColor,
                   ),
@@ -417,35 +414,35 @@ class _BalanceHeroSection extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
 
           // Remaining principal + interest — primary visual anchor
           Text(
             CurrencyFormatter.formatAmount(remaining.total),
-            style: theme.textTheme.displaySmall?.copyWith(
+            style: context.ff.text.displaySm.copyWith(
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: StillwaterTokens.space3Xs),
+          const SizedBox(height: FfSpace.x3s),
           Text(
             '${CurrencyFormatter.formatAmount(remaining.principal)} principal'
             ' + ${CurrencyFormatter.formatAmount(remaining.interest)} interest',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.secondary,
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // Progress bar
           FfProgressBar(
             value: paidPct,
-            color: secColors.verified,
+            color: secColors.statusSuccess,
             size: FfProgressSize.lg,
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceSm),
+          const SizedBox(height: FfSpace.sm),
 
           // Paid / Original / Percentage row
           Row(
@@ -457,16 +454,16 @@ class _BalanceHeroSection extends ConsumerWidget {
                   children: [
                     Text(
                       'Paid',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: FfSpace.x3s),
                     Text(
                       CurrencyFormatter.formatAmount(remaining.paid),
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: context.ff.text.bodySm.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: secColors.verified,
+                        color: secColors.statusSuccess,
                       ),
                     ),
                   ],
@@ -477,16 +474,15 @@ class _BalanceHeroSection extends ConsumerWidget {
                 children: [
                   Text(
                     '${(paidPct * 100).toStringAsFixed(1)}%',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.secondary,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.secondary,
                     ),
                   ),
-                  const SizedBox(height: 1),
+                  const SizedBox(height: FfSpace.x3s),
                   Text(
                     'complete',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                      fontSize: 10,
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.secondary,
                     ),
                   ),
                 ],
@@ -497,14 +493,14 @@ class _BalanceHeroSection extends ConsumerWidget {
                   children: [
                     Text(
                       'Total payable',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: FfSpace.x3s),
                     Text(
                       CurrencyFormatter.formatAmount(remaining.totalPayable),
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: context.ff.text.bodySm.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -543,14 +539,13 @@ class _NextEmiSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final secColors = context.secColors;
+    final secColors = context.ff.color;
     final isOverdue = nextInstallment.isOverdue;
     final dueLabelColor =
-        isOverdue ? secColors.error : theme.colorScheme.secondary;
+        isOverdue ? secColors.statusError : context.ff.color.secondary;
 
     return FfCard(
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -564,15 +559,15 @@ class _NextEmiSection extends StatelessWidget {
                   children: [
                     Text(
                       'EMI #${nextInstallment.monthNumber}',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.secondary,
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.secondary,
                         letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: FfSpace.x3s),
                     Text(
                       CurrencyFormatter.formatAmount(nextInstallment.emiAmount),
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      style: context.ff.text.headlineSm.copyWith(
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.3,
                       ),
@@ -580,55 +575,58 @@ class _NextEmiSection extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: StillwaterTokens.spaceSm),
+              const SizedBox(width: FfSpace.sm),
               // Due-status pill
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: StillwaterTokens.spaceXs,
-                  vertical: StillwaterTokens.space2Xs,
+                  horizontal: FfSpace.xs,
+                  vertical: FfSpace.x2s,
                 ),
                 decoration: BoxDecoration(
                   color:
                       isOverdue
-                          ? secColors.error.withValues(alpha: 0.10)
+                          ? secColors.statusError.withValues(
+                            alpha: FfTint.subtle.alpha,
+                          )
                           : daysUntilDue <= 3
-                          ? secColors.error.withValues(alpha: 0.08)
-                          : theme.colorScheme.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
+                          ? secColors.statusError.withValues(
+                            alpha: FfTint.faint.alpha,
+                          )
+                          : context.ff.color.actionPrimary.withValues(
+                            alpha: FfTint.faint.alpha,
+                          ),
+                  borderRadius: BorderRadius.circular(FfRadius.full),
                 ),
                 child: Text(
                   _dueLabel(),
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: context.ff.text.labelSm.copyWith(
                     fontWeight: FontWeight.w600,
                     color:
                         isOverdue
-                            ? secColors.error
+                            ? secColors.statusError
                             : daysUntilDue <= 3
-                            ? secColors.error
-                            : theme.colorScheme.primary,
+                            ? secColors.statusError
+                            : context.ff.color.actionPrimary,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
 
           // Due date line
           Text(
             isOverdue
                 ? 'Was due ${DateFormatter.formatFullDate(nextInstallment.dueDate)}'
                 : 'Due ${DateFormatter.formatFullDate(nextInstallment.dueDate)}',
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: context.ff.text.bodySm.copyWith(
               color: dueLabelColor,
               fontWeight: isOverdue ? FontWeight.w500 : FontWeight.normal,
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // Full-width Mark Paid button — never overlaps text above
           SizedBox(
@@ -663,8 +661,7 @@ class _OverdueBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final secColors = context.secColors;
+    final secColors = context.ff.color;
     final first = overdueItems.first;
     final totalOverdue = overdueItems.fold<double>(
       0.0,
@@ -673,7 +670,7 @@ class _OverdueBanner extends StatelessWidget {
 
     return FfCard(
       variant: FfCardVariant.warning,
-      padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+      padding: const EdgeInsets.all(FfSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -683,39 +680,39 @@ class _OverdueBanner extends StatelessWidget {
               Icon(
                 Icons.info_outline_rounded,
                 size: 18,
-                color: secColors.error,
+                color: secColors.statusError,
               ),
-              const SizedBox(width: StillwaterTokens.spaceXs),
+              const SizedBox(width: FfSpace.xs),
               Expanded(
                 child: Text(
                   '${overdueItems.length} Overdue EMI${overdueItems.length > 1 ? "s" : ""}',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.ff.text.titleSm.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: secColors.error,
+                    color: secColors.statusError,
                   ),
                 ),
               ),
               Text(
                 CurrencyFormatter.formatAmount(totalOverdue),
-                style: theme.textTheme.titleSmall?.copyWith(
+                style: context.ff.text.titleSm.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: secColors.error,
+                  color: secColors.statusError,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceXs),
+          const SizedBox(height: FfSpace.xs),
 
           // Detail line
           Text(
             'Installment #${first.monthNumber} (${DateFormatter.formatFullDate(first.dueDate)}) was due ${first.daysOverdue()} days ago.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
+            style: context.ff.text.bodySm.copyWith(
+              color: context.ff.color.secondary,
             ),
           ),
 
-          const SizedBox(height: StillwaterTokens.spaceMd),
+          const SizedBox(height: FfSpace.md),
 
           // Action buttons
           Row(
@@ -728,7 +725,7 @@ class _OverdueBanner extends StatelessWidget {
                 ),
               ),
               if (onPayAll != null) ...[
-                const SizedBox(width: StillwaterTokens.spaceSm),
+                const SizedBox(width: FfSpace.sm),
                 Expanded(
                   child: FfButton(
                     label: 'Pay All (${overdueItems.length}) Overdue',
@@ -762,19 +759,16 @@ class _RepaymentSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final secColors = context.secColors;
+    final secColors = context.ff.color;
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        vertical: StillwaterTokens.spaceMd,
-        horizontal: StillwaterTokens.spaceXs,
+        vertical: FfSpace.md,
+        horizontal: FfSpace.xs,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.40,
-        ),
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
+        color: context.ff.color.surfaceContainerHighest.withValues(alpha: 0.40),
+        borderRadius: BorderRadius.circular(FfRadius.md),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -783,7 +777,7 @@ class _RepaymentSummary extends StatelessWidget {
               child: _SummaryColumn(
                 label: 'Paid EMIs',
                 value: '$paidCount / $totalMonths',
-                color: secColors.verified,
+                color: secColors.statusSuccess,
               ),
             ),
             const VerticalDivider(
@@ -798,8 +792,8 @@ class _RepaymentSummary extends StatelessWidget {
                 value: '$overdueCount',
                 color:
                     overdueCount > 0
-                        ? secColors.error
-                        : theme.colorScheme.secondary,
+                        ? secColors.statusError
+                        : context.ff.color.secondary,
               ),
             ),
             const VerticalDivider(
@@ -812,7 +806,7 @@ class _RepaymentSummary extends StatelessWidget {
               child: _SummaryColumn(
                 label: 'Remaining',
                 value: '$remainingCount',
-                color: theme.colorScheme.primary,
+                color: context.ff.color.actionPrimary,
               ),
             ),
           ],
@@ -836,25 +830,23 @@ class _SummaryColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceXs),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
       child: Column(
         children: [
           Text(
             value,
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: context.ff.text.titleLg.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: FfSpace.x3s),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.secondary,
-              fontSize: 11,
+            style: context.ff.text.labelSm.copyWith(
+              color: context.ff.color.secondary,
             ),
           ),
         ],
@@ -889,7 +881,7 @@ class _LoanInfoSection extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: StillwaterTokens.spaceMd),
+        const SizedBox(height: FfSpace.md),
 
         // ─ Repayment Details ─────────────────────────────────────────────
         _InfoSectionBlock(
@@ -907,7 +899,7 @@ class _LoanInfoSection extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: StillwaterTokens.spaceMd),
+        const SizedBox(height: FfSpace.md),
 
         // ─ Interest Details ──────────────────────────────────────────────
         _InfoSectionBlock(
@@ -933,32 +925,26 @@ class _InfoSectionBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(
-            left: StillwaterTokens.space2Xs,
-            bottom: StillwaterTokens.spaceXs,
-          ),
+          padding: const EdgeInsets.only(left: FfSpace.x2s, bottom: FfSpace.xs),
           child: Text(
             label.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
+            style: context.ff.text.labelSm.copyWith(
               letterSpacing: 0.8,
-              color: theme.colorScheme.secondary,
-              fontSize: 10,
+              color: context.ff.color.secondary,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
+            color: context.ff.color.surfaceCard,
+            borderRadius: BorderRadius.circular(FfRadius.lg),
             border: Border.all(
-              color: theme.dividerColor,
-              width: StillwaterTokens.borderWidthHairline,
+              color: context.ff.color.borderSubtle,
+              width: FfBorderWidth.hairline,
             ),
           ),
           child: Column(
@@ -968,9 +954,9 @@ class _InfoSectionBlock extends StatelessWidget {
                 if (i < rows.length - 1)
                   Divider(
                     height: 1,
-                    thickness: StillwaterTokens.borderWidthHairline,
-                    indent: StillwaterTokens.spaceMd,
-                    endIndent: StillwaterTokens.spaceMd,
+                    thickness: FfBorderWidth.hairline,
+                    indent: FfSpace.md,
+                    endIndent: FfSpace.md,
                   ),
               ],
             ],

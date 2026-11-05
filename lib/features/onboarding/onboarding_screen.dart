@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/financeflow_mark.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../theme/ff.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
@@ -59,8 +58,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _nextPage() {
     if (_currentPage < _steps.length - 1) {
       _pageController.nextPage(
-        duration: StillwaterTokens.durationBase,
-        curve: StillwaterTokens.easeEmphasized,
+        duration: FfMotion.base,
+        curve: FfMotion.emphasized,
       );
     } else {
       _finishOnboarding();
@@ -82,10 +81,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.ff.color.surfacePage,
       appBar: FfAppBar(
         actions: [
           if (_currentPage < _steps.length - 1)
@@ -93,12 +90,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onPressed: _finishOnboarding,
               child: Text(
                 'Skip',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.secondary,
+                style: context.ff.text.labelLg.copyWith(
+                  color: context.ff.color.secondary,
                 ),
               ),
             ),
-          const SizedBox(width: StillwaterTokens.spaceMd),
+          const SizedBox(width: FfSpace.md),
         ],
       ),
       body: SafeArea(
@@ -117,7 +114,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   final step = _steps[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: StillwaterTokens.space2Xl,
+                      horizontal: FfSpace.x2l,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -127,8 +124,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           width: 88,
                           height: 88,
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.5),
+                            color: context.ff.color.actionPrimaryContainer
+                                .withValues(alpha: FfOpacity.half),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -138,33 +135,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     : Icon(
                                       step.icon,
                                       size: 44,
-                                      color: theme.colorScheme.primary,
+                                      color: context.ff.color.actionPrimary,
                                     ),
                           ),
                         ),
-                        const SizedBox(height: StillwaterTokens.space2Xl),
+                        const SizedBox(height: FfSpace.x2l),
                         FfPrivacyBadge(label: step.badgeText),
-                        const SizedBox(height: StillwaterTokens.spaceMd),
+                        const SizedBox(height: FfSpace.md),
                         Text(
                           step.title,
-                          style: theme.textTheme.displaySmall,
+                          style: context.ff.text.displaySm,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceXs),
+                        const SizedBox(height: FfSpace.xs),
                         Text(
                           step.subtitle,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.primary,
+                          style: context.ff.text.title.copyWith(
+                            color: context.ff.color.actionPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: StillwaterTokens.spaceMd),
+                        const SizedBox(height: FfSpace.md),
                         Text(
                           step.body,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.85),
+                          style: context.ff.text.bodyLg.copyWith(
+                            color: context.ff.text.body.color?.withValues(
+                              alpha: FfOpacity.high,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -175,7 +173,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(StillwaterTokens.space2Xl),
+              padding: const EdgeInsets.all(FfSpace.x2l),
               child: Column(
                 children: [
                   // Page Indicator Dots
@@ -184,23 +182,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     children: List.generate(
                       _steps.length,
                       (index) => AnimatedContainer(
-                        duration: StillwaterTokens.durationFast,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        duration: FfMotion.fast,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: FfSpace.x2s,
+                        ),
                         width: _currentPage == index ? 24 : 8,
                         height: 8,
                         decoration: BoxDecoration(
                           color:
                               _currentPage == index
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusFull,
-                          ),
+                                  ? context.ff.color.actionPrimary
+                                  : context.ff.color.borderSubtle,
+                          borderRadius: BorderRadius.circular(FfRadius.full),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.space2Xl),
+                  const SizedBox(height: FfSpace.x2l),
                   FfButton(
                     label:
                         _currentPage == _steps.length - 1

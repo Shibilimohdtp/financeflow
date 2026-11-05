@@ -10,7 +10,6 @@ import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'add_edit_investment_sheet.dart';
 import 'investment_detail_screen.dart';
@@ -20,6 +19,7 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../theme/ff.dart';
 
 class InvestmentsScreen extends ConsumerWidget {
   const InvestmentsScreen({super.key});
@@ -47,7 +47,7 @@ class InvestmentsScreen extends ConsumerWidget {
         title: 'Investment Portfolio',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
+            padding: EdgeInsets.only(right: FfSpace.lg),
             child: Center(
               child: FfPrivacyBadge(label: 'Manual-First', iconOnly: true),
             ),
@@ -65,9 +65,9 @@ class InvestmentsScreen extends ConsumerWidget {
         data: (investments) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              StillwaterTokens.spaceLg,
-              StillwaterTokens.spaceMd,
-              StillwaterTokens.spaceLg,
+              FfSpace.lg,
+              FfSpace.md,
+              FfSpace.lg,
               104,
             ),
             children: [
@@ -82,8 +82,8 @@ class InvestmentsScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'TOTAL PORTFOLIO VALUE',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.labelSm.copyWith(
+                            color: context.ff.color.secondary,
                             letterSpacing: 1.1,
                             fontWeight: FontWeight.w700,
                           ),
@@ -91,55 +91,55 @@ class InvestmentsScreen extends ConsumerWidget {
                         if (summary.totalInvested > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: StillwaterTokens.spaceSm,
-                              vertical: 2,
+                              horizontal: FfSpace.sm,
+                              vertical: FfSpace.x3s,
                             ),
                             decoration: BoxDecoration(
                               color:
                                   summary.isProfitable
-                                      ? context.finColors.incomeContainer
-                                      : context.finColors.expenseContainer,
+                                      ? context.ff.color.moneyIncomeContainer
+                                      : context.ff.color.moneyExpenseContainer,
                               borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusFull,
+                                FfRadius.full,
                               ),
                             ),
                             child: Text(
                               '${summary.isProfitable ? '+' : ''}${summary.percentageReturn.toStringAsFixed(1)}%',
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: context.ff.text.labelSm.copyWith(
                                 color:
                                     summary.isProfitable
-                                        ? context.finColors.income
-                                        : context.finColors.expense,
+                                        ? context.ff.color.moneyIncome
+                                        : context.ff.color.moneyExpense,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
+                    const SizedBox(height: FfSpace.xs),
                     Text(
                       CurrencyFormatter.formatAmount(summary.totalCurrentValue),
                       style: StillwaterTypography.numHero(
-                        color: theme.colorScheme.onSurface,
+                        color: context.ff.color.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: StillwaterTokens.spaceSm),
+                    const SizedBox(height: FfSpace.sm),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Invested: ${CurrencyFormatter.formatAmount(summary.totalInvested)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
                           ),
                         ),
                         Text(
                           '${summary.isProfitable ? '+' : ''}${CurrencyFormatter.formatAmount(summary.absoluteReturn)} returns',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: context.ff.text.bodySm.copyWith(
                             color:
                                 summary.isProfitable
-                                    ? context.finColors.income
-                                    : context.finColors.expense,
+                                    ? context.ff.color.moneyIncome
+                                    : context.ff.color.moneyExpense,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -149,13 +149,11 @@ class InvestmentsScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: StillwaterTokens.spaceLg),
+              const SizedBox(height: FfSpace.lg),
 
               if (investments.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.space2Xl,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.x2l),
                   child: FfEmptyState(
                     icon: Icons.show_chart_rounded,
                     title: 'No investments recorded',
@@ -170,7 +168,7 @@ class InvestmentsScreen extends ConsumerWidget {
                 if (summary.allocationSlices.isNotEmpty) ...[
                   const FfSectionHeader(title: 'Asset Allocation'),
                   FfCard(
-                    padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+                    padding: const EdgeInsets.all(FfSpace.md),
                     child: Column(
                       children: [
                         for (
@@ -180,7 +178,7 @@ class InvestmentsScreen extends ConsumerWidget {
                         ) ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                              vertical: StillwaterTokens.space2Xs,
+                              vertical: FfSpace.x2s,
                             ),
                             child: Row(
                               children: [
@@ -188,7 +186,7 @@ class InvestmentsScreen extends ConsumerWidget {
                                   flex: 3,
                                   child: Text(
                                     summary.allocationSlices[i].label,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                    style: context.ff.text.body.copyWith(
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -199,15 +197,15 @@ class InvestmentsScreen extends ConsumerWidget {
                                     CurrencyFormatter.formatAmount(
                                       summary.allocationSlices[i].totalValue,
                                     ),
-                                    style: theme.textTheme.bodySmall?.copyWith(
+                                    style: context.ff.text.bodySm.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: StillwaterTokens.spaceSm,
-                                    vertical: 2,
+                                    horizontal: FfSpace.sm,
+                                    vertical: FfSpace.x3s,
                                   ),
                                   decoration: BoxDecoration(
                                     color:
@@ -215,12 +213,12 @@ class InvestmentsScreen extends ConsumerWidget {
                                             .colorScheme
                                             .surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusSm,
+                                      FfRadius.sm,
                                     ),
                                   ),
                                   child: Text(
                                     '${summary.allocationSlices[i].percentage}%',
-                                    style: theme.textTheme.labelSmall?.copyWith(
+                                    style: context.ff.text.labelSm.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -234,7 +232,7 @@ class InvestmentsScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: StillwaterTokens.spaceLg),
+                  const SizedBox(height: FfSpace.lg),
                 ],
 
                 // ── 3. Holdings List ────────────────────────────────────────
@@ -247,19 +245,17 @@ class InvestmentsScreen extends ConsumerWidget {
 
                         return FfRow(
                           leading: Container(
-                            width: StillwaterTokens.iconTileSize,
-                            height: StillwaterTokens.iconTileSize,
+                            width: FfRowTokens.iconTile,
+                            height: FfRowTokens.iconTile,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusSm,
-                              ),
+                              color: context.ff.color.actionPrimaryContainer
+                                  .withValues(alpha: FfTint.strong.alpha),
+                              borderRadius: BorderRadius.circular(FfRadius.sm),
                             ),
                             child: Icon(
                               _getInvestmentTypeIcon(inv.assetType),
                               size: 20,
-                              color: theme.colorScheme.primary,
+                              color: context.ff.color.actionPrimary,
                             ),
                           ),
                           title: inv.name,
@@ -275,13 +271,12 @@ class InvestmentsScreen extends ConsumerWidget {
                               ),
                               Text(
                                 '${isProfit ? '+' : ''}${CurrencyFormatter.formatAmount(profit)}',
-                                style: TextStyle(
-                                  fontSize: 11,
+                                style: context.ff.text.labelSm.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color:
                                       isProfit
-                                          ? context.finColors.income
-                                          : context.finColors.expense,
+                                          ? context.ff.color.moneyIncome
+                                          : context.ff.color.moneyExpense,
                                 ),
                               ),
                             ],
@@ -297,7 +292,7 @@ class InvestmentsScreen extends ConsumerWidget {
         loading:
             () => const Center(
               child: Padding(
-                padding: EdgeInsets.all(StillwaterTokens.space4Xl),
+                padding: EdgeInsets.all(FfSpace.x4l),
                 child: FfLoading(),
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/transaction.dart';
@@ -11,7 +10,6 @@ import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
-import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import '../ingestion/needs_review_controller.dart';
@@ -32,6 +30,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../theme/ff.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -354,8 +353,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           IconButton(
             icon: Badge(
               label: Text('$pendingCount'),
-              backgroundColor: context.statusColors.warning,
-              textColor: context.theme.colorScheme.surface,
+              backgroundColor: context.ff.color.statusWarning,
+              textColor: context.ff.color.surfaceCard,
               child: const Icon(Icons.pending_actions_rounded),
             ),
             tooltip: 'Review queue ($pendingCount pending)',
@@ -371,7 +370,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             isLabelVisible:
                 query.hasRefinements || query.sort != TransactionSort.newest,
             smallSize: 8,
-            backgroundColor: context.theme.colorScheme.primary,
+            backgroundColor: context.ff.color.actionPrimary,
             child: const Icon(Icons.tune_rounded),
           ),
           tooltip: 'Filter & sort',
@@ -379,7 +378,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               () => _openFilters(categories: categories, accounts: accounts),
         ),
         const Padding(
-          padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
+          padding: EdgeInsets.only(right: FfSpace.md),
           child: Center(
             child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
           ),
@@ -486,7 +485,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(top: StillwaterTokens.spaceXs),
+            padding: const EdgeInsets.only(top: FfSpace.xs),
             child: ActiveFilterChips(
               query: query,
               accounts: accounts,
@@ -512,7 +511,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     label: dayLabel(group.day),
                     totals: group.totals,
                     isPrivacyBlur: privacyBlur,
-                    background: context.theme.scaffoldBackgroundColor,
+                    background: context.ff.color.surfacePage,
                   ),
                 ),
                 SliverList.separated(
@@ -532,11 +531,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         if (items.length > visible.length)
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Center(
                 child: Text(
                   'Showing ${visible.length} of ${items.length}',
-                  style: context.textTheme.labelSmall,
+                  style: context.ff.text.labelSm,
                 ),
               ),
             ),
@@ -588,17 +587,16 @@ class _TransactionsLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     return FfSkeletonLoader(
       child: ListView.separated(
-        padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
+        padding: const EdgeInsets.all(FfSpace.lg),
         itemCount: 8,
-        separatorBuilder:
-            (_, __) => const SizedBox(height: StillwaterTokens.spaceMd),
+        separatorBuilder: (_, __) => const SizedBox(height: FfSpace.md),
         itemBuilder:
             (_, __) => const Row(
               children: [
                 FfSkeletonBlock(width: 42, height: 42, borderRadius: 12),
-                SizedBox(width: StillwaterTokens.spaceMd),
+                SizedBox(width: FfSpace.md),
                 Expanded(child: FfSkeletonBlock(height: 14)),
-                SizedBox(width: StillwaterTokens.spaceLg),
+                SizedBox(width: FfSpace.lg),
                 FfSkeletonBlock(width: 64, height: 14),
               ],
             ),
