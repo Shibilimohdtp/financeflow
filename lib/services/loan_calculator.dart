@@ -38,6 +38,28 @@ class AmortizationScheduleItem {
   }
 }
 
+class LoanRemainingBalance {
+  final double principal;
+  final double interest;
+
+  /// Principal plus interest over the whole schedule.
+  final double totalPayable;
+
+  const LoanRemainingBalance({
+    required this.principal,
+    required this.interest,
+    required this.totalPayable,
+  });
+
+  /// Everything still to be paid: remaining principal plus remaining interest.
+  double get total => principal + interest;
+
+  double get paid => (totalPayable - total).clamp(0.0, totalPayable);
+
+  double get paidFraction =>
+      totalPayable <= 0 ? 1.0 : (paid / totalPayable).clamp(0.0, 1.0);
+}
+
 class LoanCalculator {
   LoanCalculator._();
 
@@ -203,6 +225,28 @@ class LoanCalculator {
     }
 
     return schedule;
+  }
+
+  /// What is still owed on a loan under its schedule: principal *and* the
+  /// interest that the remaining installments will charge. Showing only the
+  /// outstanding principal understates the money the user still has to pay.
+  static LoanRemainingBalance remainingBalance(
+    List<AmortizationScheduleItem> schedule,
+  ) {
+    var principal = 0.0;
+    var interest = 0.0;
+    var totalPayable = 0.0;
+    for (final item in schedule) {
+      totalPayable += item.principalPaid + item.interestPaid;
+      if (item.isPaid) continue;
+      principal += item.principalPaid;
+      interest += item.interestPaid;
+    }
+    return LoanRemainingBalance(
+      principal: principal,
+      interest: interest,
+      totalPayable: totalPayable,
+    );
   }
 
   /// Identify all overdue/missed installments

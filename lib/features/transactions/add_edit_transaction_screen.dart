@@ -2077,7 +2077,7 @@ class _AddEditTransactionScreenState
           Text(
             _selectedLoan == null
                 ? 'This payment will affect the account, but will not update a loan schedule.'
-                : 'Expected EMI ${CurrencyFormatter.formatINR(_selectedLoan!.emiAmount)} · Outstanding ${CurrencyFormatter.formatINR(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
+                : 'Expected EMI ${CurrencyFormatter.formatINR(_selectedLoan!.emiAmount)} · Principal left ${CurrencyFormatter.formatINR(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
             style: context.theme.textTheme.bodySmall,
           ),
           if (_selectedLoan != null) ...[

@@ -6,6 +6,8 @@ import '../../services/loan_calculator.dart';
 import '../../services/financial_operation_service.dart';
 import '../../database/isar_service.dart';
 
+/// Totals across active loans. `totalOutstanding` is everything left to pay
+/// (remaining principal plus remaining interest), not just principal.
 final loansSummaryProvider = Provider<
   ({double totalOutstanding, double totalMonthlyEmi, int activeLoansCount})
 >((ref) {
@@ -14,7 +16,7 @@ final loansSummaryProvider = Provider<
 
   final totalOutstanding = active.fold<double>(
     0.0,
-    (s, l) => s + l.outstandingPrincipal,
+    (s, l) => s + _remainingFor(ref, l).total,
   );
   final totalMonthlyEmi = active.fold<double>(0.0, (s, l) => s + l.emiAmount);
 
@@ -43,6 +45,18 @@ final loanScheduleProvider =
           ref.watch(loanPaymentsStreamProvider(loan.id)).value ?? const [];
       return LoanCalculator.generateSchedule(loan, payments: payments);
     });
+
+/// Remaining principal and interest for a loan, from its live schedule.
+final loanRemainingBalanceProvider = Provider.autoDispose
+    .family<LoanRemainingBalance, Loan>(_remainingFor);
+
+LoanRemainingBalance _remainingFor(Ref ref, Loan loan) {
+  final payments =
+      ref.watch(loanPaymentsStreamProvider(loan.id)).value ?? const [];
+  return LoanCalculator.remainingBalance(
+    LoanCalculator.generateSchedule(loan, payments: payments),
+  );
+}
 
 class LoansController extends StateNotifier<AsyncValue<void>> {
   final LoanRepository _repository;

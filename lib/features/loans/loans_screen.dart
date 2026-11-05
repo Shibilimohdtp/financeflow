@@ -238,7 +238,13 @@ class LoansScreen extends ConsumerWidget {
                                   children: [
                                     Text(
                                       CurrencyFormatter.formatINR(
-                                        loan.outstandingPrincipal,
+                                        ref
+                                            .watch(
+                                              loanRemainingBalanceProvider(
+                                                loan,
+                                              ),
+                                            )
+                                            .total,
                                       ),
                                       style: StillwaterTypography.numMd(
                                         color: theme.colorScheme.onSurface,

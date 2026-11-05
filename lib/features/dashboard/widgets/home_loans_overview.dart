@@ -177,7 +177,7 @@ class HomeLoansOverview extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Total Outstanding',
+                                'Left to pay',
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.secondary,
                                 ),
@@ -192,7 +192,7 @@ class HomeLoansOverview extends StatelessWidget {
                               ),
                               const SizedBox(height: StillwaterTokens.space3Xs),
                               Text(
-                                'Principal debt',
+                                'Principal + interest',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontSize: 11,
                                   color: theme.colorScheme.secondary,

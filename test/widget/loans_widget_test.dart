@@ -61,7 +61,7 @@ void main() {
 
       // Verify loan title and hero card
       expect(find.text('HDFC Home Loan'), findsWidgets);
-      expect(find.text('Outstanding Principal'), findsOneWidget);
+      expect(find.text('Left to pay'), findsOneWidget);
 
       // Verify Overdue banner is displayed because loan has past due installments
       expect(find.textContaining('Overdue EMI'), findsWidgets);

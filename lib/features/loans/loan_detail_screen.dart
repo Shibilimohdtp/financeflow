@@ -380,17 +380,19 @@ class _LoanAppBarTitle extends StatelessWidget {
   }
 }
 
-/// Outstanding balance hero with progress bar and paid/original breakdown.
-class _BalanceHeroSection extends StatelessWidget {
+/// "Left to pay" hero: remaining principal plus remaining interest, with
+/// progress measured against the total payable over the loan's life.
+class _BalanceHeroSection extends ConsumerWidget {
   final Loan loan;
 
   const _BalanceHeroSection({required this.loan});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final secColors = context.secColors;
-    final paidPct = loan.progressPercentage;
+    final remaining = ref.watch(loanRemainingBalanceProvider(loan));
+    final paidPct = remaining.paidFraction;
     final isActive = loan.status == LoanStatus.active;
 
     // Status chip colors
@@ -413,7 +415,7 @@ class _BalanceHeroSection extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Outstanding Principal',
+                'Left to pay',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.secondary,
                   letterSpacing: 0.2,
@@ -445,12 +447,20 @@ class _BalanceHeroSection extends StatelessWidget {
 
           const SizedBox(height: StillwaterTokens.spaceXs),
 
-          // Outstanding amount — primary visual anchor
+          // Remaining principal + interest — primary visual anchor
           Text(
-            CurrencyFormatter.formatINR(loan.outstandingPrincipal),
+            CurrencyFormatter.formatINR(remaining.total),
             style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: StillwaterTokens.space3Xs),
+          Text(
+            '${CurrencyFormatter.formatINR(remaining.principal)} principal'
+            ' + ${CurrencyFormatter.formatINR(remaining.interest)} interest',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.secondary,
             ),
           ),
 
@@ -485,7 +495,7 @@ class _BalanceHeroSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      CurrencyFormatter.formatINR(loan.totalPrincipalPaid),
+                      CurrencyFormatter.formatINR(remaining.paid),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: secColors.verified,
@@ -518,14 +528,14 @@ class _BalanceHeroSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Original',
+                      'Total payable',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.secondary,
                       ),
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      CurrencyFormatter.formatINR(loan.principalAmount),
+                      CurrencyFormatter.formatINR(remaining.totalPayable),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),

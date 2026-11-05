@@ -15,6 +15,7 @@ import '../budgets/budgets_controller.dart';
 import '../ingestion/needs_review_controller.dart';
 import '../ingestion/needs_review_screen.dart';
 import '../loans/loan_detail_screen.dart';
+import '../loans/loans_controller.dart';
 import '../loans/loans_screen.dart';
 import '../savings_goals/savings_goals_controller.dart';
 import '../settings/settings_controller.dart';
@@ -101,10 +102,7 @@ class DashboardScreen extends ConsumerWidget {
     final allLoans = ref.watch(allLoansStreamProvider).valueOrNull ?? const [];
     final activeLoans =
         allLoans.where((l) => l.status == LoanStatus.active).toList();
-    final totalOutstanding = activeLoans.fold<double>(
-      0.0,
-      (s, l) => s + l.outstandingPrincipal,
-    );
+    final totalOutstanding = ref.watch(loansSummaryProvider).totalOutstanding;
     final totalMonthlyEmi = activeLoans.fold<double>(
       0.0,
       (s, l) => s + l.emiAmount,
