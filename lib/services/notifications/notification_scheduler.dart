@@ -62,24 +62,13 @@ class NotificationScheduler {
       return null;
     }
 
-    final now = referenceDate ?? DateTime.now();
-    final reminderTargetDay = sub.nextRenewalDate.subtract(
-      Duration(days: sub.reminderDaysBefore),
+    return _nextReminderSlot(
+      dueDate: sub.nextRenewalDate,
+      daysBefore: sub.reminderDaysBefore,
+      now: referenceDate ?? DateTime.now(),
+      hour: targetHour,
+      minute: targetMinute,
     );
-
-    final scheduled = DateTime(
-      reminderTargetDay.year,
-      reminderTargetDay.month,
-      reminderTargetDay.day,
-      targetHour,
-      targetMinute,
-    );
-
-    if (scheduled.isBefore(now)) {
-      return null;
-    }
-
-    return scheduled;
   }
 
   /// Calculate the scheduled reminder datetime for an upcoming loan EMI due date.
@@ -95,23 +84,44 @@ class NotificationScheduler {
       return null;
     }
 
-    final now = referenceDate ?? DateTime.now();
-    final reminderTargetDay = loan.nextDueDate.subtract(
-      Duration(days: reminderDaysBefore),
+    return _nextReminderSlot(
+      dueDate: loan.nextDueDate,
+      daysBefore: reminderDaysBefore,
+      now: referenceDate ?? DateTime.now(),
+      hour: targetHour,
+      minute: targetMinute,
     );
+  }
 
-    final scheduled = DateTime(
-      reminderTargetDay.year,
-      reminderTargetDay.month,
-      reminderTargetDay.day,
-      targetHour,
-      targetMinute,
+  /// The early reminder (`daysBefore` the due date) if it is still ahead,
+  /// otherwise a reminder on the due date itself, so data synced late (the app
+  /// opened after the early slot) still produces one reminder. Calendar-day
+  /// arithmetic keeps the wall-clock time stable across DST changes.
+  static DateTime? _nextReminderSlot({
+    required DateTime dueDate,
+    required int daysBefore,
+    required DateTime now,
+    required int hour,
+    required int minute,
+  }) {
+    final early = DateTime(
+      dueDate.year,
+      dueDate.month,
+      dueDate.day - daysBefore,
+      hour,
+      minute,
     );
+    if (!early.isBefore(now)) return early;
 
-    if (scheduled.isBefore(now)) {
-      return null;
-    }
+    final onDueDay = DateTime(
+      dueDate.year,
+      dueDate.month,
+      dueDate.day,
+      hour,
+      minute,
+    );
+    if (!onDueDay.isBefore(now)) return onDueDay;
 
-    return scheduled;
+    return null;
   }
 }

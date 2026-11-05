@@ -44,6 +44,7 @@ class FakeLocalNotificationService implements LocalNotificationService {
       NotificationPermissionStatus.granted;
   bool notificationsEnabled = true;
   bool exactNotificationsEnabled = true;
+  int permissionRequestCount = 0;
 
   final List<DisplayedNotificationRecord> displayedNotifications = [];
   final List<ScheduledNotificationRecord> scheduledNotifications = [];
@@ -63,6 +64,8 @@ class FakeLocalNotificationService implements LocalNotificationService {
 
   @override
   Future<NotificationPermissionStatus> requestNotificationPermission() async {
+    permissionRequestCount++;
+    if (permissionStatus.isGranted) notificationsEnabled = true;
     return permissionStatus;
   }
 

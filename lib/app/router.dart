@@ -12,12 +12,29 @@ import '../features/transactions/transactions_screen.dart';
 import '../features/ingestion/needs_review_controller.dart';
 import '../models/transaction.dart';
 import '../repositories/alert_repository.dart';
+import '../services/notifications/notification_coordinator.dart';
 import '../shared/widgets/stillwater_bottom_navigation_bar.dart';
 
 final currentNavIndexProvider = StateProvider<int>((ref) => 0);
 
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
+
+  @override
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    // The shell renders only after onboarding/unlock, so this is the first
+    // point where a permission dialog makes sense to the user.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(notificationCoordinatorProvider).ensurePermission();
+    });
+  }
 
   void _openAddTransactionScreen(BuildContext context) {
     AddEditTransactionScreen.push(context);
@@ -44,7 +61,7 @@ class AppShell extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentNavIndexProvider);
     final pendingCount = ref.watch(pendingReviewCountProvider);
     final unreadAlerts = ref.watch(unreadAlertsCountProvider);

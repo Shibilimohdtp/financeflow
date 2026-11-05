@@ -151,5 +151,54 @@ void main() {
         );
       },
     );
+
+    test(
+      'falls back to a due-day reminder when the early reminder has passed',
+      () {
+        // Early slot (Aug 23, 9:00) is gone, but the renewal day is ahead.
+        final now = DateTime(2026, 8, 24, 12, 0);
+        final sub = Subscription(
+          id: 'sub_late',
+          merchant: 'Netflix',
+          normalizedMerchant: 'netflix',
+          amount: 649,
+          nextRenewalDate: DateTime(2026, 8, 25),
+          reminderDaysBefore: 2,
+          isReminderEnabled: true,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        );
+
+        final scheduled =
+            NotificationScheduler.calculateSubscriptionReminderDate(
+              sub,
+              referenceDate: now,
+            );
+
+        expect(scheduled, DateTime(2026, 8, 25, 9, 0));
+      },
+    );
+
+    test('reminder days are calendar days across month boundaries', () {
+      final sub = Subscription(
+        id: 'sub_month',
+        merchant: 'Gym',
+        normalizedMerchant: 'gym',
+        amount: 1500,
+        nextRenewalDate: DateTime(2026, 3, 1),
+        reminderDaysBefore: 3,
+        isReminderEnabled: true,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+
+      expect(
+        NotificationScheduler.calculateSubscriptionReminderDate(
+          sub,
+          referenceDate: DateTime(2026, 2, 1),
+        ),
+        DateTime(2026, 2, 26, 9, 0),
+      );
+    });
   });
 }

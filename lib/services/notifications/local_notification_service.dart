@@ -257,6 +257,9 @@ class FlutterLocalNotificationService implements LocalNotificationService {
         playSound: channel.playSound,
         enableVibration: channel.enableVibration,
         showWhen: true,
+        // Updating an existing notification (e.g. the review count) must not
+        // buzz again.
+        onlyAlertOnce: true,
       );
 
       final darwinDetails = DarwinNotificationDetails(

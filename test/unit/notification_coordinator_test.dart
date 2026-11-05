@@ -329,5 +329,88 @@ void main() {
 
       expect(navigatedRoute, equals('/needs-review'));
     });
+
+    AlertItem budgetAlert() => AlertItem(
+      id: 'alt_once',
+      type: AlertType.budgetApproachingLimit,
+      title: 'Dining nearing budget limit',
+      message: 'Dining has reached 80% of its planned budget.',
+      severity: AlertSeverity.attention,
+      relatedEntityType: 'budget',
+      relatedEntityId: 'b_dining',
+      scheduledAt: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+
+    test('an alert is posted once, not on every sync', () async {
+      final coordinator = container.read(notificationCoordinatorProvider);
+      await coordinator.start();
+      await fakeAlertRepo.saveAlert(budgetAlert());
+
+      await coordinator.syncFromLocalState();
+      await coordinator.syncFromLocalState();
+
+      final id = NotificationId.forAlertItem('alt_once');
+      expect(
+        fakeNotificationService.displayedNotifications.where((n) => n.id == id),
+        hasLength(1),
+      );
+    });
+
+    test(
+      'alerts are held back while the OS blocks notifications, then posted',
+      () async {
+        fakeNotificationService.notificationsEnabled = false;
+        final coordinator = container.read(notificationCoordinatorProvider);
+        await coordinator.start();
+        await fakeAlertRepo.saveAlert(budgetAlert());
+        await coordinator.syncFromLocalState();
+
+        final id = NotificationId.forAlertItem('alt_once');
+        expect(
+          fakeNotificationService.displayedNotifications.where(
+            (n) => n.id == id,
+          ),
+          isEmpty,
+        );
+
+        await coordinator.ensurePermission();
+
+        expect(fakeNotificationService.permissionRequestCount, 1);
+        expect(
+          fakeNotificationService.displayedNotifications.where(
+            (n) => n.id == id,
+          ),
+          hasLength(1),
+        );
+      },
+    );
+
+    test('permission is requested at most once per process', () async {
+      fakeNotificationService.notificationsEnabled = false;
+      fakeNotificationService.permissionStatus =
+          NotificationPermissionStatus.denied;
+      final coordinator = container.read(notificationCoordinatorProvider);
+
+      await coordinator.ensurePermission();
+      await coordinator.ensurePermission();
+
+      expect(fakeNotificationService.permissionRequestCount, 1);
+    });
+
+    test(
+      'permission is not requested when reminders are switched off',
+      () async {
+        await fakeSettingsRepo.updateSettings(
+          const AppSettings(isLocalNotificationsEnabled: false),
+        );
+        fakeNotificationService.notificationsEnabled = false;
+        final coordinator = container.read(notificationCoordinatorProvider);
+
+        await coordinator.ensurePermission();
+
+        expect(fakeNotificationService.permissionRequestCount, 0);
+      },
+    );
   });
 }

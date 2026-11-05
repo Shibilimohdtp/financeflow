@@ -44,6 +44,7 @@ class NotificationCoordinator with WidgetsBindingObserver {
   final LocalNotificationService _notificationService;
   Future<void>? _startFuture;
   Future<void>? _activeSyncFuture;
+  bool _permissionRequested = false;
   void Function(String route, Map<String, dynamic> metadata)? onNavigate;
 
   NotificationCoordinator({
@@ -83,6 +84,31 @@ class NotificationCoordinator with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(syncFromLocalState());
+    }
+  }
+
+  /// Asks for the Android 13+ / iOS notification permission once per app
+  /// process when reminders are switched on but the OS would hide them, then
+  /// resynchronizes so pending reminders are posted. The OS itself stops
+  /// showing the dialog after the user declines twice.
+  Future<void> ensurePermission() async {
+    if (_permissionRequested) return;
+    _permissionRequested = true;
+    try {
+      final settings =
+          await _ref.read(settingsRepositoryProvider).getSettings();
+      if (!settings.isAlertsEnabled || !settings.isLocalNotificationsEnabled) {
+        return;
+      }
+      await start();
+      if (await _notificationService.areNotificationsEnabled()) return;
+      final status = await _notificationService.requestNotificationPermission();
+      if (status.isGranted) await syncFromLocalState();
+    } catch (e) {
+      developer.log(
+        'Notification permission request failed',
+        name: 'NotificationCoordinator',
+      );
     }
   }
 
@@ -193,6 +219,9 @@ class NotificationCoordinator with WidgetsBindingObserver {
     try {
       final alertRepo = _ref.read(alertRepositoryProvider);
       final activeAlerts = await alertRepo.getActiveAlerts();
+      // Without OS permission a shown notification is silently dropped, so
+      // don't mark alerts as delivered until notifications can be displayed.
+      final canDisplay = await _notificationService.areNotificationsEnabled();
 
       for (final alert in activeAlerts) {
         final alertNotifId = NotificationId.forAlertItem(alert.id);
@@ -203,6 +232,11 @@ class NotificationCoordinator with WidgetsBindingObserver {
 
         if (!isCategoryEnabled) {
           await _notificationService.cancelNotification(alertNotifId);
+          continue;
+        }
+
+        // Each alert notifies once; re-posting on every resume is noise.
+        if (!canDisplay || alert.localNotificationId == alertNotifId) {
           continue;
         }
 
@@ -275,6 +309,9 @@ class NotificationCoordinator with WidgetsBindingObserver {
           body: text.body,
           channel: channel,
           payload: payload,
+        );
+        await alertRepo.saveAlert(
+          alert.copyWith(localNotificationId: alertNotifId),
         );
       }
     } catch (e) {
