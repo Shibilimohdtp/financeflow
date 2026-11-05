@@ -7,6 +7,7 @@ import '../accounts/accounts_controller.dart';
 import '../../models/account.dart';
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
+import '../../services/categorization_service.dart';
 import '../../services/default_account_service.dart';
 import '../../repositories/pending_transaction_repository.dart';
 import '../../shared/widgets/ff_button.dart';
@@ -46,13 +47,34 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
     // Older queued SMS/notification items may still carry the historical
     // Cash Wallet fallback. Repair that default when the user opens review;
     // explicitly chosen accounts remain untouched.
-    final initialTransaction =
+    var initialTransaction =
         isImportedFinancialEvent &&
                 item.accountId == 'acc_primary_cash' &&
                 importedDefault != null &&
                 !wasAlreadyReviewed
             ? parsedTransaction.copyWith(accountId: importedDefault.id)
             : parsedTransaction;
+
+    final history = ref.read(allTransactionsStreamProvider).value ?? const [];
+    final isMisc = initialTransaction.categoryId == 'cat_miscellaneous' ||
+        initialTransaction.categoryName.toLowerCase() == 'miscellaneous';
+    if ((isMisc || (initialTransaction.categorizationConfidence ?? 0.0) < 0.7) &&
+        initialTransaction.merchant.isNotEmpty) {
+      final histSuggestion = CategorizationService.suggestCategory(
+        initialTransaction.merchant,
+        history: history,
+      );
+      if (histSuggestion != null &&
+          histSuggestion.categoryId != 'cat_miscellaneous') {
+        initialTransaction = initialTransaction.copyWith(
+          categoryId: histSuggestion.categoryId,
+          categoryName: histSuggestion.categoryName,
+          categoryIcon: histSuggestion.categoryIcon,
+          categoryColor: histSuggestion.categoryColor,
+          categorizationConfidence: histSuggestion.confidence,
+        );
+      }
+    }
 
     AddEditTransactionScreen.push<void>(
       context,

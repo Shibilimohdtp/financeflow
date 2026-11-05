@@ -124,8 +124,32 @@ void main() {
     expect(summary.net, 2415.50);
     expect(
       groupTransactionsForList(items, now: now).map((group) => group.label),
-      ['Today', 'This week', 'Earlier this month', 'Older dates'],
+      ['Today', 'This week', 'Earlier this month', 'July 2026'],
     );
+  });
+
+  test('filters transactions by selectedMonth', () {
+    final julyFiltered = applyTransactionFilter(
+      transactions: items,
+      filter: TransactionFilterState(selectedMonth: DateTime(2026, 7)),
+      accounts: [account],
+    );
+    expect(julyFiltered.map((t) => t.id), ['4']);
+
+    final augustFiltered = applyTransactionFilter(
+      transactions: items,
+      filter: TransactionFilterState(selectedMonth: DateTime(2026, 8)),
+      accounts: [account],
+    );
+    expect(augustFiltered.map((t) => t.id), containsAll(['1', '2', '3']));
+    expect(augustFiltered.map((t) => t.id), isNot(contains('4')));
+  });
+
+  test('extracts available months from transaction list', () {
+    final months = extractAvailableMonths(items);
+    expect(months.length, 2);
+    expect(months.first, DateTime(2026, 8));
+    expect(months.last, DateTime(2026, 7));
   });
 
   test('default filter is clear and newest first', () {
@@ -140,6 +164,7 @@ void main() {
       '1',
     );
   });
+
 
   test(
     'keeps every supported transaction type filterable and accurately totals cash flow',

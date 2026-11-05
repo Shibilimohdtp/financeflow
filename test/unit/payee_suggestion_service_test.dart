@@ -405,5 +405,57 @@ void main() {
       expect(score7d > score30d, isTrue);
       expect(score30d > score100d, isTrue);
     });
+
+    test(
+      'ranks exact match > prefix match > substring match character by character',
+      () {
+        final transactions = [
+          createTx(
+            id: '1',
+            merchant: 'Super Market',
+            categoryId: 'cat_groceries',
+            date: baseTime.subtract(const Duration(days: 5)),
+          ),
+          createTx(
+            id: '2',
+            merchant: 'Swiggy',
+            categoryId: 'cat_dining',
+            date: baseTime.subtract(const Duration(days: 2)),
+          ),
+          createTx(
+            id: '3',
+            merchant: 'Swiggy Instamart',
+            categoryId: 'cat_groceries',
+            date: baseTime.subtract(const Duration(days: 1)),
+          ),
+          createTx(
+            id: '4',
+            merchant: 'Best Sweet Shop',
+            categoryId: 'cat_dining',
+            date: baseTime.subtract(const Duration(days: 3)),
+          ),
+        ];
+
+        // Typing 'Sw' should rank Swiggy and Swiggy Instamart at the top
+        final swSuggestions = PayeeSuggestionService.getSuggestions(
+          transactions: transactions,
+          type: TransactionType.expense,
+          query: 'Sw',
+          now: baseTime,
+        );
+
+        expect(swSuggestions.first.displayName.startsWith('Swiggy'), isTrue);
+
+        // Typing 'Swiggy' should rank exact match first
+        final swiggySuggestions = PayeeSuggestionService.getSuggestions(
+          transactions: transactions,
+          type: TransactionType.expense,
+          query: 'Swiggy',
+          now: baseTime,
+        );
+
+        expect(swiggySuggestions.first.displayName, 'Swiggy');
+      },
+    );
   });
 }

@@ -326,10 +326,11 @@ class _AddEditTransactionScreenState
 
   void _onMerchantChanged() {
     final merchant = _merchantController.text.trim();
+    final history = ref.read(allTransactionsStreamProvider).value ?? const [];
     final suggestion =
         merchant.isEmpty
             ? null
-            : CategorizationService.suggestCategory(merchant);
+            : CategorizationService.suggestCategory(merchant, history: history);
     if (_suggestedCategory?.categoryId != suggestion?.categoryId) {
       setState(() => _suggestedCategory = suggestion);
     }
@@ -917,10 +918,26 @@ class _AddEditTransactionScreenState
           accounts
               .where((a) => a.id == widget.initialTransaction!.toAccountId)
               .firstOrNull;
-      _selectedCategory ??=
-          categories
-              .where((c) => c.id == widget.initialTransaction!.categoryId)
-              .firstOrNull;
+      if (_selectedCategory == null) {
+        final initCatId = widget.initialTransaction!.categoryId;
+        final isMisc = initCatId == 'cat_miscellaneous' ||
+            widget.initialTransaction!.categoryName.toLowerCase() == 'miscellaneous';
+        if (isMisc && widget.initialTransaction!.merchant.isNotEmpty) {
+          final histCat = CategorizationService.suggestCategory(
+            widget.initialTransaction!.merchant,
+            history: history,
+          );
+          if (histCat != null && histCat.categoryId != 'cat_miscellaneous') {
+            _selectedCategory = categories
+                .where((c) => c.id == histCat.categoryId)
+                .firstOrNull;
+          }
+        }
+        _selectedCategory ??=
+            categories
+                .where((c) => c.id == widget.initialTransaction!.categoryId)
+                .firstOrNull;
+      }
     }
 
     final categoriesForType = _prioritizedCategories(categories, history);
@@ -1022,6 +1039,7 @@ class _AddEditTransactionScreenState
                         _buildMerchantField(
                           suggestions: payeeSuggestions,
                           categories: categories,
+                          history: history,
                         ),
                         const SizedBox(height: StillwaterTokens.spaceMd),
 
@@ -1478,6 +1496,7 @@ class _AddEditTransactionScreenState
   Widget _buildMerchantField({
     required List<PayeeSuggestion> suggestions,
     required List<Category> categories,
+    required List<Transaction> history,
   }) {
     final theme = context.theme;
     final isDark = theme.brightness == Brightness.dark;
@@ -1622,60 +1641,7 @@ class _AddEditTransactionScreenState
                       shrinkWrap: true,
                       physics: const ClampingScrollPhysics(),
                       children: [
-                        if (typedText.isNotEmpty &&
-                            !visibleSuggestions.any(
-                              (s) =>
-                                  s.displayName.toLowerCase() == typedTextLower,
-                            )) ...[
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _showMerchantSuggestions = false;
-                              });
-                              _merchantFocusNode.unfocus();
-                            },
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusMd,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: StillwaterTokens.spaceXs,
-                                vertical: StillwaterTokens.spaceSm,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.edit_note_rounded,
-                                    size: 18,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(
-                                    width: StillwaterTokens.spaceSm,
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      'Use "$typedText"',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                    ),
-                                  ),
-                                  Text(
-                                    'Enter',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (visibleSuggestions.isNotEmpty)
-                            const Divider(height: StillwaterTokens.spaceSm),
-                        ],
+                        // Rank best matching payees at the top of the dropdown
                         ...visibleSuggestions.map((suggestion) {
                           return InkWell(
                             onTap: () {
@@ -1686,21 +1652,24 @@ class _AddEditTransactionScreenState
                                   offset: suggestion.displayName.length,
                                 ),
                               );
-                              if (_needsCategory &&
-                                  suggestion.primaryCategoryId != null) {
-                                final match =
-                                    categories
-                                        .where(
-                                          (c) =>
-                                              c.id ==
-                                              suggestion.primaryCategoryId,
-                                        )
-                                        .firstOrNull;
-                                if (match != null) {
-                                  setState(() {
-                                    _selectedCategory = match;
-                                    _categoryError = null;
-                                  });
+                              if (_needsCategory) {
+                                final targetCatId =
+                                    suggestion.primaryCategoryId ??
+                                    CategorizationService.suggestCategory(
+                                      suggestion.displayName,
+                                      history: history,
+                                    )?.categoryId;
+                                if (targetCatId != null) {
+                                  final match =
+                                      categories
+                                          .where((c) => c.id == targetCatId)
+                                          .firstOrNull;
+                                  if (match != null) {
+                                    setState(() {
+                                      _selectedCategory = match;
+                                      _categoryError = null;
+                                    });
+                                  }
                                 }
                               }
                               if (_merchantError != null) {
@@ -1799,6 +1768,60 @@ class _AddEditTransactionScreenState
                             ),
                           );
                         }),
+                        if (typedText.isNotEmpty &&
+                            !visibleSuggestions.any(
+                              (s) =>
+                                  s.displayName.toLowerCase() == typedTextLower,
+                            )) ...[
+                          if (visibleSuggestions.isNotEmpty)
+                            const Divider(height: StillwaterTokens.spaceSm),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _showMerchantSuggestions = false;
+                              });
+                              _merchantFocusNode.unfocus();
+                            },
+                            borderRadius: BorderRadius.circular(
+                              StillwaterTokens.radiusMd,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: StillwaterTokens.spaceXs,
+                                vertical: StillwaterTokens.spaceSm,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.edit_note_rounded,
+                                    size: 18,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(
+                                    width: StillwaterTokens.spaceSm,
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      'Use "$typedText"',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Enter',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
@@ -6,10 +7,8 @@ import '../../core/formatting/date_formatter.dart';
 import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/transaction.dart';
-import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
@@ -28,6 +27,7 @@ import 'add_edit_transaction_screen.dart';
 import 'transaction_list_utils.dart';
 import 'transactions_controller.dart';
 import 'widgets/pending_review_task_card.dart';
+import 'widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -46,19 +46,38 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   final _searchController = TextEditingController();
   late final FocusNode _searchFocusNode;
+  final ScrollController _scrollController = ScrollController();
   bool _isSearchOpen = false;
+  int _visibleItemCount = 50;
 
   @override
   void initState() {
     super.initState();
     _searchFocusNode = FocusNode();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (currentScroll >= maxScroll - 300) {
+      final totalItems =
+          ref.read(filteredTransactionsProvider).value?.length ?? 0;
+      if (_visibleItemCount < totalItems) {
+        setState(() {
+          _visibleItemCount = (_visibleItemCount + 50).clamp(0, totalItems);
+        });
+      }
+    }
   }
 
   void _openSearch() {
@@ -116,7 +135,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final filter = ref.watch(transactionFilterProvider);
     final notifier = ref.read(transactionFilterProvider.notifier);
     final transactions = ref.watch(filteredTransactionsProvider);
-    final availableTransactions = transactions.value ?? const <Transaction>[];
+    final allTransactions =
+        ref.watch(allTransactionsStreamProvider).value ?? const <Transaction>[];
     final categories =
         ref.watch(categoriesStreamProvider).value ?? const <Category>[];
     final accounts =
@@ -224,14 +244,16 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                             )
                             : const Icon(Icons.tune_rounded),
                     tooltip: 'Filter & sort',
-                    onPressed:
-                        () => _showFilterSheet(
-                          context,
-                          filter: filter,
-                          categories: categories,
-                          accounts: accounts,
-                          transactions: availableTransactions,
-                        ),
+                    onPressed: () {
+                      final items = transactions.value ?? const <Transaction>[];
+                      _showFilterSheet(
+                        context,
+                        filter: filter,
+                        categories: categories,
+                        accounts: accounts,
+                        transactions: items,
+                      );
+                    },
                   ),
                   const Padding(
                     padding: EdgeInsets.only(right: StillwaterTokens.spaceMd),
@@ -254,13 +276,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ),
       body: Column(
         children: [
-          if (filter.hasActiveFilters)
-            _ActiveFilters(
-              filter: filter,
-              categories: categories,
-              accounts: accounts,
-              onClear: _clearFilters,
-            ),
           if (pendingCount > 0 && !isReviewSnoozed)
             PendingReviewTaskCard(
               count: pendingCount,
@@ -288,68 +303,179 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         () => ref.invalidate(filteredTransactionsProvider),
                   ),
               data: (items) {
-                if (items.isEmpty) {
-                  final isSearching = filter.searchQuery.trim().isNotEmpty;
-                  return FfEmptyState(
-                    icon:
-                        isSearching
-                            ? Icons.search_off_rounded
-                            : Icons.receipt_long_outlined,
-                    title:
-                        filter.hasActiveFilters
-                            ? 'No matching transactions'
-                            : 'No transactions yet',
-                    description:
-                        filter.hasActiveFilters
-                            ? 'Try another search or remove a filter.'
-                            : 'Add your first transaction to start a private, local record.',
-                    actionLabel:
-                        filter.hasActiveFilters
-                            ? 'Clear filters'
-                            : 'Add transaction',
-                    onAction:
-                        filter.hasActiveFilters
-                            ? _clearFilters
-                            : widget.onAddTransaction,
-                  );
+                final visibleItems = items.take(_visibleItemCount).toList();
+                final groups = groupTransactionsForList(visibleItems);
+                final availableMonths = extractAvailableMonths(
+                  allTransactions.isNotEmpty ? allTransactions : items,
+                );
+
+                final now = DateTime.now();
+                final currentMonth = DateTime(now.year, now.month);
+                final targetMonth =
+                    filter.selectedMonth ??
+                    (filter.startDate == null ? currentMonth : null);
+
+                final String periodLabel;
+                final TransactionListSummary summary;
+
+                if (targetMonth != null) {
+                  final periodList =
+                      allTransactions.isNotEmpty
+                          ? allTransactions
+                              .where(
+                                (t) =>
+                                    t.date.year == targetMonth.year &&
+                                    t.date.month == targetMonth.month,
+                              )
+                              .toList()
+                          : items
+                              .where(
+                                (t) =>
+                                    t.date.year == targetMonth.year &&
+                                    t.date.month == targetMonth.month,
+                              )
+                              .toList();
+                  summary = calculateTransactionListSummary(periodList);
+                  periodLabel =
+                      (targetMonth.year == currentMonth.year &&
+                              targetMonth.month == currentMonth.month)
+                          ? 'This Month · ${DateFormatter.formatMonthYear(targetMonth)}'
+                          : '${DateFormatter.formatMonthYear(targetMonth)} Cash Flow';
+                } else if (filter.startDate != null) {
+                  summary = calculateTransactionListSummary(items);
+                  periodLabel = 'Custom Period Cash Flow';
+                } else {
+                  summary = calculateTransactionListSummary(items);
+                  periodLabel = 'All-Time Cash Flow';
                 }
-                final summary = calculateTransactionListSummary(items);
-                final groups = groupTransactionsForList(items);
+
                 return CustomScrollView(
+                  controller: _scrollController,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
+                    // Interactive Cash Flow Summary Card (Period Aware)
                     SliverToBoxAdapter(
                       child: _CashFlowSummary(
                         summary: summary,
+                        periodLabel: periodLabel,
                         isPrivacyBlur: privacyBlur,
+                        selectedType: filter.selectedType,
+                        onSelectType: (type) {
+                          HapticFeedback.selectionClick();
+                          if (filter.selectedType == type) {
+                            notifier.state = filter.copyWith(
+                              clearType: true,
+                            );
+                          } else {
+                            notifier.state = filter.copyWith(
+                              selectedType: type,
+                            );
+                          }
+                        },
                       ),
                     ),
-                    for (final group in groups) ...[
-                      SliverToBoxAdapter(child: _GroupHeader(group: group)),
-                      SliverList.separated(
-                        itemCount: group.transactions.length,
-                        separatorBuilder:
-                            (_, __) => const Divider(indent: 72, height: 1),
-                        itemBuilder:
-                            (context, index) => _TransactionRow(
-                              transaction: group.transactions[index],
-                              accounts: accounts,
-                              showDate: group.showDateInRows,
-                              isPrivacyBlur: privacyBlur,
-                              onOpen:
-                                  () => widget.onOpenDetail(
-                                    group.transactions[index],
-                                  ),
-                              onEdit: () => _edit(group.transactions[index]),
-                              onDelete:
-                                  () => _delete(group.transactions[index]),
+
+                        // Quick Filter & Month Carousel
+                        SliverToBoxAdapter(
+                          child: _QuickFilterBar(
+                            filter: filter,
+                            availableMonths: availableMonths,
+                            onTypeChanged: (type) {
+                              HapticFeedback.selectionClick();
+                              notifier.state = filter.copyWith(
+                                selectedType: type,
+                                clearType: type == null,
+                              );
+                            },
+                            onMonthChanged: (month) {
+                              HapticFeedback.selectionClick();
+                              notifier.state = filter.copyWith(
+                                selectedMonth: month,
+                                clearMonth: month == null,
+                                clearDates: true,
+                              );
+                            },
+                            onClearFilters: _clearFilters,
+                          ),
+                        ),
+
+                        if (items.isEmpty)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: FfEmptyState(
+                              icon:
+                                  filter.searchQuery.trim().isNotEmpty
+                                      ? Icons.search_off_rounded
+                                      : Icons.receipt_long_outlined,
+                              title:
+                                  filter.hasActiveFilters
+                                      ? 'No matching transactions'
+                                      : 'No transactions yet',
+                              description:
+                                  filter.hasActiveFilters
+                                      ? 'Try another search or reset active filters.'
+                                      : 'Add your first transaction to start a private, local record.',
+                              actionLabel:
+                                  filter.hasActiveFilters
+                                      ? 'Clear filters'
+                                      : 'Add transaction',
+                              onAction:
+                                  filter.hasActiveFilters
+                                      ? _clearFilters
+                                      : widget.onAddTransaction,
                             ),
-                      ),
-                    ],
-                    const SliverToBoxAdapter(child: SizedBox(height: 104)),
-                  ],
-                );
+                          )
+                        else ...[
+                          for (final group in groups) ...[
+                            SliverToBoxAdapter(
+                              child: _GroupHeader(group: group),
+                            ),
+                            SliverList.separated(
+                              itemCount: group.transactions.length,
+                              separatorBuilder:
+                                  (_, __) =>
+                                      const Divider(indent: 72, height: 1),
+                              itemBuilder: (context, index) {
+                                final tx = group.transactions[index];
+                                return TransactionTile(
+                                  transaction: tx,
+                                  accounts: accounts,
+                                  showDate: group.showDateInRows,
+                                  isPrivacyBlur: privacyBlur,
+                                  onOpen: () => widget.onOpenDetail(tx),
+                                  onEdit: () => _edit(tx),
+                                  onDelete: () => _delete(tx),
+                                );
+                              },
+                            ),
+                          ],
+                          if (items.length > _visibleItemCount)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: StillwaterTokens.spaceMd,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Showing $_visibleItemCount of ${items.length} transactions',
+                                    style: context.textTheme.labelSmall
+                                        ?.copyWith(
+                                          color: context
+                                              .theme
+                                              .colorScheme
+                                              .secondary,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 104),
+                          ),
+                        ],
+                      ],
+                    );
               },
             ),
           ),
@@ -357,6 +483,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ),
     );
   }
+
 
   void _showFilterSheet(
     BuildContext context, {
@@ -379,6 +506,376 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               ref.read(transactionFilterProvider.notifier).state = applied;
             },
           ),
+    );
+  }
+}
+
+class _QuickFilterBar extends StatelessWidget {
+  final TransactionFilterState filter;
+  final List<DateTime> availableMonths;
+  final ValueChanged<TransactionType?> onTypeChanged;
+  final ValueChanged<DateTime?> onMonthChanged;
+  final VoidCallback onClearFilters;
+
+  const _QuickFilterBar({
+    required this.filter,
+    required this.availableMonths,
+    required this.onTypeChanged,
+    required this.onMonthChanged,
+    required this.onClearFilters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(
+        horizontal: StillwaterTokens.spaceLg,
+        vertical: StillwaterTokens.spaceXs,
+      ),
+      child: Row(
+        children: [
+          if (filter.hasActiveFilters) ...[
+            ActionChip(
+              avatar: const Icon(Icons.clear_rounded, size: 16),
+              label: const Text('Clear'),
+              onPressed: onClearFilters,
+            ),
+            const SizedBox(width: StillwaterTokens.spaceXs),
+          ],
+          // Type Pills
+          FfChip(
+            label: 'All Types',
+            isSelected: filter.selectedType == null,
+            onSelected: () => onTypeChanged(null),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceXs),
+          FfChip(
+            label: 'Expenses',
+            isSelected: filter.selectedType == TransactionType.expense,
+            onSelected: () => onTypeChanged(TransactionType.expense),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceXs),
+          FfChip(
+            label: 'Income',
+            isSelected: filter.selectedType == TransactionType.income,
+            onSelected: () => onTypeChanged(TransactionType.income),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceXs),
+          FfChip(
+            label: 'Transfers',
+            isSelected: filter.selectedType == TransactionType.transfer,
+            onSelected: () => onTypeChanged(TransactionType.transfer),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceMd),
+
+          Container(
+            height: 20,
+            width: 1,
+            color: context.theme.dividerColor.withValues(alpha: 0.5),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceMd),
+
+          // Month Selection Pills
+          FfChip(
+            label: 'All Time',
+            isSelected:
+                filter.selectedMonth == null && filter.startDate == null,
+            onSelected: () => onMonthChanged(null),
+          ),
+          const SizedBox(width: StillwaterTokens.spaceXs),
+          FfChip(
+            label: 'This Month',
+            isSelected:
+                filter.selectedMonth != null &&
+                filter.selectedMonth!.year == currentMonth.year &&
+                filter.selectedMonth!.month == currentMonth.month,
+            onSelected: () => onMonthChanged(currentMonth),
+          ),
+          for (final month in availableMonths)
+            if (month.year != currentMonth.year ||
+                month.month != currentMonth.month) ...[
+              const SizedBox(width: StillwaterTokens.spaceXs),
+              FfChip(
+                label: DateFormatter.formatMonthYear(month),
+                isSelected:
+                    filter.selectedMonth != null &&
+                    filter.selectedMonth!.year == month.year &&
+                    filter.selectedMonth!.month == month.month,
+                onSelected: () => onMonthChanged(month),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CashFlowSummary extends StatelessWidget {
+  final TransactionListSummary summary;
+  final String periodLabel;
+  final bool isPrivacyBlur;
+  final TransactionType? selectedType;
+  final ValueChanged<TransactionType> onSelectType;
+
+  const _CashFlowSummary({
+    required this.summary,
+    required this.periodLabel,
+    required this.isPrivacyBlur,
+    required this.selectedType,
+    required this.onSelectType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final totalFlow = summary.income + summary.expenses;
+    final expenseRatio = totalFlow > 0 ? (summary.expenses / totalFlow) : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceXs,
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceXs,
+      ),
+      child: FfCard(
+        variant: FfCardVariant.elevated,
+        padding: const EdgeInsets.symmetric(
+          horizontal: StillwaterTokens.spaceLg,
+          vertical: StillwaterTokens.spaceMd,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Period Heading
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 13,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: StillwaterTokens.spaceXs),
+                Text(
+                  periodLabel,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: StillwaterTokens.spaceSm),
+            const Divider(height: 1),
+            const SizedBox(height: StillwaterTokens.spaceSm),
+
+            Row(
+              children: [
+                _SummaryValue(
+                  label: 'Income',
+                  value: summary.income,
+                  positive: true,
+                  isPrivacyBlur: isPrivacyBlur,
+                  isActive: selectedType == TransactionType.income,
+                  onTap: () => onSelectType(TransactionType.income),
+                ),
+                Container(
+                  width: 1,
+                  height: 36,
+                  color: context.theme.dividerColor,
+                ),
+                _SummaryValue(
+                  label: 'Expenses',
+                  value: summary.expenses,
+                  positive: false,
+                  isPrivacyBlur: isPrivacyBlur,
+                  isActive: selectedType == TransactionType.expense,
+                  onTap: () => onSelectType(TransactionType.expense),
+                ),
+                Container(
+                  width: 1,
+                  height: 36,
+                  color: context.theme.dividerColor,
+                ),
+                _SummaryValue(
+                  label: 'Net',
+                  value: summary.net,
+                  positive: summary.net >= 0,
+                  isPrivacyBlur: isPrivacyBlur,
+                  isActive: false,
+                ),
+              ],
+            ),
+            if (totalFlow > 0) ...[
+              const SizedBox(height: StillwaterTokens.spaceSm),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+                child: SizedBox(
+                  height: 4,
+                  child: Row(
+                    children: [
+                      Flexible(
+                        flex: (expenseRatio * 100).round().clamp(1, 99),
+                        child: Container(color: context.finColors.expense),
+                      ),
+                      Flexible(
+                        flex: ((1 - expenseRatio) * 100).round().clamp(1, 99),
+                        child: Container(color: context.finColors.income),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryValue extends StatelessWidget {
+  final String label;
+  final double value;
+  final bool positive;
+  final bool isPrivacyBlur;
+  final bool isActive;
+  final VoidCallback? onTap;
+
+  const _SummaryValue({
+    required this.label,
+    required this.value,
+    required this.positive,
+    this.isPrivacyBlur = false,
+    this.isActive = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final finColors = context.finColors;
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color:
+                    isActive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.secondary,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.check_circle_rounded,
+                size: 10,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: StillwaterTokens.space2Xs),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child:
+              isPrivacyBlur
+                  ? Text('₹ ••••••', style: StillwaterTypography.numMd())
+                  : Text(
+                    CurrencyFormatter.format(
+                      value,
+                      showSign: label == 'Net',
+                      isIncome: positive,
+                      isExpense: !positive,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: StillwaterTypography.numMd(
+                      color: positive ? finColors.income : finColors.expense,
+                    ),
+                  ),
+        ),
+      ],
+    );
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: StillwaterTokens.spaceXs,
+            vertical: StillwaterTokens.space2Xs,
+          ),
+          child: content,
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupHeader extends StatelessWidget {
+  final TransactionDateGroup group;
+
+  const _GroupHeader({required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    final finColors = context.finColors;
+    final theme = context.theme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceMd,
+        StillwaterTokens.spaceLg,
+        StillwaterTokens.spaceXs,
+      ),
+      child: Row(
+        children: [
+          Text(
+            group.label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: (group.net >= 0 ? finColors.income : finColors.expense)
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
+            ),
+            child: Text(
+              CurrencyFormatter.format(
+                group.net,
+                showSign: true,
+                isIncome: group.net >= 0,
+                isExpense: group.net < 0,
+              ),
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: group.net >= 0 ? finColors.income : finColors.expense,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -631,6 +1128,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                                   _draft = _draft.copyWith(
                                     startDate: range.start,
                                     endDate: range.end,
+                                    clearMonth: true,
                                   ),
                             );
                           }
@@ -722,406 +1220,6 @@ class _FilterDropdown<T> extends StatelessWidget {
     ],
     onChanged: onChanged,
   );
-}
-
-class _CashFlowSummary extends StatelessWidget {
-  final TransactionListSummary summary;
-  final bool isPrivacyBlur;
-
-  const _CashFlowSummary({required this.summary, this.isPrivacyBlur = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        StillwaterTokens.spaceLg,
-        StillwaterTokens.spaceXs,
-        StillwaterTokens.spaceLg,
-        StillwaterTokens.spaceMd,
-      ),
-      child: FfCard(
-        variant: FfCardVariant.elevated,
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceLg,
-          vertical: StillwaterTokens.spaceMd,
-        ),
-        child: Row(
-          children: [
-            _SummaryValue(
-              label: 'Income',
-              value: summary.income,
-              positive: true,
-              isPrivacyBlur: isPrivacyBlur,
-            ),
-            Container(width: 1, height: 36, color: context.theme.dividerColor),
-            _SummaryValue(
-              label: 'Expenses',
-              value: summary.expenses,
-              positive: false,
-              isPrivacyBlur: isPrivacyBlur,
-            ),
-            Container(width: 1, height: 36, color: context.theme.dividerColor),
-            _SummaryValue(
-              label: 'Net',
-              value: summary.net,
-              positive: summary.net >= 0,
-              isPrivacyBlur: isPrivacyBlur,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryValue extends StatelessWidget {
-  final String label;
-  final double value;
-  final bool positive;
-  final bool isPrivacyBlur;
-
-  const _SummaryValue({
-    required this.label,
-    required this.value,
-    required this.positive,
-    this.isPrivacyBlur = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final finColors = context.finColors;
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceXs,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.secondary,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
-              ),
-            ),
-            const SizedBox(height: StillwaterTokens.space2Xs),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child:
-                  isPrivacyBlur
-                      ? Text('₹ ••••••', style: StillwaterTypography.numMd())
-                      : Text(
-                        CurrencyFormatter.format(
-                          value,
-                          showSign: label == 'Net',
-                          isIncome: positive,
-                          isExpense: !positive,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: StillwaterTypography.numMd(
-                          color:
-                              positive ? finColors.income : finColors.expense,
-                        ),
-                      ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GroupHeader extends StatelessWidget {
-  final TransactionDateGroup group;
-
-  const _GroupHeader({required this.group});
-
-  @override
-  Widget build(BuildContext context) {
-    final finColors = context.finColors;
-    final theme = context.theme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        StillwaterTokens.spaceLg,
-        StillwaterTokens.spaceMd,
-        StillwaterTokens.spaceLg,
-        StillwaterTokens.spaceXs,
-      ),
-      child: Row(
-        children: [
-          Text(
-            group.label,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            CurrencyFormatter.format(
-              group.net,
-              showSign: true,
-              isIncome: group.net >= 0,
-              isExpense: group.net < 0,
-            ),
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: group.net >= 0 ? finColors.income : finColors.expense,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TransactionRow extends StatelessWidget {
-  final Transaction transaction;
-  final List<Account> accounts;
-  final bool showDate;
-  final bool isPrivacyBlur;
-  final VoidCallback onOpen;
-  final VoidCallback onEdit;
-  final Future<void> Function() onDelete;
-
-  const _TransactionRow({
-    required this.transaction,
-    required this.accounts,
-    required this.showDate,
-    required this.isPrivacyBlur,
-    required this.onOpen,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final account =
-        accounts.where((item) => item.id == transaction.accountId).firstOrNull;
-    final metadata = [
-      if (showDate) DateFormatter.formatShortDate(transaction.date),
-      if (!showDate)
-        DateFormatter.formatTransactionDate(transaction.date).split(', ').last,
-      if (account != null) account.name,
-      if (transaction.paymentMethod?.isNotEmpty ?? false)
-        transaction.paymentMethod!,
-      if (transaction.tags.isNotEmpty) '#${transaction.tags.first}',
-    ].join(' · ');
-
-    return Dismissible(
-      key: ValueKey('transaction-${transaction.id}'),
-      direction: DismissDirection.horizontal,
-      background: _SwipeBackground(
-        icon: Icons.edit_outlined,
-        label: 'Edit',
-        alignment: Alignment.centerLeft,
-        color: context.theme.colorScheme.primary,
-      ),
-      secondaryBackground: _SwipeBackground(
-        icon: Icons.delete_outline_rounded,
-        label: 'Delete',
-        alignment: Alignment.centerRight,
-        color: context.theme.colorScheme.error,
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          onEdit();
-          return false;
-        }
-        await onDelete();
-        return true;
-      },
-      child: Semantics(
-        button: true,
-        label:
-            '${transaction.merchant}, ${transaction.type.displayName}, ${CurrencyFormatter.format(transaction.amount)}',
-        child: ListTile(
-          minVerticalPadding: StillwaterTokens.spaceXs,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceLg,
-          ),
-          leading: FfCategoryTile(
-            iconIdentifier: transaction.categoryIcon,
-            colorTokenIdentifier: transaction.categoryColor,
-            size: 40,
-          ),
-          title: Text(
-            transaction.merchant,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          subtitle: Text(
-            metadata,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.textTheme.bodySmall?.copyWith(
-              color: context.theme.colorScheme.secondary,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfAmountText(
-                amount: transaction.amount,
-                type: transaction.type,
-                size: FfAmountSize.md,
-                isBlurred: isPrivacyBlur,
-                showSign: true,
-              ),
-              PopupMenuButton<String>(
-                tooltip: 'Transaction actions',
-                icon: Icon(
-                  Icons.more_vert_rounded,
-                  size: 18,
-                  color: context.theme.colorScheme.secondary,
-                ),
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    onEdit();
-                  } else {
-                    onDelete();
-                  }
-                },
-                itemBuilder:
-                    (_) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_outlined, size: 18),
-                            SizedBox(width: StillwaterTokens.spaceSm),
-                            Text('Edit'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_outline_rounded,
-                              size: 18,
-                              color: context.theme.colorScheme.error,
-                            ),
-                            const SizedBox(width: StillwaterTokens.spaceSm),
-                            Text(
-                              'Delete',
-                              style: TextStyle(
-                                color: context.theme.colorScheme.error,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-              ),
-            ],
-          ),
-          onTap: onOpen,
-        ),
-      ),
-    );
-  }
-}
-
-class _SwipeBackground extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Alignment alignment;
-  final Color color;
-
-  const _SwipeBackground({
-    required this.icon,
-    required this.label,
-    required this.alignment,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) => Container(
-    alignment: alignment,
-    color: color,
-    padding: const EdgeInsets.symmetric(horizontal: StillwaterTokens.spaceLg),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: context.theme.colorScheme.onPrimary),
-        const SizedBox(width: StillwaterTokens.spaceXs),
-        Text(
-          label,
-          style: TextStyle(color: context.theme.colorScheme.onPrimary),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ActiveFilters extends StatelessWidget {
-  final TransactionFilterState filter;
-  final List<Category> categories;
-  final List<Account> accounts;
-  final VoidCallback onClear;
-
-  const _ActiveFilters({
-    required this.filter,
-    required this.categories,
-    required this.accounts,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = <String>[
-      if (filter.selectedType != null) filter.selectedType!.displayName,
-      if (filter.selectedCategoryId != null)
-        categories
-                .where((category) => category.id == filter.selectedCategoryId)
-                .firstOrNull
-                ?.name ??
-            'Category',
-      if (filter.selectedAccountId != null)
-        accounts
-                .where((account) => account.id == filter.selectedAccountId)
-                .firstOrNull
-                ?.name ??
-            'Account',
-      if (filter.paymentMethod != null) filter.paymentMethod!,
-      if (filter.tag != null) '#${filter.tag}',
-      if (filter.startDate != null) 'Date range',
-      if (filter.sort != TransactionSort.newest) filter.sort.label,
-    ];
-    if (labels.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: StillwaterTokens.spaceXs),
-      child: SizedBox(
-        height: 34,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(left: StillwaterTokens.spaceLg),
-          children: [
-            for (final label in labels)
-              Padding(
-                padding: const EdgeInsets.only(right: StillwaterTokens.spaceXs),
-                child: Chip(
-                  label: Text(label),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            TextButton(onPressed: onClear, child: const Text('Clear all')),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _TransactionsLoading extends StatelessWidget {

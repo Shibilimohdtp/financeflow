@@ -143,6 +143,31 @@ class PayeeSuggestionService {
     return 10.0;
   }
 
+  static int _levenshteinDistance(String s1, String s2) {
+    if (s1 == s2) return 0;
+    if (s1.isEmpty) return s2.length;
+    if (s2.isEmpty) return s1.length;
+
+    List<int> v0 = List<int>.generate(s2.length + 1, (i) => i);
+    List<int> v1 = List<int>.filled(s2.length + 1, 0);
+
+    for (int i = 0; i < s1.length; i++) {
+      v1[0] = i + 1;
+      for (int j = 0; j < s2.length; j++) {
+        final cost = (s1[i] == s2[j]) ? 0 : 1;
+        v1[j + 1] = [
+          v1[j] + 1,
+          v0[j + 1] + 1,
+          v0[j] + cost,
+        ].reduce((min, val) => val < min ? val : min);
+      }
+      for (int j = 0; j <= s2.length; j++) {
+        v0[j] = v1[j];
+      }
+    }
+    return v1[s2.length];
+  }
+
   /// Generate intelligent, context-aware suggestions
   ///
   /// Ranking considerations:
@@ -198,24 +223,51 @@ class PayeeSuggestionService {
         final queryMatchesKey = normKey.contains(cleanQuery);
         final queryMatchesName = normNameLower.contains(cleanQuery);
 
-        if (!queryMatchesKey && !queryMatchesName) {
-          // No match with typed text -> skip
-          continue;
-        }
-
         if (normKey == cleanQuery || normNameLower == cleanQuery) {
-          queryScore = 2000.0;
+          queryScore = 5000.0;
         } else if (normKey.startsWith(cleanQuery) ||
             normNameLower.startsWith(cleanQuery)) {
-          queryScore = 1000.0;
+          queryScore = 3500.0;
         } else {
           // Check if any word starts with query
           final words = normKey.split(' ');
           final wordStartsWith = words.any((w) => w.startsWith(cleanQuery));
           if (wordStartsWith) {
-            queryScore = 800.0;
+            queryScore = 2500.0;
+          } else if (queryMatchesKey || queryMatchesName) {
+            queryScore = 1500.0;
+          } else if (cleanQuery.length >= 3) {
+            // Check for close/fuzzy matching
+            final maxDistance = cleanQuery.length <= 4 ? 1 : 2;
+            bool isClose = false;
+            // Check distance against prefix of name/key
+            if (normKey.length >= cleanQuery.length) {
+              final prefix = normKey.substring(0, cleanQuery.length);
+              if (_levenshteinDistance(prefix, cleanQuery) <= maxDistance) {
+                isClose = true;
+              }
+            }
+            if (!isClose) {
+              for (final word in words) {
+                if (word.length >= cleanQuery.length) {
+                  final wordPrefix = word.substring(0, cleanQuery.length);
+                  if (_levenshteinDistance(wordPrefix, cleanQuery) <= maxDistance) {
+                    isClose = true;
+                    break;
+                  }
+                } else if (_levenshteinDistance(word, cleanQuery) <= maxDistance) {
+                  isClose = true;
+                  break;
+                }
+              }
+            }
+            if (isClose) {
+              queryScore = 800.0;
+            } else {
+              continue; // No match
+            }
           } else {
-            queryScore = 400.0;
+            continue; // No match
           }
         }
       }

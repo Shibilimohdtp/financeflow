@@ -15,6 +15,7 @@ class TransactionFilterState {
   final String? selectedAccountId;
   final DateTime? startDate;
   final DateTime? endDate;
+  final DateTime? selectedMonth;
   final String? paymentMethod;
   final String? tag;
   final TransactionSort sort;
@@ -26,6 +27,7 @@ class TransactionFilterState {
     this.selectedAccountId,
     this.startDate,
     this.endDate,
+    this.selectedMonth,
     this.paymentMethod,
     this.tag,
     this.sort = TransactionSort.newest,
@@ -42,6 +44,8 @@ class TransactionFilterState {
     DateTime? startDate,
     DateTime? endDate,
     bool clearDates = false,
+    DateTime? selectedMonth,
+    bool clearMonth = false,
     String? paymentMethod,
     bool clearPaymentMethod = false,
     String? tag,
@@ -59,6 +63,8 @@ class TransactionFilterState {
           clearAccount ? null : (selectedAccountId ?? this.selectedAccountId),
       startDate: clearDates ? null : (startDate ?? this.startDate),
       endDate: clearDates ? null : (endDate ?? this.endDate),
+      selectedMonth:
+          clearMonth ? null : (selectedMonth ?? this.selectedMonth),
       paymentMethod:
           clearPaymentMethod ? null : (paymentMethod ?? this.paymentMethod),
       tag: clearTag ? null : (tag ?? this.tag),
@@ -73,6 +79,7 @@ class TransactionFilterState {
       selectedAccountId != null ||
       startDate != null ||
       endDate != null ||
+      selectedMonth != null ||
       paymentMethod != null ||
       tag != null ||
       sort != TransactionSort.newest;
@@ -86,6 +93,7 @@ class TransactionFilterState {
       tag != null ||
       sort != TransactionSort.newest;
 }
+
 
 final transactionFilterProvider = StateProvider<TransactionFilterState>((ref) {
   return const TransactionFilterState();

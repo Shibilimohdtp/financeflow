@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/services/categorization_service.dart';
 
 void main() {
@@ -124,5 +125,67 @@ void main() {
       final s = CategorizationService.suggestCategory('XYZ98765RANDOM');
       expect(s, isNull);
     });
+
+    test(
+      'Defaults category to most recently used category from transaction history instead of Miscellaneous',
+      () {
+        final now = DateTime.now();
+        final history = [
+          Transaction(
+            id: 'tx_old',
+            amount: 50.0,
+            type: TransactionType.expense,
+            categoryId: 'cat_dining',
+            categoryName: 'Dining',
+            categoryIcon: 'restaurant',
+            categoryColor: 'clay',
+            merchant: 'Local Corner Cafe',
+            date: now.subtract(const Duration(days: 10)),
+            accountId: 'acc_1',
+            createdAt: now.subtract(const Duration(days: 10)),
+            updatedAt: now.subtract(const Duration(days: 10)),
+          ),
+          Transaction(
+            id: 'tx_new',
+            amount: 80.0,
+            type: TransactionType.expense,
+            categoryId: 'cat_coffee',
+            categoryName: 'Coffee & Snacks',
+            categoryIcon: 'coffee',
+            categoryColor: 'sand',
+            merchant: 'Local Corner Cafe',
+            date: now.subtract(const Duration(days: 2)),
+            accountId: 'acc_1',
+            createdAt: now.subtract(const Duration(days: 2)),
+            updatedAt: now.subtract(const Duration(days: 2)),
+          ),
+          Transaction(
+            id: 'tx_misc',
+            amount: 10.0,
+            type: TransactionType.expense,
+            categoryId: 'cat_miscellaneous',
+            categoryName: 'Miscellaneous',
+            categoryIcon: 'more_horiz',
+            categoryColor: 'slate',
+            merchant: 'Local Corner Cafe',
+            date: now.subtract(const Duration(days: 1)),
+            accountId: 'acc_1',
+            createdAt: now.subtract(const Duration(days: 1)),
+            updatedAt: now.subtract(const Duration(days: 1)),
+          ),
+        ];
+
+        // Should ignore the miscellaneous entry and pick the most recent valid category ('Coffee & Snacks')
+        final suggestion = CategorizationService.suggestCategory(
+          'Local Corner Cafe',
+          history: history,
+        );
+
+        expect(suggestion, isNotNull);
+        expect(suggestion!.categoryId, equals('cat_coffee'));
+        expect(suggestion.categoryName, equals('Coffee & Snacks'));
+        expect(suggestion.isUserOverride, isTrue);
+      },
+    );
   });
 }

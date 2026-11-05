@@ -91,9 +91,9 @@ void main() {
       expect(find.byType(TextField), findsNothing);
 
       // Verify Cash Flow Summary Card
-      expect(find.text('Income'), findsOneWidget);
-      expect(find.text('Expenses'), findsOneWidget);
       expect(find.text('Net'), findsOneWidget);
+      expect(find.widgetWithText(FfChip, 'Income'), findsOneWidget);
+      expect(find.widgetWithText(FfChip, 'Expenses'), findsOneWidget);
 
       // Verify Transaction Row
       expect(find.text('Swiggy Biryani'), findsOneWidget);
@@ -119,8 +119,8 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Swiggy');
       await tester.pumpAndSettle();
 
-      // Clear button should appear
-      expect(find.byIcon(Icons.clear_rounded), findsOneWidget);
+      // Clear button in search bar should appear
+      expect(find.byTooltip('Clear search text'), findsOneWidget);
 
       // Dismiss search
       await tester.tap(find.byIcon(Icons.close_rounded));
@@ -146,10 +146,23 @@ void main() {
       // Bottom sheet header and type options
       expect(find.text('Filter & sort'), findsOneWidget);
       expect(find.text('Transaction Type'), findsOneWidget);
-      expect(find.widgetWithText(FfChip, 'All'), findsOneWidget);
-      expect(find.widgetWithText(FfChip, 'Expenses'), findsOneWidget);
-      expect(find.widgetWithText(FfChip, 'Income'), findsOneWidget);
-      expect(find.widgetWithText(FfChip, 'Transfers'), findsOneWidget);
+      final sheetFinder = find.byType(BottomSheet);
+      expect(
+        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'All')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Expenses')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Income')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Transfers')),
+        findsOneWidget,
+      );
 
       // Verify Filter Dropdowns and Actions
       expect(find.text('Category'), findsOneWidget);
@@ -157,7 +170,9 @@ void main() {
       expect(find.text('Payment method'), findsOneWidget);
       expect(find.text('Tag'), findsOneWidget);
       // Select 'Expenses' type in sheet
-      await tester.tap(find.widgetWithText(FfChip, 'Expenses'));
+      await tester.tap(
+        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Expenses')),
+      );
       await tester.pumpAndSettle();
 
       // Scroll to and apply filter
@@ -166,18 +181,20 @@ void main() {
       await tester.tap(find.text('Show transactions'));
       await tester.pumpAndSettle();
 
-      // Filter sheet closes, Active filter chip for Expense appears
+      // Filter sheet closes
       expect(find.text('Filter & sort'), findsNothing);
-      expect(find.text('Expense'), findsOneWidget);
-      expect(find.text('Clear all'), findsOneWidget);
+      expect(find.widgetWithText(FfChip, 'Expenses'), findsWidgets);
+      expect(find.text('Clear'), findsWidgets);
 
       // Clear all active filters
-      await tester.tap(find.text('Clear all'));
+      await tester.tap(find.text('Clear'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Expense'), findsNothing);
+      expect(find.text('Clear'), findsNothing);
     },
   );
+
+
 
   testWidgets('TransactionsScreen renders cleanly in Deep Water dark theme', (
     WidgetTester tester,

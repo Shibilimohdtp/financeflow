@@ -1,3 +1,5 @@
+import '../models/transaction.dart';
+
 class CategorySuggestion {
   final String categoryId;
   final String categoryName;
@@ -513,8 +515,50 @@ class CategorizationService {
     ),
   ];
 
-  /// Suggest a category based on the merchant name, checking user overrides first, then on-device rules
-  static CategorySuggestion? suggestCategory(String rawMerchant) {
+  /// Returns the most recent non-miscellaneous category used for this merchant from transaction history
+  static CategorySuggestion? getHistoricalCategoryForMerchant(
+    String rawMerchant, {
+    required Iterable<Transaction> history,
+  }) {
+    if (rawMerchant.trim().isEmpty) return null;
+    final normalized = _normalizeKey(rawMerchant);
+    if (normalized.isEmpty) return null;
+
+    final matches = history.where((tx) {
+      if (tx.categoryId.isEmpty ||
+          tx.categoryId == 'cat_miscellaneous' ||
+          tx.categoryName.toLowerCase() == 'miscellaneous') {
+        return false;
+      }
+      final txNorm = _normalizeKey(tx.merchant);
+      return txNorm == normalized ||
+          (txNorm.length > 2 &&
+              normalized.length > 2 &&
+              (txNorm.contains(normalized) || normalized.contains(txNorm)));
+    }).toList();
+
+    if (matches.isEmpty) return null;
+
+    // Sort by date descending (most recently used first)
+    matches.sort((a, b) => b.date.compareTo(a.date));
+    final recentTx = matches.first;
+
+    return CategorySuggestion(
+      categoryId: recentTx.categoryId,
+      categoryName: recentTx.categoryName,
+      categoryIcon: recentTx.categoryIcon,
+      categoryColor: recentTx.categoryColor,
+      confidence: 0.95,
+      reason: 'Most recent category used for "$rawMerchant"',
+      isUserOverride: true,
+    );
+  }
+
+  /// Suggest a category based on the merchant name, checking user overrides and transaction history first, then on-device rules
+  static CategorySuggestion? suggestCategory(
+    String rawMerchant, {
+    Iterable<Transaction>? history,
+  }) {
     if (rawMerchant.trim().isEmpty) return null;
 
     final normalized = _normalizeKey(rawMerchant);
@@ -525,14 +569,25 @@ class CategorizationService {
       return _userOverrides[normalized];
     }
 
-    // 2. Check if user override matches any substring
+    // 2. Check transaction history for most recent category for this merchant
+    if (history != null) {
+      final historicalMatch = getHistoricalCategoryForMerchant(
+        rawMerchant,
+        history: history,
+      );
+      if (historicalMatch != null) {
+        return historicalMatch;
+      }
+    }
+
+    // 3. Check if user override matches any substring
     for (final entry in _userOverrides.entries) {
       if (normalized.contains(entry.key) || entry.key.contains(normalized)) {
         return entry.value;
       }
     }
 
-    // 3. Match against default deterministic rules
+    // 4. Match against default deterministic rules
     for (final rule in _defaultRules) {
       for (final keyword in rule.keywords) {
         final normKw = _normalizeKey(keyword);

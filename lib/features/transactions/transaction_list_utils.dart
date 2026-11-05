@@ -1,3 +1,4 @@
+import '../../core/formatting/date_formatter.dart';
 import '../../models/account.dart';
 import '../../models/transaction.dart';
 import 'transactions_controller.dart';
@@ -71,6 +72,26 @@ List<Transaction> applyTransactionFilter({
             )) {
           return false;
         }
+        if (filter.selectedMonth != null) {
+          final monthStart = DateTime(
+            filter.selectedMonth!.year,
+            filter.selectedMonth!.month,
+            1,
+          );
+          final monthEnd = DateTime(
+            filter.selectedMonth!.year,
+            filter.selectedMonth!.month + 1,
+            0,
+            23,
+            59,
+            59,
+            999,
+          );
+          if (transaction.date.isBefore(monthStart) ||
+              transaction.date.isAfter(monthEnd)) {
+            return false;
+          }
+        }
         if (filter.startDate != null &&
             transaction.date.isBefore(_startOfDay(filter.startDate!))) {
           return false;
@@ -136,16 +157,21 @@ List<TransactionDateGroup> groupTransactionsForList(
 
   for (final transaction in transactions) {
     final day = _startOfDay(transaction.date);
-    final label =
-        day == today
-            ? 'Today'
-            : day == today.subtract(const Duration(days: 1))
-            ? 'Yesterday'
-            : !day.isBefore(startOfWeek)
-            ? 'This week'
-            : !day.isBefore(startOfMonth)
-            ? 'Earlier this month'
-            : 'Older dates';
+    final String label;
+
+    if (day == today) {
+      label = 'Today';
+    } else if (day == today.subtract(const Duration(days: 1))) {
+      label = 'Yesterday';
+    } else if (!day.isBefore(startOfWeek) && day.isBefore(today)) {
+      label = 'This week';
+    } else if (!day.isBefore(startOfMonth)) {
+      label = 'Earlier this month';
+    } else {
+      // Group by Month and Year (e.g., 'August 2026')
+      label = DateFormatter.formatMonthYear(transaction.date);
+    }
+
     groups.putIfAbsent(label, () => []).add(transaction);
   }
 
@@ -160,7 +186,17 @@ List<TransactionDateGroup> groupTransactionsForList(
   }).toList();
 }
 
+List<DateTime> extractAvailableMonths(List<Transaction> transactions) {
+  final months = <DateTime>{};
+  for (final tx in transactions) {
+    months.add(DateTime(tx.date.year, tx.date.month));
+  }
+  final sorted = months.toList()..sort((a, b) => b.compareTo(a));
+  return sorted;
+}
+
 DateTime _startOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day);
 DateTime _endOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+
