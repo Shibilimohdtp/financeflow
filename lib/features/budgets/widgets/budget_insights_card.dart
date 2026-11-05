@@ -27,7 +27,7 @@ class BudgetInsightsCard extends StatelessWidget {
 
     final theme = context.theme;
     final finColors = context.finColors;
-    final aiColors = context.aiColors;
+    final accentColors = context.accentColors;
 
     // Derive data-driven insights
     final exceededBudgets = summaries.where((s) => s.isExceeded).toList();
@@ -107,12 +107,12 @@ class BudgetInsightsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, size: 16, color: aiColors.accent),
+              Icon(Icons.auto_awesome, size: 16, color: accentColors.accent),
               const SizedBox(width: StillwaterTokens.spaceXs),
               Text(
                 'BUDGET INTELLIGENCE',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: aiColors.accent,
+                  color: accentColors.accent,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.0,
                 ),

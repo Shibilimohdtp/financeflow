@@ -86,9 +86,6 @@ class IsarSettingsRepository implements SettingsRepository {
       ingestionRejectedCount: entity.ingestionRejectedCount,
       ingestionDuplicateCount: entity.ingestionDuplicateCount,
       ingestionLastError: entity.ingestionLastError,
-      isGeminiEnabled: entity.isGeminiEnabled,
-      geminiConsentGranted: entity.geminiConsentGranted,
-      geminiConsentDate: entity.geminiConsentDate,
       isAlertsEnabled: entity.isAlertsEnabled,
       isBudgetAlertsEnabled: entity.isBudgetAlertsEnabled,
       isSubscriptionAlertsEnabled: entity.isSubscriptionAlertsEnabled,
@@ -170,9 +167,6 @@ class IsarSettingsRepository implements SettingsRepository {
       entity.ingestionLastError = settings.ingestionLastError;
 
       // Phase 4
-      entity.isGeminiEnabled = settings.isGeminiEnabled;
-      entity.geminiConsentGranted = settings.geminiConsentGranted;
-      entity.geminiConsentDate = settings.geminiConsentDate;
       entity.isAlertsEnabled = settings.isAlertsEnabled;
       entity.isBudgetAlertsEnabled = settings.isBudgetAlertsEnabled;
       entity.isSubscriptionAlertsEnabled = settings.isSubscriptionAlertsEnabled;

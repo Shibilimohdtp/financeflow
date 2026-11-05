@@ -63,7 +63,7 @@ class ActionableItemsSection extends StatelessWidget {
   List<ActionableItemData> _buildActionableItems(BuildContext context) {
     final theme = context.theme;
     final finColors = context.finColors;
-    final aiColors = context.aiColors;
+    final accentColors = context.accentColors;
     final items = <ActionableItemData>[];
 
     // 1. Pending Review Imports
@@ -72,8 +72,8 @@ class ActionableItemsSection extends StatelessWidget {
         ActionableItemData(
           id: 'pending_review',
           icon: Icons.rate_review_outlined,
-          iconColor: aiColors.accent,
-          backgroundColor: aiColors.accent.withValues(alpha: 0.10),
+          iconColor: accentColors.accent,
+          backgroundColor: accentColors.accent.withValues(alpha: 0.10),
           title:
               pendingReviewCount == 1
                   ? '1 imported transaction needs review'

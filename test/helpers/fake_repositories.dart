@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:financeflow/models/ingestion/parsed_transaction.dart';
 import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/models/account.dart';
-import 'package:financeflow/models/ai_activity_log.dart';
 import 'package:financeflow/models/alert_item.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/budget.dart';
@@ -17,7 +16,6 @@ import 'package:financeflow/models/savings_goal.dart';
 import 'package:financeflow/models/subscription.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/repositories/account_repository.dart';
-import 'package:financeflow/repositories/ai_activity_log_repository.dart';
 import 'package:financeflow/repositories/alert_repository.dart';
 import 'package:financeflow/repositories/budget_repository.dart';
 import 'package:financeflow/repositories/category_repository.dart';
@@ -1045,46 +1043,6 @@ class FakeAlertRepository implements AlertRepository {
           a.relatedEntityId == relatedEntityId &&
           !a.createdAt.isBefore(sinceDate),
     );
-  }
-
-  void dispose() {
-    _controller.close();
-  }
-}
-
-class FakeAiActivityLogRepository implements AiActivityLogRepository {
-  final List<AiActivityLog> _logs = [];
-  final StreamController<List<AiActivityLog>> _controller =
-      StreamController<List<AiActivityLog>>.broadcast();
-
-  @override
-  Future<List<AiActivityLog>> getAllLogs() async => List.from(_logs);
-
-  @override
-  Stream<List<AiActivityLog>> watchAllLogs() async* {
-    yield await getAllLogs();
-    yield* _controller.stream;
-  }
-
-  @override
-  Future<void> logActivity(AiActivityLog log) async {
-    _logs.add(log);
-    _controller.add(List.from(_logs));
-  }
-
-  @override
-  Future<void> updateAccepted(String id, bool accepted) async {
-    final idx = _logs.indexWhere((l) => l.id == id);
-    if (idx != -1) {
-      _logs[idx] = _logs[idx].copyWith(userAccepted: accepted);
-      _controller.add(List.from(_logs));
-    }
-  }
-
-  @override
-  Future<void> clearLogs() async {
-    _logs.clear();
-    _controller.add([]);
   }
 
   void dispose() {

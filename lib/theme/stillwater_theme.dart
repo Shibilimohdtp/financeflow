@@ -65,7 +65,7 @@ class StillwaterTheme {
       extensions: const [
         FfFinColors.daylight,
         FfStatusColors.daylight,
-        FfAiColors.daylight,
+        FfAccentColors.daylight,
         FfSecColors.daylight,
       ],
       appBarTheme: AppBarTheme(
@@ -318,7 +318,7 @@ class StillwaterTheme {
       extensions: const [
         FfFinColors.deepWater,
         FfStatusColors.deepWater,
-        FfAiColors.deepWater,
+        FfAccentColors.deepWater,
         FfSecColors.deepWater,
       ],
       appBarTheme: AppBarTheme(

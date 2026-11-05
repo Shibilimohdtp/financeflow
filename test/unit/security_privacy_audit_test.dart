@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:financeflow/core/constants/app_constants.dart';
-import 'package:financeflow/services/gemini_service.dart';
 import 'package:financeflow/services/security_service.dart';
 import '../helpers/fake_repositories.dart';
 
@@ -208,36 +207,6 @@ void main() {
 
         mockAuth.authResult = false;
         expect(await securityService.authenticateWithBiometrics(), isFalse);
-      },
-    );
-
-    test(
-      'GeminiDataSanitizer redacts account numbers and phone numbers from user queries',
-      () {
-        const queryWithAccount =
-            'How much did I send to account 987654321098 last month?';
-        final sanitized = GeminiDataSanitizer.sanitizeForQuery(
-          query: queryWithAccount,
-          contextSummary: 'Context with 2 transactions',
-        );
-
-        expect(sanitized['query'].contains('987654321098'), isFalse);
-        expect(sanitized['query'].contains('[REDACTED_NUMBER]'), isTrue);
-      },
-    );
-
-    test(
-      'GeminiDataSanitizer normalizes merchant before sending categorization request',
-      () {
-        final sanitized = GeminiDataSanitizer.sanitizeForCategorization(
-          rawMerchant: 'UPI-SWIGGY-swiggy@icici-42352345',
-          amount: 450.0,
-          availableCategoryNames: ['Dining', 'Groceries', 'Transport'],
-        );
-
-        expect(sanitized['merchant'], 'Swiggy');
-        expect(sanitized['amount'], 450.0);
-        expect(sanitized['availableCategories'], contains('Dining'));
       },
     );
 

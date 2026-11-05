@@ -33,7 +33,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
       case AlertSeverity.urgent:
         return context.secColors.error;
       case AlertSeverity.attention:
-        return context.aiColors.accent;
+        return context.accentColors.accent;
       case AlertSeverity.informational:
         return Theme.of(context).colorScheme.primary;
     }

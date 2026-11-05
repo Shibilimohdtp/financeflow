@@ -21,7 +21,7 @@ class StillwaterColors {
   static const Color lightOnSecondary = Color(0xFFFAF9F3);
   static const Color lightOnSecondaryContainer = Color(0xFF382F3B);
 
-  // Tertiary / Accent (Mineral Rose / AI)
+  // Tertiary / Accent (Mineral Rose)
   static const Color lightAccent = Color(0xFF76546A);
   static const Color lightAccentBright = Color(0xFFA77D92);
   static const Color lightAccentContainer = Color(0xFFF1DFEA);
@@ -36,7 +36,7 @@ class StillwaterColors {
   static const Color lightSurfaceContainerHigh = Color(0xFFE3E3D7);
   static const Color lightSurfaceContainerHighest = Color(0xFFDCDDD1);
   static const Color lightSurfaceElevated = Color(0xFFFDFCF7);
-  static const Color lightSurfaceAi = Color(0xFFF5EDF1);
+  static const Color lightSurfaceAccent = Color(0xFFF5EDF1);
   static const Color lightSurfaceSecurity = Color(0xFFEDF0E3);
   static const Color lightSurfaceTintPrimary = Color(0xFFE9EDD9);
 
@@ -94,7 +94,7 @@ class StillwaterColors {
   static const Color darkOnSecondary = Color(0xFF1C2019);
   static const Color darkOnSecondaryContainer = Color(0xFFEFE3F0);
 
-  // Tertiary / Accent (Marigold / AI)
+  // Tertiary / Accent (Marigold)
   static const Color darkAccent = Color(0xFFDFB6CD);
   static const Color darkAccentBright = Color(0xFFEDCADE);
   static const Color darkAccentContainer = Color(0xFF533849);
@@ -109,7 +109,7 @@ class StillwaterColors {
   static const Color darkSurfaceContainerHigh = Color(0xFF30352A);
   static const Color darkSurfaceContainerHighest = Color(0xFF383D31);
   static const Color darkSurfaceElevated = Color(0xFF383D31);
-  static const Color darkSurfaceAi = Color(0xFF2B242B);
+  static const Color darkSurfaceAccent = Color(0xFF2B242B);
   static const Color darkSurfaceSecurity = Color(0xFF242D21);
   static const Color darkSurfaceTintPrimary = Color(0xFF343D26);
 
@@ -326,37 +326,37 @@ class FfStatusColors extends ThemeExtension<FfStatusColors> {
   }
 }
 
-/// ThemeExtension for AI Moments
-class FfAiColors extends ThemeExtension<FfAiColors> {
+/// ThemeExtension for secondary accent moments (insights, highlights)
+class FfAccentColors extends ThemeExtension<FfAccentColors> {
   final Color accent;
   final Color container;
   final Color surface;
 
-  const FfAiColors({
+  const FfAccentColors({
     required this.accent,
     required this.container,
     required this.surface,
   });
 
-  static const daylight = FfAiColors(
+  static const daylight = FfAccentColors(
     accent: StillwaterColors.lightAccent,
     container: StillwaterColors.lightAccentContainer,
-    surface: StillwaterColors.lightSurfaceAi,
+    surface: StillwaterColors.lightSurfaceAccent,
   );
 
-  static const deepWater = FfAiColors(
+  static const deepWater = FfAccentColors(
     accent: StillwaterColors.darkAccent,
     container: StillwaterColors.darkAccentContainer,
-    surface: StillwaterColors.darkSurfaceAi,
+    surface: StillwaterColors.darkSurfaceAccent,
   );
 
   @override
-  ThemeExtension<FfAiColors> copyWith({
+  ThemeExtension<FfAccentColors> copyWith({
     Color? accent,
     Color? container,
     Color? surface,
   }) {
-    return FfAiColors(
+    return FfAccentColors(
       accent: accent ?? this.accent,
       container: container ?? this.container,
       surface: surface ?? this.surface,
@@ -364,9 +364,9 @@ class FfAiColors extends ThemeExtension<FfAiColors> {
   }
 
   @override
-  ThemeExtension<FfAiColors> lerp(ThemeExtension<FfAiColors>? other, double t) {
-    if (other is! FfAiColors) return this;
-    return FfAiColors(
+  ThemeExtension<FfAccentColors> lerp(ThemeExtension<FfAccentColors>? other, double t) {
+    if (other is! FfAccentColors) return this;
+    return FfAccentColors(
       accent: Color.lerp(accent, other.accent, t)!,
       container: Color.lerp(container, other.container, t)!,
       surface: Color.lerp(surface, other.surface, t)!,

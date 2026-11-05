@@ -36,7 +36,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
             const FfSheetHeader(
               title: 'Recurring Patterns',
               subtitle: 'Detected on-device from transaction history',
-              trailing: FfPrivacyBadge(label: 'On-Device AI'),
+              trailing: FfPrivacyBadge(label: 'On-device'),
             ),
             const Divider(height: 1, thickness: 1),
             Flexible(

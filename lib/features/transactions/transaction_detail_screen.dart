@@ -189,7 +189,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                     size: 20,
                     color:
                         transaction.mergedSources.length > 1
-                            ? context.aiColors.accent
+                            ? context.accentColors.accent
                             : context.secColors.verified,
                   ),
                   const SizedBox(width: StillwaterTokens.spaceSm),
@@ -205,7 +205,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                             fontWeight: FontWeight.w700,
                             color:
                                 transaction.mergedSources.length > 1
-                                    ? context.aiColors.accent
+                                    ? context.accentColors.accent
                                     : context.secColors.verified,
                           ),
                         ),

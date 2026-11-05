@@ -16,9 +16,9 @@ extension BuildContextExtensions on BuildContext {
       Theme.of(this).extension<FfStatusColors>() ??
       (isDarkMode ? FfStatusColors.deepWater : FfStatusColors.daylight);
 
-  FfAiColors get aiColors =>
-      Theme.of(this).extension<FfAiColors>() ??
-      (isDarkMode ? FfAiColors.deepWater : FfAiColors.daylight);
+  FfAccentColors get accentColors =>
+      Theme.of(this).extension<FfAccentColors>() ??
+      (isDarkMode ? FfAccentColors.deepWater : FfAccentColors.daylight);
 
   FfSecColors get secColors =>
       Theme.of(this).extension<FfSecColors>() ??

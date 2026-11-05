@@ -65,9 +65,6 @@ class AppSettings {
   final String? ingestionLastError;
 
   // Phase 4 Settings
-  final bool isGeminiEnabled;
-  final bool geminiConsentGranted;
-  final DateTime? geminiConsentDate;
   final bool isAlertsEnabled;
   final bool isBudgetAlertsEnabled;
   final bool isSubscriptionAlertsEnabled;
@@ -117,9 +114,6 @@ class AppSettings {
     this.ingestionRejectedCount = 0,
     this.ingestionDuplicateCount = 0,
     this.ingestionLastError,
-    this.isGeminiEnabled = false,
-    this.geminiConsentGranted = false,
-    this.geminiConsentDate,
     this.isAlertsEnabled = true,
     this.isBudgetAlertsEnabled = true,
     this.isSubscriptionAlertsEnabled = true,
@@ -160,9 +154,6 @@ class AppSettings {
     int? ingestionRejectedCount,
     int? ingestionDuplicateCount,
     String? ingestionLastError,
-    bool? isGeminiEnabled,
-    bool? geminiConsentGranted,
-    DateTime? geminiConsentDate,
     bool? isAlertsEnabled,
     bool? isBudgetAlertsEnabled,
     bool? isSubscriptionAlertsEnabled,
@@ -212,9 +203,6 @@ class AppSettings {
       ingestionDuplicateCount:
           ingestionDuplicateCount ?? this.ingestionDuplicateCount,
       ingestionLastError: ingestionLastError ?? this.ingestionLastError,
-      isGeminiEnabled: isGeminiEnabled ?? this.isGeminiEnabled,
-      geminiConsentGranted: geminiConsentGranted ?? this.geminiConsentGranted,
-      geminiConsentDate: geminiConsentDate ?? this.geminiConsentDate,
       isAlertsEnabled: isAlertsEnabled ?? this.isAlertsEnabled,
       isBudgetAlertsEnabled:
           isBudgetAlertsEnabled ?? this.isBudgetAlertsEnabled,

@@ -96,7 +96,7 @@ class _NotificationPermissionScreenState
                   ),
                   child: Text(
                     '• Notification text is parsed locally in memory on your phone.\n'
-                    '• No notification content is ever sent to any remote server or AI service.\n'
+                    '• No notification content is ever sent to any remote server.\n'
                     '• Non-financial notifications (WhatsApp, social media) are strictly ignored.\n'
                     '• You can revoke or disable this permission at any time.',
                     style: theme.textTheme.bodySmall?.copyWith(

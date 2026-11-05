@@ -29,13 +29,13 @@ class LocalInsightsCard extends ConsumerWidget {
                   Icon(
                     Icons.auto_awesome_rounded,
                     size: 14,
-                    color: context.aiColors.accent,
+                    color: context.accentColors.accent,
                   ),
                   const SizedBox(width: StillwaterTokens.spaceXs),
                   Text(
                     'On-Device Analysis',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: context.aiColors.accent,
+                      color: context.accentColors.accent,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.2,
                     ),
@@ -67,7 +67,7 @@ class LocalInsightsCard extends ConsumerWidget {
               case InsightSeverity.info:
               case InsightSeverity.neutral:
                 iconData = Icons.lightbulb_outline_rounded;
-                iconColor = context.aiColors.accent;
+                iconColor = context.accentColors.accent;
                 break;
             }
 

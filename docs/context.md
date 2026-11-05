@@ -1,3 +1,5 @@
+> **Outdated (2026-11-05):** this document overstates readiness and lists dependencies and features that do not exist. The Gemini/AI feature has been removed entirely. See `docs/audit/2026-11-phase0-audit.md` for the current state.
+
 # FinanceFlow — Complete Application Context & Technical Architecture
 
 **Application Name**: FinanceFlow  

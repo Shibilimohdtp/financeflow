@@ -829,9 +829,6 @@ class BackupDataPayload {
     'ingestionRejectedCount': s.ingestionRejectedCount,
     'ingestionDuplicateCount': s.ingestionDuplicateCount,
     'ingestionLastError': s.ingestionLastError,
-    'isGeminiEnabled': s.isGeminiEnabled,
-    'geminiConsentGranted': s.geminiConsentGranted,
-    'geminiConsentDate': s.geminiConsentDate?.toIso8601String(),
     'isAlertsEnabled': s.isAlertsEnabled,
     'isBudgetAlertsEnabled': s.isBudgetAlertsEnabled,
     'isSubscriptionAlertsEnabled': s.isSubscriptionAlertsEnabled,
@@ -893,12 +890,6 @@ class BackupDataPayload {
         ingestionRejectedCount: j['ingestionRejectedCount'] as int? ?? 0,
         ingestionDuplicateCount: j['ingestionDuplicateCount'] as int? ?? 0,
         ingestionLastError: j['ingestionLastError'] as String?,
-        isGeminiEnabled: j['isGeminiEnabled'] as bool? ?? false,
-        geminiConsentGranted: j['geminiConsentGranted'] as bool? ?? false,
-        geminiConsentDate:
-            j['geminiConsentDate'] != null
-                ? DateTime.parse(j['geminiConsentDate'] as String)
-                : null,
         isAlertsEnabled: j['isAlertsEnabled'] as bool? ?? true,
         isBudgetAlertsEnabled: j['isBudgetAlertsEnabled'] as bool? ?? true,
         isSubscriptionAlertsEnabled:

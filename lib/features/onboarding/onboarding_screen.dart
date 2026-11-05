@@ -50,7 +50,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'You are in full control',
       subtitle: 'Everything works without internet',
       body:
-          'No account sign-up is required. You decide if optional integrations or AI features are ever enabled.',
+          'No account sign-up is required. You decide if optional integrations are ever enabled.',
       badgeText: '100% Offline Ready',
     ),
   ];

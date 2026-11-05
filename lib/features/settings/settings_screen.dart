@@ -13,8 +13,6 @@ import '../../theme/stillwater_tokens.dart';
 import '../../services/ingestion/ingestion_coordinator.dart';
 import '../../services/ingestion/ingestion_platform.dart';
 import '../accounts/accounts_screen.dart';
-import '../ai/ai_query_sheet.dart';
-import '../ai/gemini_consent_screen.dart';
 import '../alerts/alert_settings_sheet.dart';
 import '../alerts/alerts_inbox_screen.dart';
 import '../backup/backup_screen.dart';
@@ -164,19 +162,6 @@ class SettingsScreen extends ConsumerWidget {
                       label: 'Local Alerts Inbox',
                       subtitle: 'Budget limits, EMI reminders & renewals',
                       onTap: () => _push(context, const AlertsInboxScreen()),
-                    ),
-                    _NavRow(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      iconColor: context.aiColors.accent,
-                      label: 'Ask Your Finances',
-                      subtitle: 'Natural language queries · on-device first',
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => const AiQuerySheet(),
-                        );
-                      },
                     ),
                     _NavRow(
                       icon: Icons.file_upload_outlined,
@@ -634,30 +619,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          // ── 5. Intelligence ──────────────────────────────────────────────
-          const _SectionLabel(label: 'Intelligence'),
-          const SizedBox(height: StillwaterTokens.spaceXs),
-          _SettingsGroup(
-            children: [
-              _SettingsRow(
-                icon: Icons.psychology_outlined,
-                iconColor: context.aiColors.accent,
-                label: 'Gemini AI Assistance',
-                subtitle:
-                    settings.isGeminiEnabled && settings.geminiConsentGranted
-                        ? 'Enabled · boundary disclosure accepted'
-                        : 'Disabled · 100% on-device rules apply',
-                value:
-                    settings.isGeminiEnabled && settings.geminiConsentGranted
-                        ? 'On'
-                        : 'Off',
-                isLast: true,
-                onTap: () => _push(context, const GeminiConsentScreen()),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: StillwaterTokens.space2Xl),
 
           // ── 6. Developer Tools (collapsed) ───────────────────────────────
           _MoreOptionsToggle(
@@ -1000,7 +961,6 @@ class _SettingsGroup extends StatelessWidget {
 /// Navigation row — icon + label + subtitle + chevron.
 class _NavRow extends StatelessWidget {
   final IconData icon;
-  final Color? iconColor;
   final String label;
   final String? subtitle;
   final Widget? trailing;
@@ -1011,7 +971,6 @@ class _NavRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor,
     this.subtitle,
     this.trailing,
     this.isLast = false,
@@ -1020,7 +979,7 @@ class _NavRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final effectiveIconColor = iconColor ?? theme.colorScheme.secondary;
+    final effectiveIconColor = theme.colorScheme.secondary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1101,7 +1060,6 @@ class _NavRow extends StatelessWidget {
 /// Settings row with an optional current-value chip and optional onTap.
 class _SettingsRow extends StatelessWidget {
   final IconData icon;
-  final Color? iconColor;
   final String label;
   final String? subtitle;
   final String? value;
@@ -1111,7 +1069,6 @@ class _SettingsRow extends StatelessWidget {
   const _SettingsRow({
     required this.icon,
     required this.label,
-    this.iconColor,
     this.subtitle,
     this.value,
     this.isLast = false,
@@ -1121,7 +1078,7 @@ class _SettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final effectiveIconColor = iconColor ?? theme.colorScheme.secondary;
+    final effectiveIconColor = theme.colorScheme.secondary;
     final isReadOnly = onTap == null;
 
     return Column(
@@ -1318,7 +1275,7 @@ class _CountBadge extends StatelessWidget {
         vertical: 2,
       ),
       decoration: BoxDecoration(
-        color: context.aiColors.accent.withValues(alpha: 0.15),
+        color: context.accentColors.accent.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
       ),
       child: Text(
@@ -1326,7 +1283,7 @@ class _CountBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: context.aiColors.accent,
+          color: context.accentColors.accent,
         ),
       ),
     );

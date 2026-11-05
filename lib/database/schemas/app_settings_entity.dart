@@ -40,6 +40,8 @@ class AppSettingsEntity {
   String? ingestionLastError;
 
   // Phase 4 Settings
+  // Retired AI settings. Kept only so the on-disk schema is unchanged; remove
+  // in the next backup-gated schema migration.
   bool isGeminiEnabled = false;
   bool geminiConsentGranted = false;
   DateTime? geminiConsentDate;

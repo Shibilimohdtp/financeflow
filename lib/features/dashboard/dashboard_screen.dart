@@ -10,7 +10,6 @@ import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
-import '../ai/ai_query_sheet.dart';
 import '../alerts/alerts_inbox_screen.dart';
 import '../budgets/budgets_controller.dart';
 import '../ingestion/needs_review_controller.dart';
@@ -141,14 +140,6 @@ class DashboardScreen extends ConsumerWidget {
         unreadAlerts: unreadAlerts,
         onOpenAlerts:
             onOpenAlerts ?? () => _push(context, const AlertsInboxScreen()),
-        onOpenAi: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => const AiQuerySheet(),
-          );
-        },
         onOpenSettings: onOpenSettings,
       ),
       body: RefreshIndicator(

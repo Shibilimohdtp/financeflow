@@ -2,6 +2,8 @@ import 'package:isar/isar.dart';
 
 part 'ai_activity_log_entity.g.dart';
 
+// Retired: the AI feature was removed. The collection stays registered so the
+// on-disk schema is unchanged; remove in the next backup-gated migration.
 @collection
 class AiActivityLogEntity {
   Id id = Isar.autoIncrement;
