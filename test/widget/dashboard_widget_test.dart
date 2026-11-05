@@ -345,7 +345,7 @@ void main() {
       // Verify Loans & EMI Section
       expect(find.text('Loans & EMI'), findsWidgets);
       expect(find.text('Next EMI Due'), findsOneWidget);
-      expect(find.text('Total Outstanding'), findsOneWidget);
+      expect(find.text('Left to pay'), findsOneWidget);
     },
   );
 

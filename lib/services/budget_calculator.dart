@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../core/period/period.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 
@@ -13,48 +14,14 @@ class BudgetCalculator {
   ) {
     switch (budget.period) {
       case BudgetPeriod.weekly:
-        // Week starts on Monday (ISO-8601) and ends on Sunday
-        final dayOfWeek = referenceDate.weekday; // 1 = Monday, 7 = Sunday
-        final start = DateTime(
-          referenceDate.year,
-          referenceDate.month,
-          referenceDate.day - (dayOfWeek - 1),
-          0,
-          0,
-          0,
-        );
-        final end = DateTime(
-          start.year,
-          start.month,
-          start.day + 6,
-          23,
-          59,
-          59,
-          999,
-        );
-        return (start: start, end: end);
-
       case BudgetPeriod.monthly:
-        final start = DateTime(
-          referenceDate.year,
-          referenceDate.month,
-          1,
-          0,
-          0,
-          0,
-        );
-        final nextMonth = DateTime(
-          referenceDate.year,
-          referenceDate.month + 1,
-          1,
-        );
-        final end = nextMonth.subtract(const Duration(milliseconds: 1));
-        return (start: start, end: end);
-
       case BudgetPeriod.yearly:
-        final start = DateTime(referenceDate.year, 1, 1, 0, 0, 0);
-        final end = DateTime(referenceDate.year, 12, 31, 23, 59, 59, 999);
-        return (start: start, end: end);
+        final period = Period.containing(switch (budget.period) {
+          BudgetPeriod.weekly => PeriodUnit.week,
+          BudgetPeriod.monthly => PeriodUnit.month,
+          _ => PeriodUnit.year,
+        }, referenceDate);
+        return (start: period.start, end: period.endInclusive);
 
       case BudgetPeriod.custom:
         final start = budget.startDate;

@@ -226,5 +226,51 @@ void main() {
         isTrue,
       );
     });
+  
+    Transaction spend(String id, double amount, DateTime date) => Transaction(
+      id: id,
+      amount: amount,
+      type: TransactionType.expense,
+      categoryId: 'cat_dining',
+      categoryName: 'Dining',
+      categoryIcon: 'restaurant',
+      categoryColor: 'clay',
+      merchant: 'Cafe',
+      date: date,
+      accountId: 'acc_1',
+      createdAt: date,
+      updatedAt: date,
+    );
+
+    test('month-to-date is compared with the same days of last month', () {
+      // On 5 Nov: 1-5 Nov (₹1,000) vs 1-5 Oct (₹1,000). The rest of
+      // October (₹9,000) must not make November look 90% cheaper.
+      final report = AnalyticsCalculator.calculateReport(
+        allTransactions: [
+          spend('a', 1000, DateTime(2026, 11, 3)),
+          spend('b', 1000, DateTime(2026, 10, 2)),
+          spend('c', 9000, DateTime(2026, 10, 20)),
+        ],
+        timeRange: AnalyticsTimeRange.month,
+        referenceDate: DateTime(2026, 11, 5, 18),
+      );
+
+      expect(report.totalExpense, 1000);
+      expect(report.previousPeriodExpense, 1000);
+      expect(report.expenseChangePercentage, 0);
+    });
+
+    test('transactions at the last instant of the month are included', () {
+      final report = AnalyticsCalculator.calculateReport(
+        allTransactions: [
+          spend('edge', 500, DateTime(2026, 10, 31, 23, 59, 59, 999)),
+          spend('next', 700, DateTime(2026, 11, 1)),
+        ],
+        timeRange: AnalyticsTimeRange.month,
+        referenceDate: DateTime(2026, 10, 15),
+      );
+
+      expect(report.totalExpense, 500);
+    });
   });
 }

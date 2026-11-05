@@ -1,5 +1,7 @@
 import 'dart:math';
+import '../core/period/period.dart';
 import '../models/transaction.dart';
+import 'ledger_totals.dart';
 import 'merchant_normalization_service.dart';
 
 enum AnalyticsTimeRange {
@@ -152,105 +154,36 @@ class AnalyticsReport {
 class AnalyticsCalculator {
   AnalyticsCalculator._();
 
+  static PeriodUnit _unitFor(AnalyticsTimeRange range) => switch (range) {
+    AnalyticsTimeRange.week => PeriodUnit.week,
+    AnalyticsTimeRange.month => PeriodUnit.month,
+    AnalyticsTimeRange.year => PeriodUnit.year,
+    AnalyticsTimeRange.custom => PeriodUnit.custom,
+  };
+
+  /// The reporting period for [range] around [referenceDate]. A custom range
+  /// without explicit dates falls back to the month containing the reference.
+  static Period periodFor(
+    AnalyticsTimeRange range,
+    DateTime referenceDate, {
+    DateTime? customStart,
+    DateTime? customEnd,
+  }) {
+    if (range == AnalyticsTimeRange.custom) {
+      if (customStart != null && customEnd != null) {
+        return Period.custom(customStart, customEnd);
+      }
+      return Period.containing(PeriodUnit.month, referenceDate);
+    }
+    return Period.containing(_unitFor(range), referenceDate);
+  }
+
   static ({DateTime start, DateTime end}) getDateRangeForTimeRange(
     AnalyticsTimeRange range,
     DateTime referenceDate,
   ) {
-    switch (range) {
-      case AnalyticsTimeRange.week:
-        final dayOfWeek = referenceDate.weekday;
-        final start = DateTime(
-          referenceDate.year,
-          referenceDate.month,
-          referenceDate.day - (dayOfWeek - 1),
-          0,
-          0,
-          0,
-        );
-        final end = DateTime(
-          start.year,
-          start.month,
-          start.day + 6,
-          23,
-          59,
-          59,
-          999,
-        );
-        return (start: start, end: end);
-
-      case AnalyticsTimeRange.month:
-        final start = DateTime(
-          referenceDate.year,
-          referenceDate.month,
-          1,
-          0,
-          0,
-          0,
-        );
-        final nextMonth = DateTime(
-          referenceDate.year,
-          referenceDate.month + 1,
-          1,
-        );
-        final end = nextMonth.subtract(const Duration(milliseconds: 1));
-        return (start: start, end: end);
-
-      case AnalyticsTimeRange.year:
-        final start = DateTime(referenceDate.year, 1, 1, 0, 0, 0);
-        final end = DateTime(referenceDate.year, 12, 31, 23, 59, 59, 999);
-        return (start: start, end: end);
-
-      case AnalyticsTimeRange.custom:
-        final start = DateTime(referenceDate.year, referenceDate.month, 1);
-        final end = DateTime.now();
-        return (start: start, end: end);
-    }
-  }
-
-  static ({DateTime start, DateTime end}) getPreviousDateRange(
-    AnalyticsTimeRange range,
-    DateTime currentStart,
-    DateTime currentEnd,
-  ) {
-    switch (range) {
-      case AnalyticsTimeRange.week:
-        final prevStart = currentStart.subtract(const Duration(days: 7));
-        final prevEnd = currentEnd.subtract(const Duration(days: 7));
-        return (start: prevStart, end: prevEnd);
-      case AnalyticsTimeRange.month:
-        final prevMonthDate = DateTime(
-          currentStart.year,
-          currentStart.month - 1,
-          1,
-        );
-        final prevEndMonth = DateTime(
-          prevMonthDate.year,
-          prevMonthDate.month + 1,
-          0,
-          23,
-          59,
-          59,
-          999,
-        );
-        return (start: prevMonthDate, end: prevEndMonth);
-      case AnalyticsTimeRange.year:
-        final prevYearDate = DateTime(currentStart.year - 1, 1, 1);
-        final prevEndYear = DateTime(
-          currentStart.year - 1,
-          12,
-          31,
-          23,
-          59,
-          59,
-          999,
-        );
-        return (start: prevYearDate, end: prevEndYear);
-      case AnalyticsTimeRange.custom:
-        final duration = currentEnd.difference(currentStart);
-        final prevEnd = currentStart.subtract(const Duration(milliseconds: 1));
-        final prevStart = prevEnd.subtract(duration);
-        return (start: prevStart, end: prevEnd);
-    }
+    final period = periodFor(range, referenceDate);
+    return (start: period.start, end: period.endInclusive);
   }
 
   static AnalyticsReport calculateReport({
@@ -260,26 +193,18 @@ class AnalyticsCalculator {
     DateTime? customEndDate,
     DateTime? referenceDate,
   }) {
-    final ref = referenceDate ?? DateTime.now();
-    final DateTime start;
-    final DateTime end;
+    final now = referenceDate ?? DateTime.now();
+    final period = periodFor(
+      timeRange,
+      now,
+      customStart: customStartDate,
+      customEnd: customEndDate,
+    );
+    final start = period.start;
+    final end = period.endInclusive;
 
-    if (timeRange == AnalyticsTimeRange.custom &&
-        customStartDate != null &&
-        customEndDate != null) {
-      start = customStartDate;
-      end = customEndDate;
-    } else {
-      final bounds = getDateRangeForTimeRange(timeRange, ref);
-      start = bounds.start;
-      end = bounds.end;
-    }
-
-    // Filter transactions in range
     final inRangeTxs =
-        allTransactions.where((t) {
-          return !t.date.isBefore(start) && !t.date.isAfter(end);
-        }).toList();
+        allTransactions.where((t) => period.contains(t.date)).toList();
 
     double totalIncome = 0.0;
     double totalExpense = 0.0;
@@ -544,32 +469,25 @@ class AnalyticsCalculator {
     // Time series points generation
     final timeSeries = _generateTimeSeries(inRangeTxs, timeRange, start, end);
 
-    // Calculate Previous Period Comparison
-    final prevBounds = getPreviousDateRange(timeRange, start, end);
-    final prevInRangeTxs =
-        allTransactions.where((t) {
-          return !t.date.isBefore(prevBounds.start) &&
-              !t.date.isAfter(prevBounds.end);
-        }).toList();
-
-    final prevExpense = prevInRangeTxs.fold<double>(
-      0.0,
-      (sum, t) => sum + t.consumptionExpenseAmount,
+    // Like-for-like comparison: a period in progress is compared with the
+    // same number of elapsed days of the previous period.
+    final comparison = period.comparison(now);
+    final soFar = LedgerTotals.of(
+      inRangeTxs.where((t) => comparison.current.contains(t.date)),
     );
-    final prevIncome = prevInRangeTxs.fold<double>(
-      0.0,
-      (sum, t) => sum + t.earnedIncomeAmount,
+    final before = LedgerTotals.of(
+      allTransactions.where((t) => comparison.previous.contains(t.date)),
     );
-
-    double? expenseChangePct;
-    if (prevExpense > 0) {
-      expenseChangePct = ((totalExpense - prevExpense) / prevExpense) * 100;
-    }
-
-    double? incomeChangePct;
-    if (prevIncome > 0) {
-      incomeChangePct = ((totalIncome - prevIncome) / prevIncome) * 100;
-    }
+    final prevExpense = before.spending;
+    final prevIncome = before.income;
+    final expenseChangePct = LedgerTotals.percentChange(
+      soFar.spending,
+      prevExpense,
+    );
+    final incomeChangePct = LedgerTotals.percentChange(
+      soFar.income,
+      prevIncome,
+    );
 
     return AnalyticsReport(
       startDate: start,
@@ -605,55 +523,29 @@ class AnalyticsCalculator {
   ) {
     final List<TimeSeriesPoint> points = [];
 
-    if (range == AnalyticsTimeRange.week) {
-      // 7 daily points Mon-Sun
-      for (int i = 0; i < 7; i++) {
-        final d = start.add(Duration(days: i));
-        double dayExp = 0.0;
-        double dayInc = 0.0;
-
-        for (final tx in transactions) {
-          if (tx.date.year == d.year &&
-              tx.date.month == d.month &&
-              tx.date.day == d.day) {
-            dayExp += tx.consumptionExpenseAmount;
-            dayInc += tx.earnedIncomeAmount;
-          }
-        }
-
-        const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        points.add(
-          TimeSeriesPoint(
-            date: d,
-            label: weekdayLabels[d.weekday - 1],
-            expense: dayExp,
-            income: dayInc,
-          ),
+    if (range == AnalyticsTimeRange.week || range == AnalyticsTimeRange.month) {
+      final period = Period.custom(start, end);
+      final totals = <DateTime, ({double expense, double income})>{};
+      for (final tx in transactions) {
+        final day = DateTime(tx.date.year, tx.date.month, tx.date.day);
+        final previous = totals[day] ?? (expense: 0.0, income: 0.0);
+        totals[day] = (
+          expense: previous.expense + tx.consumptionExpenseAmount,
+          income: previous.income + tx.earnedIncomeAmount,
         );
       }
-    } else if (range == AnalyticsTimeRange.month) {
-      // 4 weekly chunks or daily intervals
-      final totalDays = end.difference(start).inDays + 1;
-      for (int day = 1; day <= totalDays; day++) {
-        final d = DateTime(start.year, start.month, day);
-        double dayExp = 0.0;
-        double dayInc = 0.0;
-
-        for (final tx in transactions) {
-          if (tx.date.year == d.year &&
-              tx.date.month == d.month &&
-              tx.date.day == d.day) {
-            dayExp += tx.consumptionExpenseAmount;
-            dayInc += tx.earnedIncomeAmount;
-          }
-        }
-
+      const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      for (final d in period.days) {
+        final values = totals[d];
         points.add(
           TimeSeriesPoint(
             date: d,
-            label: '$day',
-            expense: dayExp,
-            income: dayInc,
+            label:
+                range == AnalyticsTimeRange.week
+                    ? weekdayLabels[d.weekday - 1]
+                    : '${d.day}',
+            expense: values?.expense ?? 0,
+            income: values?.income ?? 0,
           ),
         );
       }
@@ -699,21 +591,15 @@ class AnalyticsCalculator {
       // the presentation layer may aggregate these complete daily totals.
       final totals = <DateTime, ({double expense, double income})>{};
       for (final tx in transactions) {
-        final day = DateTime.utc(tx.date.year, tx.date.month, tx.date.day);
+        final day = DateTime(tx.date.year, tx.date.month, tx.date.day);
         final previous = totals[day] ?? (expense: 0.0, income: 0.0);
         totals[day] = (
           expense: previous.expense + tx.consumptionExpenseAmount,
           income: previous.income + tx.earnedIncomeAmount,
         );
       }
-      final firstDay = DateTime.utc(start.year, start.month, start.day);
-      final lastDay = DateTime.utc(end.year, end.month, end.day);
-      final totalDays = lastDay.difference(firstDay).inDays + 1;
-      for (int i = 0; i < totalDays; i++) {
-        final day = firstDay.add(Duration(days: i));
-        final d = DateTime(day.year, day.month, day.day);
-        final values = totals[day];
-
+      for (final d in Period.custom(start, end).days) {
+        final values = totals[d];
         points.add(
           TimeSeriesPoint(
             date: d,

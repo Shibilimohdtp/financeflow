@@ -1,4 +1,5 @@
 import '../../core/formatting/date_formatter.dart';
+import '../../core/period/period.dart';
 import '../../models/account.dart';
 import '../../models/transaction.dart';
 import 'transactions_controller.dart';
@@ -151,7 +152,8 @@ List<TransactionDateGroup> groupTransactionsForList(
 }) {
   final reference = now ?? DateTime.now();
   final today = _startOfDay(reference);
-  final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+  final startOfWeek = Period.containing(PeriodUnit.week, today).start;
+  final yesterday = DateTime(today.year, today.month, today.day - 1);
   final startOfMonth = DateTime(today.year, today.month);
   final groups = <String, List<Transaction>>{};
 
@@ -161,7 +163,7 @@ List<TransactionDateGroup> groupTransactionsForList(
 
     if (day == today) {
       label = 'Today';
-    } else if (day == today.subtract(const Duration(days: 1))) {
+    } else if (day == yesterday) {
       label = 'Yesterday';
     } else if (!day.isBefore(startOfWeek) && day.isBefore(today)) {
       label = 'This week';
@@ -199,4 +201,3 @@ DateTime _startOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day);
 DateTime _endOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
-
