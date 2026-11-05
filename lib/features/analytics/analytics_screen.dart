@@ -24,6 +24,7 @@ import 'analytics_controller.dart';
 import 'widgets/analytics_cash_flow_card.dart';
 import 'widgets/analytics_metrics_hero.dart';
 import 'widgets/expense_category_breakdown.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 /// "Where did my money go" for the shared report period. Every category and
 /// payee opens the Money tab filtered to exactly the transactions behind it.
@@ -51,8 +52,8 @@ class AnalyticsScreen extends ConsumerWidget {
         onShowTransactions == null ? null : () => onShowTransactions!(query);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Insights'),
+      appBar: FfAppBar(
+        title: 'Insights',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

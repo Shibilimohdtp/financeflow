@@ -20,6 +20,7 @@ import 'recurring_suggestions_sheet.dart';
 import 'subscription_detail_screen.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   const SubscriptionsScreen({super.key});
@@ -53,8 +54,8 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     final suggestionCount = suggestionsAsync.value?.length ?? 0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Subscriptions'),
+      appBar: FfAppBar(
+        title: 'Subscriptions',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

@@ -7,6 +7,7 @@ import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_card.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../cash_flow_chart_data.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 enum _FlowView { compare, expenses, income }
 
@@ -270,7 +271,7 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Divider(height: 1, color: theme.dividerColor),
+                const FfDivider(),
                 const SizedBox(height: 10),
                 Text(
                   'Net ${CurrencyFormatter.format(selected.net, showSign: selected.net != 0)}',

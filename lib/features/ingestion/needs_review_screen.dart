@@ -20,6 +20,7 @@ import 'needs_review_controller.dart';
 import '../transactions/add_edit_transaction_screen.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class NeedsReviewScreen extends ConsumerStatefulWidget {
   const NeedsReviewScreen({super.key});
@@ -166,8 +167,8 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
         }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Needs Review Queue'),
+      appBar: FfAppBar(
+        title: 'Needs Review Queue',
         actions: [
           if (items.isNotEmpty) ...[
             IconButton(

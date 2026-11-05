@@ -16,6 +16,8 @@ import 'add_edit_money_record_sheet.dart';
 import 'money_record_detail_screen.dart';
 import 'money_records_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class LendingBorrowingScreen extends ConsumerWidget {
   const LendingBorrowingScreen({super.key});
@@ -56,8 +58,8 @@ class LendingBorrowingScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lending & Borrowing'),
+      appBar: FfAppBar(
+        title: 'Lending & Borrowing',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -604,7 +606,7 @@ class _MoneyRecordCard extends StatelessWidget {
           ],
 
           const SizedBox(height: StillwaterTokens.spaceSm),
-          const Divider(height: 1),
+          const FfDivider(),
           const SizedBox(height: StillwaterTokens.spaceSm),
 
           // Row 3: Due date with relative badge & status pill

@@ -16,6 +16,7 @@ import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
   final Subscription? initialSubscription;
@@ -181,7 +182,7 @@ class _AddEditSubscriptionSheetState
           title: isEditing ? 'Edit Subscription' : 'New Subscription',
           subtitle: 'Track recurring renewals locally on device',
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(

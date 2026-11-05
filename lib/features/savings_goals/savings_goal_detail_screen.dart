@@ -17,6 +17,7 @@ import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class SavingsGoalDetailScreen extends ConsumerWidget {
   final SavingsGoal goal;
@@ -93,8 +94,8 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
         currentGoal.targetDate.difference(DateTime.now()).inDays;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(currentGoal.name),
+      appBar: FfAppBar(
+        title: currentGoal.name,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),

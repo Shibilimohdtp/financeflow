@@ -17,6 +17,8 @@ import 'add_edit_investment_sheet.dart';
 import 'investment_detail_screen.dart';
 import 'investments_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class InvestmentsScreen extends ConsumerWidget {
   const InvestmentsScreen({super.key});
@@ -40,8 +42,8 @@ class InvestmentsScreen extends ConsumerWidget {
     final invsAsync = ref.watch(allInvestmentsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Investment Portfolio'),
+      appBar: FfAppBar(
+        title: 'Investment Portfolio',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -226,11 +228,7 @@ class InvestmentsScreen extends ConsumerWidget {
                             ),
                           ),
                           if (i < summary.allocationSlices.length - 1)
-                            Divider(
-                              height: 1,
-                              thickness: StillwaterTokens.borderWidthHairline,
-                              color: theme.dividerColor,
-                            ),
+                            const FfDivider(),
                         ],
                       ],
                     ),

@@ -5,6 +5,7 @@ import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/ff_card.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../../theme/stillwater_typography.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 /// A 3x2 grid card showing all key summary metrics from [AnalyticsReport].
 class AnalyticsMetricsHero extends StatelessWidget {
@@ -59,11 +60,7 @@ class AnalyticsMetricsHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: StillwaterTokens.spaceMd),
-          Divider(
-            height: 1,
-            thickness: StillwaterTokens.borderWidthHairline,
-            color: theme.dividerColor,
-          ),
+          const FfDivider(),
           const SizedBox(height: StillwaterTokens.spaceMd),
           Row(
             children: [
@@ -92,11 +89,7 @@ class AnalyticsMetricsHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: StillwaterTokens.spaceMd),
-          Divider(
-            height: 1,
-            thickness: StillwaterTokens.borderWidthHairline,
-            color: theme.dividerColor,
-          ),
+          const FfDivider(),
           const SizedBox(height: StillwaterTokens.spaceMd),
           Row(
             children: [

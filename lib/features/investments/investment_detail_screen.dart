@@ -16,6 +16,8 @@ import 'investments_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class InvestmentDetailScreen extends ConsumerWidget {
   final Investment investment;
@@ -51,7 +53,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
               subtitle:
                   'Enter current market valuation for "${currentInv.name}"',
             ),
-            const Divider(height: 1, thickness: 1),
+            const FfDivider(),
             Padding(
               padding: EdgeInsets.only(
                 left: StillwaterTokens.spaceLg,
@@ -139,8 +141,8 @@ class InvestmentDetailScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(currentInv.name),
+      appBar: FfAppBar(
+        title: currentInv.name,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),

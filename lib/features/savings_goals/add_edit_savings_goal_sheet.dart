@@ -14,6 +14,7 @@ import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class AddEditSavingsGoalSheet extends ConsumerStatefulWidget {
   final SavingsGoal? initialGoal;
@@ -149,7 +150,7 @@ class _AddEditSavingsGoalSheetState
           title: isEditing ? 'Edit Savings Goal' : 'Create Savings Goal',
           subtitle: 'Track savings progress on-device',
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
 
         // Form Content
         Flexible(

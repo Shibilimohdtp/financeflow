@@ -3,6 +3,7 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../shared/widgets/ff_app_bar.dart';
 
 class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
   final int unreadAlerts;
@@ -36,9 +37,8 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
     final now = DateTime.now();
     final formattedDate = DateFormatter.formatFullDate(now);
 
-    return AppBar(
-      titleSpacing: StillwaterTokens.spaceLg,
-      title: FittedBox(
+    return FfAppBar(
+      titleWidget: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
         child: Column(

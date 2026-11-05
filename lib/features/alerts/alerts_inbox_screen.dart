@@ -11,6 +11,7 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'alert_settings_sheet.dart';
 import 'alerts_controller.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class AlertsInboxScreen extends ConsumerStatefulWidget {
   const AlertsInboxScreen({super.key});
@@ -67,8 +68,8 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
     final alertsAsync = ref.watch(activeAlertsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alerts & Reminders'),
+      appBar: FfAppBar(
+        title: 'Alerts & Reminders',
         actions: [
           IconButton(
             icon: const Icon(Icons.done_all_rounded),

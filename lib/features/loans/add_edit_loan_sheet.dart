@@ -16,6 +16,7 @@ import 'loans_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon map for each loan type
@@ -354,7 +355,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   : 'Track repayments and outstanding balance.',
           onClose: () => Navigator.of(context).pop(),
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
 
         // ── Scrollable form body ─────────────────────────────────
         Flexible(
@@ -950,7 +951,7 @@ class _RepaymentPreview extends StatelessWidget {
             ),
           ),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.5)),
+          const FfDivider(),
           const SizedBox(height: StillwaterTokens.spaceXs),
           Row(
             children: [

@@ -33,6 +33,8 @@ import 'settings_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 String _smsStatusLabel(IngestionPlatformStatus? status) {
   if (status == null) return 'Checking';
@@ -301,10 +303,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
     final awaitingReview = ref.watch(pendingReviewCountProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        leading: const BackButton(),
-      ),
+      appBar: FfAppBar(title: 'Settings', leading: const BackButton()),
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: StillwaterTokens.spaceLg,
@@ -833,7 +832,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
               title: 'Currency',
               subtitle: 'Changes how amounts are shown. No conversion.',
             ),
-            const Divider(height: 1, thickness: 1),
+            const FfDivider(),
             for (final currency in AppCurrency.values)
               ListTile(
                 key: ValueKey('currency-${currency.code}'),
@@ -888,7 +887,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
               title: 'Theme',
               subtitle: 'Choose your visual preference',
             ),
-            const Divider(height: 1, thickness: 1),
+            const FfDivider(),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: StillwaterTokens.spaceLg,

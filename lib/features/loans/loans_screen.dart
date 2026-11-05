@@ -17,6 +17,7 @@ import 'add_edit_loan_sheet.dart';
 import 'loan_detail_screen.dart';
 import 'loans_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class LoansScreen extends ConsumerWidget {
   const LoansScreen({super.key});
@@ -38,8 +39,8 @@ class LoansScreen extends ConsumerWidget {
     final loansAsync = ref.watch(allLoansStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Loans & EMIs'),
+      appBar: FfAppBar(
+        title: 'Loans & EMIs',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

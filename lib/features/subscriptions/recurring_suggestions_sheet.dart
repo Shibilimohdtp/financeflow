@@ -14,6 +14,7 @@ import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class RecurringSuggestionsSheet extends ConsumerWidget {
   const RecurringSuggestionsSheet({super.key});
@@ -30,7 +31,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
           subtitle: 'Detected on-device from transaction history',
           trailing: FfPrivacyBadge(label: 'On-device'),
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
         Flexible(
           child: suggestionsAsync.when(
             data: (suggestions) {

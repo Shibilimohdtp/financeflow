@@ -18,6 +18,7 @@ import '../../services/notifications/notification_coordinator.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
@@ -63,7 +64,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
           subtitle: 'Evaluated 100% locally on this device',
           trailing: FfPrivacyBadge(label: '100% Local'),
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
         Flexible(
           child: ListView(
             padding: const EdgeInsets.symmetric(

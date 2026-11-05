@@ -16,6 +16,7 @@ import 'backup_controller.dart';
 import 'restore_preview_screen.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -177,8 +178,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final theme = context.theme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Full Backup & Migration'),
+      appBar: FfAppBar(
+        title: 'Full Backup & Migration',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

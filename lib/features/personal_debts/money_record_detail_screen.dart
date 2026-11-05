@@ -18,6 +18,8 @@ import 'money_records_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class MoneyRecordDetailScreen extends ConsumerWidget {
   final MoneyRecord record;
@@ -173,8 +175,8 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
         isLent ? context.finColors.income : context.finColors.expense;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(liveRecord.personName),
+      appBar: FfAppBar(
+        title: liveRecord.personName,
         actions: [
           IconButton(
             tooltip: 'Edit record',
@@ -563,7 +565,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: allocations.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) => const FfDivider(),
                 itemBuilder: (ctx, index) {
                   final alloc = allocations[index];
                   final item = alloc.advance;
@@ -744,7 +746,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: repayments.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) => const FfDivider(),
                 itemBuilder: (ctx, index) {
                   final item = repayments[index];
                   return ListTile(
@@ -808,13 +810,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                     liveRecord.transactionDate,
                   ),
                 ),
-                const Divider(height: 1),
+                const FfDivider(),
                 _DetailTile(
                   icon: Icons.event_available_outlined,
                   label: 'Next Due Date',
                   value: DateFormatter.formatFullDate(effectiveDueDate),
                 ),
-                const Divider(height: 1),
+                const FfDivider(),
                 _DetailTile(
                   icon: Icons.notifications_none_rounded,
                   label: 'Reminder',
@@ -825,7 +827,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 ),
                 if (liveRecord.notes != null &&
                     liveRecord.notes!.isNotEmpty) ...[
-                  const Divider(height: 1),
+                  const FfDivider(),
                   _DetailTile(
                     icon: Icons.notes_rounded,
                     label: 'Notes',

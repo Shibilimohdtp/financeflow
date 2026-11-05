@@ -15,6 +15,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_banner.dart';
 import '../../theme/ff.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class RestorePreviewScreen extends ConsumerStatefulWidget {
   final File backupFile;
@@ -161,8 +163,8 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
     final filename = widget.backupFile.path.split(Platform.pathSeparator).last;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Restore Encrypted Backup'),
+      appBar: FfAppBar(
+        title: 'Restore Encrypted Backup',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -393,10 +395,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
                     activeColor: theme.colorScheme.primary,
                     onChanged: (val) => setState(() => _selectedMode = val!),
                   ),
-                  Divider(
-                    height: 1,
-                    thickness: StillwaterTokens.borderWidthHairline,
-                  ),
+                  const FfDivider(),
                   RadioListTile<RestoreMode>(
                     value: RestoreMode.replace,
                     groupValue: _selectedMode,

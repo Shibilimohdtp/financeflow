@@ -15,6 +15,7 @@ import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class AddGoalContributionSheet extends ConsumerStatefulWidget {
   final SavingsGoal goal;
@@ -125,7 +126,7 @@ class _AddGoalContributionSheetState
           title: 'Add Funds',
           subtitle: 'Contributing to "${widget.goal.name}"',
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
 
         // Form Content
         Flexible(

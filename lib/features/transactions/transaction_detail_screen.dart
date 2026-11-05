@@ -18,6 +18,8 @@ import 'add_edit_transaction_screen.dart';
 import 'transactions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class TransactionDetailScreen extends ConsumerWidget {
   final Transaction transaction;
@@ -43,8 +45,8 @@ class TransactionDetailScreen extends ConsumerWidget {
             : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transaction Details'),
+      appBar: FfAppBar(
+        title: 'Transaction Details',
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -243,7 +245,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   if (transaction.originalMerchant != null &&
                       transaction.originalMerchant!.isNotEmpty &&
                       transaction.originalMerchant != transaction.merchant) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Raw Payee',
@@ -252,7 +254,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ],
                   if (transaction.sourceReference != null &&
                       transaction.sourceReference!.isNotEmpty) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Reference / UTR',
@@ -260,14 +262,14 @@ class TransactionDetailScreen extends ConsumerWidget {
                     ),
                   ],
                   if (transaction.mergedSources.isNotEmpty) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Merged Sources',
                       value: transaction.mergedSources.join(', '),
                     ),
                   ],
-                  const Divider(height: 1),
+                  const FfDivider(),
                   _buildDetailRow(
                     context,
                     label: 'Account',
@@ -278,7 +280,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ),
                   if (transaction.type == TransactionType.transfer &&
                       toAccount != null) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Destination Account',
@@ -288,7 +290,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ],
                   if (transaction.externalCounterpartyName != null &&
                       transaction.externalCounterpartyName!.isNotEmpty) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Counterparty',
@@ -296,13 +298,13 @@ class TransactionDetailScreen extends ConsumerWidget {
                     ),
                   ],
                   if (transaction.linkedLoanId != null) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Loan link',
                       value: transaction.linkedLoanId!,
                     ),
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Payment split',
@@ -311,7 +313,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                     ),
                   ],
                   if (transaction.linkedSubscriptionId != null) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildSubscriptionRow(
                       context,
                       linkedSubscription: linkedSubscription,
@@ -327,7 +329,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                               : null,
                     ),
                   ],
-                  const Divider(height: 1),
+                  const FfDivider(),
                   _buildDetailRow(
                     context,
                     label: 'Date & Time',
@@ -335,7 +337,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ),
                   if (transaction.paymentMethod != null &&
                       transaction.paymentMethod!.isNotEmpty) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Payment Method',
@@ -344,7 +346,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   ],
                   if (transaction.notes != null &&
                       transaction.notes!.isNotEmpty) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Notes',
@@ -352,7 +354,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                     ),
                   ],
                   if (transaction.tags.isNotEmpty) ...[
-                    const Divider(height: 1),
+                    const FfDivider(),
                     _buildDetailRow(
                       context,
                       label: 'Tags',

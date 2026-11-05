@@ -11,6 +11,7 @@ import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_colors.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_sheet.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 /// A compact, rich tile button for selecting an Account.
 class AccountTileButton extends StatelessWidget {
@@ -489,7 +490,7 @@ class AccountPickerSheet extends StatelessWidget {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: accounts.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const FfDivider(),
                       itemBuilder: (context, index) {
                         final account = accounts[index];
                         final isSelected = account.id == selected?.id;

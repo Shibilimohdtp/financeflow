@@ -8,6 +8,7 @@ import '../../settings/settings_controller.dart';
 import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../services/ingestion/ingestion_platform.dart';
 import '../../../shared/widgets/ff_toast.dart';
+import '../../../shared/widgets/ff_app_bar.dart';
 
 class SmsPermissionScreen extends ConsumerStatefulWidget {
   const SmsPermissionScreen({super.key});
@@ -37,7 +38,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
         status?.smsPermission ?? IngestionPermissionState.unavailable;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bank SMS Detection')),
+      appBar: FfAppBar(title: 'Bank SMS Detection'),
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: StillwaterTokens.spaceLg,

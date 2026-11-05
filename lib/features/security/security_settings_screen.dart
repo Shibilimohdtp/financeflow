@@ -9,6 +9,8 @@ import '../settings/settings_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -36,7 +38,7 @@ class _SecuritySettingsScreenState
                   title: 'Set Security PIN',
                   subtitle: 'PIN is stored in your device hardware keystore',
                 ),
-                const Divider(height: 1, thickness: 1),
+                const FfDivider(),
                 Padding(
                   padding: EdgeInsets.only(
                     left: StillwaterTokens.spaceLg,
@@ -143,8 +145,8 @@ class _SecuritySettingsScreenState
         settings?.isScreenshotProtectionEnabled ?? false;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Security & Privacy'),
+      appBar: FfAppBar(
+        title: 'Security & Privacy',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

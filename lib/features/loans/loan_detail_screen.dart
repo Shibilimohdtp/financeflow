@@ -17,6 +17,7 @@ import 'widgets/emi_schedule_view.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
   final Loan loan;
@@ -199,10 +200,9 @@ class LoanDetailScreen extends ConsumerWidget {
     final daysUntilDue = currentLoan.daysUntilDue();
 
     return Scaffold(
-      appBar: AppBar(
-        // Two-line title: loan name + lender as a subdued subtitle
-        title: _LoanAppBarTitle(loan: currentLoan),
-        titleSpacing: 0,
+      appBar: FfAppBar(
+        title: currentLoan.name,
+        subtitle: currentLoan.lender,
         actions: [
           Semantics(
             label: 'View amortization schedule',
@@ -350,41 +350,6 @@ class LoanDetailScreen extends ConsumerWidget {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// Two-line AppBar title: loan name + lender subtitle.
-class _LoanAppBarTitle extends StatelessWidget {
-  final Loan loan;
-
-  const _LoanAppBarTitle({required this.loan});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          loan.name,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-        if (loan.lender.isNotEmpty)
-          Text(
-            loan.lender,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
-              fontSize: 11,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-      ],
-    );
-  }
-}
-
 /// "Left to pay" hero: remaining principal plus remaining interest, with
 /// progress measured against the total payable over the loan's life.
 class _BalanceHeroSection extends ConsumerWidget {

@@ -22,6 +22,8 @@ import 'accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -48,8 +50,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final isPrivacyBlur = settings?.isPrivacyBlurEnabled ?? false;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Financial Accounts'),
+      appBar: FfAppBar(
+        title: 'Financial Accounts',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -505,7 +507,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
           title: isEditing ? 'Edit Account' : 'Add Financial Account',
           subtitle: 'Stored 100% locally on device',
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(

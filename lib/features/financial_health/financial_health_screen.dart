@@ -9,6 +9,7 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'financial_health_controller.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class FinancialHealthScreen extends ConsumerWidget {
   const FinancialHealthScreen({super.key});
@@ -20,8 +21,8 @@ class FinancialHealthScreen extends ConsumerWidget {
     final reportAsync = ref.watch(financialHealthReportProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Financial Health'),
+      appBar: FfAppBar(
+        title: 'Financial Health',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

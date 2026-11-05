@@ -29,6 +29,8 @@ import 'widgets/transaction_tile.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -344,8 +346,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     required int pendingCount,
     required bool showReviewBadge,
   }) {
-    return AppBar(
-      title: const Text('Transactions'),
+    return FfAppBar(
+      title: 'Transactions',
       actions: [
         if (showReviewBadge)
           IconButton(
@@ -386,39 +388,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   PreferredSizeWidget _searchAppBar() {
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded),
-        tooltip: 'Close search',
-        onPressed: _closeSearch,
-      ),
-      title: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        textInputAction: TextInputAction.search,
-        decoration: const InputDecoration(
-          hintText: 'Search payee, note, amount, tag…',
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          filled: false,
-          contentPadding: EdgeInsets.zero,
-        ),
-        onChanged: (text) {
-          ref.read(transactionQueryProvider.notifier).state = _query.copyWith(
-            search: text,
-          );
-          setState(() => _visibleCount = _pageSize);
-        },
-      ),
-      actions: [
-        if (_searchController.text.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.clear_rounded),
-            tooltip: 'Clear search text',
-            onPressed: () => _setQuery(_query.copyWith(search: '')),
-          ),
-      ],
+    return FfAppBar.search(
+      controller: _searchController,
+      focusNode: _searchFocusNode,
+      hint: 'Search payee, note, amount, tag…',
+      onClose: _closeSearch,
+      onChanged: (text) {
+        ref.read(transactionQueryProvider.notifier).state = _query.copyWith(
+          search: text,
+        );
+        setState(() => _visibleCount = _pageSize);
+      },
+      onClear: () => _setQuery(_query.copyWith(search: '')),
     );
   }
 
@@ -428,13 +409,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   ) {
     final visible = items.take(_visibleCount);
     final allSelected = visible.every((t) => _selected.contains(t.id));
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.close_rounded),
-        tooltip: 'Cancel selection',
-        onPressed: () => setState(_selected.clear),
-      ),
-      title: Text('${_selected.length} selected'),
+    return FfAppBar.selection(
+      count: _selected.length,
+      onCancel: () => setState(_selected.clear),
       actions: [
         IconButton(
           icon: Icon(
@@ -539,8 +516,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ),
                 SliverList.separated(
                   itemCount: group.transactions.length,
-                  separatorBuilder:
-                      (_, __) => const Divider(indent: 72, height: 1),
+                  separatorBuilder: (_, __) => const FfDivider.inset(),
                   itemBuilder:
                       (_, i) => tile(group.transactions[i], showDate: false),
                 ),
@@ -549,7 +525,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         else
           SliverList.separated(
             itemCount: visible.length,
-            separatorBuilder: (_, __) => const Divider(indent: 72, height: 1),
+            separatorBuilder: (_, __) => const FfDivider.inset(),
             itemBuilder: (_, i) => tile(visible[i], showDate: true),
           ),
         if (items.length > visible.length)

@@ -19,6 +19,8 @@ import '../categories/categories_controller.dart';
 import 'csv_import_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -131,7 +133,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                     subtitle:
                         'Select which column in your CSV matches each transaction field',
                   ),
-                  const Divider(height: 1, thickness: 1),
+                  const FfDivider(),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.symmetric(
@@ -327,8 +329,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Import CSV Statement'),
+      appBar: FfAppBar(
+        title: 'Import CSV Statement',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -554,7 +556,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 onTap: () => setState(() => _showPasteArea = !_showPasteArea),
               ),
               if (_showPasteArea) ...[
-                const Divider(height: 1),
+                const FfDivider(),
                 Padding(
                   padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
                   child: Column(
@@ -693,11 +695,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   item: session.items[i],
                   categories: categories,
                 ),
-                if (i < session.items.length - 1)
-                  Divider(
-                    height: 1,
-                    thickness: StillwaterTokens.borderWidthHairline,
-                  ),
+                if (i < session.items.length - 1) const FfDivider(),
               ],
             ],
           ),

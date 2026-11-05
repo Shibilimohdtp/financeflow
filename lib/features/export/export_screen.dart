@@ -16,6 +16,8 @@ import 'export_controller.dart';
 import '../accounts/accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
@@ -92,8 +94,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final transactions = ref.watch(allTransactionsStreamProvider).value ?? [];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Export Reports'),
+      appBar: FfAppBar(
+        title: 'Export Reports',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -275,11 +277,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                   if (val != null) setState(() => _selectedScope = val);
                 },
               ),
-              Divider(
-                height: 1,
-                thickness: StillwaterTokens.borderWidthHairline,
-                color: theme.dividerColor,
-              ),
+              const FfDivider(),
               RadioListTile<ExportScope>(
                 title: const Text('Specific Date Range'),
                 subtitle: Text(

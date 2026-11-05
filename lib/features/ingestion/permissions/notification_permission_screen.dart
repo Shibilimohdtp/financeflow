@@ -7,6 +7,8 @@ import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
 import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../shared/widgets/ff_toast.dart';
+import '../../../shared/widgets/ff_app_bar.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -45,7 +47,7 @@ class _NotificationPermissionScreenState
         false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification Detection')),
+      appBar: FfAppBar(title: 'Notification Detection'),
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: StillwaterTokens.spaceLg,
@@ -174,11 +176,7 @@ class _NotificationPermissionScreenState
                       });
                     },
                   ),
-                  if (i < _supportedApps.entries.length - 1)
-                    Divider(
-                      height: 1,
-                      thickness: StillwaterTokens.borderWidthHairline,
-                    ),
+                  if (i < _supportedApps.entries.length - 1) const FfDivider(),
                 ],
               ],
             ),

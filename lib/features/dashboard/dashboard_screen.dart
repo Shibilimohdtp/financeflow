@@ -32,6 +32,7 @@ import 'widgets/total_balance_hero.dart';
 import '../../core/period/period_format.dart';
 import '../../core/period/report_period_provider.dart';
 import '../../shared/widgets/ff_period_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   final VoidCallback onAddTransaction;
@@ -417,9 +418,9 @@ class DashboardScreen extends ConsumerWidget {
                           child: Column(
                             children: const [
                               FfTransactionSkeletonRow(),
-                              Divider(height: 1),
+                              FfDivider(),
                               FfTransactionSkeletonRow(),
-                              Divider(height: 1),
+                              FfDivider(),
                               FfTransactionSkeletonRow(),
                             ],
                           ),

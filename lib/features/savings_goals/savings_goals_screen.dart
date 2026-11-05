@@ -14,6 +14,7 @@ import 'add_edit_savings_goal_sheet.dart';
 import 'savings_goal_detail_screen.dart';
 import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class SavingsGoalsScreen extends ConsumerWidget {
   const SavingsGoalsScreen({super.key});
@@ -35,8 +36,8 @@ class SavingsGoalsScreen extends ConsumerWidget {
     final overallSummaryAsync = ref.watch(overallSavingsGoalSummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Savings Goals'),
+      appBar: FfAppBar(
+        title: 'Savings Goals',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),

@@ -12,6 +12,7 @@ import 'investments_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 class AddEditInvestmentSheet extends ConsumerStatefulWidget {
   final Investment? initialInvestment;
@@ -179,7 +180,7 @@ class _AddEditInvestmentSheetState
           title: isEditing ? 'Edit Holding' : 'Add Investment',
           subtitle: 'Manual on-device portfolio valuation',
         ),
-        const Divider(height: 1, thickness: 1),
+        const FfDivider(),
 
         // Form Content
         Flexible(

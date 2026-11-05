@@ -7,6 +7,7 @@ import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../dashboard_controller.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class CashFlowCard extends StatelessWidget {
   final MonthlyCashFlow cashFlow;
@@ -185,7 +186,7 @@ class CashFlowCard extends StatelessWidget {
             ),
 
             const SizedBox(height: StillwaterTokens.spaceMd),
-            const Divider(),
+            const FfDivider(),
             const SizedBox(height: StillwaterTokens.spaceSm),
 
             if (trendMetric?.hasPreviousData == true && !isPrivacyBlur) ...[

@@ -6,6 +6,7 @@ import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
@@ -85,9 +86,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      appBar: FfAppBar(
         actions: [
           if (_currentPage < _steps.length - 1)
             TextButton(

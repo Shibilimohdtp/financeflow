@@ -12,6 +12,7 @@ import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
 import '../../../shared/widgets/ff_dialog.dart';
 import '../../../shared/widgets/ff_sheet.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -62,7 +63,7 @@ class TransactionTile extends StatelessWidget {
                   isExpense: transaction.type == TransactionType.expense,
                 ),
               ),
-              const Divider(height: 1),
+              const FfDivider(),
               ListTile(
                 leading: const Icon(Icons.info_outline_rounded),
                 title: const Text('View details'),

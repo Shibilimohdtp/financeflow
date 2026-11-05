@@ -7,6 +7,7 @@ import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_empty_state.dart';
 import '../../../shared/widgets/ff_source_badge.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class HomeRecentTransactions extends StatelessWidget {
   final List<Transaction> transactions;
@@ -91,7 +92,7 @@ class HomeRecentTransactions extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: transactions.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
+                separatorBuilder: (context, index) => const FfDivider(),
                 itemBuilder: (context, index) {
                   final tx = transactions[index];
                   return InkWell(

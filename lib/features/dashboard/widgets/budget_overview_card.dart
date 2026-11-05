@@ -4,6 +4,7 @@ import '../../../models/budget.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
   final double totalBudgeted;
@@ -209,7 +210,7 @@ class BudgetOverviewCard extends StatelessWidget {
                       if (activeBudgets != null &&
                           activeBudgets!.isNotEmpty) ...[
                         const SizedBox(height: StillwaterTokens.spaceSm),
-                        const Divider(height: 1),
+                        const FfDivider(),
                         const SizedBox(height: StillwaterTokens.spaceSm),
                         ...activeBudgets!.take(3).map((summary) {
                           final pct = summary.percentageUsed.clamp(0.0, 1.0);

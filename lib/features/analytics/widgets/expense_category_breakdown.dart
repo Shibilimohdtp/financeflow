@@ -5,6 +5,7 @@ import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/charts/ff_donut_chart.dart';
 import '../../../shared/widgets/ff_card.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 /// The ring and its numbered, directly labeled comparison rows share one order.
 /// Rows also provide large, keyboard/screen-reader accessible drill-down targets.
@@ -134,7 +135,7 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
             ),
           ),
           const SizedBox(height: StillwaterTokens.spaceMd),
-          Divider(height: 1, color: theme.dividerColor),
+          const FfDivider(),
           const SizedBox(height: StillwaterTokens.spaceMd),
           Text(
             'Share of total spending',

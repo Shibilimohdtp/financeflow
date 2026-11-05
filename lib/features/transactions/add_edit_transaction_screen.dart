@@ -37,6 +37,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -786,13 +788,8 @@ class _AddEditTransactionScreenState
             isDark
                 ? StillwaterColors.darkSurfaceDefault
                 : StillwaterColors.lightSurfaceDefault,
-        appBar: AppBar(
-          title: Text(
-            titleText,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        appBar: FfAppBar(
+          title: titleText,
           leading: IconButton(
             icon: const Icon(Icons.close_rounded),
             tooltip: 'Close',
@@ -803,9 +800,6 @@ class _AddEditTransactionScreenState
               }
             },
           ),
-          centerTitle: false,
-          elevation: 0,
-          scrolledUnderElevation: 1,
         ),
         body: SafeArea(
           child: Column(
@@ -1585,7 +1579,7 @@ class _AddEditTransactionScreenState
                                   s.displayName.toLowerCase() == typedTextLower,
                             )) ...[
                           if (visibleSuggestions.isNotEmpty)
-                            const Divider(height: StillwaterTokens.spaceSm),
+                            const FfDivider.spaced(),
                           InkWell(
                             onTap: () {
                               setState(() {
@@ -2694,7 +2688,7 @@ class _AddEditTransactionScreenState
             StillwaterTokens.spaceMd,
           ),
           children: [
-            const Divider(height: 1),
+            const FfDivider(),
             const SizedBox(height: StillwaterTokens.spaceMd),
 
             // Payment Method Selector

@@ -13,6 +13,8 @@ import '../../accounts/accounts_controller.dart';
 import '../payment_account_picker.dart';
 import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_dialog.dart';
+import '../../../shared/widgets/ff_app_bar.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class EmiScheduleView extends ConsumerWidget {
   final Loan loan;
@@ -189,7 +191,7 @@ class EmiScheduleView extends ConsumerWidget {
     final upcomingItems = schedule.where((it) => it.isUpcoming).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text('${currentLoan.name} Schedule')),
+      appBar: FfAppBar(title: '${currentLoan.name} Schedule'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -272,13 +274,13 @@ class EmiScheduleView extends ConsumerWidget {
               ),
             ),
 
-          const Divider(height: 1),
+          const FfDivider(),
 
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
               itemCount: schedule.length,
-              separatorBuilder: (_, __) => const Divider(),
+              separatorBuilder: (_, __) => const FfDivider(),
               itemBuilder: (context, index) {
                 final item = schedule[index];
 

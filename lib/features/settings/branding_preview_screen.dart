@@ -4,6 +4,8 @@ import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_colors.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_divider.dart';
 
 /// Internal Branding & Stillwater Design System Preview Screen
 class BrandingPreviewScreen extends StatelessWidget {
@@ -15,8 +17,8 @@ class BrandingPreviewScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Stillwater Branding Showcase'),
+      appBar: FfAppBar(
+        title: 'Stillwater Branding Showcase',
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
@@ -310,7 +312,7 @@ class BrandingPreviewScreen extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Divider(height: 1, thickness: StillwaterTokens.borderWidthHairline);
+    return const FfDivider();
   }
 }
 

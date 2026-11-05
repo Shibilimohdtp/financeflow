@@ -89,4 +89,10 @@ abstract final class FfBannerTokens {
 abstract final class FfDividerTokens {
   static const double thickness = FfBorderWidth.hairline;
   static const double space = 1;
+
+  /// Total height of a spaced divider (the line sits in the middle).
+  static const double spacedHeight = FfSpace.sm;
+
+  /// Where an inset divider starts: past a list row's leading icon tile.
+  static const double rowInset = 72;
 }
