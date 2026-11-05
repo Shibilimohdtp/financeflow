@@ -6,6 +6,7 @@ import '../../../shared/widgets/charts/ff_donut_chart.dart';
 import '../../../shared/widgets/ff_card.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_progress.dart';
 
 /// The ring and its numbered, directly labeled comparison rows share one order.
 /// Rows also provide large, keyboard/screen-reader accessible drill-down targets.
@@ -293,13 +294,10 @@ class _CategoryRow extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             ExcludeSemantics(
-                              child: LinearProgressIndicator(
+                              child: FfProgressBar(
                                 value: fraction,
-                                minHeight: 4,
                                 color: color,
-                                backgroundColor: theme.colorScheme.onSurface
-                                    .withValues(alpha: .08),
-                                borderRadius: BorderRadius.circular(2),
+                                size: FfProgressSize.sm,
                               ),
                             ),
                           ],

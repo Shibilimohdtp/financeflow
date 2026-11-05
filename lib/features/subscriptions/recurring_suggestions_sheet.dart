@@ -15,6 +15,7 @@ import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class RecurringSuggestionsSheet extends ConsumerWidget {
   const RecurringSuggestionsSheet({super.key});
@@ -146,7 +147,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                 () => const Center(
                   child: Padding(
                     padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                    child: CircularProgressIndicator(),
+                    child: FfLoading(),
                   ),
                 ),
             error: (e, _) => Center(child: Text('Error: $e')),

@@ -5,6 +5,8 @@ import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_progress.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
   final double totalBudgeted;
@@ -150,20 +152,13 @@ class BudgetOverviewCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: StillwaterTokens.spaceSm),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusFull,
-                        ),
-                        child: LinearProgressIndicator(
-                          value: percentage,
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          color:
-                              isExceeded
-                                  ? finColors.expense
-                                  : theme.colorScheme.primary,
-                          minHeight: 6,
-                        ),
+                      FfProgressBar(
+                        value: percentage,
+                        color:
+                            isExceeded
+                                ? finColors.expense
+                                : theme.colorScheme.primary,
+                        size: FfProgressSize.md,
                       ),
                       const SizedBox(height: StillwaterTokens.spaceSm),
                       Row(
@@ -182,7 +177,7 @@ class BudgetOverviewCard extends StatelessWidget {
                                 size: FfAmountSize.sm,
                                 isBlurred: isPrivacyBlur,
                                 showSign: false,
-                                colorOverride: theme.colorScheme.onSurface,
+                                tone: FfTone.neutral,
                               ),
                             ],
                           ),
@@ -199,7 +194,7 @@ class BudgetOverviewCard extends StatelessWidget {
                                 size: FfAmountSize.sm,
                                 isBlurred: isPrivacyBlur,
                                 showSign: false,
-                                colorOverride: theme.colorScheme.onSurface,
+                                tone: FfTone.neutral,
                               ),
                             ],
                           ),
@@ -276,27 +271,17 @@ class BudgetOverviewCard extends StatelessWidget {
                                       size: FfAmountSize.sm,
                                       isBlurred: isPrivacyBlur,
                                       showSign: false,
-                                      colorOverride:
-                                          theme.colorScheme.secondary,
+                                      tone: FfTone.neutral,
                                     ),
                                   ],
                                 ),
                                 const SizedBox(
                                   height: StillwaterTokens.space3Xs,
                                 ),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                    StillwaterTokens.radiusFull,
-                                  ),
-                                  child: LinearProgressIndicator(
-                                    value: pct,
-                                    backgroundColor:
-                                        theme
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                    color: barColor,
-                                    minHeight: 4,
-                                  ),
+                                FfProgressBar(
+                                  value: pct,
+                                  color: barColor,
+                                  size: FfProgressSize.sm,
                                 ),
                               ],
                             ),

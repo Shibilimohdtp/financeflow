@@ -19,6 +19,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class InvestmentsScreen extends ConsumerWidget {
   const InvestmentsScreen({super.key});
@@ -297,7 +298,7 @@ class InvestmentsScreen extends ConsumerWidget {
             () => const Center(
               child: Padding(
                 padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                child: CircularProgressIndicator(),
+                child: FfLoading(),
               ),
             ),
         error: (e, _) => Center(child: Text('Error: $e')),

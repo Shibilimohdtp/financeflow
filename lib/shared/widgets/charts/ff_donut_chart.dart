@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/formatting/currency_formatter.dart';
+import '../../../theme/ff.dart';
+import '../../../theme/palettes/ff_palette.dart';
 import '../../../models/category_colors.dart';
 
 class DonutSlice {
@@ -146,7 +148,7 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: FfSpace.x2s),
                                   FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: Text(
@@ -160,7 +162,7 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                     ),
                                   ),
                                   if (selected != null) ...[
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: FfSpace.x2s),
                                     Text(
                                       '${_share(selected.value / total)} of total',
                                       textAlign: TextAlign.center,
@@ -218,6 +220,10 @@ class _DonutChartPainter extends CustomPainter {
   final double strokeWidth;
   final int? selectedSliceIndex;
   final ThemeData theme;
+
+  FfColors get _colors =>
+      theme.extension<FfColors>() ??
+      FfPalettes.lichen.colorsFor(theme.brightness);
   final bool showNumbers;
 
   _DonutChartPainter({
@@ -271,13 +277,15 @@ class _DonutChartPainter extends CustomPainter {
         final text = TextPainter(
           text: TextSpan(
             text: '${arc.index + 1}',
-            style: TextStyle(
-              fontSize: 12,
-              fontFamily: theme.textTheme.labelSmall?.fontFamily,
-              fontWeight: FontWeight.w700,
-              color:
-                  color.computeLuminance() > .179 ? Colors.black : Colors.white,
-            ),
+            // Ink on light segments, paper on dark ones (WCAG midpoint).
+            style: (theme.extension<FfText>()?.label ?? const TextStyle())
+                .copyWith(
+                  fontWeight: FontWeight.w700,
+                  color:
+                      color.computeLuminance() > .179
+                          ? _colors.surfaceInk
+                          : _colors.onSurfaceInk,
+                ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();

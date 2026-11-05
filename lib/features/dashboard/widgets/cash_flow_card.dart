@@ -8,6 +8,7 @@ import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../dashboard_controller.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../theme/ff_tone.dart';
 
 class CashFlowCard extends StatelessWidget {
   final MonthlyCashFlow cashFlow;
@@ -176,10 +177,10 @@ class CashFlowCard extends StatelessWidget {
                   amount: cashFlow.netSavings,
                   size: FfAmountSize.lg,
                   isBlurred: isPrivacyBlur,
-                  colorOverride:
+                  tone:
                       cashFlow.isPositiveSavings
-                          ? finColors.savings
-                          : finColors.expense,
+                          ? FfTone.savings
+                          : FfTone.expense,
                   showSign: true,
                 ),
               ],

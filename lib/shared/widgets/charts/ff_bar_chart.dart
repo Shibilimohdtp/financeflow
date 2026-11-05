@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
+import '../../../theme/ff.dart';
 
 class BarChartItem {
   final String label;
@@ -91,9 +92,8 @@ class _FfBarChartState extends State<FfBarChart> {
       ),
     );
     final ceiling = _axisCeiling(maxValue);
-    final textStyle = theme.textTheme.labelSmall!.copyWith(
-      fontSize: 11,
-      color: theme.colorScheme.onSurfaceVariant,
+    final textStyle = context.ff.text.labelSm.copyWith(
+      color: context.ff.color.textSecondary,
     );
     final scaler = MediaQuery.textScalerOf(context);
     String amount(double value) =>
@@ -296,9 +296,9 @@ class _BarChartPainter extends CustomPainter {
               max(0, slot - 2),
               plot.height,
             ),
-            const Radius.circular(4),
+            const Radius.circular(FfRadius.xs),
           ),
-          Paint()..color = highlightColor.withValues(alpha: .055),
+          Paint()..color = highlightColor.withValues(alpha: FfTint.faint.alpha),
         );
       }
       void bar(double value, Color color, double x) {

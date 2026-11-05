@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_progress.dart';
 
 class SavingsGoalsOverviewCard extends StatelessWidget {
   final double totalTarget;
@@ -119,7 +121,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                                     size: FfAmountSize.sm,
                                     isBlurred: isPrivacyBlur,
                                     showSign: false,
-                                    colorOverride: finColors.income,
+                                    tone: FfTone.income,
                                   ),
                                   const SizedBox(
                                     width: StillwaterTokens.space3Xs,
@@ -144,17 +146,10 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: StillwaterTokens.spaceSm),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusFull,
-                        ),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          color: finColors.income,
-                          minHeight: 6,
-                        ),
+                      FfProgressBar(
+                        value: progress,
+                        color: finColors.income,
+                        size: FfProgressSize.md,
                       ),
                       const SizedBox(height: StillwaterTokens.spaceSm),
                       Row(
@@ -179,7 +174,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                                 size: FfAmountSize.sm,
                                 isBlurred: isPrivacyBlur,
                                 showSign: false,
-                                colorOverride: theme.colorScheme.onSurface,
+                                tone: FfTone.neutral,
                               ),
                             ],
                           ),

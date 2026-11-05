@@ -18,6 +18,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_key_value_row.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
   final Loan loan;
@@ -437,14 +439,10 @@ class _BalanceHeroSection extends ConsumerWidget {
           const SizedBox(height: StillwaterTokens.spaceMd),
 
           // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
-            child: LinearProgressIndicator(
-              value: paidPct,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: secColors.verified,
-              minHeight: 8,
-            ),
+          FfProgressBar(
+            value: paidPct,
+            color: secColors.verified,
+            size: FfProgressSize.lg,
           ),
 
           const SizedBox(height: StillwaterTokens.spaceSm),
@@ -998,40 +996,6 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              data.label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.secondary,
-              ),
-            ),
-          ),
-          const SizedBox(width: StillwaterTokens.spaceSm),
-          Flexible(
-            flex: 5,
-            child: Text(
-              data.value,
-              textAlign: TextAlign.end,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
-          ),
-        ],
-      ),
-    );
+    return FfKeyValueRow(label: data.label, value: data.value);
   }
 }

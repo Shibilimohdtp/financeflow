@@ -27,6 +27,7 @@ import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_menu.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -371,7 +372,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             () => const Center(
               child: Padding(
                 padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                child: CircularProgressIndicator(),
+                child: FfLoading(),
               ),
             ),
         error: (e, _) => Center(child: Text('Error: $e')),

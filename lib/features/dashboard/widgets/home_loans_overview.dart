@@ -4,6 +4,7 @@ import '../../../core/formatting/date_formatter.dart';
 import '../../../models/loan.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../theme/ff_tone.dart';
 
 class HomeLoansOverview extends StatelessWidget {
   final List<Loan> activeLoans;
@@ -151,7 +152,7 @@ class HomeLoansOverview extends StatelessWidget {
                                 size: FfAmountSize.md,
                                 isBlurred: isPrivacyBlur,
                                 showSign: false,
-                                colorOverride: finColors.debt,
+                                tone: FfTone.debt,
                               ),
                               const SizedBox(height: StillwaterTokens.space3Xs),
                               Text(
@@ -188,7 +189,7 @@ class HomeLoansOverview extends StatelessWidget {
                                 size: FfAmountSize.md,
                                 isBlurred: isPrivacyBlur,
                                 showSign: false,
-                                colorOverride: theme.colorScheme.onSurface,
+                                tone: FfTone.neutral,
                               ),
                               const SizedBox(height: StillwaterTokens.space3Xs),
                               Text(

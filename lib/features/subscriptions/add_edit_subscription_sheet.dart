@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
@@ -19,6 +18,7 @@ import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_amount_field.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
   final Subscription? initialSubscription;
@@ -237,32 +237,8 @@ class _AddEditSubscriptionSheetState
                             ),
                             const SizedBox(width: StillwaterTokens.spaceXs),
                             Expanded(
-                              child: TextFormField(
+                              child: FfAmountField.bare(
                                 controller: _amountController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'^\d+\.?\d{0,2}'),
-                                  ),
-                                ],
-                                style: StillwaterTypography.numHero(
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: '0',
-                                  hintStyle: StillwaterTypography.numHero(
-                                    color: theme.colorScheme.outline,
-                                  ),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  filled: false,
-                                  contentPadding: EdgeInsets.zero,
-                                  isDense: true,
-                                ),
                                 validator: (val) {
                                   if (val == null || val.trim().isEmpty) {
                                     return 'Please enter amount.';

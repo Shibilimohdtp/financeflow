@@ -41,6 +41,8 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -1227,41 +1229,10 @@ class _AddEditTransactionScreenState
                             ),
                           ),
                           Expanded(
-                            child: TextField(
+                            child: FfAmountField.bare(
                               controller: _amountController,
+                              size: FfAmountSize.md,
                               autofocus: widget.initialTransaction == null,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d*\.?\d{0,2}'),
-                                ),
-                              ],
-                              style: StillwaterTypography.numHero(
-                                color: theme.colorScheme.onSurface,
-                              ).copyWith(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: '0',
-                                hintStyle: StillwaterTypography.numHero(
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.45),
-                                ).copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                errorBorder: InputBorder.none,
-                                focusedErrorBorder: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                                isDense: true,
-                              ),
                               onChanged: (val) {
                                 if (_amountError != null) {
                                   setState(() => _amountError = null);

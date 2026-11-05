@@ -5,6 +5,7 @@ import '../../../models/loan.dart';
 import '../../../models/subscription.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../theme/ff_tone.dart';
 
 class ActionableItemData {
   final String id;
@@ -281,7 +282,7 @@ class ActionableItemsSection extends StatelessWidget {
                   size: FfAmountSize.sm,
                   isBlurred: isPrivacyBlur,
                   showSign: false,
-                  colorOverride: theme.colorScheme.onSurface,
+                  tone: FfTone.neutral,
                 ),
               ],
               const SizedBox(width: StillwaterTokens.spaceXs),

@@ -18,6 +18,7 @@ import 'money_records_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class LendingBorrowingScreen extends ConsumerWidget {
   const LendingBorrowingScreen({super.key});
@@ -594,14 +595,10 @@ class _MoneyRecordCard extends StatelessWidget {
           // Row 2: Progress bar (if partially repaid)
           if (totalRepaid > 0.001 && !isSettled) ...[
             const SizedBox(height: StillwaterTokens.spaceSm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusFull),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 4,
-                backgroundColor: theme.dividerColor.withValues(alpha: 0.3),
-                valueColor: AlwaysStoppedAnimation<Color>(typeColor),
-              ),
+            FfProgressBar(
+              value: progress,
+              color: typeColor,
+              size: FfProgressSize.sm,
             ),
           ],
 

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/money_record.dart';
@@ -18,6 +16,8 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../theme/ff_tone.dart';
 
 class AddAdvanceSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -109,8 +109,6 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLent = widget.record.type == MoneyRecordType.lent;
-    final typeColor =
-        isLent ? context.finColors.income : context.finColors.expense;
     final accounts =
         ref.watch(rawAccountsStreamProvider).valueOrNull ?? const <Account>[];
     final activeAccounts = accounts.where((a) => !a.isArchived).toList();
@@ -140,27 +138,11 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Amount Field
-                  TextFormField(
+                  FfAmountField(
                     controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
+                    label: 'Advance Amount',
+                    tone: isLent ? FfTone.income : FfTone.expense,
                     autofocus: true,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: typeColor,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Advance Amount',
-                      prefixText: '${CurrencyFormatter.currencySymbol} ',
-                      prefixStyle: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: typeColor,
-                      ),
-                    ),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter an amount';

@@ -1,114 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
-import '../../theme/stillwater_typography.dart';
+
 import '../../core/formatting/currency_formatter.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import 'ff_amount_text.dart';
 
+/// Money entry. Digits use the money type roles (tabular figures) and the
+/// currency symbol is coloured by [tone] (for example income or expense).
+///
+/// The default constructor is an outlined form field like `FfTextField`.
+/// [FfAmountField.bare] is borderless, for screens that place the amount in
+/// their own panel (the Add transaction header).
 class FfAmountField extends StatelessWidget {
-  final TextEditingController controller;
-  final String? labelText;
-  final String? hintText;
-  final String? errorText;
-  final ValueChanged<String>? onChanged;
-  final bool autoFocus;
-
   const FfAmountField({
     super.key,
     required this.controller,
-    this.labelText,
-    this.hintText,
-    this.errorText,
+    this.label,
+    this.hint = '0',
+    this.tone = FfTone.primary,
+    this.size = FfAmountSize.lg,
+    this.validator,
     this.onChanged,
-    this.autoFocus = false,
-  });
+    this.autofocus = false,
+    this.focusNode,
+  }) : _bare = false;
+
+  const FfAmountField.bare({
+    super.key,
+    required this.controller,
+    this.hint = '0',
+    this.tone = FfTone.neutral,
+    this.size = FfAmountSize.hero,
+    this.validator,
+    this.onChanged,
+    this.autofocus = false,
+    this.focusNode,
+  }) : _bare = true,
+       label = null;
+
+  final TextEditingController controller;
+  final String? label;
+  final String hint;
+  final FfTone tone;
+  final FfAmountSize size;
+  final FormFieldValidator<String>? validator;
+  final ValueChanged<String>? onChanged;
+  final bool autofocus;
+  final FocusNode? focusNode;
+  final bool _bare;
+
+  /// Digits with at most two decimals.
+  static final List<TextInputFormatter> formatters = [
+    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
+    final ff = context.ff;
+    final c = ff.color;
+    final digits = switch (size) {
+      FfAmountSize.hero => ff.text.moneyHero,
+      FfAmountSize.lg => ff.text.moneyLg,
+      FfAmountSize.md => ff.text.moneyMd,
+      FfAmountSize.sm => ff.text.moneySm,
+    };
+    final symbolColor =
+        tone == FfTone.neutral ? c.textSecondary : tone.foreground(c);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (labelText != null) ...[
-          Text(labelText!, style: theme.textTheme.labelMedium),
-          const SizedBox(height: StillwaterTokens.space2Xs),
-        ],
-        Container(
-          height: StillwaterTokens.amountFieldHeight,
-          padding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceMd,
-          ),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-            border: Border.all(
-              color:
-                  errorText != null
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.outline,
-              width:
-                  errorText != null
-                      ? StillwaterTokens.borderWidthFocus
-                      : StillwaterTokens.borderWidthDefault,
-            ),
-          ),
-          child: Row(
-            children: [
-              Text(
-                '${CurrencyFormatter.currencySymbol} ',
-                style: StillwaterTypography.numHero(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  autofocus: autoFocus,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*\.?\d{0,2}'),
-                    ),
-                  ],
-                  style: StillwaterTypography.numHero(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    hintText: hintText ?? '0',
-                    suffixIcon:
-                        controller.text.isEmpty
-                            ? null
-                            : IconButton(
-                              tooltip: 'Clear amount',
-                              icon: const Icon(Icons.clear_rounded),
-                              onPressed: controller.clear,
-                            ),
-                  ),
-                  onChanged: onChanged,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (errorText != null) ...[
-          const SizedBox(height: StillwaterTokens.space2Xs),
-          Text(
-            errorText!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
-            ),
-          ),
-        ],
-      ],
+    final decoration =
+        _bare
+            ? InputDecoration(
+              hintText: hint,
+              hintStyle: digits.copyWith(color: c.textTertiary),
+              prefixText: '${CurrencyFormatter.currencySymbol} ',
+              prefixStyle: digits.copyWith(color: symbolColor),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              filled: false,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            )
+            : InputDecoration(
+              labelText: label,
+              hintText: hint,
+              hintStyle: digits.copyWith(color: c.textTertiary),
+              prefixText: '${CurrencyFormatter.currencySymbol} ',
+              prefixStyle: digits.copyWith(color: symbolColor),
+              errorMaxLines: 2,
+            );
+
+    // Large amounts keep their layout under big system text sizes.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: FfAmountTokens.maxTextScale,
+      child: TextFormField(
+        controller: controller,
+        focusNode: focusNode,
+        autofocus: autofocus,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: formatters,
+        style: digits.copyWith(color: c.textPrimary),
+        decoration: decoration,
+        validator: validator,
+        onChanged: onChanged,
+      ),
     );
   }
 }

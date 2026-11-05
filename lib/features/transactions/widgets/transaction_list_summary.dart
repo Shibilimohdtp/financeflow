@@ -3,6 +3,7 @@ import '../../../core/extensions/context_extensions.dart';
 import '../../../services/ledger_totals.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../theme/ff_tone.dart';
 
 /// Spent / Income / Net for exactly the transactions in the list below it.
 class TransactionListSummary extends StatelessWidget {
@@ -45,7 +46,7 @@ class TransactionListSummary extends StatelessWidget {
                   amount: -totals.spending,
                   size: FfAmountSize.sm,
                   isBlurred: isPrivacyBlur,
-                  colorOverride: context.finColors.expense,
+                  tone: FfTone.expense,
                 ),
               ),
               _Figure(
@@ -54,7 +55,7 @@ class TransactionListSummary extends StatelessWidget {
                   amount: totals.income,
                   size: FfAmountSize.sm,
                   isBlurred: isPrivacyBlur,
-                  colorOverride: context.finColors.income,
+                  tone: FfTone.income,
                 ),
               ),
               _Figure(

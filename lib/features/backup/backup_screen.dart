@@ -18,6 +18,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -328,7 +329,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           ),
 
           if (_isLoadingBackups)
-            const Center(child: CircularProgressIndicator())
+            const FfLoading()
           else if (_existingBackups.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(

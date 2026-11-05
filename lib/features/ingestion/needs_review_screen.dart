@@ -21,6 +21,7 @@ import '../transactions/add_edit_transaction_screen.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class NeedsReviewScreen extends ConsumerStatefulWidget {
   const NeedsReviewScreen({super.key});
@@ -228,7 +229,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
       ),
       body:
           pending.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const FfLoading()
               : pending.hasError
               ? Center(
                 child: TextButton(

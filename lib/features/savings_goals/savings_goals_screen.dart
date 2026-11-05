@@ -15,6 +15,7 @@ import 'savings_goal_detail_screen.dart';
 import 'savings_goals_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class SavingsGoalsScreen extends ConsumerWidget {
   const SavingsGoalsScreen({super.key});
@@ -140,17 +141,10 @@ class SavingsGoalsScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: StillwaterTokens.spaceMd),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusFull,
-                            ),
-                            child: LinearProgressIndicator(
-                              value: overallProgress,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              color: theme.colorScheme.primary,
-                              minHeight: 8,
-                            ),
+                          FfProgressBar(
+                            value: overallProgress,
+                            color: theme.colorScheme.primary,
+                            size: FfProgressSize.lg,
                           ),
                           const SizedBox(height: StillwaterTokens.spaceSm),
                           Row(
@@ -295,20 +289,13 @@ class SavingsGoalsScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: StillwaterTokens.spaceMd),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              StillwaterTokens.radiusFull,
-                            ),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              color:
-                                  isComplete
-                                      ? context.finColors.income
-                                      : theme.colorScheme.primary,
-                              minHeight: 6,
-                            ),
+                          FfProgressBar(
+                            value: progress,
+                            color:
+                                isComplete
+                                    ? context.finColors.income
+                                    : theme.colorScheme.primary,
+                            size: FfProgressSize.md,
                           ),
                           const SizedBox(height: StillwaterTokens.spaceSm),
                           Row(
@@ -344,7 +331,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                   () => const Center(
                     child: Padding(
                       padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                      child: CircularProgressIndicator(),
+                      child: FfLoading(),
                     ),
                   ),
               error: (e, _) => Center(child: Text('Error: $e')),

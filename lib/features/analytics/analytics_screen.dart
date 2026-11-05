@@ -262,7 +262,7 @@ class AnalyticsScreen extends ConsumerWidget {
                   trailing: FfAmountText(
                     amount: -tx.consumptionExpenseAmount,
                     size: FfAmountSize.sm,
-                    colorOverride: context.finColors.expense,
+                    tone: FfTone.expense,
                   ),
                   onTap: () => _openTransactionDetail(context, tx),
                 ),

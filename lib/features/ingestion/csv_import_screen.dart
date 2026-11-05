@@ -22,6 +22,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -374,11 +375,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
           // ── 2. Loading / Progress State ──────────────────────────────
           if (state.isLoading) ...[
-            LinearProgressIndicator(
-              backgroundColor: theme.colorScheme.surfaceContainerLow,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                theme.colorScheme.primary,
-              ),
+            FfProgressBar(
+              value: null,
+              color: theme.colorScheme.primary,
+              size: FfProgressSize.md,
             ),
             if (state.progressStep != null)
               Padding(

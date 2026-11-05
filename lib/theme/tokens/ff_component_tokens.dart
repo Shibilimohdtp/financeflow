@@ -118,3 +118,34 @@ abstract final class FfDividerTokens {
   /// Where an inset divider starts: past a list row's leading tile.
   static const double rowInset = FfRowTokens.textInsetAfterTile;
 }
+
+abstract final class FfAmountTokens {
+  /// Largest system text scale applied to amounts, so big numbers keep
+  /// their layout (body text still follows the system setting fully).
+  static const double maxTextScale = 1.3;
+}
+
+abstract final class FfProgressTokens {
+  static const double heightSm = 4;
+  static const double heightMd = 6;
+  static const double heightLg = 8;
+  static const double paceMarkerWidth = 2;
+  static const double spinnerSize = 28;
+  static const double spinnerStroke = 3;
+}
+
+abstract final class FfBadgeTokens {
+  static const double paddingH = FfSpace.xs;
+  static const double paddingV = FfSpace.x3s;
+  static const double radius = FfRadius.full;
+  static const double iconSize = FfIconSize.xs;
+  static const double gap = FfSpace.x2s;
+}
+
+/// Same geometry as list rows, so dividers line up across both.
+abstract final class FfKeyValueTokens {
+  static const double paddingH = FfRowTokens.paddingH;
+  static const double paddingV = FfRowTokens.paddingV;
+  static const double iconSize = FfRowTokens.iconSize;
+  static const double iconGap = FfRowTokens.gap;
+}

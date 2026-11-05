@@ -20,6 +20,8 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_key_value_row.dart';
 
 class MoneyRecordDetailScreen extends ConsumerWidget {
   final MoneyRecord record;
@@ -382,18 +384,10 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                 const SizedBox(height: StillwaterTokens.spaceMd),
 
                 // Progress Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    StillwaterTokens.radiusFull,
-                  ),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: theme.dividerColor.withValues(alpha: 0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isSettled ? context.finColors.income : typeColor,
-                    ),
-                  ),
+                FfProgressBar(
+                  value: progress,
+                  color: isSettled ? context.finColors.income : typeColor,
+                  size: FfProgressSize.lg,
                 ),
 
                 const SizedBox(height: StillwaterTokens.spaceMd),
@@ -881,38 +875,6 @@ class _DetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceMd,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: theme.colorScheme.secondary),
-          const SizedBox(width: StillwaterTokens.spaceMd),
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.secondary,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return FfKeyValueRow(icon: icon, label: label, value: value);
   }
 }

@@ -10,6 +10,7 @@ import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'financial_health_controller.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class FinancialHealthScreen extends ConsumerWidget {
   const FinancialHealthScreen({super.key});
@@ -221,17 +222,10 @@ class FinancialHealthScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: StillwaterTokens.spaceSm),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusFull,
-                              ),
-                              child: LinearProgressIndicator(
-                                value: scorePct,
-                                backgroundColor:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                color: barColor,
-                                minHeight: 5,
-                              ),
+                            FfProgressBar(
+                              value: scorePct,
+                              color: barColor,
+                              size: FfProgressSize.md,
                             ),
                             const SizedBox(height: StillwaterTokens.spaceSm),
                             Text(
@@ -297,7 +291,7 @@ class FinancialHealthScreen extends ConsumerWidget {
             () => const Center(
               child: Padding(
                 padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                child: CircularProgressIndicator(),
+                child: FfLoading(),
               ),
             ),
         error: (e, _) => Center(child: Text('Error: $e')),

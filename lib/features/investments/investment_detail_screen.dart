@@ -19,6 +19,7 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_key_value_row.dart';
 
 class InvestmentDetailScreen extends ConsumerWidget {
   final Investment investment;
@@ -364,46 +365,14 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: theme.colorScheme.secondary),
-          const SizedBox(width: StillwaterTokens.spaceMd),
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.secondary,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
+    return FfKeyValueRow(icon: icon, label: label, value: value);
   }
 }
 
 class _DetailDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: StillwaterTokens.borderWidthHairline,
-      indent: StillwaterTokens.spaceMd + 20 + StillwaterTokens.spaceMd,
-      endIndent: 0,
-    );
+    return const FfDivider.inset(after: FfRowLeading.icon);
   }
 }
 

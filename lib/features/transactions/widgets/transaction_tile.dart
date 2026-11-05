@@ -14,6 +14,7 @@ import '../../../shared/widgets/ff_dialog.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
+import '../../../theme/ff_tone.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -350,9 +351,9 @@ extension on TransactionTile {
       amount: inflow ? transaction.amount : -transaction.amount,
       size: FfAmountSize.md,
       isBlurred: isPrivacyBlur,
-      colorOverride: switch (kind) {
-        TransactionKind.spending => context.finColors.expense,
-        TransactionKind.income => context.finColors.income,
+      tone: switch (kind) {
+        TransactionKind.spending => FfTone.expense,
+        TransactionKind.income => FfTone.income,
         _ => null,
       },
     );

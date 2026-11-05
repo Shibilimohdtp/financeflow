@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
@@ -18,6 +17,8 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../theme/ff_tone.dart';
 
 class AddEditMoneyRecordSheet extends ConsumerStatefulWidget {
   final MoneyRecord? initialRecord;
@@ -344,43 +345,13 @@ class _AddEditMoneyRecordSheetState
                     ),
                   ),
                   const SizedBox(height: StillwaterTokens.spaceXs),
-                  TextFormField(
+                  FfAmountField(
                     controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d+\.?\d{0,2}'),
-                      ),
-                    ],
-                    decoration: InputDecoration(
-                      hintText: '0.00',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: StillwaterTokens.spaceMd,
-                        ),
-                        child: Text(
-                          CurrencyFormatter.currencySymbol,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color:
-                                _type == MoneyRecordType.lent
-                                    ? context.finColors.income
-                                    : context.finColors.expense,
-                          ),
-                        ),
-                      ),
-                      prefixIconConstraints: const BoxConstraints(
-                        minWidth: 0,
-                        minHeight: 0,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusMd,
-                        ),
-                      ),
-                    ),
+                    hint: '0.00',
+                    tone:
+                        _type == MoneyRecordType.lent
+                            ? FfTone.income
+                            : FfTone.expense,
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Amount is required';

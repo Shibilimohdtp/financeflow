@@ -21,6 +21,7 @@ import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   const SubscriptionsScreen({super.key});
@@ -338,7 +339,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             () => const Center(
               child: Padding(
                 padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                child: CircularProgressIndicator(),
+                child: FfLoading(),
               ),
             ),
         error: (e, _) => Center(child: Text('Error: $e')),

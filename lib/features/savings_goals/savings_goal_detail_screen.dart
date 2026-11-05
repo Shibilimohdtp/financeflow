@@ -18,6 +18,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class SavingsGoalDetailScreen extends ConsumerWidget {
   final SavingsGoal goal;
@@ -201,21 +202,13 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: StillwaterTokens.spaceMd),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        StillwaterTokens.radiusFull,
-                      ),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 8,
-                        backgroundColor:
-                            theme.colorScheme.surfaceContainerHighest,
-                        valueColor: AlwaysStoppedAnimation<Color>(
+                    FfProgressBar(
+                      value: progress,
+                      color:
                           summary.isTargetReached
                               ? context.secColors.verified
                               : theme.colorScheme.primary,
-                        ),
-                      ),
+                      size: FfProgressSize.lg,
                     ),
                   ],
                 ),
@@ -367,7 +360,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const FfLoading(),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );

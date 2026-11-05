@@ -18,6 +18,7 @@ import 'loans_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class LoansScreen extends ConsumerWidget {
   const LoansScreen({super.key});
@@ -259,17 +260,10 @@ class LoansScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: StillwaterTokens.spaceMd),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                StillwaterTokens.radiusFull,
-                              ),
-                              child: LinearProgressIndicator(
-                                value: paidProgress,
-                                backgroundColor:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                color: theme.colorScheme.primary,
-                                minHeight: 6,
-                              ),
+                            FfProgressBar(
+                              value: paidProgress,
+                              color: theme.colorScheme.primary,
+                              size: FfProgressSize.md,
                             ),
                             const SizedBox(height: StillwaterTokens.spaceSm),
                             Row(
@@ -364,7 +358,7 @@ class LoansScreen extends ConsumerWidget {
             () => const Center(
               child: Padding(
                 padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                child: CircularProgressIndicator(),
+                child: FfLoading(),
               ),
             ),
         error: (e, _) => Center(child: Text('Error: $e')),

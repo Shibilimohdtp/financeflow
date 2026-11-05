@@ -12,6 +12,7 @@ import '../../theme/stillwater_tokens.dart';
 import 'alert_settings_sheet.dart';
 import 'alerts_controller.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_progress.dart';
 
 class AlertsInboxScreen extends ConsumerStatefulWidget {
   const AlertsInboxScreen({super.key});
@@ -249,7 +250,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
             () => const Center(
               child: Padding(
                 padding: EdgeInsets.all(StillwaterTokens.space4Xl),
-                child: CircularProgressIndicator(),
+                child: FfLoading(),
               ),
             ),
         error: (e, _) => Center(child: Text('Error: $e')),
