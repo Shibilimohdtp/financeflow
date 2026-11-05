@@ -10,6 +10,7 @@ import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_confirm_dialog.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../transaction_list_utils.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -21,6 +22,13 @@ class TransactionTile extends StatelessWidget {
   final Future<void> Function() onDelete;
   final VoidCallback? onDuplicate;
 
+  /// When true, taps toggle selection and swipe actions are disabled.
+  final bool selectionMode;
+  final bool isSelected;
+
+  /// Long-press handler; when null, long-press opens the action sheet.
+  final VoidCallback? onToggleSelected;
+
   const TransactionTile({
     super.key,
     required this.transaction,
@@ -31,6 +39,9 @@ class TransactionTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.onDuplicate,
+    this.selectionMode = false,
+    this.isSelected = false,
+    this.onToggleSelected,
   });
 
   void _showActionSheet(BuildContext context) {
@@ -41,80 +52,81 @@ class TransactionTile extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(StillwaterTokens.radius2Xl),
+      builder:
+          (sheetContext) => Container(
+            decoration: BoxDecoration(
+              color: theme.scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(StillwaterTokens.radius2Xl),
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FfSheetHeader(
+                    title: transaction.merchant,
+                    subtitle: CurrencyFormatter.format(
+                      transaction.amount,
+                      isIncome: transaction.type == TransactionType.income,
+                      isExpense: transaction.type == TransactionType.expense,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline_rounded),
+                    title: const Text('View details'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      onOpen();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Edit transaction'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      onEdit();
+                    },
+                  ),
+                  if (onDuplicate != null)
+                    ListTile(
+                      leading: const Icon(Icons.copy_rounded),
+                      title: const Text('Duplicate transaction'),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        onDuplicate!();
+                      },
+                    ),
+                  ListTile(
+                    leading: Icon(
+                      Icons.delete_outline_rounded,
+                      color: finColors.expense,
+                    ),
+                    title: Text(
+                      'Delete transaction',
+                      style: TextStyle(color: finColors.expense),
+                    ),
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      final confirmed = await FfConfirmDialog.show(
+                        context,
+                        title: 'Delete transaction?',
+                        message:
+                            'Are you sure you want to delete "${transaction.merchant}" (${CurrencyFormatter.format(transaction.amount)})?',
+                        confirmLabel: 'Delete',
+                        isDestructive: true,
+                      );
+                      if (confirmed == true) {
+                        await onDelete();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: StillwaterTokens.spaceSm),
+                ],
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: transaction.merchant,
-                subtitle: CurrencyFormatter.format(
-                  transaction.amount,
-                  isIncome: transaction.type == TransactionType.income,
-                  isExpense: transaction.type == TransactionType.expense,
-                ),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded),
-                title: const Text('View details'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onOpen();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit transaction'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  onEdit();
-                },
-              ),
-              if (onDuplicate != null)
-                ListTile(
-                  leading: const Icon(Icons.copy_rounded),
-                  title: const Text('Duplicate transaction'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    onDuplicate!();
-                  },
-                ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete_outline_rounded,
-                  color: finColors.expense,
-                ),
-                title: Text(
-                  'Delete transaction',
-                  style: TextStyle(color: finColors.expense),
-                ),
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  final confirmed = await FfConfirmDialog.show(
-                    context,
-                    title: 'Delete transaction?',
-                    message:
-                        'Are you sure you want to delete "${transaction.merchant}" (${CurrencyFormatter.format(transaction.amount)})?',
-                    confirmLabel: 'Delete',
-                    isDestructive: true,
-                  );
-                  if (confirmed == true) {
-                    await onDelete();
-                  }
-                },
-              ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -123,27 +135,28 @@ class TransactionTile extends StatelessWidget {
     final theme = context.theme;
     final isDark = context.isDarkMode;
 
-    final fromAccount = accounts
-        .where((item) => item.id == transaction.accountId)
-        .firstOrNull;
-    final toAccount = accounts
-        .where((item) => item.id == transaction.toAccountId)
-        .firstOrNull;
+    final fromAccount =
+        accounts.where((item) => item.id == transaction.accountId).firstOrNull;
+    final toAccount =
+        accounts
+            .where((item) => item.id == transaction.toAccountId)
+            .firstOrNull;
 
     final isTransfer = transaction.type == TransactionType.transfer;
-    final timeStr = DateFormatter.formatTransactionDate(transaction.date)
-        .split(', ')
-        .last;
+    final timeStr =
+        DateFormatter.formatTransactionDate(transaction.date).split(', ').last;
     final dateStr = DateFormatter.formatShortDate(transaction.date);
 
     // Title construction
-    final titleText = isTransfer && toAccount != null
-        ? '${fromAccount?.name ?? "Account"} → ${toAccount.name}'
-        : transaction.merchant;
+    final titleText =
+        isTransfer && toAccount != null
+            ? '${fromAccount?.name ?? "Account"} → ${toAccount.name}'
+            : transaction.merchant;
 
     return Dismissible(
       key: ValueKey('transaction-${transaction.id}'),
-      direction: DismissDirection.horizontal,
+      direction:
+          selectionMode ? DismissDirection.none : DismissDirection.horizontal,
       background: _SwipeActionBackground(
         icon: Icons.edit_outlined,
         label: 'Edit',
@@ -178,10 +191,13 @@ class TransactionTile extends StatelessWidget {
         return false;
       },
       child: Material(
-        color: Colors.transparent,
+        color:
+            isSelected
+                ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                : Colors.transparent,
         child: InkWell(
-          onTap: onOpen,
-          onLongPress: () => _showActionSheet(context),
+          onTap: selectionMode ? onToggleSelected : onOpen,
+          onLongPress: onToggleSelected ?? () => _showActionSheet(context),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: StillwaterTokens.spaceLg,
@@ -190,12 +206,27 @@ class TransactionTile extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Category Icon / Avatar
-                FfCategoryTile(
-                  iconIdentifier: transaction.categoryIcon,
-                  colorTokenIdentifier: transaction.categoryColor,
-                  size: 42,
-                ),
+                // Category icon, or a check mark while selecting
+                if (selectionMode)
+                  SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: Icon(
+                      isSelected
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      color:
+                          isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
+                    ),
+                  )
+                else
+                  FfCategoryTile(
+                    iconIdentifier: transaction.categoryIcon,
+                    colorTokenIdentifier: transaction.categoryColor,
+                    size: 42,
+                  ),
                 const SizedBox(width: StillwaterTokens.spaceMd),
 
                 // Center Information
@@ -251,7 +282,8 @@ class TransactionTile extends StatelessWidget {
                               ),
                             ),
                           ],
-                          if (transaction.paymentMethod?.isNotEmpty ?? false) ...[
+                          if (transaction.paymentMethod?.isNotEmpty ??
+                              false) ...[
                             Text(
                               ' · ',
                               style: TextStyle(
@@ -266,9 +298,10 @@ class TransactionTile extends StatelessWidget {
                                 vertical: 1.5,
                               ),
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                color:
+                                    isDark
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.black.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(
                                   StillwaterTokens.radiusXs,
                                 ),
@@ -304,18 +337,40 @@ class TransactionTile extends StatelessWidget {
                 const SizedBox(width: StillwaterTokens.spaceMd),
 
                 // Amount Section
-                FfAmountText(
-                  amount: transaction.amount,
-                  type: transaction.type,
-                  size: FfAmountSize.md,
-                  isBlurred: isPrivacyBlur,
-                  showSign: true,
-                ),
+                _amount(context),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+extension on TransactionTile {
+  /// Sign follows the account movement (in +, out −, between own accounts
+  /// unsigned); colour follows what the totals count it as.
+  Widget _amount(BuildContext context) {
+    final kind = TransactionKind.of(transaction);
+    if (kind == TransactionKind.transfer) {
+      return FfAmountText(
+        amount: transaction.amount,
+        type: TransactionType.transfer,
+        size: FfAmountSize.md,
+        isBlurred: isPrivacyBlur,
+      );
+    }
+    final inflow =
+        transaction.effectiveDirection == AccountMovementDirection.inflow;
+    return FfAmountText(
+      amount: inflow ? transaction.amount : -transaction.amount,
+      size: FfAmountSize.md,
+      isBlurred: isPrivacyBlur,
+      colorOverride: switch (kind) {
+        TransactionKind.spending => context.finColors.expense,
+        TransactionKind.income => context.finColors.income,
+        _ => null,
+      },
     );
   }
 }

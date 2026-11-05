@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/category.dart';
 import '../../models/money_record.dart';
 import '../../models/transaction.dart';
 import '../../repositories/transaction_repository.dart';
@@ -6,108 +7,34 @@ import '../../services/financial_operation_service.dart';
 import '../accounts/accounts_controller.dart';
 import 'transaction_list_utils.dart';
 
-enum TransactionSort { newest, oldest, amountHigh, amountLow }
+export 'transaction_list_utils.dart' show TransactionQuery, TransactionSort;
 
-class TransactionFilterState {
-  final String searchQuery;
-  final TransactionType? selectedType;
-  final String? selectedCategoryId;
-  final String? selectedAccountId;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final DateTime? selectedMonth;
-  final String? paymentMethod;
-  final String? tag;
-  final TransactionSort sort;
+/// What the transaction list shows. Global, so it survives tab switches and
+/// returning from detail/edit screens.
+final transactionQueryProvider = StateProvider<TransactionQuery>(
+  (ref) => TransactionQuery.initial(),
+);
 
-  const TransactionFilterState({
-    this.searchQuery = '',
-    this.selectedType,
-    this.selectedCategoryId,
-    this.selectedAccountId,
-    this.startDate,
-    this.endDate,
-    this.selectedMonth,
-    this.paymentMethod,
-    this.tag,
-    this.sort = TransactionSort.newest,
-  });
-
-  TransactionFilterState copyWith({
-    String? searchQuery,
-    TransactionType? selectedType,
-    bool clearType = false,
-    String? selectedCategoryId,
-    bool clearCategory = false,
-    String? selectedAccountId,
-    bool clearAccount = false,
-    DateTime? startDate,
-    DateTime? endDate,
-    bool clearDates = false,
-    DateTime? selectedMonth,
-    bool clearMonth = false,
-    String? paymentMethod,
-    bool clearPaymentMethod = false,
-    String? tag,
-    bool clearTag = false,
-    TransactionSort? sort,
-  }) {
-    return TransactionFilterState(
-      searchQuery: searchQuery ?? this.searchQuery,
-      selectedType: clearType ? null : (selectedType ?? this.selectedType),
-      selectedCategoryId:
-          clearCategory
-              ? null
-              : (selectedCategoryId ?? this.selectedCategoryId),
-      selectedAccountId:
-          clearAccount ? null : (selectedAccountId ?? this.selectedAccountId),
-      startDate: clearDates ? null : (startDate ?? this.startDate),
-      endDate: clearDates ? null : (endDate ?? this.endDate),
-      selectedMonth:
-          clearMonth ? null : (selectedMonth ?? this.selectedMonth),
-      paymentMethod:
-          clearPaymentMethod ? null : (paymentMethod ?? this.paymentMethod),
-      tag: clearTag ? null : (tag ?? this.tag),
-      sort: sort ?? this.sort,
-    );
-  }
-
-  bool get hasActiveFilters =>
-      searchQuery.isNotEmpty ||
-      selectedType != null ||
-      selectedCategoryId != null ||
-      selectedAccountId != null ||
-      startDate != null ||
-      endDate != null ||
-      selectedMonth != null ||
-      paymentMethod != null ||
-      tag != null ||
-      sort != TransactionSort.newest;
-
-  bool get hasAdvancedFilters =>
-      selectedCategoryId != null ||
-      selectedAccountId != null ||
-      startDate != null ||
-      endDate != null ||
-      paymentMethod != null ||
-      tag != null ||
-      sort != TransactionSort.newest;
-}
-
-
-final transactionFilterProvider = StateProvider<TransactionFilterState>((ref) {
-  return const TransactionFilterState();
-});
-
+/// The transaction list's results: only the selected period is read from the
+/// database (date index), then the remaining filters and sort are applied.
+///
+/// This is the Transactions screen's view. Budgets, export and other features
+/// must use [allTransactionsStreamProvider] instead, so a search on this screen
+/// never changes their numbers.
 final filteredTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
-  final filter = ref.watch(transactionFilterProvider);
+  final query = ref.watch(transactionQueryProvider);
   final repo = ref.watch(transactionRepositoryProvider);
   final accounts = ref.watch(rawAccountsStreamProvider).value ?? const [];
+  final period = query.period;
 
-  return repo.watchAllTransactions().map(
-    (transactions) => applyTransactionFilter(
+  final source =
+      period == null
+          ? repo.watchAllTransactions()
+          : repo.watchTransactionsBetween(period.start, period.endExclusive);
+  return source.map(
+    (transactions) => applyTransactionQuery(
       transactions: transactions,
-      filter: filter,
+      query: query,
       accounts: accounts,
     ),
   );
@@ -128,11 +55,15 @@ final transactionsControllerProvider =
 
 class TransactionsController extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
-  FinancialOperationSnapshot? _lastDeletedOperation;
+  List<FinancialOperationSnapshot> _lastDeleted = const [];
 
   TransactionsController(this._ref) : super(const AsyncValue.data(null));
 
-  Transaction? get lastDeletedTransaction => _lastDeletedOperation?.transaction;
+  Transaction? get lastDeletedTransaction =>
+      _lastDeleted.isEmpty ? null : _lastDeleted.first.transaction;
+
+  FinancialOperationService get _operations =>
+      _ref.read(financialOperationServiceProvider);
 
   Future<void> saveTransaction(
     Transaction transaction, {
@@ -140,8 +71,7 @@ class TransactionsController extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final coordinator = _ref.read(financialOperationServiceProvider);
-      await coordinator.postTransaction(
+      await _operations.postTransaction(
         transaction,
         moneyRecordDetails: moneyRecordDetails,
       );
@@ -152,13 +82,20 @@ class TransactionsController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> deleteTransaction(Transaction transaction) async {
+  Future<void> deleteTransaction(Transaction transaction) =>
+      deleteTransactions([transaction]);
+
+  /// Deletes through the operation service so linked EMI/debt allocations are
+  /// reversed too. The whole batch can be undone with [undoDelete].
+  Future<void> deleteTransactions(List<Transaction> transactions) async {
     state = const AsyncValue.loading();
     try {
-      final coordinator = _ref.read(financialOperationServiceProvider);
-      _lastDeletedOperation = await coordinator.deleteTransaction(
-        transaction.id,
-      );
+      final snapshots = <FinancialOperationSnapshot>[];
+      for (final tx in transactions) {
+        final snapshot = await _operations.deleteTransaction(tx.id);
+        if (snapshot != null) snapshots.add(snapshot);
+      }
+      _lastDeleted = snapshots;
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -167,10 +104,49 @@ class TransactionsController extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> undoDelete() async {
-    if (_lastDeletedOperation != null) {
-      final coordinator = _ref.read(financialOperationServiceProvider);
-      await coordinator.restore(_lastDeletedOperation!);
-      _lastDeletedOperation = null;
+    final snapshots = _lastDeleted;
+    _lastDeleted = const [];
+    for (final snapshot in snapshots.reversed) {
+      await _operations.restore(snapshot);
     }
+  }
+
+  /// Moves transactions to [category]. Transactions whose kind cannot carry a
+  /// category (transfers, lending, loan links) are skipped; returns how many
+  /// were changed.
+  Future<int> recategorize(
+    List<Transaction> transactions,
+    Category category,
+  ) async {
+    state = const AsyncValue.loading();
+    try {
+      var changed = 0;
+      final now = DateTime.now();
+      for (final tx in transactions) {
+        if (!canRecategorize(tx)) continue;
+        await _operations.postTransaction(
+          tx.copyWith(
+            categoryId: category.id,
+            categoryName: category.name,
+            categoryIcon: category.iconIdentifier,
+            categoryColor: category.colorTokenIdentifier,
+            updatedAt: now,
+          ),
+        );
+        changed++;
+      }
+      state = const AsyncValue.data(null);
+      return changed;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  static bool canRecategorize(Transaction tx) {
+    final kind = TransactionKind.of(tx);
+    return (kind == TransactionKind.spending ||
+            kind == TransactionKind.income) &&
+        !tx.isLinkedOperation;
   }
 }

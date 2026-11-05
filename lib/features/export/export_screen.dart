@@ -13,8 +13,8 @@ import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../backup/backup_screen.dart';
-import '../transactions/transactions_controller.dart';
 import 'export_controller.dart';
+import '../accounts/accounts_controller.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
@@ -84,7 +84,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    final transactions = ref.watch(filteredTransactionsProvider).value ?? [];
+    final transactions = ref.watch(allTransactionsStreamProvider).value ?? [];
 
     return Scaffold(
       appBar: AppBar(

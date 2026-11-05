@@ -3,7 +3,7 @@ import '../../models/budget.dart';
 import '../../repositories/budget_repository.dart';
 import '../../services/budget_calculator.dart';
 import '../dashboard/dashboard_controller.dart';
-import '../transactions/transactions_controller.dart';
+import '../accounts/accounts_controller.dart';
 
 final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
   return IsarBudgetRepository();
@@ -28,7 +28,7 @@ final budgetSummariesProvider = Provider<AsyncValue<List<BudgetSummary>>>((
   ref,
 ) {
   final budgetsAsync = ref.watch(activeBudgetsStreamProvider);
-  final allTxAsync = ref.watch(filteredTransactionsProvider);
+  final allTxAsync = ref.watch(allTransactionsStreamProvider);
   final selectedMonth = ref.watch(selectedDashboardMonthProvider);
   final periodFilter = ref.watch(selectedBudgetPeriodFilterProvider);
 
@@ -74,7 +74,7 @@ final overallBudgetSummaryProvider = Provider<
   >
 >((ref) {
   final budgetsAsync = ref.watch(activeBudgetsStreamProvider);
-  final allTxAsync = ref.watch(filteredTransactionsProvider);
+  final allTxAsync = ref.watch(allTransactionsStreamProvider);
   final selectedMonth = ref.watch(selectedDashboardMonthProvider);
 
   return budgetsAsync.when(

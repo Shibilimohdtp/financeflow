@@ -23,6 +23,13 @@ abstract class TransactionRepository {
     DateTime? startDate,
     DateTime? endDate,
   });
+  /// Transactions dated in `[start, endExclusive)`, newest first. Uses the
+  /// date index, so it does not read the whole table.
+  Stream<List<Transaction>> watchTransactionsBetween(
+    DateTime start,
+    DateTime endExclusive,
+  );
+
   Stream<List<Transaction>> watchSearchAndFilterTransactions({
     String? query,
     TransactionType? type,
@@ -294,6 +301,22 @@ class IsarTransactionRepository implements TransactionRepository {
     }
 
     return domainList;
+  }
+
+  @override
+  Stream<List<Transaction>> watchTransactionsBetween(
+    DateTime start,
+    DateTime endExclusive,
+  ) {
+    return isar.transactionEntitys
+        .where()
+        .dateBetween(start, endExclusive, includeUpper: false)
+        .watch(fireImmediately: true)
+        .map(
+          (entities) =>
+              entities.map(_toDomain).toList()
+                ..sort((a, b) => b.date.compareTo(a.date)),
+        );
   }
 
   @override

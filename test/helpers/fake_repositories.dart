@@ -258,6 +258,17 @@ class FakeTransactionRepository implements TransactionRepository {
   }
 
   @override
+  Stream<List<Transaction>> watchTransactionsBetween(
+    DateTime start,
+    DateTime endExclusive,
+  ) => watchAllTransactions().map(
+    (all) =>
+        all
+            .where((t) => !t.date.isBefore(start) && t.date.isBefore(endExclusive))
+            .toList(),
+  );
+
+  @override
   Stream<List<Transaction>> watchSearchAndFilterTransactions({
     String? query,
     TransactionType? type,

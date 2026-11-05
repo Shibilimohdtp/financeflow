@@ -19,9 +19,9 @@ import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../dashboard/dashboard_controller.dart';
 import '../transactions/transaction_detail_screen.dart';
-import '../transactions/transactions_controller.dart';
 import 'add_edit_budget_sheet.dart';
 import 'budgets_controller.dart';
+import '../accounts/accounts_controller.dart';
 
 class BudgetDetailScreen extends ConsumerWidget {
   final Budget budget;
@@ -89,7 +89,7 @@ class BudgetDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final finColors = context.finColors;
-    final allTransactions = ref.watch(filteredTransactionsProvider).value ?? [];
+    final allTransactions = ref.watch(allTransactionsStreamProvider).value ?? [];
     final selectedMonth = ref.watch(selectedDashboardMonthProvider);
 
     final summary = BudgetCalculator.calculateSummary(

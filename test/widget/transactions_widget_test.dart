@@ -15,6 +15,8 @@ import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/shared/widgets/ff_chip.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
+import '../helpers/fake_repositories.dart';
+
 void main() {
   final now = DateTime.now();
 
@@ -50,18 +52,53 @@ void main() {
     updatedAt: now,
   );
 
-  Widget createWidgetUnderTest({ThemeData? theme}) {
+  final incomeTransaction = Transaction(
+    id: 't2',
+    amount: 50000.0,
+    type: TransactionType.income,
+    categoryId: 'cat_salary',
+    categoryName: 'Salary',
+    categoryIcon: 'payments',
+    categoryColor: 'grove',
+    merchant: 'Employer',
+    date: now,
+    accountId: 'acc_1',
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  final olderTransaction = Transaction(
+    id: 't3',
+    amount: 120.0,
+    type: TransactionType.expense,
+    categoryId: 'cat_food',
+    categoryName: 'Food',
+    categoryIcon: 'restaurant',
+    categoryColor: 'clay',
+    merchant: 'Chai Point',
+    date: DateTime(now.year, now.month, now.day - 1, 9),
+    accountId: 'acc_1',
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  /// Uses the real query pipeline over an in-memory repository. All-time by
+  /// default so the fixtures never fall outside the current month.
+  Widget createWidgetUnderTest({
+    ThemeData? theme,
+    TransactionQuery query = const TransactionQuery(),
+  }) {
+    final all = [testTransaction, incomeTransaction, olderTransaction];
     return ProviderScope(
       overrides: [
         settingsStreamProvider.overrideWith(
           (ref) => Stream.value(const AppSettings()),
         ),
-        filteredTransactionsProvider.overrideWith(
-          (ref) => Stream.value([testTransaction]),
+        transactionRepositoryProvider.overrideWithValue(
+          FakeTransactionRepository(all),
         ),
-        allTransactionsStreamProvider.overrideWith(
-          (ref) => Stream.value([testTransaction]),
-        ),
+        transactionQueryProvider.overrideWith((ref) => query),
+        allTransactionsStreamProvider.overrideWith((ref) => Stream.value(all)),
         categoriesStreamProvider.overrideWith(
           (ref) => Stream.value([testCategory]),
         ),
@@ -76,125 +113,146 @@ void main() {
     );
   }
 
-  testWidgets(
-    'TransactionsScreen renders app bar actions, summary card, and transaction rows without permanent search/chips',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(createWidgetUnderTest());
-      await tester.pumpAndSettle();
+  testWidgets('renders period bar, totals, day headers and rows', (
+    tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
-      // Verify Title and App Bar action buttons
-      expect(find.text('Transactions'), findsOneWidget);
-      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    expect(find.text('Transactions'), findsOneWidget);
+    expect(find.text('All time'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
 
-      // Verify search textfield is NOT permanently visible in initial state
-      expect(find.byType(TextField), findsNothing);
+    // Totals cover exactly the listed rows.
+    expect(find.text('Spent'), findsOneWidget);
+    expect(find.text('− ₹550'), findsOneWidget);
+    expect(find.text('+ ₹50,000'), findsWidgets);
+    expect(find.text('3 transactions'), findsOneWidget);
 
-      // Verify Cash Flow Summary Card
-      expect(find.text('Net'), findsOneWidget);
-      expect(find.widgetWithText(FfChip, 'Income'), findsOneWidget);
-      expect(find.widgetWithText(FfChip, 'Expenses'), findsOneWidget);
+    // Day sections with that day's totals.
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Yesterday'), findsOneWidget);
+    expect(find.text('−₹430  +₹50,000'), findsOneWidget);
+    expect(find.text('−₹120'), findsOneWidget);
 
-      // Verify Transaction Row
-      expect(find.text('Swiggy Biryani'), findsOneWidget);
-      expect(find.text('− ₹430'), findsWidgets);
-    },
-  );
+    expect(find.text('Swiggy Biryani'), findsOneWidget);
+    expect(find.text('− ₹430'), findsOneWidget);
+  });
 
-  testWidgets(
-    'Tapping search icon opens dynamic search bar in app bar and allows typing and closing',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(createWidgetUnderTest());
-      await tester.pumpAndSettle();
+  testWidgets('defaults to the current month with prev/next navigation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      createWidgetUnderTest(query: TransactionQuery.initial()),
+    );
+    await tester.pumpAndSettle();
 
-      // Tap search icon
-      await tester.tap(find.byIcon(Icons.search_rounded));
-      await tester.pumpAndSettle();
+    expect(find.byTooltip('Previous period'), findsOneWidget);
+    // Cannot move into the future.
+    final next = tester.widget<IconButton>(
+      find.widgetWithIcon(IconButton, Icons.chevron_right_rounded),
+    );
+    expect(next.onPressed, isNull);
 
-      // Search TextField should now be visible in the AppBar
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Search transactions...'), findsOneWidget);
+    await tester.tap(find.byTooltip('Previous period'));
+    await tester.pumpAndSettle();
+    expect(find.text('Swiggy Biryani'), findsNothing);
+  });
 
-      // Enter search query
-      await tester.enterText(find.byType(TextField), 'Swiggy');
-      await tester.pumpAndSettle();
+  testWidgets('search filters rows and closing search restores them', (
+    tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
-      // Clear button in search bar should appear
-      expect(find.byTooltip('Clear search text'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.search_rounded));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'chai');
+    await tester.pumpAndSettle();
 
-      // Dismiss search
-      await tester.tap(find.byIcon(Icons.close_rounded));
-      await tester.pumpAndSettle();
+    expect(find.text('Chai Point'), findsOneWidget);
+    expect(find.text('Swiggy Biryani'), findsNothing);
+    expect(find.byTooltip('Clear search text'), findsOneWidget);
 
-      // Should return to normal title state
-      expect(find.text('Transactions'), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
-      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
-    },
-  );
+    await tester.tap(find.byTooltip('Close search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Swiggy Biryani'), findsOneWidget);
+    expect(find.text('Transactions'), findsOneWidget);
+  });
 
-  testWidgets(
-    'Tapping filter icon opens filter bottom sheet with Type options and controls',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(createWidgetUnderTest());
-      await tester.pumpAndSettle();
+  testWidgets('filter sheet applies a kind, chips show it, Clear all resets', (
+    tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
-      // Tap filter icon
-      await tester.tap(find.byIcon(Icons.tune_rounded));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Filter & sort'), findsOneWidget);
+    for (final label in ['Spending', 'Income', 'Transfers']) {
+      expect(find.widgetWithText(FfChip, label), findsOneWidget);
+    }
+    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('Category'), findsOneWidget);
 
-      // Bottom sheet header and type options
-      expect(find.text('Filter & sort'), findsOneWidget);
-      expect(find.text('Transaction Type'), findsOneWidget);
-      final sheetFinder = find.byType(BottomSheet);
-      expect(
-        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'All')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Expenses')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Income')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Transfers')),
-        findsOneWidget,
-      );
+    await tester.tap(find.byKey(const ValueKey('kind-income')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show results'));
+    await tester.pumpAndSettle();
 
-      // Verify Filter Dropdowns and Actions
-      expect(find.text('Category'), findsOneWidget);
-      expect(find.text('Account'), findsOneWidget);
-      expect(find.text('Payment method'), findsOneWidget);
-      expect(find.text('Tag'), findsOneWidget);
-      // Select 'Expenses' type in sheet
-      await tester.tap(
-        find.descendant(of: sheetFinder, matching: find.widgetWithText(FfChip, 'Expenses')),
-      );
-      await tester.pumpAndSettle();
+    expect(find.text('Filter & sort'), findsNothing);
+    expect(find.widgetWithText(InputChip, 'Income'), findsOneWidget);
+    expect(find.text('Employer'), findsOneWidget);
+    expect(find.text('Swiggy Biryani'), findsNothing);
+    expect(find.text('1 transaction'), findsOneWidget);
 
-      // Scroll to and apply filter
-      await tester.ensureVisible(find.text('Show transactions'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Show transactions'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('clear-all-filters')));
+    await tester.pumpAndSettle();
+    expect(find.byType(InputChip), findsNothing);
+    expect(find.text('Swiggy Biryani'), findsOneWidget);
+  });
 
-      // Filter sheet closes
-      expect(find.text('Filter & sort'), findsNothing);
-      expect(find.widgetWithText(FfChip, 'Expenses'), findsWidgets);
-      expect(find.text('Clear'), findsWidgets);
+  testWidgets('amount sort shows a flat list without day headers', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      createWidgetUnderTest(
+        query: const TransactionQuery(sort: TransactionSort.amountHigh),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      // Clear all active filters
-      await tester.tap(find.text('Clear'));
-      await tester.pumpAndSettle();
+    expect(find.text('Today'), findsNothing);
+    expect(find.widgetWithText(InputChip, 'Largest first'), findsOneWidget);
+  });
 
-      expect(find.text('Clear'), findsNothing);
-    },
-  );
+  testWidgets('long-press enters selection mode with bulk actions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
+    await tester.longPress(find.text('Swiggy Biryani'));
+    await tester.pumpAndSettle();
 
+    expect(find.text('1 selected'), findsOneWidget);
+    expect(find.byTooltip('Change category'), findsOneWidget);
+    expect(find.byTooltip('Delete selected'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.tap(find.text('Chai Point'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 selected'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Select all'));
+    await tester.pumpAndSettle();
+    expect(find.text('3 selected'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Cancel selection'));
+    await tester.pumpAndSettle();
+    expect(find.text('Transactions'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
 
   testWidgets('TransactionsScreen renders cleanly in Deep Water dark theme', (
     WidgetTester tester,
@@ -336,47 +394,44 @@ void main() {
     },
   );
 
-  testWidgets(
-    'No review task card is rendered when pending count is 0',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            settingsStreamProvider.overrideWith(
-              (ref) => Stream.value(const AppSettings()),
-            ),
-            filteredTransactionsProvider.overrideWith(
-              (ref) => Stream.value([testTransaction]),
-            ),
-            allTransactionsStreamProvider.overrideWith(
-              (ref) => Stream.value([testTransaction]),
-            ),
-            categoriesStreamProvider.overrideWith(
-              (ref) => Stream.value([testCategory]),
-            ),
-            rawAccountsStreamProvider.overrideWith(
-              (ref) => Stream.value([testAccount]),
-            ),
-            pendingReviewCountProvider.overrideWithValue(0),
-            pendingTransactionsStreamProvider.overrideWith(
-              (ref) => Stream.value([]),
-            ),
-          ],
-          child: MaterialApp(
-            theme: StillwaterTheme.daylight,
-            home: TransactionsScreen(
-              onOpenDetail: (_) {},
-              onAddTransaction: () {},
-            ),
+  testWidgets('No review task card is rendered when pending count is 0', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          settingsStreamProvider.overrideWith(
+            (ref) => Stream.value(const AppSettings()),
+          ),
+          filteredTransactionsProvider.overrideWith(
+            (ref) => Stream.value([testTransaction]),
+          ),
+          allTransactionsStreamProvider.overrideWith(
+            (ref) => Stream.value([testTransaction]),
+          ),
+          categoriesStreamProvider.overrideWith(
+            (ref) => Stream.value([testCategory]),
+          ),
+          rawAccountsStreamProvider.overrideWith(
+            (ref) => Stream.value([testAccount]),
+          ),
+          pendingReviewCountProvider.overrideWithValue(0),
+          pendingTransactionsStreamProvider.overrideWith(
+            (ref) => Stream.value([]),
+          ),
+        ],
+        child: MaterialApp(
+          theme: StillwaterTheme.daylight,
+          home: TransactionsScreen(
+            onOpenDetail: (_) {},
+            onAddTransaction: () {},
           ),
         ),
-      );
-      await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.textContaining('imported transaction'), findsNothing);
-      expect(find.text('Review now'), findsNothing);
-    },
-  );
+    expect(find.textContaining('imported transaction'), findsNothing);
+    expect(find.text('Review now'), findsNothing);
+  });
 }
-
-

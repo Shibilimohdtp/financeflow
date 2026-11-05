@@ -10,6 +10,7 @@ import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
+import '../accounts/accounts_controller.dart';
 import '../transactions/transactions_controller.dart';
 import 'backup_controller.dart';
 
@@ -97,6 +98,7 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
 
     if (result.isSuccess && mounted) {
       ref.invalidate(filteredTransactionsProvider);
+      ref.invalidate(allTransactionsStreamProvider);
       showDialog(
         context: context,
         barrierDismissible: false,

@@ -77,22 +77,20 @@ final dashboardPreviousDateRangeProvider =
 
 // Stream of transactions for the selected dashboard period
 final dashboardTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
-  final range = ref.watch(dashboardDateRangeProvider);
+  final period = ref.watch(dashboardPeriodProvider);
   final repo = ref.watch(transactionRepositoryProvider);
-  return repo.watchSearchAndFilterTransactions(
-    startDate: range.start,
-    endDate: range.end,
-  );
+  return repo.watchTransactionsBetween(period.start, period.endExclusive);
 });
 
 // Stream of transactions for the previous period
 final dashboardPreviousTransactionsProvider = StreamProvider<List<Transaction>>(
   (ref) {
-    final range = ref.watch(dashboardPreviousDateRangeProvider);
+    final previous =
+        ref.watch(dashboardPeriodProvider).comparison(DateTime.now()).previous;
     final repo = ref.watch(transactionRepositoryProvider);
-    return repo.watchSearchAndFilterTransactions(
-      startDate: range.start,
-      endDate: range.end,
+    return repo.watchTransactionsBetween(
+      previous.start,
+      previous.endExclusive,
     );
   },
 );

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/budgets/add_edit_budget_sheet.dart';
 import 'package:financeflow/features/budgets/budget_detail_screen.dart';
 import 'package:financeflow/features/budgets/budgets_controller.dart';
 import 'package:financeflow/features/budgets/budgets_screen.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
-import 'package:financeflow/features/transactions/transactions_controller.dart';
 import 'package:financeflow/models/budget.dart';
 import 'package:financeflow/models/category.dart';
 import 'package:financeflow/models/transaction.dart';
@@ -173,7 +173,7 @@ void main() {
             selectedDashboardMonthProvider.overrideWith(
               (ref) => DateTime(2026, 8, 1),
             ),
-            filteredTransactionsProvider.overrideWith(
+            allTransactionsStreamProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
             ),
           ],
