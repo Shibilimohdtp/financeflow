@@ -27,7 +27,9 @@ without changing the ledger.
 - Lending/borrowing and principal repayments move cash and a receivable or
   liability, but do not become income/expense.
 - Loan payment components equal the transaction amount within one minor unit.
-  Only interest and fees are consumption expense; the total is cash outflow.
+  The **full** loan repayment (principal + interest + fees) counts as spending
+  and as cash outflow (owner decision 2026-11-05). The principal component is
+  still reported separately as debt principal paid.
 - Investment principal is investing cash flow, not consumption. Fees are
   consumption expense. Redemption proceeds are cash inflow; only an explicitly
   supplied gain component can be reported as income.

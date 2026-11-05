@@ -1,6 +1,6 @@
 # Phase 0 audit and roadmap (2026-11-05)
 
-Status: **awaiting owner approval**. No code has been changed in this phase.
+Status: **approved 2026-11-05** with the owner decisions recorded in section 10.
 
 ## 1. Baseline
 
@@ -130,3 +130,14 @@ I agree with the proposed order, with two changes. First, **platform risk moves 
 - **D6 Scope:** India-first INR v1 with a currency abstraction ready (recommended), or multi-currency v1.
 - **D7 Cuts for v1:** hide financial-health score, heat-map, and investments (recommended), or keep.
 - **D8 Isar fork migration:** approve moving to `isar_community` in Phase 1a. This needs a personal encrypted backup per AGENTS.md before any device validation.
+
+## 10. Owner decisions (2026-11-05)
+
+- **D1 Brand and theme:** keep the "FinanceFlow" name and the current theme (palette and naming) unchanged.
+- **D2 Staged work:** committed to `main` as a checkpoint (`ff526a9`).
+- **D3 SMS:** keep SMS reading as a feature. Separately, local notifications are reported as never arriving; diagnose and fix.
+- **D4 AI:** remove every AI/Gemini/LLM feature and its UI, settings, consent and activity log. No "smart suggestions" branding.
+- **D5 Loans/EMI:** the **full EMI amount counts as spending** (code already does this; the ADR is updated). The loan balance shown to users must include the **remaining interest**, not just outstanding principal.
+- **D6 Currency:** INR stays the default, with an app-wide option for USD, EUR and GBP.
+- **D7 Home:** remove duplicate or overloaded home sections, but keep every feature reachable elsewhere.
+- **D8 Isar fork:** follow the roadmap. It is gated on a personal encrypted backup per AGENTS.md.

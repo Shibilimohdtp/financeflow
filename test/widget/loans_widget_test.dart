@@ -14,8 +14,10 @@ void main() {
     'LoanDetailScreen renders overdue banner and quick pay action for old loan',
     (WidgetTester tester) async {
       final now = DateTime.now();
-      // Loan started 3 months ago (May 1st, 2026), 12 months tenure, EMI on 5th
+      // Loan started 3 months ago, 12 months tenure, EMI on the 5th. An EMI
+      // due today is not overdue yet, so the count depends on today's date.
       final pastStartDate = DateTime(now.year, now.month - 3, 1);
+      final expectedOverdue = now.day > 5 ? 3 : 2;
 
       final loan = Loan(
         id: 'loan_widget_test',
@@ -63,7 +65,7 @@ void main() {
 
       // Verify Overdue banner is displayed because loan has past due installments
       expect(find.textContaining('Overdue EMI'), findsWidgets);
-      expect(find.text('Pay All (3) Overdue'), findsOneWidget);
+      expect(find.text('Pay All ($expectedOverdue) Overdue'), findsOneWidget);
       expect(find.text('Pay #1'), findsOneWidget);
     },
   );
@@ -73,6 +75,8 @@ void main() {
     (WidgetTester tester) async {
       final now = DateTime.now();
       final pastStartDate = DateTime(now.year, now.month - 2, 1);
+      // EMIs fall on the 5th; one due today is not overdue yet.
+      final expectedOverdue = now.day > 5 ? 2 : 1;
 
       final loan = Loan(
         id: 'loan_schedule_test',
@@ -125,14 +129,14 @@ void main() {
 
       // Verify confirmation dialog appears
       expect(find.text('Mark All Overdue EMIs Paid?'), findsOneWidget);
-      expect(find.text('Mark All (2) Paid'), findsOneWidget);
+      expect(find.text('Mark All ($expectedOverdue) Paid'), findsOneWidget);
 
       // Confirm payment
-      await tester.tap(find.text('Mark All (2) Paid'));
+      await tester.tap(find.text('Mark All ($expectedOverdue) Paid'));
       await tester.pumpAndSettle();
 
-      // Verify payments recorded and status updated to 2 Paid
-      expect(find.text('2 Paid'), findsOneWidget);
+      // Verify payments recorded and paid count matches the overdue count
+      expect(find.text('$expectedOverdue Paid'), findsOneWidget);
       expect(find.text('0 Overdue'), findsNothing); // Overdue banner is gone!
     },
   );
