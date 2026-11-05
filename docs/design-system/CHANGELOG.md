@@ -26,8 +26,8 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | DS-3 Bundle fonts, drop `google_fonts` | done (3c44dcd), device check pending | analyze, tests and both APK builds green; cold start on the Pixel waits for the backup gate |
 | DS-4a Toast, dialogs, date pickers, banner | done (1d687f2) | budgets files still use the legacy `FfSnackbar`/`FfConfirmDialog` shims and 2 raw pickers until that chat lands |
 | DS-4b Shared sheet frame + `showFfSheet`, migrate every sheet | done (5d7660d) | the 3 budgets sheets migrate in DS-7h |
-| DS-5a App bars + dividers | done (commit "feat(ui): DS-5a …"; hash filled in at DS-5b) | Settings' floating `SliverAppBar` moves with Settings in DS-7; 9 dividers with row-specific indents move with rows in DS-5b |
-| DS-5b List rows (`FfRow` merging `FfListRow`/`FfSwitchRow`, raw `ListTile`s, row dividers) | not started | |
+| DS-5a App bars + dividers | done (570f490) | Settings' floating `SliverAppBar` moves with Settings in DS-7; 9 dividers with row-specific indents move with rows in DS-5b |
+| DS-5b List rows (`FfRow` merging `FfListRow`/`FfSwitchRow`, raw `ListTile`s, row dividers) | done (commit "feat(ui): DS-5b …"; hash filled in at DS-5c) | key-value rows (`_DetailRow`, `_InfoRow`, `_MetricRow`, `_ContributionRow`) and the two lending-history `ListTile`s move to DS-6 with their dividers |
 | DS-5c Inputs (`FfTextField`, `FfSelect`, menus) | not started | |
 | DS-6 Data display & charts | not started | |
 | DS-7a–h Feature migrations | not started | budgets last (DS-7h) |
@@ -46,7 +46,8 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | Date | Slice | Commit | What changed |
 |---|---|---|---|
 | 2026-11-05 | DS-0 | 7c6e015 | Audit, proposal, palette preview, `tool/design_system_audit.dart`, this log, AGENTS.md pointer. |
-| 2026-11-05 | DS-5a | "feat(ui): DS-5a …" | `FfAppBar` (string title with one-line ellipsis, optional `subtitle`, `titleWidget` escape hatch, `.search` and `.selection` variants) and `FfDivider` (`()`, `.inset()`, `.spaced()`; hairline in `borderSubtle`). Migrated 33 app bars and 57 dividers in 45 files. The Money tab's search and selection bars now use the variants; the loan detail's custom two-line title became `title` + `subtitle`; Add transaction drops its one-off title style. Tab titles now sit on the 20 dp page margin (Material default was 16); the loan detail title had been flush against the screen edge. Screenshots in `screenshots/ds-5a/`. |
+| 2026-11-05 | DS-5b | "feat(ui): DS-5b …" | `FfRow`: plain icon, tone tile (`FfIconTile`) or custom leading; `detail`, chevron, `selected` check or custom trailing; `.toggle`, `.checkbox`, `.radio`; `destructive`; 48 dp minimum; one merged semantics node per row (label, state, tap). Added `FfTone` (one colour mapping for components) and `FfIconTile`. `FfGroupedContainer` now owns the dividers (`dividerInset: FfRowLeading.icon/tile`) and takes no raw colours. Migrated 27 Settings rows and 10 groups, Security's rows and groups, 7 `FfListRow`, 11 `FfSwitchRow` and 21 `ListTile`/`SwitchListTile`/`CheckboxListTile`/`RadioListTile`. Deleted `FfSwitchRow` and 8 private row/group/divider widgets. `FfListRow` stays as a legacy shim for budgets. Screenshots in `screenshots/ds-5b/`. |
+| 2026-11-05 | DS-5a | 570f490 | `FfAppBar` (string title with one-line ellipsis, optional `subtitle`, `titleWidget` escape hatch, `.search` and `.selection` variants) and `FfDivider` (`()`, `.inset()`, `.spaced()`; hairline in `borderSubtle`). Migrated 33 app bars and 57 dividers in 45 files. The Money tab's search and selection bars now use the variants; the loan detail's custom two-line title became `title` + `subtitle`; Add transaction drops its one-off title style. Tab titles now sit on the 20 dp page margin (Material default was 16); the loan detail title had been flush against the screen edge. Screenshots in `screenshots/ds-5a/`. |
 | 2026-11-05 | DS-4b | 5d7660d | New `FfSheet` frame (sheet colour, 28 dp top radius, max 90% height, keyboard lift, bottom safe area) and `showFfSheet` (scroll-controlled, below the status bar, transparent route). 26 callers and 22 sheet frames migrated, among them loan, account, investment, goal, contribution, subscription, lending, advance, repayment, PIN, alert settings, CSV import, category/account/payment pickers, filter, period, bulk-recategorize, settings and the transaction action menu. Things fixed along the way: the advance sheet had a 16 dp radius and no drag handle or labelled close; the payment picker could not scroll; two sheets added the keyboard inset twice; the subscription payment row opened a full screen inside a transparent sheet (it now opens as a page, like everywhere else). The loan form no longer uses `DraggableScrollableSheet`. `test/widget/components/sheet_components_test.dart` covers frame, height cap and scroll, keyboard, safe area and return value, and fails if a raw `showModalBottomSheet` appears outside budgets. Screenshots are in `screenshots/ds-4b/`. |
 | 2026-11-05 | DS-4a | 1d687f2 | New shared components: `FfToast` (tones with icons and screen-reader prefix, Undo in `toastAction`, 6 s when there is an action), `FfDialog` (`confirm`, `confirmTyped`, `info`, `withProgress`), `FfBanner` (info/success/warning/error) and `pickFfDate`/`pickFfDateRange`/`pickFfTime` (clamp out-of-range initial dates instead of crashing). Migrated 89 toasts (20 error and 16 validation-warning tones assigned from their messages), 22 confirms, 14 pickers and both raw backup dialogs, in 31 feature files. Picker and dialog shape now come from the theme. New role `statusSuccessContainer`, plus banner contrast rules. `FfSnackbar` and `FfConfirmDialog` are now forwarding shims for the budgets files. Screenshots are in `screenshots/ds-4a/`. |
 | 2026-11-05 | DS-3 | 3c44dcd | Fonts bundled in `assets/fonts/`: Manrope 400–800 and Fraunces 600/700, cut from the Google Fonts variable fonts with `tool/fonts/make_static_fonts.py`. OFL licences and provenance are in `assets/fonts/README.md`. `google_fonts` is removed, so nothing fetches fonts at runtime and release now renders Manrope (its manifest has no INTERNET permission, so it never could before). `FfFonts` names the families. Release APK went from 65.1 to 64.4 MB. `test/helpers/app_fonts.dart` loads the real fonts for future screenshots; `test/theme/bundled_fonts_test.dart` checks the manifest, the weights and that text measures differently with them. |
@@ -67,6 +68,8 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | 2026-11-05 | Lichen refinements approved for DS-8: expense from raspberry to brick, lighter tertiary text, readable snackbar Undo, brighter cards. | owner |
 | 2026-11-05 | Bundle Manrope and the Fraunces weight in use, and drop `google_fonts` (DS-3). Downloading the font files from the Google Fonts GitHub repo is approved. | owner |
 | 2026-11-05 | The design-system gallery is debug-only (`kDebugMode`), reached by long-pressing the version row in Settings, and replaces `branding_preview_screen.dart`. | owner |
+| 2026-11-05 | Row leading: tinted tile (`iconTone`) for things with an identity (accounts, payees, categories); plain neutral icon for settings and actions. Pickers that close on tap mark the current choice with a trailing check (`selected`); choices inside a form use `FfRow.radio`. | DS-5b |
+| 2026-11-05 | Row subtitles use `bodySm` (13 dp), up from 11 dp in Settings. More subtitles wrap to two lines, so settings lists are taller; legibility was the priority. Revisit only together with a dense-mode preference. | DS-5b |
 | 2026-11-05 | `FfScaffold` (page template) is not built separately. It arrives during the DS-7 screen migrations, where each body is restructured anyway, so it is designed against real screens rather than in the abstract. | DS-5a |
 | 2026-11-05 | App bar titles: without a back/close button they start at the page margin (`FfSpace.pageMargin`); with one, they keep Material's spacing after it. Titles are one line; the theme sets the style. | DS-5a |
 | 2026-11-05 | Sheets use the page colour (`surfaceSheet` = page in Lichen), which 17 of 22 sheets already used. Their inputs and cards keep the same contrast as on full screens. The theme's `bottomSheetTheme` follows, and the parity test records this one intended difference. | DS-4b |
@@ -85,7 +88,7 @@ These are the open items. Palette items are also listed in `knownIssues` in `tes
 | Issue | Where | Fixed by |
 |---|---|---|
 | Income and expense too similar under deuteranopia (ΔE 5.8 light, 9.7 dark) | Lichen palette | DS-8 (expense moves to brick) |
-| Text sizes 9 and 10 used in feature code, below the type scale | 50 files | DS-5 to DS-7 migrations |
+| Text sizes 9 and 10 used in feature code, below the type scale | 46 files (Settings, Security and permission rows fixed in DS-5b) | DS-6 and DS-7 migrations |
 
 ## Leakage over time
 
@@ -97,6 +100,7 @@ Command: `dart run tool/design_system_audit.dart --shared` (lib/ minus lib/theme
 | 2026-11-05 | DS-4a | 5 | 22 | 170 | 61 | 153 | 43 | 25* | 86 | 36 | 30 | 0 | 2 | 71 |
 | 2026-11-05 | DS-4b | 5 | 22 | 170 | 57 | 153 | 43 | 25 | 86 | 36 | 3 | 0 | 2 | 71 |
 | 2026-11-05 | DS-5a | 5 | 22 | 169 | 57 | 152 | 43 | 25 | 86 | 4 | 3 | 0 | 2 | 14 |
+| 2026-11-05 | DS-5b | 5 | 22 | 165 | 57 | 145 | 42 | 25 | 80 | 4 | 3 | 0 | 2 | 9 |
 
 \* Not new literals: formatting joined multi-line `EdgeInsets` calls onto one line, where the line-based check now counts them. The remaining 2 pickers and 3 sheets are in budgets (other chat).
 
@@ -109,4 +113,5 @@ checked in light and dark; say where (golden, emulator, Pixel 7).
 |---|---|---|---|
 | Toast with Undo, delete confirm, date picker (shared overlays used across the app) | DS-4a | 1d687f2 | golden capture, light and dark, before and after: `screenshots/ds-4a/` |
 | All bottom sheets outside budgets (loan, goal, category, account and payment pickers shown) | DS-4b | 5d7660d | golden capture, light and dark, before and after: `screenshots/ds-4b/` |
-| Loans list and loan detail (app bar alignment, two-line title) | DS-5a | this commit | golden capture, light and dark, before and after: `screenshots/ds-5a/` |
+| Loans list and loan detail (app bar alignment, two-line title) | DS-5a | 570f490 | golden capture, light and dark, before and after: `screenshots/ds-5a/` |
+| Settings hub, App Settings, Security (rows, groups, dividers, toggles) | DS-5b | this commit | golden capture, light and dark, before and after: `screenshots/ds-5b/` |

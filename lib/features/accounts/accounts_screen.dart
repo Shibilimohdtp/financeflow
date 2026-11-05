@@ -9,7 +9,6 @@ import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
@@ -24,6 +23,7 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -227,7 +227,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                           subtitleParts.add('Archived');
                         }
 
-                        return FfListRow(
+                        return FfRow(
                           leading: Container(
                             width: StillwaterTokens.iconTileSize,
                             height: StillwaterTokens.iconTileSize,

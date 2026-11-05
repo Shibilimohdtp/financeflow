@@ -9,6 +9,7 @@ import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_row.dart';
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -113,18 +114,14 @@ class _NotificationPermissionScreenState
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          ListTile(
-            leading: Icon(
-              hasAccess ? Icons.check_circle_outline : Icons.info_outline,
-            ),
-            title: Text(
-              'Android notification access: ${hasAccess ? 'Allowed' : 'Not allowed'}',
-            ),
-            subtitle: Text(
-              hasAccess
-                  ? 'The system notification-listener service is available.'
-                  : 'Android requires a separate action in Notification Access settings.',
-            ),
+          FfRow(
+            icon: hasAccess ? Icons.check_circle_outline : Icons.info_outline,
+            title:
+                'Android notification access: ${hasAccess ? 'Allowed' : 'Not allowed'}',
+            subtitle:
+                hasAccess
+                    ? 'The system notification-listener service is available.'
+                    : 'Android requires a separate action in Notification Access settings.',
           ),
 
           const SizedBox(height: StillwaterTokens.spaceMd),
@@ -144,37 +141,24 @@ class _NotificationPermissionScreenState
             child: Column(
               children: [
                 for (int i = 0; i < _supportedApps.entries.length; i++) ...[
-                  CheckboxListTile(
-                    title: Text(
-                      _supportedApps.entries.elementAt(i).value,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      _supportedApps.entries.elementAt(i).key,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                        fontSize: 10,
-                      ),
-                    ),
-                    value: _selectedPackages.contains(
+                  FfRow.checkbox(
+                    title: _supportedApps.entries.elementAt(i).value,
+                    subtitle: _supportedApps.entries.elementAt(i).key,
+                    checked: _selectedPackages.contains(
                       _supportedApps.entries.elementAt(i).key,
                     ),
-                    activeColor: theme.colorScheme.primary,
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          _selectedPackages.add(
-                            _supportedApps.entries.elementAt(i).key,
-                          );
-                        } else {
-                          _selectedPackages.remove(
-                            _supportedApps.entries.elementAt(i).key,
-                          );
-                        }
-                      });
-                    },
+                    onChanged:
+                        (checked) => setState(() {
+                          if (checked) {
+                            _selectedPackages.add(
+                              _supportedApps.entries.elementAt(i).key,
+                            );
+                          } else {
+                            _selectedPackages.remove(
+                              _supportedApps.entries.elementAt(i).key,
+                            );
+                          }
+                        }),
                   ),
                   if (i < _supportedApps.entries.length - 1) const FfDivider(),
                 ],

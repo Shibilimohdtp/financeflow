@@ -17,6 +17,7 @@ import '../../shared/widgets/ff_banner.dart';
 import '../../theme/ff.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class RestorePreviewScreen extends ConsumerStatefulWidget {
   final File backupFile;
@@ -385,26 +386,23 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
               ),
               child: Column(
                 children: [
-                  RadioListTile<RestoreMode>(
-                    value: RestoreMode.merge,
-                    groupValue: _selectedMode,
-                    title: const Text('Merge with Existing Data'),
-                    subtitle: const Text(
-                      'Safely skip duplicate records and add missing entries.',
-                    ),
-                    activeColor: theme.colorScheme.primary,
-                    onChanged: (val) => setState(() => _selectedMode = val!),
+                  FfRow.radio(
+                    title: 'Merge with Existing Data',
+                    subtitle:
+                        'Safely skip duplicate records and add missing entries.',
+                    selected: _selectedMode == RestoreMode.merge,
+                    onTap:
+                        () => setState(() => _selectedMode = RestoreMode.merge),
                   ),
                   const FfDivider(),
-                  RadioListTile<RestoreMode>(
-                    value: RestoreMode.replace,
-                    groupValue: _selectedMode,
-                    title: const Text('Clean Replace (Overwrite)'),
-                    subtitle: const Text(
-                      'Clear current database and restore state from this backup.',
-                    ),
-                    activeColor: context.secColors.error,
-                    onChanged: (val) => setState(() => _selectedMode = val!),
+                  FfRow.radio(
+                    title: 'Clean Replace (Overwrite)',
+                    subtitle:
+                        'Clear current database and restore state from this backup.',
+                    selected: _selectedMode == RestoreMode.replace,
+                    onTap:
+                        () =>
+                            setState(() => _selectedMode = RestoreMode.replace),
                   ),
                 ],
               ),

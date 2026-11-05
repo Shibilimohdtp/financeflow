@@ -11,7 +11,6 @@ import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
@@ -24,6 +23,8 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../theme/ff_tone.dart';
 
 class SubscriptionDetailScreen extends ConsumerWidget {
   final Subscription subscription;
@@ -308,20 +309,23 @@ class SubscriptionDetailScreen extends ConsumerWidget {
           const FfSectionHeader(title: 'Plan Details'),
           FfGroupedContainer(
             children: [
-              FfListRow(
+              FfRow(
                 icon: Icons.repeat_rounded,
+                iconTone: FfTone.primary,
                 title: 'Billing Frequency',
                 subtitle: currentSub.billingFrequency.displayName,
                 showChevron: false,
               ),
-              FfListRow(
+              FfRow(
                 icon: Icons.account_balance_outlined,
+                iconTone: FfTone.primary,
                 title: 'Linked Payment Account',
                 subtitle: linkedAccount?.name ?? 'No account linked',
                 showChevron: false,
               ),
-              FfListRow(
+              FfRow(
                 icon: Icons.notifications_active_outlined,
+                iconTone: FfTone.primary,
                 title: 'Renewal Reminder',
                 subtitle:
                     currentSub.isReminderEnabled
@@ -330,8 +334,9 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 showChevron: false,
               ),
               if (currentSub.notes != null && currentSub.notes!.isNotEmpty)
-                FfListRow(
+                FfRow(
                   icon: Icons.notes_rounded,
+                  iconTone: FfTone.primary,
                   title: 'Notes',
                   subtitle: currentSub.notes!,
                   showChevron: false,

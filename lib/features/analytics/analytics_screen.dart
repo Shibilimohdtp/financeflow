@@ -12,7 +12,6 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
@@ -25,6 +24,8 @@ import 'widgets/analytics_cash_flow_card.dart';
 import 'widgets/analytics_metrics_hero.dart';
 import 'widgets/expense_category_breakdown.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../theme/ff_tone.dart';
 
 /// "Where did my money go" for the shared report period. Every category and
 /// payee opens the Money tab filtered to exactly the transactions behind it.
@@ -191,7 +192,7 @@ class AnalyticsScreen extends ConsumerWidget {
           FfGroupedContainer(
             children: [
               for (final src in report.incomeSources)
-                FfListRow(
+                FfRow(
                   leading: FfCategoryTile(
                     iconIdentifier: src.categoryIcon,
                     colorTokenIdentifier: src.categoryColor,
@@ -200,7 +201,7 @@ class AnalyticsScreen extends ConsumerWidget {
                   title: src.categoryName,
                   subtitle:
                       '${src.transactionCount} · ${(src.percentage * 100).toStringAsFixed(0)}%',
-                  trailingText: CurrencyFormatter.formatAmount(src.amount),
+                  detail: CurrencyFormatter.formatAmount(src.amount),
                   onTap: show(
                     TransactionQuery(
                       period: period,
@@ -221,16 +222,15 @@ class AnalyticsScreen extends ConsumerWidget {
           FfGroupedContainer(
             children: [
               for (final merch in report.topMerchants.take(5))
-                FfListRow(
+                FfRow(
                   icon: Icons.storefront_outlined,
+                  iconTone: FfTone.primary,
                   title: merch.normalizedMerchant,
                   subtitle:
                       merch.transactionCount == 1
                           ? '1 transaction'
                           : '${merch.transactionCount} transactions',
-                  trailingText: CurrencyFormatter.formatAmount(
-                    merch.totalAmount,
-                  ),
+                  detail: CurrencyFormatter.formatAmount(merch.totalAmount),
                   onTap: show(
                     TransactionQuery(
                       period: period,
@@ -251,7 +251,7 @@ class AnalyticsScreen extends ConsumerWidget {
           FfGroupedContainer(
             children: [
               for (final tx in report.largestTransactions)
-                FfListRow(
+                FfRow(
                   leading: FfCategoryTile(
                     iconIdentifier: tx.categoryIcon,
                     colorTokenIdentifier: tx.categoryColor,

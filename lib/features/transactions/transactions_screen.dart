@@ -31,6 +31,7 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -211,8 +212,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   shrinkWrap: true,
                   children: [
                     for (final c in categories.where((c) => !c.isArchived))
-                      ListTile(
-                        title: Text(c.name),
+                      FfRow(
+                        title: c.name,
                         onTap: () => Navigator.of(ctx).pop(c),
                       ),
                   ],

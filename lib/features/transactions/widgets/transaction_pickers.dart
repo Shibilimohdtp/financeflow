@@ -12,6 +12,8 @@ import '../../../theme/stillwater_colors.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_icon_tile.dart';
 
 /// A compact, rich tile button for selecting an Account.
 class AccountTileButton extends StatelessWidget {
@@ -464,7 +466,6 @@ class AccountPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
 
     return FfSheet(
       children: [
@@ -495,41 +496,12 @@ class AccountPickerSheet extends StatelessWidget {
                         final account = accounts[index];
                         final isSelected = account.id == selected?.id;
 
-                        return ListTile(
-                          leading: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.4),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _icon(account.type),
-                              size: 20,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          title: Text(
-                            account.name,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          trailing:
-                              isSelected
-                                  ? Icon(
-                                    Icons.check_circle_rounded,
-                                    color: theme.colorScheme.primary,
-                                  )
-                                  : null,
+                        return FfRow(
+                          leading: FfIconTile(icon: _icon(account.type)),
+                          title: account.name,
+                          subtitle:
+                              '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
+                          selected: isSelected,
                           onTap: () => Navigator.pop(context, account),
                         );
                       },

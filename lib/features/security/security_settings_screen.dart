@@ -11,6 +11,8 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -222,70 +224,60 @@ class _SecuritySettingsScreenState
           // ── 2. App Authentication ────────────────────────────────────
           _SectionLabel(label: 'App Authentication & Lock'),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-              border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
-              ),
-            ),
-            child: Column(
-              children: [
-                _SecuritySwitchRow(
-                  icon: Icons.fingerprint_rounded,
-                  title: 'Biometric Authentication',
-                  subtitle: 'Unlock with Fingerprint or Face ID',
-                  value: isBiometric,
-                  onChanged: (val) async {
-                    if (val) {
-                      final securityService = ref.read(securityServiceProvider);
-                      final isAvailable =
-                          await securityService.isBiometricsAvailable();
-                      if (!isAvailable && context.mounted) {
-                        FfToast.show(
-                          context,
-                          message:
-                              'Biometric authentication is not configured on this device.',
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
+            children: [
+              FfRow.toggle(
+                icon: Icons.fingerprint_rounded,
+                title: 'Biometric Authentication',
+                subtitle: 'Unlock with Fingerprint or Face ID',
+                value: isBiometric,
+                onChanged: (val) async {
+                  if (val) {
+                    final securityService = ref.read(securityServiceProvider);
+                    final isAvailable =
+                        await securityService.isBiometricsAvailable();
+                    if (!isAvailable && context.mounted) {
+                      FfToast.show(
+                        context,
+                        message:
+                            'Biometric authentication is not configured on this device.',
+                      );
+                      return;
+                    }
+                    final authSuccess = await securityService
+                        .authenticateWithBiometrics(
+                          reason: 'Enable Biometric Lock',
                         );
-                        return;
-                      }
-                      final authSuccess = await securityService
-                          .authenticateWithBiometrics(
-                            reason: 'Enable Biometric Lock',
-                          );
-                      if (authSuccess) {
-                        await ref
-                            .read(settingsControllerProvider.notifier)
-                            .setBiometricEnabled(true);
-                      }
-                    } else {
+                    if (authSuccess) {
                       await ref
                           .read(settingsControllerProvider.notifier)
-                          .setBiometricEnabled(false);
+                          .setBiometricEnabled(true);
                     }
-                  },
-                ),
-                _SecurityDivider(),
-                _SecurityActionRow(
-                  icon: Icons.lock_outline_rounded,
-                  title: isPin ? 'App PIN Protected' : 'Set Security PIN',
-                  subtitle:
-                      isPin
-                          ? 'PIN is active. Tap to change or remove.'
-                          : 'Require a 4-6 digit code on launch',
-                  trailing:
-                      isPin
-                          ? TextButton(
-                            onPressed: () => _removePin(context),
-                            child: const Text('Remove'),
-                          )
-                          : null,
-                  onTap: () => _showSetPinSheet(context),
-                ),
-              ],
-            ),
+                  } else {
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .setBiometricEnabled(false);
+                  }
+                },
+              ),
+              FfRow(
+                icon: Icons.lock_outline_rounded,
+                title: isPin ? 'App PIN Protected' : 'Set Security PIN',
+                subtitle:
+                    isPin
+                        ? 'PIN is active. Tap to change or remove.'
+                        : 'Require a 4-6 digit code on launch',
+                trailing:
+                    isPin
+                        ? TextButton(
+                          onPressed: () => _removePin(context),
+                          child: const Text('Remove'),
+                        )
+                        : null,
+                onTap: () => _showSetPinSheet(context),
+              ),
+            ],
           ),
 
           const SizedBox(height: StillwaterTokens.space2Xl),
@@ -293,192 +285,42 @@ class _SecuritySettingsScreenState
           // ── 3. Privacy Safeguards ────────────────────────────────────
           _SectionLabel(label: 'Privacy & Screen Protection'),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-              border: Border.all(
-                color: theme.dividerColor,
-                width: StillwaterTokens.borderWidthHairline,
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
+            children: [
+              FfRow.toggle(
+                icon: Icons.blur_on_rounded,
+                title: 'Privacy Blur Mode',
+                subtitle: 'Mask balance figures by default in views',
+                value: isPrivacyBlur,
+                onChanged: (val) {
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .setPrivacyBlurEnabled(val);
+                },
               ),
-            ),
-            child: Column(
-              children: [
-                _SecuritySwitchRow(
-                  icon: Icons.blur_on_rounded,
-                  title: 'Privacy Blur Mode',
-                  subtitle: 'Mask balance figures by default in views',
-                  value: isPrivacyBlur,
-                  onChanged: (val) {
+              FfRow.toggle(
+                icon: Icons.hide_image_outlined,
+                title: 'Screenshot & Recents Protection',
+                subtitle:
+                    'Block app preview screenshots in Android task switcher',
+                value: isScreenshotProtection,
+                onChanged: (val) {
+                  if (settings != null) {
                     ref
                         .read(settingsControllerProvider.notifier)
-                        .setPrivacyBlurEnabled(val);
-                  },
-                ),
-                _SecurityDivider(),
-                _SecuritySwitchRow(
-                  icon: Icons.hide_image_outlined,
-                  title: 'Screenshot & Recents Protection',
-                  subtitle:
-                      'Block app preview screenshots in Android task switcher',
-                  value: isScreenshotProtection,
-                  onChanged: (val) {
-                    if (settings != null) {
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .updateSettings(
-                            settings.copyWith(
-                              isScreenshotProtectionEnabled: val,
-                            ),
-                          );
-                    }
-                  },
-                ),
-              ],
-            ),
+                        .updateSettings(
+                          settings.copyWith(isScreenshotProtectionEnabled: val),
+                        );
+                  }
+                },
+              ),
+            ],
           ),
 
           const SizedBox(height: StillwaterTokens.space4Xl),
         ],
       ),
-    );
-  }
-}
-
-class _SecuritySwitchRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SecuritySwitchRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StillwaterTokens.spaceMd,
-        vertical: StillwaterTokens.spaceSm,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: theme.colorScheme.primary),
-          const SizedBox(width: StillwaterTokens.spaceMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: value,
-            activeColor: theme.colorScheme.primary,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SecurityActionRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Widget? trailing;
-  final VoidCallback onTap;
-
-  const _SecurityActionRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.trailing,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceMd,
-          vertical: StillwaterTokens.spaceSm,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
-            const SizedBox(width: StillwaterTokens.spaceMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (trailing != null)
-              trailing!
-            else
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: theme.colorScheme.secondary,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SecurityDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: StillwaterTokens.borderWidthHairline,
-      indent: StillwaterTokens.spaceMd + 20 + StillwaterTokens.spaceMd,
-      endIndent: 0,
     );
   }
 }

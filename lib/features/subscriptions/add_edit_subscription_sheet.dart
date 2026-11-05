@@ -9,7 +9,6 @@ import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
@@ -17,6 +16,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
   final Subscription? initialSubscription;
@@ -421,7 +421,7 @@ class _AddEditSubscriptionSheetState
                   ],
 
                   // ── 6. Reminder Settings ──────────────────────────
-                  FfSwitchRow(
+                  FfRow.toggle(
                     title: 'Renewal Reminder',
                     subtitle: 'Notify before renewal charge happens',
                     value: _isReminderEnabled,

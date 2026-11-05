@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../theme/stillwater_tokens.dart';
 
-/// A standard Stillwater list row item for navigation hubs, settings, and detail views.
+/// Legacy list row, kept only for the budgets screens another chat owns.
+/// New code uses `FfRow`. Removed in design-system slice DS-9.
 class FfListRow extends StatelessWidget {
   final Widget? leading;
   final IconData? icon;

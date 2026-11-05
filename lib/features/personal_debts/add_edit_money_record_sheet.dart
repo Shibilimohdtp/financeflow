@@ -9,13 +9,13 @@ import '../../models/account.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'money_records_controller.dart';
 import '../accounts/accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class AddEditMoneyRecordSheet extends ConsumerStatefulWidget {
   final MoneyRecord? initialRecord;
@@ -277,7 +277,7 @@ class _AddEditMoneyRecordSheetState
 
                   if (!isEditing) ...[
                     const SizedBox(height: StillwaterTokens.spaceMd),
-                    FfSwitchRow(
+                    FfRow.toggle(
                       title: 'Record in transactions and update balance',
                       subtitle:
                           _type == MoneyRecordType.lent
@@ -545,7 +545,7 @@ class _AddEditMoneyRecordSheetState
                   const SizedBox(height: StillwaterTokens.spaceSm),
 
                   // ── 6. Reminder Settings ──────────────────────────────
-                  FfSwitchRow(
+                  FfRow.toggle(
                     title: 'Enable Reminder',
                     subtitle: 'Track upcoming repayment due date',
                     value: _isReminderEnabled,

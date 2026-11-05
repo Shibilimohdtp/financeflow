@@ -35,6 +35,9 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../theme/ff.dart';
 
 String _smsStatusLabel(IngestionPlatformStatus? status) {
   if (status == null) return 'Checking';
@@ -104,50 +107,50 @@ class SettingsScreen extends ConsumerWidget {
                 // ── Finance Modules ────────────────────────────────────────
                 const _SectionLabel(label: 'Finance Modules'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
-                _NavGroup(
+                FfGroupedContainer(
+                  dividerInset: FfRowLeading.icon,
                   children: [
-                    _NavRow(
+                    FfRow(
                       icon: Icons.account_balance_wallet_outlined,
-                      label: 'Financial Accounts',
+                      title: 'Financial Accounts',
                       subtitle: 'Bank accounts, cards, cash & UPI',
                       onTap: () => _push(context, const AccountsScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.account_balance_outlined,
-                      label: 'Loans & EMI Tracker',
+                      title: 'Loans & EMI Tracker',
                       subtitle: 'Amortization, outstanding debt & EMIs',
                       onTap: () => _push(context, const LoansScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.handshake_outlined,
-                      label: 'Lending & Borrowing',
+                      title: 'Lending & Borrowing',
                       subtitle: 'Track money lent to & borrowed from others',
                       onTap:
                           () => _push(context, const LendingBorrowingScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.repeat_rounded,
-                      label: 'Subscriptions',
+                      title: 'Subscriptions',
                       subtitle: 'Recurring services, renewals & burn rate',
                       onTap: () => _push(context, const SubscriptionsScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.flag_outlined,
-                      label: 'Savings Goals',
+                      title: 'Savings Goals',
                       subtitle: 'Emergency fund, vacation & targets',
                       onTap: () => _push(context, const SavingsGoalsScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.show_chart_rounded,
-                      label: 'Investment Portfolio',
+                      title: 'Investment Portfolio',
                       subtitle: 'Stocks, mutual funds, gold & valuations',
                       onTap: () => _push(context, const InvestmentsScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.health_and_safety_outlined,
-                      label: 'Financial Health Score',
+                      title: 'Financial Health Score',
                       subtitle: '7-dimension on-device wellness score',
-                      isLast: true,
                       onTap:
                           () => _push(context, const FinancialHealthScreen()),
                     ),
@@ -159,23 +162,24 @@ class SettingsScreen extends ConsumerWidget {
                 // ── Tools & Insights ───────────────────────────────────────
                 const _SectionLabel(label: 'Tools & Insights'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
-                _NavGroup(
+                FfGroupedContainer(
+                  dividerInset: FfRowLeading.icon,
                   children: [
-                    _NavRow(
+                    FfRow(
                       icon: Icons.notifications_active_outlined,
-                      label: 'Local Alerts Inbox',
+                      title: 'Local Alerts Inbox',
                       subtitle: 'Budget limits, EMI reminders & renewals',
                       onTap: () => _push(context, const AlertsInboxScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.file_upload_outlined,
-                      label: 'Import CSV Statement',
+                      title: 'Import CSV Statement',
                       subtitle: 'Parse bank or credit card CSV files',
                       onTap: () => _push(context, const CsvImportScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.rate_review_outlined,
-                      label: 'Needs Review Queue',
+                      title: 'Needs Review Queue',
                       subtitle:
                           pendingCount > 0
                               ? '$pendingCount transactions need review'
@@ -184,7 +188,6 @@ class SettingsScreen extends ConsumerWidget {
                           pendingCount > 0
                               ? _CountBadge(count: pendingCount)
                               : null,
-                      isLast: true,
                       onTap: () => _push(context, const NeedsReviewScreen()),
                     ),
                   ],
@@ -195,19 +198,19 @@ class SettingsScreen extends ConsumerWidget {
                 // ── Data & Backup ──────────────────────────────────────────
                 const _SectionLabel(label: 'Data & Backup'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
-                _NavGroup(
+                FfGroupedContainer(
+                  dividerInset: FfRowLeading.icon,
                   children: [
-                    _NavRow(
+                    FfRow(
                       icon: Icons.file_download_outlined,
-                      label: 'Export Data',
+                      title: 'Export Data',
                       subtitle: 'CSV, JSON, Excel spreadsheet & PDF reports',
                       onTap: () => _push(context, const ExportScreen()),
                     ),
-                    _NavRow(
+                    FfRow(
                       icon: Icons.lock_clock_outlined,
-                      label: 'Encrypted Backup & Restore',
+                      title: 'Encrypted Backup & Restore',
                       subtitle: 'PBKDF2 & AES-256 local encrypted files',
-                      isLast: true,
                       onTap: () => _push(context, const BackupScreen()),
                     ),
                   ],
@@ -218,13 +221,13 @@ class SettingsScreen extends ConsumerWidget {
                 // ── App settings ───────────────────────────────────────────
                 const _SectionLabel(label: 'App'),
                 const SizedBox(height: StillwaterTokens.spaceXs),
-                _NavGroup(
+                FfGroupedContainer(
+                  dividerInset: FfRowLeading.icon,
                   children: [
-                    _NavRow(
+                    FfRow(
                       icon: Icons.settings_outlined,
-                      label: 'App Settings',
+                      title: 'App Settings',
                       subtitle: 'Appearance, alerts, security & more',
-                      isLast: true,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -313,19 +316,20 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           // ── 1. Appearance ────────────────────────────────────────────────
           const _SectionLabel(label: 'Appearance'),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          _SettingsGroup(
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
             children: [
               // Theme — opens bottom sheet
-              _SettingsRow(
+              FfRow(
                 icon: Icons.palette_outlined,
-                label: 'Theme',
-                value: settings.themePreference.displayName,
+                title: 'Theme',
+                detail: settings.themePreference.displayName,
                 onTap: () => _showThemePicker(context, ref, settings),
               ),
               // Dense mode switch
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.density_medium_rounded,
-                label: 'Ledger View',
+                title: 'Ledger View',
                 subtitle: 'Compact list rows and reduced padding',
                 value: settings.isDenseMode,
                 onChanged: (val) {
@@ -334,14 +338,13 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       .setDenseMode(val);
                 },
               ),
-              _SettingsRow(
+              FfRow(
                 icon: Icons.payments_outlined,
-                label: 'Currency',
-                value: () {
+                title: 'Currency',
+                detail: () {
                   final currency = AppCurrency.fromCode(settings.currencyCode);
                   return '${currency.symbol} ${currency.code}';
                 }(),
-                isLast: true,
                 onTap: () => _showCurrencyPicker(context, ref, settings),
               ),
             ],
@@ -352,11 +355,12 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           // ── 2. Alerts & Notifications ────────────────────────────────────
           const _SectionLabel(label: 'Alerts & Notifications'),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          _SettingsGroup(
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
             children: [
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.notifications_outlined,
-                label: 'All Alerts & Notifications',
+                title: 'All Alerts & Notifications',
                 subtitle: 'Master switch for local alerts and notifications',
                 value:
                     settings.isAlertsEnabled &&
@@ -372,15 +376,15 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       );
                 },
               ),
-              _SettingsRow(
+              FfRow(
                 icon: Icons.tune_rounded,
-                label: 'Notification & Alert Preferences',
+                title: 'Notification & Alert Preferences',
                 subtitle: 'Categories, lock screen privacy & permissions',
                 onTap: () => AlertSettingsSheet.show(context),
               ),
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.rate_review_outlined,
-                label: 'Needs Review Alerts',
+                title: 'Needs Review Alerts',
                 subtitle: 'Remind when imported transactions need confirmation',
                 value:
                     settings.isNeedsReviewNotificationsEnabled &&
@@ -399,9 +403,9 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       );
                 },
               ),
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.pie_chart_outline_rounded,
-                label: 'Budget Alerts',
+                title: 'Budget Alerts',
                 subtitle: 'Notify when spending approaches limit',
                 value:
                     settings.isBudgetNotificationEnabled &&
@@ -420,9 +424,9 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       );
                 },
               ),
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.repeat_rounded,
-                label: 'Subscription Alerts',
+                title: 'Subscription Alerts',
                 subtitle: 'Notify before renewal dates',
                 value:
                     settings.isSubscriptionNotificationEnabled &&
@@ -441,9 +445,9 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       );
                 },
               ),
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.account_balance_outlined,
-                label: 'Loan & EMI Alerts',
+                title: 'Loan & EMI Alerts',
                 subtitle: 'Remind before EMI due dates',
                 value:
                     settings.isLoanNotificationEnabled &&
@@ -462,9 +466,9 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       );
                 },
               ),
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.backup_outlined,
-                label: 'Backup Reminder',
+                title: 'Backup Reminder',
                 subtitle: 'Periodic reminder to create a backup',
                 value:
                     settings.isBackupNotificationEnabled &&
@@ -472,7 +476,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 enabled:
                     settings.isAlertsEnabled &&
                     settings.isLocalNotificationsEnabled,
-                isLast: true,
                 onChanged: (val) {
                   ref
                       .read(settingsControllerProvider.notifier)
@@ -492,13 +495,13 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           // ── 3. Privacy & Security ────────────────────────────────────────
           const _SectionLabel(label: 'Privacy & Security'),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          _SettingsGroup(
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
             children: [
-              _SettingsRow(
+              FfRow(
                 icon: Icons.shield_outlined,
-                label: 'App Lock & Biometrics',
+                title: 'App Lock & Biometrics',
                 subtitle: 'PIN, face ID, fingerprint & auto-lock',
-                isLast: true,
                 onTap: () => _push(context, const SecuritySettingsScreen()),
               ),
             ],
@@ -509,11 +512,12 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
           // ── 4. Transaction Ingestion ─────────────────────────────────────
           const _SectionLabel(label: 'Transaction Ingestion'),
           const SizedBox(height: StillwaterTokens.spaceXs),
-          _SettingsGroup(
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
             children: [
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.notifications_active_outlined,
-                label: 'Notification Detection',
+                title: 'Notification Detection',
                 subtitle:
                     settings.isNotificationDetectionEnabled
                         ? ingestionStatus?.notificationAccess == true
@@ -537,9 +541,9 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                   }
                 },
               ),
-              _SettingsSwitchRow(
+              FfRow.toggle(
                 icon: Icons.sms_outlined,
-                label: 'Bank SMS Detection',
+                title: 'Bank SMS Detection',
                 subtitle:
                     settings.isSmsDetectionEnabled
                         ? ingestionStatus?.smsPermission ==
@@ -563,20 +567,20 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                   }
                 },
               ),
-              const _SettingsRow(
+              const FfRow(
                 icon: Icons.email_outlined,
-                label: 'Bank Email Detection',
+                title: 'Bank Email Detection',
                 subtitle:
                     'Not configured · Gmail OAuth and scanning are unavailable in this build',
-                value: 'Unavailable',
-                isLast: true,
+                detail: 'Unavailable',
                 onTap: null,
               ),
             ],
           ),
 
           const SizedBox(height: StillwaterTokens.spaceMd),
-          _SettingsGroup(
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.icon,
             children: [
               Padding(
                 padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
@@ -631,7 +635,8 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
 
           if (_showDevTools) ...[
             const SizedBox(height: StillwaterTokens.spaceMd),
-            _SettingsGroup(
+            FfGroupedContainer(
+              dividerInset: FfRowLeading.icon,
               children: [
                 Padding(
                   padding: const EdgeInsets.all(StillwaterTokens.spaceMd),
@@ -824,7 +829,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
     showFfSheet(
       context,
       builder: (ctx) {
-        final theme = ctx.theme;
         return FfSheet(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -834,26 +838,17 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
             ),
             const FfDivider(),
             for (final currency in AppCurrency.values)
-              ListTile(
+              FfRow(
                 key: ValueKey('currency-${currency.code}'),
                 leading: SizedBox(
-                  width: 32,
+                  width: FfRowTokens.iconTile,
                   child: Center(
-                    child: Text(
-                      currency.symbol,
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    child: Text(currency.symbol, style: context.ff.text.title),
                   ),
                 ),
-                title: Text(currency.displayName),
-                subtitle: Text(currency.code),
-                trailing:
-                    currency == selected
-                        ? Icon(
-                          Icons.check_rounded,
-                          color: theme.colorScheme.primary,
-                        )
-                        : null,
+                title: currency.displayName,
+                subtitle: currency.code,
+                selected: currency == selected,
                 onTap: () {
                   Navigator.of(ctx).pop();
                   if (currency != selected) {
@@ -879,7 +874,6 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
     showFfSheet(
       context,
       builder: (ctx) {
-        final theme = ctx.theme;
         return FfSheet(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -898,27 +892,15 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                 children: [
                   ...AppThemePreference.values.map((pref) {
                     final isSelected = settings.themePreference == pref;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        pref == AppThemePreference.system
-                            ? Icons.brightness_auto_outlined
-                            : pref == AppThemePreference.daylight
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
-                        color:
-                            isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.secondary,
-                      ),
-                      title: Text(pref.displayName),
-                      trailing:
-                          isSelected
-                              ? Icon(
-                                Icons.check_rounded,
-                                color: theme.colorScheme.primary,
-                              )
-                              : null,
+                    return FfRow(
+                      icon:
+                          pref == AppThemePreference.system
+                              ? Icons.brightness_auto_outlined
+                              : pref == AppThemePreference.daylight
+                              ? Icons.light_mode_outlined
+                              : Icons.dark_mode_outlined,
+                      title: pref.displayName,
+                      selected: isSelected,
                       onTap: () {
                         ref
                             .read(settingsControllerProvider.notifier)
@@ -959,354 +941,6 @@ class _SectionLabel extends StatelessWidget {
           fontSize: 10,
         ),
       ),
-    );
-  }
-}
-
-/// Grouped block of rows — single rounded border, hairline dividers between rows.
-class _NavGroup extends StatelessWidget {
-  final List<Widget> children;
-  const _NavGroup({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-        border: Border.all(
-          color: theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
-        ),
-      ),
-      child: Column(children: children),
-    );
-  }
-}
-
-/// Settings group — same visual as _NavGroup.
-class _SettingsGroup extends StatelessWidget {
-  final List<Widget> children;
-  const _SettingsGroup({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-        border: Border.all(
-          color: theme.dividerColor,
-          width: StillwaterTokens.borderWidthHairline,
-        ),
-      ),
-      child: Column(children: children),
-    );
-  }
-}
-
-/// Navigation row — icon + label + subtitle + chevron.
-class _NavRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final Widget? trailing;
-  final bool isLast;
-  final VoidCallback onTap;
-
-  const _NavRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.subtitle,
-    this.trailing,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final effectiveIconColor = theme.colorScheme.secondary;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          label: label,
-          button: true,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.vertical(
-              top:
-                  isLast
-                      ? Radius.zero
-                      : const Radius.circular(StillwaterTokens.radiusLg),
-              bottom:
-                  isLast
-                      ? const Radius.circular(StillwaterTokens.radiusLg)
-                      : Radius.zero,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceMd,
-                vertical: StillwaterTokens.spaceSm,
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, size: 22, color: effectiveIconColor),
-                  const SizedBox(width: StillwaterTokens.spaceMd),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 1),
-                          Text(
-                            subtitle!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.secondary,
-                              fontSize: 11,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
-                  trailing ??
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18,
-                        color: theme.colorScheme.secondary,
-                      ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (!isLast)
-          Divider(
-            height: 1,
-            thickness: StillwaterTokens.borderWidthHairline,
-            indent: StillwaterTokens.spaceMd + 22 + StillwaterTokens.spaceMd,
-            endIndent: 0,
-          ),
-      ],
-    );
-  }
-}
-
-/// Settings row with an optional current-value chip and optional onTap.
-class _SettingsRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final String? value;
-  final bool isLast;
-  final VoidCallback? onTap;
-
-  const _SettingsRow({
-    required this.icon,
-    required this.label,
-    this.subtitle,
-    this.value,
-    this.isLast = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final effectiveIconColor = theme.colorScheme.secondary;
-    final isReadOnly = onTap == null;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          label: value != null ? '$label: $value' : label,
-          button: !isReadOnly,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.vertical(
-              top:
-                  isLast
-                      ? Radius.zero
-                      : const Radius.circular(StillwaterTokens.radiusLg),
-              bottom:
-                  isLast
-                      ? const Radius.circular(StillwaterTokens.radiusLg)
-                      : Radius.zero,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: StillwaterTokens.spaceMd,
-                vertical: StillwaterTokens.spaceSm,
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, size: 22, color: effectiveIconColor),
-                  const SizedBox(width: StillwaterTokens.spaceMd),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 1),
-                          Text(
-                            subtitle!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.secondary,
-                              fontSize: 11,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: StillwaterTokens.spaceXs),
-                  if (value != null) ...[
-                    Text(
-                      value!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                  ],
-                  if (!isReadOnly)
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: theme.colorScheme.secondary,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (!isLast)
-          Divider(
-            height: 1,
-            thickness: StillwaterTokens.borderWidthHairline,
-            indent: StillwaterTokens.spaceMd + 22 + StillwaterTokens.spaceMd,
-            endIndent: 0,
-          ),
-      ],
-    );
-  }
-}
-
-/// Settings row with a Switch trailing control.
-class _SettingsSwitchRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final bool value;
-  final bool enabled;
-  final bool isLast;
-  final ValueChanged<bool> onChanged;
-
-  const _SettingsSwitchRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.subtitle,
-    this.enabled = true,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final effectiveColor =
-        enabled
-            ? theme.colorScheme.secondary
-            : theme.colorScheme.secondary.withValues(alpha: 0.35);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          label: '$label: ${value ? "on" : "off"}',
-          toggled: value,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: StillwaterTokens.spaceMd,
-              right: StillwaterTokens.spaceXs,
-              top: StillwaterTokens.spaceXs,
-              bottom: StillwaterTokens.spaceXs,
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 22, color: effectiveColor),
-                const SizedBox(width: StillwaterTokens.spaceMd),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color:
-                              enabled
-                                  ? null
-                                  : theme.colorScheme.secondary.withValues(
-                                    alpha: 0.5,
-                                  ),
-                        ),
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 1),
-                        Text(
-                          subtitle!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary.withValues(
-                              alpha: enabled ? 1.0 : 0.5,
-                            ),
-                            fontSize: 11,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Switch(value: value, onChanged: enabled ? onChanged : null),
-              ],
-            ),
-          ),
-        ),
-        if (!isLast)
-          Divider(
-            height: 1,
-            thickness: StillwaterTokens.borderWidthHairline,
-            indent: StillwaterTokens.spaceMd + 22 + StillwaterTokens.spaceMd,
-            endIndent: 0,
-          ),
-      ],
     );
   }
 }

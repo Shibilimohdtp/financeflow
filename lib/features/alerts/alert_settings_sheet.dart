@@ -10,7 +10,6 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../services/notifications/local_notification_service.dart';
@@ -19,6 +18,7 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
@@ -153,7 +153,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
               const FfSectionHeader(title: 'Master Switch'),
               FfGroupedContainer(
                 children: [
-                  FfSwitchRow(
+                  FfRow.toggle(
                     icon: Icons.notifications_outlined,
                     title: 'Local Alerts & Notifications',
                     subtitle: 'Evaluated 100% on-device using local rules',
@@ -180,7 +180,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 const FfSectionHeader(title: 'Active Notification Categories'),
                 FfGroupedContainer(
                   children: [
-                    FfSwitchRow(
+                    FfRow.toggle(
                       icon: Icons.rate_review_outlined,
                       title: 'Needs Review Transactions',
                       subtitle:
@@ -197,7 +197,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         );
                       },
                     ),
-                    FfSwitchRow(
+                    FfRow.toggle(
                       icon: Icons.pie_chart_outline_rounded,
                       title: 'Budget Limits',
                       subtitle:
@@ -214,7 +214,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         );
                       },
                     ),
-                    FfSwitchRow(
+                    FfRow.toggle(
                       icon: Icons.repeat_rounded,
                       title: 'Subscription Renewals',
                       subtitle: 'Remind before upcoming subscriptions renew',
@@ -230,7 +230,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         );
                       },
                     ),
-                    FfSwitchRow(
+                    FfRow.toggle(
                       icon: Icons.account_balance_outlined,
                       title: 'Loan & EMI Due Dates',
                       subtitle: 'Remind before upcoming loan EMIs are due',
@@ -246,7 +246,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         );
                       },
                     ),
-                    FfSwitchRow(
+                    FfRow.toggle(
                       icon: Icons.backup_outlined,
                       title: 'Encrypted Backup Reminders',
                       subtitle:
@@ -271,7 +271,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 const FfSectionHeader(title: 'Lock Screen Privacy'),
                 FfGroupedContainer(
                   children: [
-                    FfSwitchRow(
+                    FfRow.toggle(
                       icon: Icons.visibility_off_outlined,
                       title: 'Hide Financial Details',
                       subtitle:
@@ -348,12 +348,11 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 const FfSectionHeader(title: 'Diagnostics & Testing'),
                 FfGroupedContainer(
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.send_rounded),
-                      title: const Text('Send Test Notification'),
-                      subtitle: const Text(
-                        'Triggers an immediate test notification to verify delivery',
-                      ),
+                    FfRow(
+                      icon: Icons.send_rounded,
+                      title: 'Send Test Notification',
+                      subtitle:
+                          'Triggers an immediate test notification to verify delivery',
                       onTap: () async {
                         await ref
                             .read(notificationCoordinatorProvider)

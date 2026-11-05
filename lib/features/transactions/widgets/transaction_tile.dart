@@ -13,6 +13,7 @@ import '../transaction_list_utils.dart';
 import '../../../shared/widgets/ff_dialog.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_row.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -48,7 +49,6 @@ class TransactionTile extends StatelessWidget {
 
   void _showActionSheet(BuildContext context) {
     HapticFeedback.mediumImpact();
-    final finColors = context.finColors;
 
     showFfSheet<void>(
       context,
@@ -64,40 +64,35 @@ class TransactionTile extends StatelessWidget {
                 ),
               ),
               const FfDivider(),
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded),
-                title: const Text('View details'),
+              FfRow(
+                icon: Icons.info_outline_rounded,
+                title: 'View details',
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   onOpen();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit transaction'),
+              FfRow(
+                icon: Icons.edit_outlined,
+                title: 'Edit transaction',
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   onEdit();
                 },
               ),
               if (onDuplicate != null)
-                ListTile(
-                  leading: const Icon(Icons.copy_rounded),
-                  title: const Text('Duplicate transaction'),
+                FfRow(
+                  icon: Icons.copy_rounded,
+                  title: 'Duplicate transaction',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     onDuplicate!();
                   },
                 ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete_outline_rounded,
-                  color: finColors.expense,
-                ),
-                title: Text(
-                  'Delete transaction',
-                  style: TextStyle(color: finColors.expense),
-                ),
+              FfRow(
+                icon: Icons.delete_outline_rounded,
+                title: 'Delete transaction',
+                destructive: true,
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   final confirmed = await FfDialog.confirm(

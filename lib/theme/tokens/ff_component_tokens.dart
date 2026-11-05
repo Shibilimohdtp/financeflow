@@ -39,7 +39,29 @@ abstract final class FfChipTokens {
 abstract final class FfRowTokens {
   static const double height = 72;
   static const double heightDense = 56;
+
+  /// Every row is at least one touch target tall.
+  static const double minHeight = FfTouch.minTarget;
+  static const double paddingH = FfSpace.md;
+
+  /// End padding when a switch or checkbox ends the row (they carry their own).
+  static const double paddingHControl = FfSpace.xs;
+  static const double paddingV = FfSpace.sm;
+
+  /// Space between the leading element and the text.
+  static const double gap = FfSpace.md;
+
+  /// Plain leading icon.
+  static const double iconSize = 22;
+
+  /// Tinted leading tile (`FfIconTile`).
   static const double iconTile = 36;
+  static const double iconTileRadius = FfRadius.sm;
+  static const double detailMaxWidth = 160;
+
+  /// Where row text starts, for dividers that skip the leading element.
+  static const double textInsetAfterIcon = paddingH + iconSize + gap;
+  static const double textInsetAfterTile = paddingH + iconTile + gap;
 }
 
 abstract final class FfSheetTokens {
@@ -93,6 +115,6 @@ abstract final class FfDividerTokens {
   /// Total height of a spaced divider (the line sits in the middle).
   static const double spacedHeight = FfSpace.sm;
 
-  /// Where an inset divider starts: past a list row's leading icon tile.
-  static const double rowInset = 72;
+  /// Where an inset divider starts: past a list row's leading tile.
+  static const double rowInset = FfRowTokens.textInsetAfterTile;
 }

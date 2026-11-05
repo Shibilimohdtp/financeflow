@@ -8,7 +8,6 @@ import '../../models/money_record.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'money_records_controller.dart';
@@ -16,6 +15,7 @@ import '../accounts/accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class AddRepaymentSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -232,7 +232,7 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
 
                   const SizedBox(height: StillwaterTokens.spaceLg),
 
-                  FfSwitchRow(
+                  FfRow.toggle(
                     title: 'Record in transactions and update balance',
                     subtitle:
                         isLent

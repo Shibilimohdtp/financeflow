@@ -15,6 +15,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class AddAdvanceSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -250,26 +251,18 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                     padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
                     child: Column(
                       children: [
-                        SwitchListTile(
+                        FfRow.toggle(
+                          title: 'Record as Transaction',
+                          subtitle:
+                              _recordInTransactions
+                                  ? (isLent
+                                      ? 'Deducts money from selected account'
+                                      : 'Adds money to selected account')
+                                  : 'Update debt balance only (no account change)',
                           value: _recordInTransactions,
                           onChanged: (val) {
                             setState(() => _recordInTransactions = val);
                           },
-                          title: Text(
-                            'Record as Transaction',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Text(
-                            _recordInTransactions
-                                ? (isLent
-                                    ? 'Deducts money from selected account'
-                                    : 'Adds money to selected account')
-                                : 'Update debt balance only (no account change)',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          contentPadding: EdgeInsets.zero,
                         ),
                         if (_recordInTransactions &&
                             activeAccounts.isNotEmpty) ...[

@@ -1,49 +1,43 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../theme/stillwater_tokens.dart';
 
-/// A standard Stillwater rounded container that groups list rows or items
-/// with subtle backgrounds, hairline borders, and optional dividers.
+import '../../theme/ff.dart';
+import 'ff_divider.dart';
+
+/// A rounded card that groups list rows. It draws the dividers between rows
+/// and clips their ink to its corners, so rows never need to know whether
+/// they are first or last.
 class FfGroupedContainer extends StatelessWidget {
-  final List<Widget> children;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final Color? backgroundColor;
-  final Color? borderColor;
-  final double borderRadius;
-  final bool showDividers;
-
   const FfGroupedContainer({
     super.key,
     required this.children,
     this.padding,
     this.margin,
-    this.backgroundColor,
-    this.borderColor,
-    this.borderRadius = StillwaterTokens.radiusLg,
     this.showDividers = true,
+    this.dividerInset,
   });
+
+  final List<Widget> children;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final bool showDividers;
+
+  /// Start dividers where the rows' text starts. Null draws full-width
+  /// dividers.
+  final FfRowLeading? dividerInset;
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final bg = backgroundColor ?? theme.cardColor;
-    final border = borderColor ?? theme.dividerColor;
+    if (children.isEmpty) return const SizedBox.shrink();
+    final c = context.ff.color;
 
-    if (children.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final dividedChildren = <Widget>[];
-    for (int i = 0; i < children.length; i++) {
-      dividedChildren.add(children[i]);
+    final divided = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      divided.add(children[i]);
       if (showDividers && i < children.length - 1) {
-        dividedChildren.add(
-          Divider(
-            height: 1,
-            thickness: StillwaterTokens.borderWidthHairline,
-            color: theme.dividerColor,
-          ),
+        divided.add(
+          dividerInset == null
+              ? const FfDivider()
+              : FfDivider.inset(after: dividerInset!),
         );
       }
     }
@@ -52,19 +46,19 @@ class FfGroupedContainer extends StatelessWidget {
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(borderRadius),
+        color: c.surfaceCard,
+        borderRadius: ffRadius(FfCardTokens.radius),
         border: Border.all(
-          color: border,
-          width: StillwaterTokens.borderWidthHairline,
+          color: c.borderSubtle,
+          width: FfCardTokens.borderWidth,
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: ffRadius(FfCardTokens.radius),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: dividedChildren,
+          children: divided,
         ),
       ),
     );

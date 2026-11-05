@@ -21,6 +21,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -545,9 +546,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           ),
           child: Column(
             children: [
-              ListTile(
-                title: const Text('Paste Raw CSV Content'),
-                subtitle: const Text('Enter CSV text directly from clipboard'),
+              FfRow(
+                title: 'Paste Raw CSV Content',
+                subtitle: 'Enter CSV text directly from clipboard',
                 trailing: Icon(
                   _showPasteArea
                       ? Icons.keyboard_arrow_up_rounded

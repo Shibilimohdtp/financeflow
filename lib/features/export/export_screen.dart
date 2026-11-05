@@ -18,6 +18,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
@@ -262,47 +263,29 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           const FfSectionHeader(title: 'Data Scope'),
           FfGroupedContainer(
             children: [
-              RadioListTile<ExportScope>(
-                title: const Text('All Recorded Transactions'),
-                subtitle: Text(
-                  '${transactions.length} transactions across all accounts and categories',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-                value: ExportScope.allTransactions,
-                groupValue: _selectedScope,
-                activeColor: theme.colorScheme.primary,
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedScope = val);
-                },
+              FfRow.radio(
+                title: 'All Recorded Transactions',
+                subtitle:
+                    '${transactions.length} transactions across all accounts and categories',
+                selected: _selectedScope == ExportScope.allTransactions,
+                onTap:
+                    () => setState(
+                      () => _selectedScope = ExportScope.allTransactions,
+                    ),
               ),
               const FfDivider(),
-              RadioListTile<ExportScope>(
-                title: const Text('Specific Date Range'),
-                subtitle: Text(
-                  _dateRange != null
-                      ? '${DateFormatter.formatShortDate(_dateRange!.start)} – ${DateFormatter.formatShortDate(_dateRange!.end)}'
-                      : 'Tap to pick date boundaries',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color:
-                        _dateRange != null
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.secondary,
-                    fontWeight:
-                        _dateRange != null
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                  ),
-                ),
-                value: ExportScope.dateRangeTransactions,
-                groupValue: _selectedScope,
-                activeColor: theme.colorScheme.primary,
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _selectedScope = val);
-                    _selectDateRange();
-                  }
+              FfRow.radio(
+                title: 'Specific Date Range',
+                subtitle:
+                    _dateRange != null
+                        ? '${DateFormatter.formatShortDate(_dateRange!.start)} – ${DateFormatter.formatShortDate(_dateRange!.end)}'
+                        : 'Tap to pick date boundaries',
+                selected: _selectedScope == ExportScope.dateRangeTransactions,
+                onTap: () {
+                  setState(
+                    () => _selectedScope = ExportScope.dateRangeTransactions,
+                  );
+                  _selectDateRange();
                 },
               ),
             ],

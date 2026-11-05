@@ -5,6 +5,7 @@ import '../../models/account.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../theme/ff.dart';
+import '../../shared/widgets/ff_row.dart';
 
 Future<Account?> showPaymentAccountPicker({
   required BuildContext context,
@@ -24,16 +25,11 @@ Future<Account?> showPaymentAccountPicker({
                 padding: const EdgeInsets.only(bottom: FfSpace.md),
                 children: [
                   for (final account in accounts.where((a) => !a.isArchived))
-                    ListTile(
-                      leading: Icon(
-                        account.id == selectedAccountId
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                      ),
-                      title: Text(account.name),
-                      subtitle: Text(
-                        '${account.displaySubtitle} · ${CurrencyFormatter.formatAmount(account.currentBalance)}',
-                      ),
+                    FfRow(
+                      title: account.name,
+                      subtitle:
+                          '${account.displaySubtitle} · ${CurrencyFormatter.formatAmount(account.currentBalance)}',
+                      selected: account.id == selectedAccountId,
                       onTap: () => Navigator.of(context).pop(account),
                     ),
                 ],

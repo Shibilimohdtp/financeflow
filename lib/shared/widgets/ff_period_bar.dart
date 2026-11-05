@@ -7,6 +7,7 @@ import 'ff_sheet_header.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'ff_pickers.dart';
 import 'ff_sheet.dart';
+import 'ff_row.dart';
 
 /// "‹ November 2026 ›" with a tap target that opens the period chooser.
 /// Used by Home, Insights and the transaction list. A null period means all
@@ -102,8 +103,8 @@ class FfPeriodBar extends StatelessWidget {
               const FfSheetHeader(title: 'Show transactions for'),
               for (final choice in _PeriodChoice.values)
                 if (allowAllTime || choice != _PeriodChoice.all)
-                  ListTile(
-                    title: Text(choice.label),
+                  FfRow(
+                    title: choice.label,
                     onTap: () => Navigator.of(ctx).pop(choice),
                   ),
             ],

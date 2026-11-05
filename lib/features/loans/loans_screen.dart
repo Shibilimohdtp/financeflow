@@ -8,7 +8,6 @@ import '../../repositories/loan_repository.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
@@ -18,6 +17,7 @@ import 'loan_detail_screen.dart';
 import 'loans_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class LoansScreen extends ConsumerWidget {
   const LoansScreen({super.key});
@@ -326,7 +326,7 @@ class LoansScreen extends ConsumerWidget {
                   FfGroupedContainer(
                     children:
                         closedLoans.map((loan) {
-                          return FfListRow(
+                          return FfRow(
                             leading: Container(
                               width: StillwaterTokens.iconTileSize,
                               height: StillwaterTokens.iconTileSize,
@@ -346,7 +346,7 @@ class LoansScreen extends ConsumerWidget {
                             title: loan.name,
                             subtitle:
                                 '${loan.lender} · Closed ${DateFormatter.formatShortDate(loan.updatedAt)}',
-                            trailingText: CurrencyFormatter.formatAmount(
+                            detail: CurrencyFormatter.formatAmount(
                               loan.principalAmount,
                             ),
                             onTap: () => _openDetail(context, loan),

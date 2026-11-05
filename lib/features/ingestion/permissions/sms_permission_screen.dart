@@ -9,6 +9,8 @@ import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../services/ingestion/ingestion_platform.dart';
 import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
+import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_divider.dart';
 
 class SmsPermissionScreen extends ConsumerStatefulWidget {
   const SmsPermissionScreen({super.key});
@@ -105,14 +107,13 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
 
           const SizedBox(height: StillwaterTokens.space2Xl),
 
-          ListTile(
-            leading: Icon(
-              permission == IngestionPermissionState.granted
-                  ? Icons.check_circle_outline
-                  : Icons.info_outline,
-            ),
-            title: Text('Android permission: ${_permissionLabel(permission)}'),
-            subtitle: Text(_permissionExplanation(permission)),
+          FfRow(
+            icon:
+                permission == IngestionPermissionState.granted
+                    ? Icons.check_circle_outline
+                    : Icons.info_outline,
+            title: 'Android permission: ${_permissionLabel(permission)}',
+            subtitle: _permissionExplanation(permission),
           ),
 
           const SizedBox(height: StillwaterTokens.spaceMd),
@@ -157,14 +158,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                     ),
                   ),
                   if (i < _supportedBanks.length - 1)
-                    Divider(
-                      height: 1,
-                      thickness: StillwaterTokens.borderWidthHairline,
-                      indent:
-                          StillwaterTokens.spaceMd +
-                          18 +
-                          StillwaterTokens.spaceMd,
-                    ),
+                    const FfDivider.inset(after: FfRowLeading.icon),
                 ],
               ],
             ),

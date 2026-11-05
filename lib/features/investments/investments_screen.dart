@@ -8,7 +8,6 @@ import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../theme/stillwater_tokens.dart';
@@ -19,6 +18,7 @@ import 'investments_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_row.dart';
 
 class InvestmentsScreen extends ConsumerWidget {
   const InvestmentsScreen({super.key});
@@ -244,7 +244,7 @@ class InvestmentsScreen extends ConsumerWidget {
                         final profit = inv.currentValue - inv.investedAmount;
                         final isProfit = profit >= 0;
 
-                        return FfListRow(
+                        return FfRow(
                           leading: Container(
                             width: StillwaterTokens.iconTileSize,
                             height: StillwaterTokens.iconTileSize,
