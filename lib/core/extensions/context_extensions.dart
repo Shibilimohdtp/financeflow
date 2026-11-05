@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../theme/stillwater_colors.dart';
 
+export '../../theme/ff_context.dart';
+
 /// BuildContext convenience extensions
 extension BuildContextExtensions on BuildContext {
   ThemeData get theme => Theme.of(this);

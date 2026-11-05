@@ -20,8 +20,8 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 
 | Slice | Status | Notes |
 |---|---|---|
-| DS-0 Audit, proposal, audit script, this log | done (uncommitted proposal) | waiting for owner approval of section 7 questions |
-| DS-1 Token core + `context.ff` + shims | not started | blocked on approval |
+| DS-0 Audit, proposal, audit script, this log | done (7c6e015) | owner approved the recommendations 2026-11-05 |
+| DS-1 Token core + `context.ff` + shims | done (commit "feat(theme): DS-1 …"; fill in hash at DS-2) | no visual change, proven by `test/theme/theme_parity_test.dart` |
 | DS-2 Contrast/CVD guardrail test | not started | |
 | DS-3 Bundle fonts, drop `google_fonts` | not started | needs backup gate + device cold start |
 | DS-4 Feedback & overlays | not started | |
@@ -37,12 +37,13 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | Since | Chat / owner | Scope | Files |
 |---|---|---|---|
 | 2026-11-05 | Budgets redesign chat | Budgets engine + UI | `lib/services/budgets/`, `lib/models/budget.dart`, `lib/core/money/money_math.dart`, `test/unit/budgets/`, `lib/features/budgets/`, `docs/features/budgets.md` (uncommitted when this log was written) |
-| 2026-11-05 | Productization chat (this design-system work) | DS-0 proposal | `docs/design-system/`, `tool/design_system_audit.dart` |
 
 ## Done
 
 | Date | Slice | Commit | What changed |
 |---|---|---|---|
+| 2026-11-05 | DS-0 | 7c6e015 | Audit, proposal, palette preview, `tool/design_system_audit.dart`, this log, AGENTS.md pointer. |
+| 2026-11-05 | DS-1 | "feat(theme): DS-1 …" | Token core: `lib/theme/tokens/` (foundation + component tokens), `palettes/` (Lichen primitives → semantic roles), `FfColors`/`FfText` extensions, `FfTheme.build` (one builder for every palette and mode, replacing two 250-line copies), `context.ff` and the `lib/theme/ff.dart` barrel. Old `Stillwater*` APIs are now forwarding shims. The parity test snapshots the old theme in `test/theme/legacy/` and proves light and dark are identical. |
 | 2026-11-05 | Pre-DS (productization chat) | 8c0fb3c, ce9d65b, 02acfb1, b308998 | Home declutter, transactions list rebuild, Insights rework, shared `FfPeriodBar`. Built on the old Stillwater tokens, so they still need DS-7 migration. |
 
 ## Decisions
@@ -50,9 +51,15 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | Date | Decision | By |
 |---|---|---|
 | 2026-11-05 | App name stays FinanceFlow, and the current Lichen look stays the default identity (refined, not replaced). | owner |
-| 2026-11-05 | Money colours are shared across palettes; income and expense must stay apart under colour blindness (ΔE ≥ 10). Other money types always carry an icon and a label. | proposal, pending owner |
-| 2026-11-05 | Theme choice is stored in the existing `AppSettingsEntity.themeMode` string, so no Isar schema change is needed. | proposal, pending owner |
-| 2026-11-05 | Space, radius, size and motion tokens are `const` statics. Colour and type are read from `context.ff`. | proposal, pending owner |
+| 2026-11-05 | Money colours are shared across palettes; income and expense must stay apart under colour blindness (ΔE ≥ 10). Other money types always carry an icon and a label. | owner (approved proposal) |
+| 2026-11-05 | Theme choice is stored in the existing `AppSettingsEntity.themeMode` string, so no Isar schema change is needed. | owner (approved proposal) |
+| 2026-11-05 | Space, radius, size and motion tokens are `const` statics. Colour and type are read from `context.ff`. | owner (approved proposal) |
+
+| 2026-11-05 | The design system is called **Stillwater**. Palettes are Lichen (default), Tide and Graphite, plus a pure-black dark switch. Sandstone stays in the preview only, unless the owner asks for it. Modes are plain Light and Dark. Code uses the `Ff` prefix. | owner |
+| 2026-11-05 | Lichen refinements approved for DS-8: expense from raspberry to brick, lighter tertiary text, readable snackbar Undo, brighter cards. | owner |
+| 2026-11-05 | Bundle Manrope and the Fraunces weight in use, and drop `google_fonts` (DS-3). Downloading the font files from the Google Fonts GitHub repo is approved. | owner |
+| 2026-11-05 | The design-system gallery is debug-only (`kDebugMode`), reached by long-pressing the version row in Settings, and replaces `branding_preview_screen.dart`. | owner |
+| 2026-11-05 | `FfSpace` keeps the legacy step names (`lg` = 20) so migration never shifts a value. Legacy APIs get a doc comment, not `@Deprecated`, so `flutter analyze` stays a clean gate until DS-9. | DS-1 |
 
 ## Leakage over time
 

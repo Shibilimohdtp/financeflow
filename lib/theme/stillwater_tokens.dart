@@ -1,72 +1,71 @@
 import 'package:flutter/material.dart';
 
-/// Stillwater Design System Tokens (Version 1.0)
-///
-/// Principles: Calm, Precise, Private, Warm, Non-judgmental.
-/// Base spacing unit: 4dp.
+import 'tokens/ff_component_tokens.dart';
+import 'tokens/ff_foundation.dart';
+
+/// Legacy token names, kept so existing code compiles during the migration.
+/// Every value forwards to `tokens/`. New code uses `FfSpace`, `FfRadius`,
+/// `FfMotion` and the component tokens. Removed in design-system slice DS-9.
 class StillwaterTokens {
   StillwaterTokens._();
 
-  // Spacing Scale (Base: 4dp)
-  static const double space3Xs = 2.0;
-  static const double space2Xs = 4.0;
-  static const double spaceXs = 8.0;
-  static const double spaceSm = 12.0;
-  static const double spaceMd = 16.0;
-  static const double spaceLg =
-      20.0; // Horizontal screen margins & comfortable card padding
-  static const double spaceXl = 24.0; // Section gaps
-  static const double space2Xl = 32.0;
-  static const double space3Xl = 40.0;
-  static const double space4Xl = 56.0;
+  // Spacing
+  static const double space3Xs = FfSpace.x3s;
+  static const double space2Xs = FfSpace.x2s;
+  static const double spaceXs = FfSpace.xs;
+  static const double spaceSm = FfSpace.sm;
+  static const double spaceMd = FfSpace.md;
+  static const double spaceLg = FfSpace.lg;
+  static const double spaceXl = FfSpace.xl;
+  static const double space2Xl = FfSpace.x2l;
+  static const double space3Xl = FfSpace.x3l;
+  static const double space4Xl = FfSpace.x4l;
 
-  // Corner Radius Scale
-  static const double radiusXs = 4.0; // Tags, tiny badges
-  static const double radiusSm = 8.0; // Small buttons, icon tiles
-  static const double radiusMd = 12.0; // Inputs, buttons, chart cards
-  static const double radiusLg = 16.0; // Standard cards, list containers
-  static const double radiusXl = 24.0; // Dialogs, hero cards
-  static const double radius2Xl = 28.0; // Bottom sheets top corners
-  static const double radiusFull = 999.0; // Chips, pills
+  // Corner radius
+  static const double radiusXs = FfRadius.xs;
+  static const double radiusSm = FfRadius.sm;
+  static const double radiusMd = FfRadius.md;
+  static const double radiusLg = FfRadius.lg;
+  static const double radiusXl = FfRadius.xl;
+  static const double radius2Xl = FfRadius.x2l;
+  static const double radiusFull = FfRadius.full;
 
-  // Border Widths
-  static const double borderWidthHairline = 0.75;
-  static const double borderWidthDefault = 1.0;
-  static const double borderWidthStrong = 1.5;
-  static const double borderWidthFocus = 2.0;
+  // Border widths
+  static const double borderWidthHairline = FfBorderWidth.hairline;
+  static const double borderWidthDefault = FfBorderWidth.regular;
+  static const double borderWidthStrong = FfBorderWidth.strong;
+  static const double borderWidthFocus = FfBorderWidth.focus;
 
-  // Component Heights
-  static const double buttonHeightPrimary = 48.0;
-  static const double buttonHeightSecondary = 44.0;
-  static const double buttonHeightDense = 36.0;
-  static const double inputHeight = 56.0;
-  static const double amountFieldHeight = 72.0;
-  static const double chipHeight = 36.0;
-  static const double transactionRowHeight = 72.0;
-  static const double transactionRowHeightDense = 56.0;
-  static const double iconTileSize = 36.0;
-  static const double touchTargetMin = 48.0;
+  // Component heights
+  static const double buttonHeightPrimary = FfButtonTokens.heightLg;
+  static const double buttonHeightSecondary = FfButtonTokens.heightMd;
+  static const double buttonHeightDense = FfButtonTokens.heightSm;
+  static const double inputHeight = FfFieldTokens.height;
+  static const double amountFieldHeight = FfFieldTokens.amountHeight;
+  static const double chipHeight = FfChipTokens.height;
+  static const double transactionRowHeight = FfRowTokens.height;
+  static const double transactionRowHeightDense = FfRowTokens.heightDense;
+  static const double iconTileSize = FfRowTokens.iconTile;
+  static const double touchTargetMin = FfTouch.minTarget;
 
-  // Motion Durations (ms)
-  static const Duration durationInstant = Duration(milliseconds: 80);
-  static const Duration durationFast = Duration(milliseconds: 160);
-  static const Duration durationBase = Duration(milliseconds: 240);
-  static const Duration durationSlow = Duration(milliseconds: 360);
-  static const Duration durationDeliberate = Duration(milliseconds: 600);
-
-  // Easing Curves
-  static const Curve easeEmphasized = Cubic(0.2, 0.0, 0.0, 1.0);
-  static const Curve easeDecelerate = Cubic(0.0, 0.0, 0.0, 1.0);
-  static const Curve easeAccelerate = Cubic(0.3, 0.0, 1.0, 1.0);
+  // Motion
+  static const Duration durationInstant = FfMotion.instant;
+  static const Duration durationFast = FfMotion.fast;
+  static const Duration durationBase = FfMotion.base;
+  static const Duration durationSlow = FfMotion.slow;
+  static const Duration durationDeliberate = FfMotion.deliberate;
+  static const Curve easeEmphasized = FfMotion.emphasized;
+  static const Curve easeDecelerate = FfMotion.decelerate;
+  static const Curve easeAccelerate = FfMotion.accelerate;
 
   // Opacities
-  static const double opacityDisabled = 0.38;
-  static const double opacityOverlay = 0.48;
-  static const double opacityTint = 0.12; // Category tile background tint
-  static const double opacityBlur = 0.92;
+  static const double opacityDisabled = FfOpacity.disabled;
+  static const double opacityOverlay = FfOpacity.overlay;
+  static const double opacityTint = 0.12; // FfTint.subtle
+  static const double opacityBlur = FfOpacity.blur;
 
   // Breakpoints
-  static const double bpCompact = 600.0;
-  static const double bpMedium = 840.0;
-  static const double bpExpanded = 1200.0;
+  static const double bpCompact = FfBreakpoint.compact;
+  static const double bpMedium = FfBreakpoint.medium;
+  static const double bpExpanded = FfBreakpoint.expanded;
 }

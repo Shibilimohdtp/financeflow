@@ -1,6 +1,6 @@
 # Design system: audit and proposal (Phase DS-0)
 
-Status: **proposal, waiting for owner approval** (2026-11-05). Nothing in `lib/` has been refactored yet.
+Status: **approved 2026-11-05** with the recommended answers in section 7. DS-1 (token core) is built; see the log for later slices.
 Progress and ownership live in [CHANGELOG.md](CHANGELOG.md). Read that first in any new chat.
 
 Inputs: [`docs/opus-design-system-prompt.md`](../opus-design-system-prompt.md) (the brief), `AGENTS.md`,
@@ -87,76 +87,88 @@ The system is "Stillwater" in files, classes and the spec. A comment calls the p
 "Daylight" and "Deep Water". The spec's palette (deep teal, sand, marigold) is not the shipped one (lichen,
 mushroom, rose). The dark accent is commented "Marigold" but is pink.
 
-## 3. Proposed token architecture and API
+## 3. Token architecture and API (built in DS-1)
 
-Three layers, one root (`lib/theme/`), generated for any palette × brightness.
+Three layers and one root, `lib/theme/`. The theme is generated for any palette in either brightness.
 
 ```
 lib/theme/
-  tokens/primitives.dart   raw ramps & scales: hex values, type-size numbers, 4dp unit (private to lib/theme)
-  tokens/foundation.dart   FfSpace, FfRadius, FfBorder, FfIconSize, FfMotion, FfOpacity, FfBreakpoint (const)
-  tokens/components.dart   FfButtonTokens, FfCardTokens, FfSheetTokens, FfFieldTokens, FfRowTokens… (const)
-  palettes/ff_palette.dart FfPalette(id, name, light: FfColorSet, dark: FfColorSet)
-  palettes/lichen.dart  tide.dart  sandstone.dart  graphite.dart
-  ff_colors.dart           FfColors  (ThemeExtension, semantic roles)
-  ff_text.dart             FfText    (ThemeExtension, type roles incl. money)
-  ff_theme.dart            FfTheme.build(palette, brightness, {pureBlack, highContrast}) → ThemeData
-  ff_context.dart          extension FfContext on BuildContext { FfThemeData get ff }
+  ff.dart                          one import for feature code (context.ff + const tokens)
+  tokens/ff_foundation.dart        FfSpace, FfRadius, FfBorderWidth, FfIconSize, FfMotion, FfOpacity, FfTint,
+                                   FfBreakpoint, FfTouch, ffRadius()  (const)
+  tokens/ff_component_tokens.dart  FfButtonTokens, FfCardTokens, FfFieldTokens, FfChipTokens, FfRowTokens,
+                                   FfSheetTokens, FfDialogTokens, FfNavBarTokens, FfFabTokens, FfToastTokens,
+                                   FfDividerTokens  (const)
+  palettes/lichen_primitives.dart  primitive layer: raw Lichen colour values (never read by UI code)
+  palettes/lichen.dart             semantic layer: every FfColorRole → a primitive, light and dark
+  palettes/ff_palette.dart         FfPalette(id, name, light, dark) + FfPalettes.all / byId
+  ff_colors.dart                   enum FfColorRole + FfColors (ThemeExtension)
+  ff_typography.dart               FfFonts (the only font loading), FfTypography (the scale), enum FfTextRole + FfText
+  ff_theme.dart                    FfTheme.build(palette, brightness) → ThemeData; FfTheme.light()/dark()
+  ff_context.dart                  context.ff → FfThemeData(color, text)
+  stillwater_*.dart                legacy shims that forward to the above (removed in DS-9)
 ```
 
 Why two access styles. Colour and type change with the theme, so they are read from context. Space, radius,
 size and motion are the same in every theme, so they stay `const`. Const keeps `const` widgets possible and has no
-lookup cost. It is still one line to change: `FfSpace` is defined as multiples of `FfSpace.unit`, and
-`FfRadius.card` is a component token pointing at the scale.
+lookup cost. Changing any of them is still one line: `FfSpace` steps are multiples of `FfSpace.unit`, and
+component tokens such as `FfCardTokens.radius` point at the scale.
+
+`FfSpace` keeps the legacy step names, so migrating `StillwaterTokens.spaceLg` to `FfSpace.lg` never changes a value:
+`x3s 2, x2s 4, xs 8, sm 12, md 16, lg 20, xl 24, x2l 32, x3l 40, x4l 56`.
 
 ```dart
-// Foundations (const, theme-invariant)
-abstract final class FfSpace {
-  static const double unit = 4;
-  static const double xxs = unit * 0.5, xs = unit, sm = unit * 2, md = unit * 3,
-      lg = unit * 4, xl = unit * 5, xxl = unit * 6, x3l = unit * 8, x4l = unit * 10;
-  static const EdgeInsetsDirectional page = EdgeInsetsDirectional.symmetric(horizontal: xl);
-}
-abstract final class FfRadius {
-  static const double sm = 8, md = 12, lg = 16, xl = 24, sheet = 28;
-  static const BorderRadius card = BorderRadius.all(Radius.circular(lg));   // component alias
-}
+import '../../theme/ff.dart';
 
-// Semantic colours and text (theme-following)
 final ff = context.ff;
 Container(
-  padding: const EdgeInsetsDirectional.all(FfSpace.lg),
-  decoration: BoxDecoration(color: ff.color.surfaceCard, borderRadius: FfRadius.card,
-      border: Border.all(color: ff.color.borderSubtle)),
+  padding: const EdgeInsetsDirectional.all(FfCardTokens.padding),
+  decoration: BoxDecoration(
+    color: ff.color.surfaceCard,
+    borderRadius: ffRadius(FfCardTokens.radius),
+    border: Border.all(color: ff.color.borderSubtle, width: FfCardTokens.borderWidth),
+  ),
   child: Text('Spent this month', style: ff.text.label),
 );
-Text(amount, style: ff.text.moneyLg.copyWith(color: ff.color.moneyExpense)); // inside FfAmount only
-ff.color.tint(ff.color.moneyIncome, FfTint.subtle)  // replaces ad-hoc .withValues(alpha: 0.12)
+ff.color.tint(ff.color.moneyIncome, FfTint.subtle);  // replaces ad-hoc .withValues(alpha: 0.12)
+Icon(Icons.add, size: FfIconSize.lg);
+AnimatedContainer(duration: FfMotion.base, curve: FfMotion.emphasized, ...);
 ```
 
-Semantic colour roles, the only colour names UI code may use:
-`surfacePage, surfaceCard, surfaceRaised, surfaceSunken, surfaceSelected, surfaceInverse, surfaceSecure`;
-`textPrimary, textSecondary, textTertiary, textDisabled, textOnAction, textInverse, textLink`;
-`borderSubtle, borderControl, borderStrong, focusRing`;
-`actionPrimary, actionPrimaryContainer, onActionPrimaryContainer, actionInverse` (snackbar action);
-`accent, accentContainer, onAccentContainer`;
-`moneyIncome, moneyExpense, moneyTransfer, moneySavings, moneyDebt, moneyInvestment` (+ `…Container`);
-`statusSuccess, statusWarning, statusInfo, statusError` (+ `…Container`); `scrim, shadow`; `chart(i)`.
+**Semantic colour roles.** `FfColorRole` is the full list; these are the only colour names UI code may use.
+- Surfaces: `surfacePage`, `surfaceCard`, `surfaceRaised`, `surfaceSheet`, the five `surfaceContainer*` steps, `surfaceDim`,
+  `surfaceSelected`, `surfaceAccent`, `surfaceSecure`, `surfaceInk`/`onSurfaceInk`, `surfaceToast`/`onSurfaceToast`,
+  `surfaceInverse`/`onSurfaceInverse`.
+- Text: `textPrimary`, `textSecondary`, `textTertiary`, `textDisabled`.
+- Borders: `borderSubtle`, `borderControl`, `borderStrong`, `focusRing`.
+- Actions: `actionPrimary` (+ `Strong`, `on…`, `…Container`), `actionInverse`, `secondary*`, `accent*`.
+- Money: `money{Income,Expense,Transfer,Savings,Debt,Investment}` (+ `…Container`).
+- Status: `statusSuccess`, `statusWarning`, `statusInfo`, `statusError` (+ containers, `onStatusError`), `privacyBoundary`.
+- Utility: `scrim`, `shadow`.
 
-Type roles (one scale, Manrope, Fraunces only for `display`): `display, headline, title, titleSm, body, bodySm,
-label, labelSm, caption, overline` and money roles `moneyHero, moneyLg, moneyMd, moneySm` (tabular figures).
-Money rows clamp the text scale to 1.3×; everything else follows the system scale up to 2×.
+Chart series colours (`chart(i)`) are added in DS-6.
 
-`FfTheme.build` writes `ColorScheme`, `TextTheme` and every Material component theme from the same
-`FfColors` and `FfText`, so stock widgets pick the system up automatically. Adding a theme means adding one
-`FfPalette` file and one line in `FfPalettes.all`.
+**Type roles** (`FfTextRole`, one scale defined once in `FfTypography`):
+- `displayLg`, `display` and `displaySm` use Fraunces.
+- `headlineLg`, `headline`, `headlineSm`, `titleLg`, `title`, `titleSm`, `bodyLg`, `body`, `bodySm`, `labelLg`, `label` and `labelSm` use Manrope.
+- Money roles `moneyHero`, `moneyLg`, `moneyMd` and `moneySm` use tabular figures.
+
+Material's `TextTheme` is generated from the same roles. The text-scale clamp for money rows (1.3×) arrives with
+`FfAmount` in DS-6.
+
+`FfTheme.build` writes `ColorScheme`, `TextTheme` and every Material component theme from the same `FfColors` and
+`FfText`, so stock widgets pick the system up automatically. It also fills the legacy `FfFinColors`,
+`FfStatusColors`, `FfAccentColors` and `FfSecColors` extensions from the same palette. Adding a theme means
+adding one `FfPalette` file and one line in `FfPalettes.all`.
 
 **Theme persistence without a schema change.** `AppSettingsEntity.themeMode` is already a free-text `String`.
 It becomes `"mode=dark;palette=tide;black=1"`, and the old values `system`, `daylight` and `deep_water` still parse.
 No Isar regeneration is needed. Installing a build on the Pixel still follows the backup gate.
 
-**Shims.** `StillwaterTokens`, `StillwaterColors`, `StillwaterTheme.daylight/deepWater` and `context.finColors`
-keep compiling as `@Deprecated` forwards until slice DS-9 removes them.
+**Shims.** `StillwaterTokens`, `StillwaterColors` (now a typedef of `LichenPrimitives`), `StillwaterTypography`,
+`StillwaterTheme.daylight/deepWater` and `context.finColors`/`statusColors`/`accentColors`/`secColors` forward to the
+new layer. They carry a "legacy" doc comment rather than `@Deprecated`: `flutter analyze` would otherwise report
+about 1,700 deprecation infos and stop being a clean gate. DS-9 removes them once the guardrail test is on.
 
 ## 4. Palettes
 
@@ -237,7 +249,9 @@ and check the "In flight" table in the log. Commit only paths the slice changed.
 - Large diffs in `add_edit_transaction_screen` (2,800 lines): migrated in its own commit.
 - No device available right now: screenshots come from golden capture until the Pixel is back.
 
-## 7. Questions for the owner (with recommendations)
+## 7. Owner decisions
+
+The owner approved all five recommendations below on 2026-11-05.
 
 1. **Design-system name.** Recommend keeping **Stillwater** as the system name, because it is already in the spec and the
    class names. Palettes get their own names (Lichen, Tide, Sandstone, Graphite). Mode names become plain "Light" and
