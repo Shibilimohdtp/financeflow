@@ -26,10 +26,12 @@ import 'widgets/budget_overview_card.dart';
 import 'widgets/cash_flow_card.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_loans_overview.dart';
-import 'widgets/home_period_selector.dart';
 import 'widgets/home_recent_transactions.dart';
 import 'widgets/savings_goals_overview_card.dart';
 import 'widgets/total_balance_hero.dart';
+import '../../core/period/period_format.dart';
+import '../../core/period/report_period_provider.dart';
+import '../../shared/widgets/ff_period_bar.dart';
 
 class DashboardScreen extends ConsumerWidget {
   final VoidCallback onAddTransaction;
@@ -79,8 +81,7 @@ class DashboardScreen extends ConsumerWidget {
     final cashFlowAsync = ref.watch(monthlyCashFlowProvider);
     final cashFlowChartAsync = ref.watch(dashboardCashFlowChartProvider);
     final recentTxAsync = ref.watch(recentTransactionsProvider);
-    final selectedMonth = ref.watch(selectedDashboardMonthProvider);
-    final selectedPeriod = ref.watch(selectedDashboardPeriodProvider);
+    final period = ref.watch(reportPeriodProvider);
     final trendMetric = ref.watch(periodComparisonProvider);
     final overallBudgetAsync = ref.watch(overallBudgetSummaryProvider);
     final activeBudgetsAsync = ref.watch(budgetSummariesProvider);
@@ -178,38 +179,6 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: StillwaterTokens.spaceMd),
 
-              // 2. Period Selector (This Week, This Month, Last Month, This Year, Custom)
-              HomePeriodSelector(
-                selectedPeriod: selectedPeriod,
-                onSelected: (chosen) async {
-                  if (chosen == DashboardPeriod.custom) {
-                    final now = DateTime.now();
-                    final picked = await showDateRangePicker(
-                      context: context,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2035),
-                      initialDateRange: DateTimeRange(
-                        start: DateTime(now.year, now.month, 1),
-                        end: now,
-                      ),
-                    );
-                    if (picked != null) {
-                      ref.read(dashboardCustomRangeProvider.notifier).state = (
-                        start: picked.start,
-                        end: picked.end,
-                      );
-                      ref.read(selectedDashboardPeriodProvider.notifier).state =
-                          chosen;
-                    }
-                  } else {
-                    ref.read(selectedDashboardPeriodProvider.notifier).state =
-                        chosen;
-                  }
-                },
-              ),
-
-              const SizedBox(height: StillwaterTokens.spaceMd),
-
               // 3. Actionable & Upcoming Items
               ActionableItemsSection(
                 pendingReviewCount: pendingCount,
@@ -244,7 +213,15 @@ class DashboardScreen extends ConsumerWidget {
                   overBudgetCount > 0)
                 const SizedBox(height: StillwaterTokens.spaceLg),
 
-              // 4. Cash Flow & Visualization Summary Card
+              // 4. Period (shared with Insights) and its cash flow
+              FfPeriodBar(
+                period: period,
+                onChanged: (p) {
+                  if (p != null) {
+                    ref.read(reportPeriodProvider.notifier).state = p;
+                  }
+                },
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: StillwaterTokens.spaceLg,
@@ -254,47 +231,14 @@ class DashboardScreen extends ConsumerWidget {
                       (cashFlow) => CashFlowCard(
                         cashFlow: cashFlow,
                         trendMetric: trendMetric,
-                        month: selectedMonth,
-                        periodLabel: selectedPeriod.label,
+                        month: period.start,
+                        periodLabel: periodLabel(period),
                         chartItems: cashFlowChartAsync.valueOrNull,
                         isPrivacyBlur: isPrivacyBlur,
                         onToggleBlur: () {
                           ref
                               .read(settingsControllerProvider.notifier)
                               .setPrivacyBlurEnabled(!isPrivacyBlur);
-                        },
-                        onPreviousMonth: () {
-                          final prev = DateTime(
-                            selectedMonth.year,
-                            selectedMonth.month - 1,
-                            1,
-                          );
-                          ref
-                              .read(selectedDashboardMonthProvider.notifier)
-                              .state = prev;
-                        },
-                        onNextMonth: () {
-                          final next = DateTime(
-                            selectedMonth.year,
-                            selectedMonth.month + 1,
-                            1,
-                          );
-                          ref
-                              .read(selectedDashboardMonthProvider.notifier)
-                              .state = next;
-                        },
-                        onPickMonth: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedMonth,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2035),
-                          );
-                          if (picked != null) {
-                            ref
-                                .read(selectedDashboardMonthProvider.notifier)
-                                .state = picked;
-                          }
                         },
                         onOpenAnalytics: onOpenAnalytics,
                       ),

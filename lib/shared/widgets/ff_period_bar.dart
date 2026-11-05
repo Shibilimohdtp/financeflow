@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/extensions/context_extensions.dart';
-import '../../../core/period/period.dart';
-import '../../../shared/widgets/ff_sheet_header.dart';
-import '../../../theme/stillwater_tokens.dart';
-import '../transaction_list_utils.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/period/period.dart';
+import '../../core/period/period_format.dart';
+import 'ff_sheet_header.dart';
+import '../../theme/stillwater_tokens.dart';
 
 /// "‹ November 2026 ›" with a tap target that opens the period chooser.
-class TransactionPeriodBar extends StatelessWidget {
+/// Used by Home, Insights and the transaction list. A null period means all
+/// time, offered only when [allowAllTime] is true.
+class FfPeriodBar extends StatelessWidget {
   final Period? period;
   final ValueChanged<Period?> onChanged;
+  final bool allowAllTime;
 
-  const TransactionPeriodBar({
+  const FfPeriodBar({
     super.key,
     required this.period,
     required this.onChanged,
+    this.allowAllTime = false,
   });
 
   @override
@@ -39,16 +43,35 @@ class TransactionPeriodBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left_rounded),
           ),
           Expanded(
-            child: TextButton.icon(
-              key: const ValueKey('period-chooser'),
-              onPressed: () => _choose(context),
-              icon: Text(
-                periodLabel(p, now: now),
-                style: context.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+            child: Semantics(
+              button: true,
+              label: 'Choose period, ${periodLabel(p, now: now)}',
+              excludeSemantics: true,
+              child: InkWell(
+                key: const ValueKey('period-chooser'),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
+                onTap: () => _choose(context),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          periodLabel(p, now: now),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: StillwaterTokens.space2Xs),
+                      const Icon(Icons.expand_more_rounded, size: 18),
+                    ],
+                  ),
                 ),
               ),
-              label: const Icon(Icons.expand_more_rounded, size: 18),
             ),
           ),
           IconButton(
@@ -79,10 +102,11 @@ class TransactionPeriodBar extends StatelessWidget {
               children: [
                 const FfSheetHeader(title: 'Show transactions for'),
                 for (final choice in _PeriodChoice.values)
-                  ListTile(
-                    title: Text(choice.label),
-                    onTap: () => Navigator.of(ctx).pop(choice),
-                  ),
+                  if (allowAllTime || choice != _PeriodChoice.all)
+                    ListTile(
+                      title: Text(choice.label),
+                      onTap: () => Navigator.of(ctx).pop(choice),
+                    ),
               ],
             ),
           ),

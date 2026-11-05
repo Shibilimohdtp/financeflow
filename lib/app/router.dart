@@ -8,6 +8,7 @@ import '../features/savings_goals/savings_goals_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/transactions/add_edit_transaction_screen.dart';
 import '../features/transactions/transaction_detail_screen.dart';
+import '../features/transactions/transactions_controller.dart';
 import '../features/transactions/transactions_screen.dart';
 import '../features/ingestion/needs_review_controller.dart';
 import '../models/transaction.dart';
@@ -88,7 +89,12 @@ class _AppShellState extends ConsumerState<AppShell> {
         onAddTransaction: () => _openAddTransactionScreen(context),
       ),
       const BudgetsScreen(),
-      const AnalyticsScreen(),
+      AnalyticsScreen(
+        onShowTransactions: (query) {
+          ref.read(transactionQueryProvider.notifier).state = query;
+          ref.read(currentNavIndexProvider.notifier).state = 1;
+        },
+      ),
       const SettingsScreen(),
     ];
 

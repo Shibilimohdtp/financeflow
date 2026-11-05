@@ -1,59 +1,23 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/period/period.dart';
+import '../../core/period/report_period_provider.dart';
 import '../../models/transaction.dart';
 import '../../services/balance_calculator.dart';
 import '../../shared/widgets/charts/ff_bar_chart.dart';
 import '../accounts/accounts_controller.dart';
 import '../settings/settings_controller.dart';
 
-enum DashboardPeriod {
-  thisWeek('This Week'),
-  thisMonth('This Month'),
-  lastMonth('Last Month'),
-  thisYear('This Year'),
-  custom('Custom');
-
-  final String label;
-  const DashboardPeriod(this.label);
-}
-
-// Selected Dashboard Period mode
-final selectedDashboardPeriodProvider = StateProvider<DashboardPeriod>((ref) {
-  return DashboardPeriod.thisMonth;
-});
-
 // Selected Dashboard Month (defaults to DateTime.now() for backwards-compatibility and month browsing)
 final selectedDashboardMonthProvider = StateProvider<DateTime>((ref) {
   return DateTime.now();
 });
 
-// Custom date range for custom period
-final dashboardCustomRangeProvider =
-    StateProvider<({DateTime start, DateTime end})?>((ref) => null);
-
-/// The active home period. Month browsing applies to "This Month".
-final dashboardPeriodProvider = Provider<Period>((ref) {
-  final period = ref.watch(selectedDashboardPeriodProvider);
-  final selectedMonth = ref.watch(selectedDashboardMonthProvider);
-  final custom = ref.watch(dashboardCustomRangeProvider);
-  final now = DateTime.now();
-
-  return switch (period) {
-    DashboardPeriod.thisWeek => Period.containing(PeriodUnit.week, now),
-    DashboardPeriod.thisMonth => Period.containing(
-      PeriodUnit.month,
-      selectedMonth,
-    ),
-    DashboardPeriod.lastMonth =>
-      Period.containing(PeriodUnit.month, now).previous(),
-    DashboardPeriod.thisYear => Period.containing(PeriodUnit.year, now),
-    DashboardPeriod.custom =>
-      custom != null
-          ? Period.custom(custom.start, custom.end)
-          : Period.containing(PeriodUnit.month, now),
-  };
-});
+/// The active home period: the shared report period, so Home and Insights
+/// always agree.
+final dashboardPeriodProvider = Provider<Period>(
+  (ref) => ref.watch(reportPeriodProvider),
+);
 
 // Calculated Date Range for active dashboard period
 final dashboardDateRangeProvider = Provider<({DateTime start, DateTime end})>((
@@ -88,10 +52,7 @@ final dashboardPreviousTransactionsProvider = StreamProvider<List<Transaction>>(
     final previous =
         ref.watch(dashboardPeriodProvider).comparison(DateTime.now()).previous;
     final repo = ref.watch(transactionRepositoryProvider);
-    return repo.watchTransactionsBetween(
-      previous.start,
-      previous.endExclusive,
-    );
+    return repo.watchTransactionsBetween(previous.start, previous.endExclusive);
   },
 );
 
@@ -181,13 +142,13 @@ final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>(
   (ref) {
     final txAsync = ref.watch(dashboardTransactionsProvider);
     final range = ref.watch(dashboardDateRangeProvider);
-    final period = ref.watch(selectedDashboardPeriodProvider);
+    final unit = ref.watch(dashboardPeriodProvider).unit;
 
     return txAsync.when(
       data: (transactions) {
         final List<BarChartItem> items = [];
 
-        if (period == DashboardPeriod.thisYear) {
+        if (unit == PeriodUnit.year) {
           // 12 monthly points
           const monthLabels = [
             'Jan',
@@ -220,7 +181,7 @@ final dashboardCashFlowChartProvider = Provider<AsyncValue<List<BarChartItem>>>(
               ),
             );
           }
-        } else if (period == DashboardPeriod.thisWeek) {
+        } else if (unit == PeriodUnit.week) {
           // 7 daily points Mon-Sun
           const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
           for (int d = 0; d < 7; d++) {

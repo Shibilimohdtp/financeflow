@@ -20,5 +20,17 @@ and the transaction list grouping all derive their boundaries from it.
   `Transaction.earnedIncomeAmount` / `consumptionExpenseAmount`. The full EMI
   counts as spending (see `transaction-semantics.md`).
 
+## Shared report period
+
+`reportPeriodProvider` (`lib/core/period/report_period_provider.dart`) is
+the single period for Home and Insights; both render `FfPeriodBar`
+(prev/next plus a chooser for today/week/month/year/custom). The Money tab
+keeps its own `TransactionQuery.period` (it also allows "All time"), and
+Insights drill-downs copy the report period into that query, so a number
+on Insights always matches the list it opens.
+
+Budgets still browse months through `selectedDashboardMonthProvider`; that
+is owned by the budgets redesign.
+
 Known gap: `DateTime.now()` is read when providers build, so a screen left
 open across midnight keeps the old "today" until it rebuilds.

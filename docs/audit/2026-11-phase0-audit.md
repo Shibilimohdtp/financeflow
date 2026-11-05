@@ -141,3 +141,22 @@ I agree with the proposed order, with two changes. First, **platform risk moves 
 - **D6 Currency:** INR stays the default, with an app-wide option for USD, EUR and GBP.
 - **D7 Home:** remove duplicate or overloaded home sections, but keep every feature reachable elsewhere.
 - **D8 Isar fork:** follow the roadmap. It is gated on a personal encrypted backup per AGENTS.md.
+
+## 11. Progress log
+
+- 2026-11-05: AI removed; notifications fixed (permission was never
+  requested); loans show remaining principal + interest; one calendar-safe
+  `Period` with like-for-like comparisons; home decluttered; display
+  currency (INR/USD/EUR/GBP). Verified on a Pixel 7 over existing data.
+- 2026-11-05: Transactions list rebuilt (TransactionQuery, date-indexed
+  reads, day sections, filter chips, bulk select/category/delete). Budgets
+  and export no longer read the list's filtered results. Add/edit form
+  logic extracted and tested; payee optional.
+- 2026-11-05: Home and Insights share one report period. Insights reduced
+  to totals, trend, categories, income, payees and largest expenses; every
+  category/payee opens the matching Money list. Not yet verified on device.
+
+Next: design tokens and component kit, remaining screen redesigns,
+backup-gated schema migration (Isar fork, integer minor units, week-start
+preference, retired AI fields), release hardening.
+

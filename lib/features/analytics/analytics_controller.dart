@@ -1,65 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/period/report_period_provider.dart';
 import '../../models/transaction.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../services/analytics_calculator.dart';
 
-final selectedAnalyticsTimeRangeProvider = StateProvider<AnalyticsTimeRange>((
-  ref,
-) {
-  return AnalyticsTimeRange.month;
-});
-
-final analyticsCustomDateRangeProvider =
-    StateProvider<({DateTime start, DateTime end})?>((ref) {
-      return null;
-    });
-
-final selectedAnalyticsAccountIdProvider = StateProvider<String?>(
-  (ref) => null,
-);
-
-final selectedAnalyticsTypeProvider = StateProvider<TransactionType?>(
-  (ref) => null,
-);
-
+/// Transactions for the shared report period and the one before it (needed
+/// for the "vs last period" comparison), read through the date index.
 final analyticsRawTransactionsProvider = StreamProvider<List<Transaction>>((
   ref,
 ) {
+  final period = ref.watch(reportPeriodProvider);
   final repo = ref.watch(transactionRepositoryProvider);
-  return repo.watchAllTransactions();
+  return repo.watchTransactionsBetween(
+    period.previous().start,
+    period.endExclusive,
+  );
 });
 
 final analyticsReportProvider = Provider<AsyncValue<AnalyticsReport>>((ref) {
-  final transactionsAsync = ref.watch(analyticsRawTransactionsProvider);
-  final timeRange = ref.watch(selectedAnalyticsTimeRangeProvider);
-  final customRange = ref.watch(analyticsCustomDateRangeProvider);
-  final accountId = ref.watch(selectedAnalyticsAccountIdProvider);
-  final txType = ref.watch(selectedAnalyticsTypeProvider);
-
-  return transactionsAsync.when(
-    data: (transactions) {
-      var filtered = transactions;
-      if (accountId != null && accountId.isNotEmpty) {
-        filtered =
-            filtered
-                .where(
-                  (t) => t.accountId == accountId || t.toAccountId == accountId,
-                )
-                .toList();
-      }
-      if (txType != null) {
-        filtered = filtered.where((t) => t.type == txType).toList();
-      }
-
-      final report = AnalyticsCalculator.calculateReport(
-        allTransactions: filtered,
-        timeRange: timeRange,
-        customStartDate: customRange?.start,
-        customEndDate: customRange?.end,
+  final period = ref.watch(reportPeriodProvider);
+  return ref
+      .watch(analyticsRawTransactionsProvider)
+      .whenData(
+        (transactions) => AnalyticsCalculator.calculateReport(
+          allTransactions: transactions,
+          timeRange: AnalyticsCalculator.rangeFor(period.unit),
+          forPeriod: period,
+        ),
       );
-      return AsyncValue.data(report);
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (e, st) => AsyncValue.error(e, st),
-  );
 });

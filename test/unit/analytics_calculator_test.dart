@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:financeflow/core/period/period.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/services/analytics_calculator.dart';
 import 'package:financeflow/features/analytics/cash_flow_chart_data.dart';
@@ -271,6 +272,25 @@ void main() {
       );
 
       expect(report.totalExpense, 500);
+    });
+
+    test('a browsed past period compares whole periods', () {
+      final october = Period.containing(PeriodUnit.month, DateTime(2026, 10));
+      final report = AnalyticsCalculator.calculateReport(
+        allTransactions: [
+          spend('oct', 1000, DateTime(2026, 10, 28)),
+          spend('sep', 2000, DateTime(2026, 9, 25)),
+        ],
+        timeRange: AnalyticsTimeRange.month,
+        forPeriod: october,
+        now: DateTime(2026, 11, 5),
+      );
+
+      expect(report.totalExpense, 1000);
+      // Late-September spending counts: September is finished.
+      expect(report.previousPeriodExpense, 2000);
+      expect(report.expenseChangePercentage, -50);
+      expect(report.timeSeries, hasLength(31));
     });
   });
 }

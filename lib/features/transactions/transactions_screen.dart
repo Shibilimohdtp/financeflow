@@ -8,6 +8,7 @@ import '../../models/transaction.dart';
 import '../../services/ledger_totals.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
@@ -26,7 +27,6 @@ import 'widgets/pending_review_task_card.dart';
 import 'widgets/transaction_day_header.dart';
 import 'widgets/transaction_filter_sheet.dart';
 import 'widgets/transaction_list_summary.dart';
-import 'widgets/transaction_period_bar.dart';
 import 'widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -259,6 +259,20 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final items = results.value ?? const <Transaction>[];
     final selecting = _selected.isNotEmpty;
 
+    // Other screens (Insights drill-down) can replace the query.
+    ref.listen<TransactionQuery>(transactionQueryProvider, (prev, next) {
+      if (_searchController.text != next.search) {
+        _searchController.text = next.search;
+      }
+      if (prev != next &&
+          (_selected.isNotEmpty || _visibleCount != _pageSize)) {
+        setState(() {
+          _selected.clear();
+          _visibleCount = _pageSize;
+        });
+      }
+    });
+
     ref.listen<int>(pendingReviewCountProvider, (prev, next) {
       if (next > (prev ?? 0)) {
         ref.read(reviewPromptSnoozedProvider.notifier).state = false;
@@ -486,7 +500,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
         SliverToBoxAdapter(
-          child: TransactionPeriodBar(
+          child: FfPeriodBar(
+            allowAllTime: true,
             period: query.period,
             onChanged:
                 (p) => _setQuery(query.copyWith(period: p, allTime: p == null)),

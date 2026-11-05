@@ -154,6 +154,14 @@ class AnalyticsReport {
 class AnalyticsCalculator {
   AnalyticsCalculator._();
 
+  /// Chart bucketing for a period: months for a year, days otherwise.
+  static AnalyticsTimeRange rangeFor(PeriodUnit unit) => switch (unit) {
+    PeriodUnit.week => AnalyticsTimeRange.week,
+    PeriodUnit.month => AnalyticsTimeRange.month,
+    PeriodUnit.year => AnalyticsTimeRange.year,
+    PeriodUnit.day || PeriodUnit.custom => AnalyticsTimeRange.custom,
+  };
+
   static PeriodUnit _unitFor(AnalyticsTimeRange range) => switch (range) {
     AnalyticsTimeRange.week => PeriodUnit.week,
     AnalyticsTimeRange.month => PeriodUnit.month,
@@ -192,14 +200,21 @@ class AnalyticsCalculator {
     DateTime? customStartDate,
     DateTime? customEndDate,
     DateTime? referenceDate,
+    Period? forPeriod,
+    DateTime? now,
   }) {
-    final now = referenceDate ?? DateTime.now();
-    final period = periodFor(
-      timeRange,
-      now,
-      customStart: customStartDate,
-      customEnd: customEndDate,
-    );
+    // [forPeriod] wins when given (Home/Insights pass the shared period);
+    // otherwise it is derived from [timeRange] around [referenceDate].
+    // [now] decides how much of an in-progress period has elapsed.
+    final clock = now ?? referenceDate ?? DateTime.now();
+    final period =
+        forPeriod ??
+        periodFor(
+          timeRange,
+          referenceDate ?? clock,
+          customStart: customStartDate,
+          customEnd: customEndDate,
+        );
     final start = period.start;
     final end = period.endInclusive;
 
@@ -467,11 +482,16 @@ class AnalyticsCalculator {
         }).toList();
 
     // Time series points generation
-    final timeSeries = _generateTimeSeries(inRangeTxs, timeRange, start, end);
+    final timeSeries = _generateTimeSeries(
+      inRangeTxs,
+      forPeriod == null ? timeRange : rangeFor(forPeriod.unit),
+      start,
+      end,
+    );
 
     // Like-for-like comparison: a period in progress is compared with the
     // same number of elapsed days of the previous period.
-    final comparison = period.comparison(now);
+    final comparison = period.comparison(clock);
     final soFar = LedgerTotals.of(
       inRangeTxs.where((t) => comparison.current.contains(t.date)),
     );
@@ -492,7 +512,7 @@ class AnalyticsCalculator {
     return AnalyticsReport(
       startDate: start,
       endDate: end,
-      timeRange: timeRange,
+      timeRange: forPeriod == null ? timeRange : rangeFor(forPeriod.unit),
       totalIncome: totalIncome,
       totalExpense: totalExpense,
       netSavings: netSavings,

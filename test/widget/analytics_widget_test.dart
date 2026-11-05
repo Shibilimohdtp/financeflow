@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/analytics/analytics_controller.dart';
 import 'package:financeflow/features/analytics/analytics_screen.dart';
-import 'package:financeflow/features/analytics/widgets/category_transactions_sheet.dart';
+import 'package:financeflow/core/period/report_period_provider.dart';
+import 'package:financeflow/features/transactions/transaction_list_utils.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/services/analytics_calculator.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
@@ -88,6 +89,8 @@ void main() {
       ],
     );
 
+    TransactionQuery? opened;
+    late WidgetRef capturedRef;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -98,32 +101,39 @@ void main() {
         ],
         child: MaterialApp(
           theme: StillwaterTheme.daylight,
-          home: const AnalyticsScreen(),
+          home: Consumer(
+            builder: (context, ref, _) {
+              capturedRef = ref;
+              return AnalyticsScreen(onShowTransactions: (q) => opened = q);
+            },
+          ),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Analytics & Trends'), findsOneWidget);
+    expect(find.text('Insights'), findsOneWidget);
     expect(find.text('Total Inflow'), findsOneWidget);
     expect(find.text('₹75,000'), findsWidgets);
     expect(find.text('Total Outflow'), findsOneWidget);
     expect(find.text('₹25,000'), findsOneWidget);
     expect(find.text('Net Savings'), findsOneWidget);
     expect(find.text('₹50,000'), findsOneWidget);
-    expect(find.text('Expense Category Breakdown'), findsOneWidget);
+    expect(find.text('Where your money went'), findsOneWidget);
     expect(find.text('Dining'), findsWidgets);
     expect(find.text('Swiggy'), findsOneWidget);
 
-    // Test clicking category row opens CategoryTransactionsSheet
+    // A category opens the transaction list for exactly that category,
+    // period and kind, so the number always reconciles with the list.
     final categoryRow = find.byKey(const ValueKey('category-row-cat_dining'));
     await tester.ensureVisible(categoryRow);
     await tester.pumpAndSettle();
     await tester.tap(categoryRow);
     await tester.pumpAndSettle();
 
-    expect(find.byType(CategoryTransactionsSheet), findsOneWidget);
-    expect(find.text('Total Spent in Period'), findsOneWidget);
+    expect(opened?.categoryId, 'cat_dining');
+    expect(opened?.kinds, {TransactionKind.spending});
+    expect(opened?.period, capturedRef.read(reportPeriodProvider));
   });
 }

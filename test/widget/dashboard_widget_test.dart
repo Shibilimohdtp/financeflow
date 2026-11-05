@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:financeflow/core/period/period.dart';
+import 'package:financeflow/core/period/report_period_provider.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_screen.dart';
@@ -507,61 +509,60 @@ void main() {
     },
   );
 
-  testWidgets(
-    'DashboardScreen period selector supports This Week, This Month, Last Month, This Year and triggers updates',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            settingsStreamProvider.overrideWith(
-              (ref) => Stream.value(const AppSettings()),
-            ),
-            monthlyCashFlowProvider.overrideWithValue(
-              AsyncValue.data(testCashFlow),
-            ),
-            accountsWithBalancesProvider.overrideWithValue(
-              AsyncValue.data([testAccount]),
-            ),
-            totalNetWorthProvider.overrideWithValue(
-              const AsyncValue.data(48500.0),
-            ),
-            recentTransactionsProvider.overrideWith(
-              (ref) => Stream.value([testTransaction]),
-            ),
-          ],
-          child: MaterialApp(
-            theme: StillwaterTheme.daylight,
-            home: DashboardScreen(
-              onAddTransaction: () {},
-              onViewAllTransactions: () {},
-              onManageAccounts: () {},
-              onAddAccount: () {},
-              onOpenTransactionDetail: (_) {},
-            ),
+  testWidgets('Home period bar steps through the shared report period', (
+    WidgetTester tester,
+  ) async {
+    late WidgetRef capturedRef;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          settingsStreamProvider.overrideWith(
+            (ref) => Stream.value(const AppSettings()),
+          ),
+          monthlyCashFlowProvider.overrideWithValue(
+            AsyncValue.data(testCashFlow),
+          ),
+          accountsWithBalancesProvider.overrideWithValue(
+            AsyncValue.data([testAccount]),
+          ),
+          totalNetWorthProvider.overrideWithValue(
+            const AsyncValue.data(48500.0),
+          ),
+          recentTransactionsProvider.overrideWith(
+            (ref) => Stream.value([testTransaction]),
+          ),
+        ],
+        child: MaterialApp(
+          theme: StillwaterTheme.daylight,
+          home: Consumer(
+            builder: (context, ref, _) {
+              capturedRef = ref;
+              return DashboardScreen(
+                onAddTransaction: () {},
+                onViewAllTransactions: () {},
+                onManageAccounts: () {},
+                onAddAccount: () {},
+                onOpenTransactionDetail: (_) {},
+              );
+            },
           ),
         ),
-      );
+      ),
+    );
 
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-      // Verify all period pills are present
-      expect(find.text('This Week'), findsOneWidget);
-      expect(find.text('This Month'), findsWidgets);
-      expect(find.text('Last Month'), findsOneWidget);
-      expect(find.text('This Year'), findsOneWidget);
-      expect(find.text('Custom'), findsOneWidget);
+    final start = capturedRef.read(reportPeriodProvider);
+    expect(start, Period.containing(PeriodUnit.month, DateTime.now()));
 
-      // Tap This Week
-      await tester.tap(find.text('This Week'));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
+    final previous = find.byTooltip('Previous period');
+    await tester.ensureVisible(previous);
+    await tester.tap(previous);
+    await tester.pumpAndSettle();
 
-      // Tap This Year
-      await tester.tap(find.text('This Year'));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-    },
-  );
+    expect(capturedRef.read(reportPeriodProvider), start.previous());
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'DashboardScreen places spending comparison in Cash Flow instead of balance',
