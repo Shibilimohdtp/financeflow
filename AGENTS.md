@@ -57,3 +57,12 @@ Before handing off such a change:
 
 Use only fixed, privacy-safe startup milestones in logs. Do not emit account,
 transaction, SMS, notification, or settings contents while diagnosing startup.
+
+## UI and design-system work
+
+Before changing anything visual (theme, colours, typography, spacing, shared widgets, screen layouts), read
+`docs/design-system/CHANGELOG.md`. It records which design-system slices are done, which files another chat
+is working on right now, and the decisions already made. Add your work to its "In flight" table when you
+start, and update it in the same commit when you finish. The full plan is in
+`docs/design-system/00-audit-and-proposal.md`; track leakage with
+`dart run tool/design_system_audit.dart --shared`.
