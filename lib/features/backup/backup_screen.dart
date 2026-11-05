@@ -11,10 +11,11 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'backup_controller.dart';
 import 'restore_preview_screen.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -77,15 +78,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final confirm = _confirmPassphraseController.text;
 
     if (pass.length < 6) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
+        tone: FfToastTone.warning,
         message: 'Passphrase must be at least 6 characters.',
       );
       return;
     }
 
     if (pass != confirm) {
-      FfSnackbar.show(context, message: 'Passphrases do not match.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Passphrases do not match.',
+      );
       return;
     }
 
@@ -100,48 +106,30 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       await _loadExistingBackups();
 
       if (mounted) {
-        showDialog(
-          context: context,
-          builder:
-              (ctx) => AlertDialog(
-                title: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: context.secColors.verified,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Backup Created'),
-                  ],
+        FfDialog.info(
+          context,
+          title: 'Backup created',
+          tone: FfDialogTone.success,
+          message:
+              'Your encrypted backup is ready. Share or save it now (Google Drive, WhatsApp or your Downloads folder) to keep it safe off this phone or move to a new device.',
+          actionLabel: 'Share or save file',
+          actionIcon: Icons.share_rounded,
+          onAction:
+              () => SharePlus.instance.share(
+                ShareParams(
+                  files: [XFile(path)],
+                  subject: 'FinanceFlow Encrypted Backup',
                 ),
-                content: const Text(
-                  'Your encrypted backup is ready. You can share or transfer it now (to Google Drive, WhatsApp, or Downloads folder) to move to a new device or keep safe offline.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Done'),
-                  ),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.share_rounded, size: 16),
-                    label: const Text('Share / Save File'),
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      SharePlus.instance.share(
-                        ShareParams(
-                          files: [XFile(path)],
-                          subject: 'FinanceFlow Encrypted Backup',
-                        ),
-                      );
-                    },
-                  ),
-                ],
               ),
         );
       }
     } catch (e) {
       if (mounted) {
-        FfSnackbar.show(context, message: 'Backup failed: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Backup failed: $e',
+        );
       }
     } finally {
       if (mounted) {
@@ -165,7 +153,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        FfSnackbar.show(context, message: 'Could not select backup file: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Could not select backup file: $e',
+        );
       }
     }
   }

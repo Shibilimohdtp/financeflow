@@ -9,11 +9,12 @@ import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class AddEditSubscriptionSheet extends ConsumerStatefulWidget {
   final Subscription? initialSubscription;
@@ -73,8 +74,8 @@ class _AddEditSubscriptionSheetState
   }
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _nextRenewalDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
@@ -90,14 +91,19 @@ class _AddEditSubscriptionSheetState
     final amount =
         CurrencyFormatter.parse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
-      FfSnackbar.show(context, message: 'Please enter a valid amount.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Please enter a valid amount.',
+      );
       return;
     }
 
     final merchant = _merchantController.text.trim();
     if (merchant.isEmpty) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
+        tone: FfToastTone.warning,
         message: 'Please enter the service or merchant name.',
       );
       return;
@@ -142,7 +148,7 @@ class _AddEditSubscriptionSheetState
 
       if (mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message:
               isEditing
@@ -153,7 +159,11 @@ class _AddEditSubscriptionSheetState
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        FfSnackbar.show(context, message: 'Could not save subscription: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Could not save subscription: $e',
+        );
       }
     }
   }

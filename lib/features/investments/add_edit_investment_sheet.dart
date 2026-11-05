@@ -7,9 +7,10 @@ import '../../models/investment.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'investments_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class AddEditInvestmentSheet extends ConsumerStatefulWidget {
   final Investment? initialInvestment;
@@ -90,8 +91,8 @@ class _AddEditInvestmentSheetState
   }
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _purchaseDate,
       firstDate: DateTime(1990),
       lastDate: DateTime.now(),
@@ -112,7 +113,11 @@ class _AddEditInvestmentSheetState
         (price * units);
 
     if (name.isEmpty) {
-      FfSnackbar.show(context, message: 'Please enter the investment name.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Please enter the investment name.',
+      );
       return;
     }
 
@@ -152,7 +157,7 @@ class _AddEditInvestmentSheetState
 
     if (mounted) {
       Navigator.of(context).pop();
-      FfSnackbar.show(
+      FfToast.show(
         context,
         message:
             isEditing
@@ -270,7 +275,8 @@ class _AddEditInvestmentSheetState
                                         ),
                                     decoration: InputDecoration(
                                       hintText: '50000',
-                                      prefixText: '${CurrencyFormatter.currencySymbol} ',
+                                      prefixText:
+                                          '${CurrencyFormatter.currencySymbol} ',
                                     ),
                                     validator: (val) {
                                       if (val == null || val.trim().isEmpty) {
@@ -299,7 +305,8 @@ class _AddEditInvestmentSheetState
                                         ),
                                     decoration: InputDecoration(
                                       hintText: '55000',
-                                      prefixText: '${CurrencyFormatter.currencySymbol} ',
+                                      prefixText:
+                                          '${CurrencyFormatter.currencySymbol} ',
                                     ),
                                     validator: (val) {
                                       if (val == null || val.trim().isEmpty) {

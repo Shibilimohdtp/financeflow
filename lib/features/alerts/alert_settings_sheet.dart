@@ -10,13 +10,13 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
 import '../../services/notifications/local_notification_service.dart';
 import '../../services/notifications/notification_coordinator.dart';
 import '../../core/formatting/currency_formatter.dart';
+import '../../shared/widgets/ff_toast.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
@@ -384,7 +384,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                                       'Local notification pipeline is active and functioning properly.',
                                 );
                             if (context.mounted) {
-                              FfSnackbar.show(
+                              FfToast.show(
                                 context,
                                 message: 'Test notification sent to device.',
                               );

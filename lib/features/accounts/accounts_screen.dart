@@ -7,7 +7,6 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_list_row.dart';
@@ -16,11 +15,12 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../settings/settings_controller.dart';
 import 'accounts_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -299,7 +299,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                           !acc.isArchived,
                                         );
                                     if (context.mounted) {
-                                      FfSnackbar.show(
+                                      FfToast.show(
                                         context,
                                         message:
                                             acc.isArchived
@@ -308,13 +308,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                       );
                                     }
                                   } else if (val == 'delete') {
-                                    final confirmed = await FfConfirmDialog.show(
+                                    final confirmed = await FfDialog.confirm(
                                       context,
                                       title: 'Delete Account?',
                                       message:
                                           'Are you sure you want to permanently delete "${acc.name}" from this device?',
                                       confirmLabel: 'Delete',
-                                      isDestructive: true,
+                                      destructive: true,
                                     );
                                     if (confirmed == true && context.mounted) {
                                       await ref
@@ -323,7 +323,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                           )
                                           .deleteAccount(acc.id);
                                       if (context.mounted) {
-                                        FfSnackbar.show(
+                                        FfToast.show(
                                           context,
                                           message: 'Account deleted.',
                                         );
@@ -486,7 +486,7 @@ class _AddEditAccountSheetState extends ConsumerState<_AddEditAccountSheet> {
 
     if (mounted) {
       Navigator.of(context).pop();
-      FfSnackbar.show(
+      FfToast.show(
         context,
         message:
             isEditing

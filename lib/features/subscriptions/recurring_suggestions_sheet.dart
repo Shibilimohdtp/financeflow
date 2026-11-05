@@ -9,10 +9,10 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
 
 class RecurringSuggestionsSheet extends ConsumerWidget {
   const RecurringSuggestionsSheet({super.key});
@@ -132,7 +132,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                               recurringSuggestionsProvider,
                                             );
                                             if (context.mounted) {
-                                              FfSnackbar.show(
+                                              FfToast.show(
                                                 context,
                                                 message:
                                                     'Subscription tracked for ${sug.merchant}.',

@@ -8,14 +8,14 @@ import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../services/savings_goal_calculator.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'add_edit_savings_goal_sheet.dart';
 import 'add_goal_contribution_sheet.dart';
 import 'savings_goals_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class SavingsGoalDetailScreen extends ConsumerWidget {
   final SavingsGoal goal;
@@ -45,13 +45,13 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     SavingsGoal currentGoal,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Delete Savings Goal?',
       message:
           'Are you sure you want to delete "${currentGoal.name}" and all recorded contributions?',
       confirmLabel: 'Delete',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -61,11 +61,15 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
             .deleteGoal(currentGoal.id);
         if (context.mounted) {
           Navigator.of(context).pop();
-          FfSnackbar.show(context, message: 'Savings goal deleted.');
+          FfToast.show(context, message: 'Savings goal deleted.');
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Could not delete goal: $e');
+          FfToast.show(
+            context,
+            tone: FfToastTone.error,
+            message: 'Could not delete goal: $e',
+          );
         }
       }
     }
@@ -319,20 +323,20 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                           contribution: contributions[i],
                           accounts: accountsAsync.value ?? [],
                           onDelete: () async {
-                            final confirmed = await FfConfirmDialog.show(
+                            final confirmed = await FfDialog.confirm(
                               context,
                               title: 'Remove Contribution?',
                               message:
                                   'Remove ${CurrencyFormatter.formatAmount(contributions[i].amount)} deposit from this goal?',
                               confirmLabel: 'Remove',
-                              isDestructive: true,
+                              destructive: true,
                             );
                             if (confirmed == true && context.mounted) {
                               await ref
                                   .read(savingsGoalsControllerProvider.notifier)
                                   .deleteContribution(contributions[i].id);
                               if (context.mounted) {
-                                FfSnackbar.show(
+                                FfToast.show(
                                   context,
                                   message: 'Contribution removed.',
                                 );

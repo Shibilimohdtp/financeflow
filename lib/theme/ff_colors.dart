@@ -76,6 +76,7 @@ enum FfColorRole {
 
   // Status
   statusSuccess,
+  statusSuccessContainer,
   statusWarning,
   statusWarningContainer,
   statusInfo,
@@ -171,6 +172,7 @@ class FfColors extends ThemeExtension<FfColors> {
       this[FfColorRole.moneyInvestmentContainer];
 
   Color get statusSuccess => this[FfColorRole.statusSuccess];
+  Color get statusSuccessContainer => this[FfColorRole.statusSuccessContainer];
   Color get statusWarning => this[FfColorRole.statusWarning];
   Color get statusWarningContainer => this[FfColorRole.statusWarningContainer];
   Color get statusInfo => this[FfColorRole.statusInfo];

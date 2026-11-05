@@ -6,13 +6,11 @@ import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../services/ledger_totals.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
@@ -28,6 +26,8 @@ import 'widgets/transaction_day_header.dart';
 import 'widgets/transaction_filter_sheet.dart';
 import 'widgets/transaction_list_summary.dart';
 import 'widgets/transaction_tile.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final ValueChanged<Transaction> onOpenDetail;
@@ -138,7 +138,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         .read(transactionsControllerProvider.notifier)
         .deleteTransaction(transaction);
     if (!mounted) return;
-    FfSnackbar.show(
+    FfToast.show(
       context,
       message: 'Transaction deleted.',
       actionLabel: 'Undo',
@@ -162,7 +162,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   Future<void> _deleteSelected(List<Transaction> items) async {
     final chosen = _selectedTransactions(items);
     if (chosen.isEmpty) return;
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title:
           chosen.length == 1
@@ -171,7 +171,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       message:
           'Linked loan and debt records are updated too. You can undo right after.',
       confirmLabel: 'Delete',
-      isDestructive: true,
+      destructive: true,
     );
     if (confirmed != true || !mounted) return;
     await ref
@@ -179,7 +179,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         .deleteTransactions(chosen);
     if (!mounted) return;
     setState(_selected.clear);
-    FfSnackbar.show(
+    FfToast.show(
       context,
       message:
           chosen.length == 1
@@ -234,7 +234,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     if (!mounted) return;
     setState(_selected.clear);
     final skipped = chosen.length - changed;
-    FfSnackbar.show(
+    FfToast.show(
       context,
       message:
           skipped == 0

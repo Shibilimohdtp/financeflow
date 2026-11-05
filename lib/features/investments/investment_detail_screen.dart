@@ -7,14 +7,14 @@ import '../../models/investment.dart';
 import '../../repositories/account_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'add_edit_investment_sheet.dart';
 import 'investments_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class InvestmentDetailScreen extends ConsumerWidget {
   final Investment investment;
@@ -106,7 +106,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
           .read(investmentsControllerProvider.notifier)
           .updateValuation(currentInv.id, newVal);
       if (context.mounted) {
-        FfSnackbar.show(context, message: 'Valuation updated on this device.');
+        FfToast.show(context, message: 'Valuation updated on this device.');
       }
     }
   }
@@ -116,13 +116,13 @@ class InvestmentDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Investment currentInv,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Delete Investment?',
       message:
           'Remove "${currentInv.name}" from your local portfolio? Linked ledger entries will be kept as unlinked historical investment movements.',
       confirmLabel: 'Delete',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -131,7 +131,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
           .deleteInvestment(currentInv.id);
       if (context.mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(context, message: 'Investment removed.');
+        FfToast.show(context, message: 'Investment removed.');
       }
     }
   }
@@ -288,7 +288,9 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 _DetailRow(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'Invested Cost',
-                  value: CurrencyFormatter.formatAmount(currentInv.investedAmount),
+                  value: CurrencyFormatter.formatAmount(
+                    currentInv.investedAmount,
+                  ),
                 ),
                 _DetailDivider(),
                 _DetailRow(

@@ -9,11 +9,12 @@ import '../../models/account.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'money_records_controller.dart';
 import '../accounts/accounts_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class AddEditMoneyRecordSheet extends ConsumerStatefulWidget {
   final MoneyRecord? initialRecord;
@@ -79,8 +80,8 @@ class _AddEditMoneyRecordSheetState
   }
 
   Future<void> _pickTransactionDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _transactionDate,
       firstDate: DateTime.now().subtract(const Duration(days: 3650)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
@@ -99,8 +100,8 @@ class _AddEditMoneyRecordSheetState
   }
 
   Future<void> _pickDueDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate:
           _dueDate.isBefore(_transactionDate) ? _transactionDate : _dueDate,
       firstDate: _transactionDate,
@@ -116,15 +117,20 @@ class _AddEditMoneyRecordSheetState
 
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      FfSnackbar.show(context, message: "Please enter person's name.");
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: "Please enter person's name.",
+      );
       return;
     }
 
     final amount =
         CurrencyFormatter.parse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
+        tone: FfToastTone.warning,
         message: 'Please enter a valid positive amount.',
       );
       return;
@@ -137,14 +143,19 @@ class _AddEditMoneyRecordSheetState
     );
     final dueDay = DateTime(_dueDate.year, _dueDate.month, _dueDate.day);
     if (dueDay.isBefore(txDay)) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
+        tone: FfToastTone.warning,
         message: 'Due date cannot be earlier than transaction date.',
       );
       return;
     }
     if (!isEditing && _recordInTransactions && _selectedAccountId == null) {
-      FfSnackbar.show(context, message: 'Select the account for this entry.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Select the account for this entry.',
+      );
       return;
     }
 
@@ -187,7 +198,7 @@ class _AddEditMoneyRecordSheetState
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message:
               isEditing
@@ -198,7 +209,7 @@ class _AddEditMoneyRecordSheetState
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        FfSnackbar.show(context, message: 'Error: $e');
+        FfToast.show(context, tone: FfToastTone.error, message: 'Error: $e');
       }
     }
   }

@@ -9,9 +9,10 @@ import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'savings_goals_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class AddEditSavingsGoalSheet extends ConsumerStatefulWidget {
   final SavingsGoal? initialGoal;
@@ -67,8 +68,8 @@ class _AddEditSavingsGoalSheetState
   }
 
   Future<void> _selectTargetDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _targetDate,
       firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
@@ -84,7 +85,11 @@ class _AddEditSavingsGoalSheetState
     final name = _nameController.text.trim();
     final amount = CurrencyFormatter.parse(_amountController.text);
     if (amount == null || amount <= 0) {
-      FfSnackbar.show(context, message: 'Please enter a valid target amount.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Please enter a valid target amount.',
+      );
       return;
     }
 
@@ -112,7 +117,7 @@ class _AddEditSavingsGoalSheetState
 
       if (mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message:
               isEditing
@@ -123,7 +128,11 @@ class _AddEditSavingsGoalSheetState
     } catch (e) {
       setState(() => _isSubmitting = false);
       if (mounted) {
-        FfSnackbar.show(context, message: 'Could not save goal: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Could not save goal: $e',
+        );
       }
     }
   }

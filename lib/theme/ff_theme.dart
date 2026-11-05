@@ -210,6 +210,16 @@ abstract final class FfTheme {
         ),
         elevation: FfDialogTokens.elevation,
       ),
+      datePickerTheme: DatePickerThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: ffRadius(FfDialogTokens.radius),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: ffRadius(FfDialogTokens.radius),
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: c.actionPrimary,
         foregroundColor: c.onActionPrimary,

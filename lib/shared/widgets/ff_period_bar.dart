@@ -5,6 +5,7 @@ import '../../core/period/period.dart';
 import '../../core/period/period_format.dart';
 import 'ff_sheet_header.dart';
 import '../../theme/stillwater_tokens.dart';
+import 'ff_pickers.dart';
 
 /// "‹ November 2026 ›" with a tap target that opens the period chooser.
 /// Used by Home, Insights and the transaction list. A null period means all
@@ -125,8 +126,8 @@ class FfPeriodBar extends StatelessWidget {
         onChanged(null);
       case _PeriodChoice.custom:
         final current = period;
-        final picked = await showDateRangePicker(
-          context: context,
+        final picked = await pickFfDateRange(
+          context,
           firstDate: DateTime(2000),
           lastDate: DateTime(now.year + 1, 12, 31),
           initialDateRange:

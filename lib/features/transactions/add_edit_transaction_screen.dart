@@ -24,8 +24,6 @@ import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_colors.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
@@ -35,6 +33,9 @@ import '../personal_debts/money_records_controller.dart';
 import 'transaction_form.dart';
 import 'transactions_controller.dart';
 import 'widgets/transaction_pickers.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -190,8 +191,7 @@ class _AddEditTransactionScreenState
     if (initial?.purpose == TransactionPurpose.subscriptionPayment &&
         initial?.linkedSubscriptionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final subs =
-            ref.read(allSubscriptionsStreamProvider).value ?? const [];
+        final subs = ref.read(allSubscriptionsStreamProvider).value ?? const [];
         final found =
             subs
                 .where((s) => s.id == initial!.linkedSubscriptionId)
@@ -247,13 +247,13 @@ class _AddEditTransactionScreenState
 
   Future<bool> _onWillPop() async {
     if (!_isDirty) return true;
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Discard Changes?',
       message:
           'You have unsaved changes. Are you sure you want to discard them?',
       confirmLabel: 'Discard',
-      isDestructive: true,
+      destructive: true,
     );
     return confirmed ?? false;
   }
@@ -573,23 +573,11 @@ class _AddEditTransactionScreenState
       setState(() => _selectedDate = DateTime(date.year, date.month, date.day));
 
   Future<void> _pickCustomDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            datePickerTheme: DatePickerThemeData(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusXl),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) _setDate(picked);
   }
@@ -682,7 +670,7 @@ class _AddEditTransactionScreenState
 
       if (mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message:
               widget.onSave != null
@@ -695,7 +683,11 @@ class _AddEditTransactionScreenState
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        FfSnackbar.show(context, message: 'Could not save transaction: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Could not save transaction: $e',
+        );
       }
     }
   }
@@ -740,17 +732,18 @@ class _AddEditTransactionScreenState
               .firstOrNull;
       if (_selectedCategory == null) {
         final initCatId = widget.initialTransaction!.categoryId;
-        final isMisc = initCatId == 'cat_miscellaneous' ||
-            widget.initialTransaction!.categoryName.toLowerCase() == 'miscellaneous';
+        final isMisc =
+            initCatId == 'cat_miscellaneous' ||
+            widget.initialTransaction!.categoryName.toLowerCase() ==
+                'miscellaneous';
         if (isMisc && widget.initialTransaction!.merchant.isNotEmpty) {
           final histCat = CategorizationService.suggestCategory(
             widget.initialTransaction!.merchant,
             history: history,
           );
           if (histCat != null && histCat.categoryId != 'cat_miscellaneous') {
-            _selectedCategory = categories
-                .where((c) => c.id == histCat.categoryId)
-                .firstOrNull;
+            _selectedCategory =
+                categories.where((c) => c.id == histCat.categoryId).firstOrNull;
           }
         }
         _selectedCategory ??=
@@ -1743,7 +1736,9 @@ class _AddEditTransactionScreenState
                 ),
                 borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
                 ),
               ),
               child: Row(
@@ -1793,14 +1788,12 @@ class _AddEditTransactionScreenState
                 ),
               ],
               onChanged: (id) {
-                final chosen =
-                    activeSubs.where((s) => s.id == id).firstOrNull;
+                final chosen = activeSubs.where((s) => s.id == id).firstOrNull;
                 setState(() {
                   _selectedSubscription = chosen;
                   if (chosen != null) {
                     // Pre-fill amount and merchant from the subscription.
-                    _amountController.text =
-                        chosen.amount.toStringAsFixed(2);
+                    _amountController.text = chosen.amount.toStringAsFixed(2);
                     if (_merchantController.text.isEmpty) {
                       _merchantController.text = chosen.merchant;
                     }
@@ -1857,7 +1850,6 @@ class _AddEditTransactionScreenState
     }
 
     if (_selectedPurpose == TransactionPurpose.loanRepayment) {
-
       final loans =
           (ref.watch(allLoansStreamProvider).valueOrNull ?? const <Loan>[])
               .where((loan) => loan.status == LoanStatus.active)
@@ -2257,8 +2249,8 @@ class _AddEditTransactionScreenState
           const SizedBox(height: StillwaterTokens.spaceSm),
           InkWell(
             onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
+              final picked = await pickFfDate(
+                context,
                 initialDate:
                     _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
                 firstDate: _selectedDate,
@@ -2305,7 +2297,10 @@ class _AddEditTransactionScreenState
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-      decoration: InputDecoration(labelText: label, prefixText: '${CurrencyFormatter.currencySymbol} '),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixText: '${CurrencyFormatter.currencySymbol} ',
+      ),
     );
   }
 

@@ -8,12 +8,13 @@ import '../../models/money_record.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_switch_row.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import 'money_records_controller.dart';
 import '../accounts/accounts_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class AddRepaymentSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -63,8 +64,8 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _repaymentDate,
       firstDate: widget.record.transactionDate.subtract(
         const Duration(days: 30),
@@ -82,12 +83,16 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
     final amount =
         CurrencyFormatter.parse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
-      FfSnackbar.show(context, message: 'Please enter a valid amount.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Please enter a valid amount.',
+      );
       return;
     }
 
     if (amount > (widget.remainingBalance + 0.001)) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
         message:
             'Repayment cannot exceed remaining balance of ${CurrencyFormatter.format(widget.remainingBalance)}',
@@ -95,7 +100,11 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
       return;
     }
     if (_recordInTransactions && _selectedAccountId == null) {
-      FfSnackbar.show(context, message: 'Select the account for this payment.');
+      FfToast.show(
+        context,
+        tone: FfToastTone.warning,
+        message: 'Select the account for this payment.',
+      );
       return;
     }
 
@@ -117,12 +126,16 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        FfSnackbar.show(context, message: 'Repayment recorded successfully.');
+        FfToast.show(context, message: 'Repayment recorded successfully.');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        FfSnackbar.show(context, message: 'Failed to record repayment: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Failed to record repayment: $e',
+        );
       }
     }
   }

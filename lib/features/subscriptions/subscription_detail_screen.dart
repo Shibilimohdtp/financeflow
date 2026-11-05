@@ -10,18 +10,18 @@ import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_list_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../transactions/add_edit_transaction_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'add_edit_subscription_sheet.dart';
 import 'subscriptions_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class SubscriptionDetailScreen extends ConsumerWidget {
   final Subscription subscription;
@@ -53,13 +53,13 @@ class SubscriptionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Subscription currentSub,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Delete Subscription?',
       message:
           'Are you sure you want to stop tracking "${currentSub.merchant}" on this device?',
       confirmLabel: 'Delete',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -68,7 +68,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
           .deleteSubscription(currentSub.id);
       if (context.mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(context, message: 'Subscription removed.');
+        FfToast.show(context, message: 'Subscription removed.');
       }
     }
   }
@@ -87,7 +87,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
         .read(subscriptionsControllerProvider.notifier)
         .updateStatus(currentSub.id, newStatus);
     if (context.mounted) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
         message:
             newStatus == SubscriptionStatus.active
@@ -116,10 +116,12 @@ class SubscriptionDetailScreen extends ConsumerWidget {
       orElse: () => null as dynamic,
     );
 
-    final paymentTotals =
-        ref.watch(subscriptionPaymentsTotalProvider(currentSub.id));
+    final paymentTotals = ref.watch(
+      subscriptionPaymentsTotalProvider(currentSub.id),
+    );
     final recentPayments =
-        ref.watch(subscriptionPaymentsStreamProvider(currentSub.id)).value ?? [];
+        ref.watch(subscriptionPaymentsStreamProvider(currentSub.id)).value ??
+        [];
     final displayPayments = recentPayments.take(5).toList();
 
     final days = currentSub.daysUntilRenewal();

@@ -10,11 +10,12 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../backup/backup_screen.dart';
 import 'export_controller.dart';
 import '../accounts/accounts_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
@@ -32,8 +33,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _isExporting = false;
 
   Future<void> _selectDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
+    final picked = await pickFfDateRange(
+      context,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       initialDateRange:
@@ -68,11 +69,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       setState(() => _exportedPath = path);
 
       if (mounted) {
-        FfSnackbar.show(context, message: 'Export saved locally to: $path');
+        FfToast.show(context, message: 'Export saved locally to: $path');
       }
     } catch (e) {
       if (mounted) {
-        FfSnackbar.show(context, message: 'Export failed: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Export failed: $e',
+        );
       }
     } finally {
       if (mounted) {

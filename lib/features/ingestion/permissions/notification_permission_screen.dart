@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_button.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../shared/widgets/ff_snackbar.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
 import '../../../services/ingestion/ingestion_coordinator.dart';
+import '../../../shared/widgets/ff_toast.dart';
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -213,7 +213,7 @@ class _NotificationPermissionScreenState
                     .read(ingestionCoordinatorProvider)
                     .configure(enabledSettings);
                 if (context.mounted) {
-                  FfSnackbar.show(
+                  FfToast.show(
                     context,
                     message: 'On-device notification detection enabled.',
                   );

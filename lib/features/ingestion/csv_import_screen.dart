@@ -13,11 +13,11 @@ import '../../models/transaction.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import 'csv_import_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
 
 class CsvImportScreen extends ConsumerStatefulWidget {
   const CsvImportScreen({super.key});
@@ -59,13 +59,21 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               .loadCsvContent(content, fileName: file.name);
         } else {
           if (mounted) {
-            FfSnackbar.show(context, message: 'The selected file is empty.');
+            FfToast.show(
+              context,
+              tone: FfToastTone.warning,
+              message: 'The selected file is empty.',
+            );
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        FfSnackbar.show(context, message: 'Could not open CSV file: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Could not open CSV file: $e',
+        );
       }
     }
   }
@@ -752,7 +760,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                           .read(csvImportControllerProvider.notifier)
                           .commitImport();
                   if (context.mounted) {
-                    FfSnackbar.show(
+                    FfToast.show(
                       context,
                       message:
                           'Imported ${imported.length} transactions successfully.',

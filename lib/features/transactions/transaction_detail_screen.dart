@@ -10,14 +10,14 @@ import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../subscriptions/subscription_detail_screen.dart';
 import 'add_edit_transaction_screen.dart';
 import 'transactions_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class TransactionDetailScreen extends ConsumerWidget {
   final Transaction transaction;
@@ -28,8 +28,7 @@ class TransactionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
-    final subscriptions =
-        ref.watch(allSubscriptionsStreamProvider).value ?? [];
+    final subscriptions = ref.watch(allSubscriptionsStreamProvider).value ?? [];
     final account =
         accounts.where((a) => a.id == transaction.accountId).firstOrNull;
     final toAccount =
@@ -64,7 +63,7 @@ class TransactionDetailScreen extends ConsumerWidget {
             ),
             tooltip: 'Delete transaction',
             onPressed: () async {
-              final confirmed = await FfConfirmDialog.show(
+              final confirmed = await FfDialog.confirm(
                 context,
                 title: 'Delete Transaction?',
                 message:
@@ -76,7 +75,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                         ? 'Delete this subscription payment? The payment will no longer appear in the subscription\'s history. This can be undone briefly.'
                         : 'Are you sure you want to delete this transaction for "${transaction.merchant}"? This action can be undone briefly.',
                 confirmLabel: 'Delete',
-                isDestructive: true,
+                destructive: true,
               );
 
               if (confirmed == true && context.mounted) {
@@ -86,7 +85,7 @@ class TransactionDetailScreen extends ConsumerWidget {
 
                 if (context.mounted) {
                   Navigator.of(context).pop();
-                  FfSnackbar.show(
+                  FfToast.show(
                     context,
                     message: 'Transaction deleted.',
                     actionLabel: 'Undo',
@@ -442,7 +441,8 @@ class TransactionDetailScreen extends ConsumerWidget {
   }) {
     final theme = context.theme;
     final name =
-        linkedSubscription?.merchant as String? ?? 'Subscription no longer tracked';
+        linkedSubscription?.merchant as String? ??
+        'Subscription no longer tracked';
     final isResolved = linkedSubscription != null;
 
     return InkWell(

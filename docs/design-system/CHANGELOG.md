@@ -23,8 +23,9 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | DS-0 Audit, proposal, audit script, this log | done (7c6e015) | owner approved the recommendations 2026-11-05 |
 | DS-1 Token core + `context.ff` + shims | done (74c9bec) | no visual change, proven by `test/theme/theme_parity_test.dart` |
 | DS-2 Contrast/CVD guardrail test | done (87bda61) | 2 known issues, both fixed by DS-8 |
-| DS-3 Bundle fonts, drop `google_fonts` | done, device check pending (commit "feat(theme): DS-3 …"; hash filled in at DS-4) | analyze, tests and both APK builds green; cold start on the Pixel waits for the backup gate |
-| DS-4 Feedback & overlays | not started | |
+| DS-3 Bundle fonts, drop `google_fonts` | done (3c44dcd), device check pending | analyze, tests and both APK builds green; cold start on the Pixel waits for the backup gate |
+| DS-4a Toast, dialogs, date pickers, banner | done (commit "feat(ui): DS-4a …"; hash filled in at DS-4b) | budgets files still use the legacy `FfSnackbar`/`FfConfirmDialog` shims and 2 raw pickers until that chat lands |
+| DS-4b Shared sheet frame + `showFfSheet`, migrate every sheet | not started | split from DS-4: about 22 sheet widgets each paint their own frame |
 | DS-5 Structure & inputs | not started | |
 | DS-6 Data display & charts | not started | |
 | DS-7a–h Feature migrations | not started | budgets last (DS-7h) |
@@ -43,7 +44,8 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | Date | Slice | Commit | What changed |
 |---|---|---|---|
 | 2026-11-05 | DS-0 | 7c6e015 | Audit, proposal, palette preview, `tool/design_system_audit.dart`, this log, AGENTS.md pointer. |
-| 2026-11-05 | DS-3 | "feat(theme): DS-3 …" | Fonts bundled in `assets/fonts/`: Manrope 400–800 and Fraunces 600/700, cut from the Google Fonts variable fonts with `tool/fonts/make_static_fonts.py`. OFL licences and provenance are in `assets/fonts/README.md`. `google_fonts` is removed, so nothing fetches fonts at runtime and release now renders Manrope (its manifest has no INTERNET permission, so it never could before). `FfFonts` names the families. Release APK went from 65.1 to 64.4 MB. `test/helpers/app_fonts.dart` loads the real fonts for future screenshots; `test/theme/bundled_fonts_test.dart` checks the manifest, the weights and that text measures differently with them. |
+| 2026-11-05 | DS-4a | "feat(ui): DS-4a …" | New shared components: `FfToast` (tones with icons and screen-reader prefix, Undo in `toastAction`, 6 s when there is an action), `FfDialog` (`confirm`, `confirmTyped`, `info`, `withProgress`), `FfBanner` (info/success/warning/error) and `pickFfDate`/`pickFfDateRange`/`pickFfTime` (clamp out-of-range initial dates instead of crashing). Migrated 89 toasts (20 error and 16 validation-warning tones assigned from their messages), 22 confirms, 14 pickers and both raw backup dialogs, in 31 feature files. Picker and dialog shape now come from the theme. New role `statusSuccessContainer`, plus banner contrast rules. `FfSnackbar` and `FfConfirmDialog` are now forwarding shims for the budgets files. Screenshots are in `screenshots/ds-4a/`. |
+| 2026-11-05 | DS-3 | 3c44dcd | Fonts bundled in `assets/fonts/`: Manrope 400–800 and Fraunces 600/700, cut from the Google Fonts variable fonts with `tool/fonts/make_static_fonts.py`. OFL licences and provenance are in `assets/fonts/README.md`. `google_fonts` is removed, so nothing fetches fonts at runtime and release now renders Manrope (its manifest has no INTERNET permission, so it never could before). `FfFonts` names the families. Release APK went from 65.1 to 64.4 MB. `test/helpers/app_fonts.dart` loads the real fonts for future screenshots; `test/theme/bundled_fonts_test.dart` checks the manifest, the weights and that text measures differently with them. |
 | 2026-11-05 | DS-2 | 87bda61 | `lib/theme/ff_contrast.dart`: WCAG contrast, colour-blindness simulation (Machado 2009) and `FfContrastRules.all`, the 90 colour pairs the app draws. `test/theme/palette_accessibility_test.dart` checks them for every palette in both modes, plus income-vs-expense ΔE ≥ 10. It is a ratchet: known issues are listed with a reason, new failures fail the build, and fixed issues must be deleted. Added the `toastAction` role (snackbar Undo); nothing uses it yet. |
 | 2026-11-05 | DS-1 | 74c9bec | Token core: `lib/theme/tokens/` (foundation + component tokens), `palettes/` (Lichen primitives → semantic roles), `FfColors`/`FfText` extensions, `FfTheme.build` (one builder for every palette and mode, replacing two 250-line copies), `context.ff` and the `lib/theme/ff.dart` barrel. Old `Stillwater*` APIs are now forwarding shims. The parity test snapshots the old theme in `test/theme/legacy/` and proves light and dark are identical. |
 | 2026-11-05 | Pre-DS (productization chat) | 8c0fb3c, ce9d65b, 02acfb1, b308998 | Home declutter, transactions list rebuild, Insights rework, shared `FfPeriodBar`. Built on the old Stillwater tokens, so they still need DS-7 migration. |
@@ -61,6 +63,9 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | 2026-11-05 | Lichen refinements approved for DS-8: expense from raspberry to brick, lighter tertiary text, readable snackbar Undo, brighter cards. | owner |
 | 2026-11-05 | Bundle Manrope and the Fraunces weight in use, and drop `google_fonts` (DS-3). Downloading the font files from the Google Fonts GitHub repo is approved. | owner |
 | 2026-11-05 | The design-system gallery is debug-only (`kDebugMode`), reached by long-pressing the version row in Settings, and replaces `branding_preview_screen.dart`. | owner |
+| 2026-11-05 | Toast tones: messages that start with "Failed", "Could not" or "Error" use `error`; validation prompts ("Please enter…", "Select the account…") use `warning`; everything else stays neutral. Success stays neutral to keep the app calm. | DS-4a |
+| 2026-11-05 | DS-4 is split: sheets (DS-4b) get one shared `FfSheet` frame. About 22 sheet widgets each paint their own background, radius, safe area and keyboard inset, so they migrate together in one slice. | DS-4a |
+| 2026-11-05 | Before/after screenshots come from `tool/screenshots/*_test.dart`, run with `--update-goldens` at the old commit (in a temporary git worktree) and at the new one, using the real bundled fonts and icons. They are combined into side-by-side sheets in `docs/design-system/screenshots/<slice>/`. | DS-4a |
 | 2026-11-05 | Fraunces is pinned to optical size 24, plain letterforms (`WONK` 0) and `SOFT` 0. It is used only by the display roles (onboarding title, loan hero). | DS-3 |
 | 2026-11-05 | Contrast rules live in `lib/theme/ff_contrast.dart` as data, not in the test, so the gallery can show the same numbers. When a component starts drawing a new colour pair, add a rule. | DS-2 |
 | 2026-11-05 | `FfSpace` keeps the legacy step names (`lg` = 20) so migration never shifts a value. Legacy APIs get a doc comment, not `@Deprecated`, so `flutter analyze` stays a clean gate until DS-9. | DS-1 |
@@ -72,7 +77,6 @@ These are the open items. Palette items are also listed in `knownIssues` in `tes
 | Issue | Where | Fixed by |
 |---|---|---|
 | Income and expense too similar under deuteranopia (ΔE 5.8 light, 9.7 dark) | Lichen palette | DS-8 (expense moves to brick) |
-| Snackbar Undo drawn in `colorScheme.primary` on the ink snackbar: 2.07:1 in light mode. The palette is fine; `FfSnackbar` uses the wrong role. | `lib/shared/widgets/ff_snackbar.dart` | DS-4 (`FfToast` uses `toastAction`) |
 | Text sizes 9 and 10 used in feature code, below the type scale | 50 files | DS-5 to DS-7 migrations |
 
 ## Leakage over time
@@ -82,6 +86,9 @@ Command: `dart run tool/design_system_audit.dart --shared` (lib/ minus lib/theme
 | Date | Commit | Colors.* | Color(0x | alpha tints | static colors | fontSize | TextStyle( | EdgeInsets# | SizedBox# | AppBar( | bottom sheets | dialogs | pickers | Divider( |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 2026-11-05 | b308998 | 5 | 22 | 170 | 61 | 154 | 44 | 22 | 89 | 36 | 30 | 4 | 16 | 71 |
+| 2026-11-05 | DS-4a | 5 | 22 | 170 | 61 | 153 | 43 | 25* | 86 | 36 | 30 | 0 | 2 | 71 |
+
+\* Not new literals: formatting joined multi-line `EdgeInsets` calls onto one line, where the line-based check now counts them. The 2 remaining pickers are in budgets (other chat).
 
 ## Screens redesigned
 
@@ -90,4 +97,4 @@ checked in light and dark; say where (golden, emulator, Pixel 7).
 
 | Screen | Slice | Commit | Visual verified |
 |---|---|---|---|
-| none yet | | | |
+| Toast with Undo, delete confirm, date picker (shared overlays used across the app) | DS-4a | this commit | golden capture, light and dark, before and after: `screenshots/ds-4a/` |

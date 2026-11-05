@@ -8,10 +8,11 @@ import '../../models/account.dart';
 import '../../models/money_record.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import 'money_records_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 class AddAdvanceSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -45,16 +46,18 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
 
     final amount = CurrencyFormatter.parse(_amountController.text) ?? 0.0;
     if (amount <= 0) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
+        tone: FfToastTone.warning,
         message: 'Please enter a valid amount greater than zero.',
       );
       return;
     }
 
     if (_recordInTransactions && _selectedAccount == null) {
-      FfSnackbar.show(
+      FfToast.show(
         context,
+        tone: FfToastTone.warning,
         message: 'Please select an account for the transaction.',
       );
       return;
@@ -80,7 +83,7 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message: 'Advance recorded for ${widget.record.personName}.',
         );
@@ -88,7 +91,11 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        FfSnackbar.show(context, message: 'Could not add advance: $e');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Could not add advance: $e',
+        );
       }
     }
   }
@@ -200,8 +207,8 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                   Expanded(
                     child: InkWell(
                       onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
+                        final picked = await pickFfDate(
+                          context,
                           initialDate: _advanceDate,
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
@@ -236,8 +243,8 @@ class _AddAdvanceSheetState extends ConsumerState<AddAdvanceSheet> {
                   Expanded(
                     child: InkWell(
                       onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
+                        final picked = await pickFfDate(
+                          context,
                           initialDate: _dueDate,
                           firstDate: _advanceDate,
                           lastDate: DateTime(2100),

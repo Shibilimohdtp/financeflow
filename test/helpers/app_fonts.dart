@@ -19,13 +19,14 @@ Future<Map<String, List<String>>> readFontManifest() async {
 var _loaded = false;
 
 /// Loads the bundled app fonts into the test engine, so goldens and
-/// screenshots render Manrope and Fraunces instead of the test font.
+/// screenshots render Manrope, Fraunces and Material icons instead of the
+/// test font's placeholder boxes.
 /// Call from `setUpAll`; repeated calls are no-ops.
 Future<void> loadAppFonts() async {
   if (_loaded) return;
   final manifest = await readFontManifest();
   for (final MapEntry(key: family, value: assets) in manifest.entries) {
-    if (family.startsWith('packages/') || family == 'MaterialIcons') continue;
+    if (family.startsWith('packages/')) continue;
     final loader = FontLoader(family);
     for (final asset in assets) {
       loader.addFont(rootBundle.load(asset));

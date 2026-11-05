@@ -64,6 +64,23 @@ abstract final class FfFabTokens {
 
 abstract final class FfToastTokens {
   static const double radius = FfRadius.md;
+  static const double margin = FfSpace.lg;
+  static const Duration duration = Duration(seconds: 4);
+
+  /// Longer when the toast offers an action such as Undo.
+  static const Duration durationWithAction = Duration(seconds: 6);
+}
+
+abstract final class FfDialogActionTokens {
+  static const double padding = FfSpace.lg;
+  static const double gap = FfSpace.sm;
+}
+
+abstract final class FfBannerTokens {
+  static const double radius = FfRadius.md;
+  static const double padding = FfSpace.md;
+  static const double gap = FfSpace.sm;
+  static const double iconSize = FfIconSize.lg;
 }
 
 abstract final class FfDividerTokens {

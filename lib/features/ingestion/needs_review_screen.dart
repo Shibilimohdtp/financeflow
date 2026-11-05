@@ -13,13 +13,13 @@ import '../../repositories/pending_transaction_repository.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_chip.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/ff_source_badge.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'needs_review_controller.dart';
 import '../transactions/add_edit_transaction_screen.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class NeedsReviewScreen extends ConsumerStatefulWidget {
   const NeedsReviewScreen({super.key});
@@ -56,9 +56,11 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
             : parsedTransaction;
 
     final history = ref.read(allTransactionsStreamProvider).value ?? const [];
-    final isMisc = initialTransaction.categoryId == 'cat_miscellaneous' ||
+    final isMisc =
+        initialTransaction.categoryId == 'cat_miscellaneous' ||
         initialTransaction.categoryName.toLowerCase() == 'miscellaneous';
-    if ((isMisc || (initialTransaction.categorizationConfidence ?? 0.0) < 0.7) &&
+    if ((isMisc ||
+            (initialTransaction.categorizationConfidence ?? 0.0) < 0.7) &&
         initialTransaction.merchant.isNotEmpty) {
       final histSuggestion = CategorizationService.suggestCategory(
         initialTransaction.merchant,
@@ -123,7 +125,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
       await action();
     } catch (error) {
       if (mounted) {
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message:
               error is StateError
@@ -143,10 +145,11 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
 
     final duplicatesCount = items.where((i) => i.isDuplicate).length;
     final uncertainCount =
-        items.where((i) => i.categorizationConfidence < 0.7 || i.hasWarnings).length;
+        items
+            .where((i) => i.categorizationConfidence < 0.7 || i.hasWarnings)
+            .length;
     final errorsCount = items.where((i) => !i.isValid).length;
-    final validCount =
-        items.where((i) => i.isValid && !i.isDuplicate).length;
+    final validCount = items.where((i) => i.isValid && !i.isDuplicate).length;
 
     final filtered =
         items.where((i) {
@@ -169,7 +172,10 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
           if (items.isNotEmpty) ...[
             IconButton(
               icon: const Icon(Icons.playlist_add_check_rounded),
-              tooltip: validCount > 0 ? 'Approve All Valid ($validCount)' : 'Approve All Valid',
+              tooltip:
+                  validCount > 0
+                      ? 'Approve All Valid ($validCount)'
+                      : 'Approve All Valid',
               onPressed:
                   busy || validCount == 0
                       ? null
@@ -178,16 +184,18 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                             .read(needsReviewControllerProvider.notifier)
                             .approveAllValid(items);
                         if (context.mounted) {
-                          FfSnackbar.show(
+                          FfToast.show(
                             context,
                             message: 'Approved $count valid transactions.',
                             actionLabel: 'Undo',
                             onAction:
-                                () => ref
-                                    .read(
-                                      needsReviewControllerProvider.notifier,
-                                    )
-                                    .undoLastApprove(),
+                                () =>
+                                    ref
+                                        .read(
+                                          needsReviewControllerProvider
+                                              .notifier,
+                                        )
+                                        .undoLastApprove(),
                           );
                         }
                       }),
@@ -199,13 +207,13 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                   busy
                       ? null
                       : () => _runAction(() async {
-                        final confirmed = await FfConfirmDialog.show(
+                        final confirmed = await FfDialog.confirm(
                           context,
                           title: 'Clear Review Queue?',
                           message:
                               'All unapproved pending transactions will be deleted.',
                           confirmLabel: 'Clear All',
-                          isDestructive: true,
+                          destructive: true,
                         );
                         if (confirmed == true) {
                           await ref
@@ -278,8 +286,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                           child: Text(
                             'Private on-device review. Unapproved items are kept separate from your ledger reports and balances.',
                             style: context.theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  context.theme.colorScheme.onSurfaceVariant,
+                              color: context.theme.colorScheme.onSurfaceVariant,
                               fontSize: 12,
                               height: 1.3,
                             ),
@@ -314,9 +321,8 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                           label: 'Uncertain ($uncertainCount)',
                           isSelected: _selectedFilter == 'uncertain',
                           onSelected:
-                              () => setState(
-                                () => _selectedFilter = 'uncertain',
-                              ),
+                              () =>
+                                  setState(() => _selectedFilter = 'uncertain'),
                         ),
                         const SizedBox(width: StillwaterTokens.spaceXs),
                         FfChip(
@@ -407,15 +413,10 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
     Widget? statusBadge;
     if (item.isDuplicate) {
       statusBadge = Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 6,
-          vertical: 2,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: context.statusColors.warningContainer,
-          borderRadius: BorderRadius.circular(
-            StillwaterTokens.radiusXs,
-          ),
+          borderRadius: BorderRadius.circular(StillwaterTokens.radiusXs),
         ),
         child: Text(
           item.duplicateStatus.displayName,
@@ -428,15 +429,10 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
       );
     } else if (!item.isValid) {
       statusBadge = Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 6,
-          vertical: 2,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(
-            StillwaterTokens.radiusXs,
-          ),
+          borderRadius: BorderRadius.circular(StillwaterTokens.radiusXs),
         ),
         child: Text(
           'Needs details',
@@ -449,15 +445,10 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
       );
     } else if (item.categorizationConfidence < 0.7) {
       statusBadge = Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 6,
-          vertical: 2,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: context.statusColors.warningContainer,
-          borderRadius: BorderRadius.circular(
-            StillwaterTokens.radiusXs,
-          ),
+          borderRadius: BorderRadius.circular(StillwaterTokens.radiusXs),
         ),
         child: Text(
           'Confirm category',
@@ -565,9 +556,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
               padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
               decoration: BoxDecoration(
                 color: theme.colorScheme.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusSm,
-                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.25),
                   width: StillwaterTokens.borderWidthHairline,
@@ -624,9 +613,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
               padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
               decoration: BoxDecoration(
                 color: theme.colorScheme.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusSm,
-                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.25),
                   width: StillwaterTokens.borderWidthHairline,
@@ -664,9 +651,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                 color: context.statusColors.warningContainer.withValues(
                   alpha: 0.25,
                 ),
-                borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusSm,
-                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
                 border: Border.all(
                   color: context.statusColors.warning.withValues(alpha: 0.3),
                   width: StillwaterTokens.borderWidthHairline,
@@ -704,9 +689,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                 color: context.statusColors.warningContainer.withValues(
                   alpha: 0.25,
                 ),
-                borderRadius: BorderRadius.circular(
-                  StillwaterTokens.radiusSm,
-                ),
+                borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
                 border: Border.all(
                   color: context.statusColors.warning.withValues(alpha: 0.3),
                   width: StillwaterTokens.borderWidthHairline,
@@ -795,17 +778,18 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                                 .dismissItem(item.tempId, item: item),
                           );
                           if (context.mounted) {
-                            FfSnackbar.show(
+                            FfToast.show(
                               context,
                               message: '$merchantName dismissed.',
                               actionLabel: 'Undo',
                               onAction:
-                                  () => ref
-                                      .read(
-                                        needsReviewControllerProvider
-                                            .notifier,
-                                      )
-                                      .undoLastDismiss(),
+                                  () =>
+                                      ref
+                                          .read(
+                                            needsReviewControllerProvider
+                                                .notifier,
+                                          )
+                                          .undoLastDismiss(),
                             );
                           }
                         },
@@ -835,18 +819,19 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                                   ),
                             );
                             if (context.mounted) {
-                              FfSnackbar.show(
+                              FfToast.show(
                                 context,
                                 message:
                                     '$merchantName approved (kept separate).',
                                 actionLabel: 'Undo',
                                 onAction:
-                                    () => ref
-                                        .read(
-                                          needsReviewControllerProvider
-                                              .notifier,
-                                        )
-                                        .undoLastApprove(),
+                                    () =>
+                                        ref
+                                            .read(
+                                              needsReviewControllerProvider
+                                                  .notifier,
+                                            )
+                                            .undoLastApprove(),
                               );
                             }
                           },
@@ -869,17 +854,18 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                                   .approveItem(mergeItem),
                             );
                             if (context.mounted) {
-                              FfSnackbar.show(
+                              FfToast.show(
                                 context,
                                 message: '$merchantName merged with existing.',
                                 actionLabel: 'Undo',
                                 onAction:
-                                    () => ref
-                                        .read(
-                                          needsReviewControllerProvider
-                                              .notifier,
-                                        )
-                                        .undoLastApprove(),
+                                    () =>
+                                        ref
+                                            .read(
+                                              needsReviewControllerProvider
+                                                  .notifier,
+                                            )
+                                            .undoLastApprove(),
                               );
                             }
                           },
@@ -905,17 +891,18 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                                   .approveItem(item),
                             );
                             if (context.mounted) {
-                              FfSnackbar.show(
+                              FfToast.show(
                                 context,
                                 message: '$merchantName approved.',
                                 actionLabel: 'Undo',
                                 onAction:
-                                    () => ref
-                                        .read(
-                                          needsReviewControllerProvider
-                                              .notifier,
-                                        )
-                                        .undoLastApprove(),
+                                    () =>
+                                        ref
+                                            .read(
+                                              needsReviewControllerProvider
+                                                  .notifier,
+                                            )
+                                            .undoLastApprove(),
                               );
                             }
                           },
@@ -927,4 +914,3 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
     );
   }
 }
-

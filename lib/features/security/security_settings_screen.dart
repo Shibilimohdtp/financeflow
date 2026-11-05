@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../settings/settings_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -117,7 +117,7 @@ class _SecuritySettingsScreenState
 
                         if (context.mounted) {
                           Navigator.of(context).pop();
-                          FfSnackbar.show(
+                          FfToast.show(
                             context,
                             message: 'App PIN set securely.',
                           );
@@ -135,12 +135,12 @@ class _SecuritySettingsScreenState
   }
 
   Future<void> _removePin(BuildContext context) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Remove Security PIN?',
       message: 'Your app will no longer require a PIN to open on this device.',
       confirmLabel: 'Remove PIN',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -148,7 +148,7 @@ class _SecuritySettingsScreenState
       await securityService.removePin();
       await ref.read(settingsControllerProvider.notifier).setPinEnabled(false);
       if (context.mounted) {
-        FfSnackbar.show(context, message: 'Security PIN removed.');
+        FfToast.show(context, message: 'Security PIN removed.');
       }
     }
   }
@@ -263,7 +263,7 @@ class _SecuritySettingsScreenState
                       final isAvailable =
                           await securityService.isBiometricsAvailable();
                       if (!isAvailable && context.mounted) {
-                        FfSnackbar.show(
+                        FfToast.show(
                           context,
                           message:
                               'Biometric authentication is not configured on this device.',

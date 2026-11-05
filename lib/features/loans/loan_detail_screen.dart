@@ -8,14 +8,14 @@ import '../../repositories/loan_repository.dart';
 import '../../services/loan_calculator.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loans_controller.dart';
 import '../accounts/accounts_controller.dart';
 import 'payment_account_picker.dart';
 import 'widgets/emi_schedule_view.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
   final Loan loan;
@@ -35,13 +35,13 @@ class LoanDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Loan currentLoan,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Delete Loan?',
       message:
           'Remove "${currentLoan.name}" from the tracker? Linked transactions will be kept as unlinked historical loan payments; schedule allocations will be removed.',
       confirmLabel: 'Delete',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -50,7 +50,7 @@ class LoanDetailScreen extends ConsumerWidget {
           .deleteLoan(currentLoan.id);
       if (context.mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(context, message: 'Loan deleted.');
+        FfToast.show(context, message: 'Loan deleted.');
       }
     }
   }
@@ -78,7 +78,7 @@ class LoanDetailScreen extends ConsumerWidget {
       return;
     }
 
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Pay Installment #$instNum?',
       message:
@@ -96,14 +96,18 @@ class LoanDetailScreen extends ConsumerWidget {
               accountId: payingAccount?.id,
             );
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
             message: 'EMI installment #$instNum recorded locally.',
           );
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Failed to record payment: $e');
+          FfToast.show(
+            context,
+            tone: FfToastTone.error,
+            message: 'Failed to record payment: $e',
+          );
         }
       }
     }
@@ -133,7 +137,7 @@ class LoanDetailScreen extends ConsumerWidget {
       return;
     }
 
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Mark All Overdue EMIs Paid?',
       message:
@@ -150,15 +154,16 @@ class LoanDetailScreen extends ConsumerWidget {
               accountId: payingAccount?.id,
             );
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
             message: 'Recorded ${overdueItems.length} overdue EMI payments.',
           );
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
+            tone: FfToastTone.error,
             message: 'Failed to record overdue payments: $e',
           );
         }

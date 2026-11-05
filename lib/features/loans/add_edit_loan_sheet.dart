@@ -11,9 +11,10 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import 'loans_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_pickers.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon map for each loan type
@@ -220,8 +221,8 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickFfDate(
+      context,
       initialDate: _startDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2050),
@@ -311,7 +312,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        FfSnackbar.show(
+        FfToast.show(
           context,
           message:
               widget.initialLoan != null
@@ -321,7 +322,11 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
       }
     } catch (_) {
       if (mounted) {
-        FfSnackbar.show(context, message: 'Failed to save. Please try again.');
+        FfToast.show(
+          context,
+          tone: FfToastTone.error,
+          message: 'Failed to save. Please try again.',
+        );
         setState(() => _isSaving = false);
       }
     }
@@ -753,7 +758,8 @@ class _NumericInputField extends StatelessWidget {
         labelStyle: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.secondary,
         ),
-        prefixText: prefixSymbol ? '${CurrencyFormatter.currencySymbol}  ' : null,
+        prefixText:
+            prefixSymbol ? '${CurrencyFormatter.currencySymbol}  ' : null,
         prefixStyle: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.w600,

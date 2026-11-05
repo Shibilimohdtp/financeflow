@@ -6,13 +6,15 @@ import '../../core/formatting/date_formatter.dart';
 import '../../models/backup_payload.dart';
 import '../../services/backup_service.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../accounts/accounts_controller.dart';
 import '../transactions/transactions_controller.dart';
 import 'backup_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_banner.dart';
+import '../../theme/ff.dart';
 
 class RestorePreviewScreen extends ConsumerStatefulWidget {
   final File backupFile;
@@ -77,13 +79,13 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
     if (_decryptedPayload == null) return;
 
     if (_selectedMode == RestoreMode.replace) {
-      final confirmed = await FfConfirmDialog.show(
+      final confirmed = await FfDialog.confirm(
         context,
         title: 'Replace All Current Data?',
         message:
             'This will overwrite existing local records with the contents of this backup. This action cannot be reversed.',
         confirmLabel: 'Replace Everything',
-        isDestructive: true,
+        destructive: true,
       );
       if (confirmed != true) return;
     }
@@ -99,112 +101,55 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
     if (result.isSuccess && mounted) {
       ref.invalidate(filteredTransactionsProvider);
       ref.invalidate(allTransactionsStreamProvider);
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder:
-            (ctx) => AlertDialog(
-              title: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    color: context.secColors.verified,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('Restore Complete'),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '• Restored ${result.restoredTransactions} transactions',
-                    ),
-                    Text('• Restored ${result.restoredAccounts} accounts'),
-                    Text('• Restored ${result.restoredCategories} categories'),
-                    Text('• Restored ${result.restoredBudgets} budgets'),
-                    Text(
-                      '• Restored ${result.restoredGoals} goals (${result.restoredGoalContributions} contributions)',
-                    ),
-                    Text(
-                      '• Restored ${result.restoredSubscriptions} subscriptions',
-                    ),
-                    Text(
-                      '• Restored ${result.restoredLoans} loans (${result.restoredEmiPayments} EMI records)',
-                    ),
-                    Text(
-                      '• Restored ${result.restoredMoneyRecords} lending/borrowing records (${result.restoredMoneyRepayments} repayments)',
-                    ),
-                    Text(
-                      '• Restored ${result.restoredInvestments} investments',
-                    ),
-                    if (result.restoredPendingTransactions > 0)
-                      Text(
-                        '• Restored ${result.restoredPendingTransactions} inbox transactions',
-                      ),
-                    if (result.restoredSettings)
-                      const Text(
-                        '• Restored application settings & preferences',
-                      ),
-                    if (result.skippedDuplicates > 0)
-                      Text(
-                        '• Skipped ${result.skippedDuplicates} duplicate records',
-                      ),
-                    if (result.hadSecurityLockConfigured) ...[
-                      const SizedBox(height: StillwaterTokens.spaceMd),
-                      Container(
-                        padding: const EdgeInsets.all(StillwaterTokens.spaceSm),
-                        decoration: BoxDecoration(
-                          color: context.statusColors.warningContainer,
-                          borderRadius: BorderRadius.circular(
-                            StillwaterTokens.radiusSm,
-                          ),
-                          border: Border.all(
-                            color: context.statusColors.warning,
-                            width: StillwaterTokens.borderWidthHairline,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lock_reset_rounded,
-                              size: 18,
-                              color: context.statusColors.warning,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Security Notice: For safety across devices, PIN/Biometrics must be re-enabled in Settings.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: context.statusColors.warning,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Done'),
-                ),
-              ],
-            ),
-      );
-    } else if (mounted) {
-      FfSnackbar.show(
+      await FfDialog.info(
         context,
+        title: 'Restore complete',
+        tone: FfDialogTone.success,
+        dismissible: false,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('• Restored ${result.restoredTransactions} transactions'),
+            Text('• Restored ${result.restoredAccounts} accounts'),
+            Text('• Restored ${result.restoredCategories} categories'),
+            Text('• Restored ${result.restoredBudgets} budgets'),
+            Text(
+              '• Restored ${result.restoredGoals} goals (${result.restoredGoalContributions} contributions)',
+            ),
+            Text('• Restored ${result.restoredSubscriptions} subscriptions'),
+            Text(
+              '• Restored ${result.restoredLoans} loans (${result.restoredEmiPayments} EMI records)',
+            ),
+            Text(
+              '• Restored ${result.restoredMoneyRecords} lending/borrowing records (${result.restoredMoneyRepayments} repayments)',
+            ),
+            Text('• Restored ${result.restoredInvestments} investments'),
+            if (result.restoredPendingTransactions > 0)
+              Text(
+                '• Restored ${result.restoredPendingTransactions} inbox transactions',
+              ),
+            if (result.restoredSettings)
+              const Text('• Restored application settings & preferences'),
+            if (result.skippedDuplicates > 0)
+              Text('• Skipped ${result.skippedDuplicates} duplicate records'),
+            if (result.hadSecurityLockConfigured) ...[
+              const SizedBox(height: FfSpace.md),
+              const FfBanner(
+                tone: FfBannerTone.warning,
+                icon: Icons.lock_reset_rounded,
+                message:
+                    'For safety across devices, turn PIN and biometric lock back on in Settings.',
+              ),
+            ],
+          ],
+        ),
+      );
+      if (mounted) Navigator.of(context).pop();
+    } else if (mounted) {
+      FfToast.show(
+        context,
+        tone: FfToastTone.error,
         message: result.errorMessage ?? 'Restore failed.',
       );
     }

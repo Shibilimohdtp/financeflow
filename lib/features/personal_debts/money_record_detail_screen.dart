@@ -8,8 +8,6 @@ import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
@@ -17,6 +15,8 @@ import 'add_advance_sheet.dart';
 import 'add_edit_money_record_sheet.dart';
 import 'add_repayment_sheet.dart';
 import 'money_records_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 class MoneyRecordDetailScreen extends ConsumerWidget {
   final MoneyRecord record;
@@ -63,13 +63,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     MoneyRecord liveRecord,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Delete Record?',
       message:
           'Deleting this relationship will also remove all its advance and repayment logs (${liveRecord.personName}). This cannot be undone.',
       confirmLabel: 'Delete Record',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -78,11 +78,15 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
         await controller.deleteRecord(liveRecord.id);
         if (context.mounted) {
           Navigator.of(context).pop();
-          FfSnackbar.show(context, message: 'Record deleted.');
+          FfToast.show(context, message: 'Record deleted.');
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Failed to delete record: $e');
+          FfToast.show(
+            context,
+            tone: FfToastTone.error,
+            message: 'Failed to delete record: $e',
+          );
         }
       }
     }
@@ -93,13 +97,13 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     MoneyRepayment repayment,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Delete Repayment?',
       message:
           'Remove this repayment of ${CurrencyFormatter.format(repayment.amount)}? The remaining balance will be recalculated.',
       confirmLabel: 'Delete',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -107,11 +111,15 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
       try {
         await controller.deleteRepayment(repayment.id, record.id);
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Repayment deleted.');
+          FfToast.show(context, message: 'Repayment deleted.');
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Failed to delete repayment: $e');
+          FfToast.show(
+            context,
+            tone: FfToastTone.error,
+            message: 'Failed to delete repayment: $e',
+          );
         }
       }
     }
@@ -480,7 +488,7 @@ class MoneyRecordDetailScreen extends ConsumerWidget {
                       );
                       await controller.markRecordUnsettled(liveRecord.id);
                       if (context.mounted) {
-                        FfSnackbar.show(
+                        FfToast.show(
                           context,
                           message: 'Record status restored.',
                         );

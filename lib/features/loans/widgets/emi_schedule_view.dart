@@ -7,12 +7,12 @@ import '../../../models/loan.dart';
 import '../../../repositories/loan_repository.dart';
 import '../../../services/loan_calculator.dart';
 import '../../../shared/widgets/ff_button.dart';
-import '../../../shared/widgets/ff_confirm_dialog.dart';
-import '../../../shared/widgets/ff_snackbar.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../loans_controller.dart';
 import '../../accounts/accounts_controller.dart';
 import '../payment_account_picker.dart';
+import '../../../shared/widgets/ff_toast.dart';
+import '../../../shared/widgets/ff_dialog.dart';
 
 class EmiScheduleView extends ConsumerWidget {
   final Loan loan;
@@ -38,7 +38,7 @@ class EmiScheduleView extends ConsumerWidget {
     if (accounts.isNotEmpty && (payingAccount == null || !context.mounted)) {
       return;
     }
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Pay Installment #${item.monthNumber}?',
       message:
@@ -56,14 +56,18 @@ class EmiScheduleView extends ConsumerWidget {
               accountId: payingAccount?.id,
             );
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
             message: 'EMI installment #${item.monthNumber} marked as paid.',
           );
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Failed to record payment: $e');
+          FfToast.show(
+            context,
+            tone: FfToastTone.error,
+            message: 'Failed to record payment: $e',
+          );
         }
       }
     }
@@ -75,14 +79,14 @@ class EmiScheduleView extends ConsumerWidget {
     Loan currentLoan,
     AmortizationScheduleItem item,
   ) async {
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Mark Installment #${item.monthNumber} as Unpaid?',
       message:
           'Remove the recorded payment of ${CurrencyFormatter.formatAmount(item.emiAmount)} (due ${DateFormatter.formatFullDate(item.dueDate)})? This will update your loan balance and next due date.',
       confirmLabel: 'Mark Unpaid',
       cancelLabel: 'Cancel',
-      isDestructive: true,
+      destructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -95,14 +99,18 @@ class EmiScheduleView extends ConsumerWidget {
               paymentId: item.payment?.id,
             );
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
             message: 'Installment #${item.monthNumber} marked as unpaid.',
           );
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(context, message: 'Failed to unmark payment: $e');
+          FfToast.show(
+            context,
+            tone: FfToastTone.error,
+            message: 'Failed to unmark payment: $e',
+          );
         }
       }
     }
@@ -132,7 +140,7 @@ class EmiScheduleView extends ConsumerWidget {
       (sum, item) => sum + item.emiAmount,
     );
 
-    final confirmed = await FfConfirmDialog.show(
+    final confirmed = await FfDialog.confirm(
       context,
       title: 'Mark All Overdue EMIs Paid?',
       message:
@@ -149,15 +157,16 @@ class EmiScheduleView extends ConsumerWidget {
               accountId: payingAccount?.id,
             );
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
             message: 'Recorded ${overdueItems.length} overdue EMI payments.',
           );
         }
       } catch (e) {
         if (context.mounted) {
-          FfSnackbar.show(
+          FfToast.show(
             context,
+            tone: FfToastTone.error,
             message: 'Failed to record overdue payments: $e',
           );
         }

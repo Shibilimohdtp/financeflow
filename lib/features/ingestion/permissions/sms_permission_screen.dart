@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../shared/widgets/ff_button.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../shared/widgets/ff_snackbar.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../../settings/settings_controller.dart';
 import '../../../services/ingestion/ingestion_coordinator.dart';
 import '../../../services/ingestion/ingestion_platform.dart';
+import '../../../shared/widgets/ff_toast.dart';
 
 class SmsPermissionScreen extends ConsumerStatefulWidget {
   const SmsPermissionScreen({super.key});
@@ -199,13 +199,13 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
                 // update after the user has granted SMS permission.
                 await coordinator.configure(enabledSettings);
                 if (context.mounted) {
-                  FfSnackbar.show(
+                  FfToast.show(
                     context,
                     message: 'On-device SMS detection enabled.',
                   );
                 }
               } else if (context.mounted) {
-                FfSnackbar.show(
+                FfToast.show(
                   context,
                   message:
                       'SMS permission was not granted. Detection remains off.',

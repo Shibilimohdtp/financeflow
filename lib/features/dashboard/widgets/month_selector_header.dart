@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../theme/stillwater_tokens.dart';
+import '../../../shared/widgets/ff_pickers.dart';
 
 class MonthSelectorHeader extends StatelessWidget {
   final DateTime selectedMonth;
@@ -37,8 +38,8 @@ class MonthSelectorHeader extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(StillwaterTokens.radiusSm),
             onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
+              final picked = await pickFfDate(
+                context,
                 initialDate: selectedMonth,
                 firstDate: DateTime(2020),
                 lastDate: DateTime(2035),

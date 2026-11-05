@@ -5,10 +5,8 @@ import '../../core/constants/app_constants.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../models/app_settings.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_tokens.dart';
 import '../../services/ingestion/ingestion_coordinator.dart';
@@ -32,6 +30,8 @@ import '../security/security_settings_screen.dart';
 import '../subscriptions/subscriptions_screen.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_dialog.dart';
 
 String _smsStatusLabel(IngestionPlatformStatus? status) {
   if (status == null) return 'Checking';
@@ -659,7 +659,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                               .read(settingsControllerProvider.notifier)
                               .seedDemoData();
                           if (context.mounted) {
-                            FfSnackbar.show(
+                            FfToast.show(
                               context,
                               message: 'Demo dataset loaded on this device.',
                             );
@@ -681,7 +681,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                                       .read(ingestionCoordinatorProvider)
                                       .injectSampleSms();
                               if (context.mounted) {
-                                FfSnackbar.show(
+                                FfToast.show(
                                   context,
                                   message:
                                       'Sample SMS: ${result.disposition.name}.',
@@ -699,7 +699,7 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                                       .read(ingestionCoordinatorProvider)
                                       .injectSampleNotification();
                               if (context.mounted) {
-                                FfSnackbar.show(
+                                FfToast.show(
                                   context,
                                   message:
                                       'Sample notification: ${result.disposition.name}.',
@@ -782,20 +782,20 @@ class _SettingsDetailScreenState extends ConsumerState<_SettingsDetailScreen> {
                       variant: FfButtonVariant.destructive,
                       size: FfButtonSize.sm,
                       onPressed: () async {
-                        final confirmed = await FfConfirmDialog.show(
+                        final confirmed = await FfDialog.confirm(
                           context,
                           title: 'Wipe All Data?',
                           message:
                               'This will permanently delete all records stored on this device. This action cannot be undone.',
                           confirmLabel: 'Wipe Everything',
-                          isDestructive: true,
+                          destructive: true,
                         );
                         if (confirmed == true && context.mounted) {
                           await ref
                               .read(settingsControllerProvider.notifier)
                               .resetAllData();
                           if (context.mounted) {
-                            FfSnackbar.show(
+                            FfToast.show(
                               context,
                               message: 'All local data was wiped.',
                             );

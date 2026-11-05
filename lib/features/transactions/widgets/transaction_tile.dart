@@ -7,10 +7,10 @@ import '../../../models/account.dart';
 import '../../../models/transaction.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
-import '../../../shared/widgets/ff_confirm_dialog.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/stillwater_tokens.dart';
 import '../transaction_list_utils.dart';
+import '../../../shared/widgets/ff_dialog.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -109,13 +109,13 @@ class TransactionTile extends StatelessWidget {
                     ),
                     onTap: () async {
                       Navigator.of(sheetContext).pop();
-                      final confirmed = await FfConfirmDialog.show(
+                      final confirmed = await FfDialog.confirm(
                         context,
                         title: 'Delete transaction?',
                         message:
                             'Are you sure you want to delete "${transaction.merchant}" (${CurrencyFormatter.format(transaction.amount)})?',
                         confirmLabel: 'Delete',
-                        isDestructive: true,
+                        destructive: true,
                       );
                       if (confirmed == true) {
                         await onDelete();
@@ -176,13 +176,13 @@ class TransactionTile extends StatelessWidget {
           onEdit();
           return false;
         }
-        final confirmed = await FfConfirmDialog.show(
+        final confirmed = await FfDialog.confirm(
           context,
           title: 'Delete transaction?',
           message:
               'Are you sure you want to delete "${transaction.merchant}" (${CurrencyFormatter.format(transaction.amount)})?',
           confirmLabel: 'Delete',
-          isDestructive: true,
+          destructive: true,
         );
         if (confirmed == true) {
           await onDelete();

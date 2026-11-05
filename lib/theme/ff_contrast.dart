@@ -287,6 +287,15 @@ abstract final class FfContrastRules {
       'Text on accent panels',
     ),
 
+    // Banner body text on each status container.
+    for (final bg in const [
+      FfColorRole.statusSuccessContainer,
+      FfColorRole.statusWarningContainer,
+      FfColorRole.statusInfoContainer,
+      FfColorRole.statusErrorContainer,
+    ])
+      FfContrastRule(FfColorRole.textPrimary, bg, _t, 'Banner text'),
+
     // Money and status on their own soft containers (badges, banners).
     for (final (fg, bg, use) in const [
       (
@@ -314,6 +323,11 @@ abstract final class FfContrastRules {
         FfColorRole.moneyInvestment,
         FfColorRole.moneyInvestmentContainer,
         'Investment badge',
+      ),
+      (
+        FfColorRole.statusSuccess,
+        FfColorRole.statusSuccessContainer,
+        'Success banner',
       ),
       (
         FfColorRole.statusWarning,
