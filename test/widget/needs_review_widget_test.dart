@@ -104,7 +104,7 @@ Future<ParsedTransaction> _pumpQueue(
 }
 
 Finder _payeeField() => find.byWidgetPredicate(
-  (w) => w is TextField && w.decoration?.labelText == 'Payee / Merchant',
+  (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
 );
 
 void main() {

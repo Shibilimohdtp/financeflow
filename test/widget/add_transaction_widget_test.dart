@@ -184,14 +184,14 @@ void main() {
     await tester.tap(find.text('Money In'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Payer / Source'), findsOneWidget);
+    expect(find.text('Payer / Source (optional)'), findsOneWidget);
     expect(find.widgetWithText(FfButton, 'Save Income'), findsOneWidget);
 
     // Switch to moving between owned accounts
     await tester.tap(find.text('Move Money'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Transfer Reference / Recipient'), findsOneWidget);
+    expect(find.text('Note (optional)'), findsOneWidget);
     expect(find.text('From Account'), findsOneWidget);
     expect(find.text('To Account'), findsOneWidget);
     expect(
@@ -207,7 +207,7 @@ void main() {
     await tester.tap(find.text('Invest').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Asset / Platform'), findsOneWidget);
+    expect(find.text('Asset / Platform (optional)'), findsOneWidget);
     expect(find.widgetWithText(FfButton, 'Save Invest'), findsOneWidget);
   });
 
@@ -344,7 +344,7 @@ void main() {
 
     // Focus payee field
     final payeeField = find.byWidgetPredicate(
-      (w) => w is TextField && w.decoration?.labelText == 'Payee / Merchant',
+      (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
     );
     await tester.tap(payeeField);
     await tester.pumpAndSettle();
@@ -388,7 +388,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final payeeField = find.byWidgetPredicate(
-        (w) => w is TextField && w.decoration?.labelText == 'Payee / Merchant',
+        (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
       );
       await tester.tap(payeeField);
       await tester.pumpAndSettle();
@@ -518,7 +518,7 @@ void main() {
       final merchantField = find.byWidgetPredicate(
         (w) =>
             w is TextField &&
-            w.decoration?.labelText == 'Transfer Reference / Recipient',
+            w.decoration?.labelText == 'Note (optional)',
       );
       await tester.enterText(merchantField, 'Transfer to Cash');
 

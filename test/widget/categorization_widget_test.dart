@@ -78,7 +78,7 @@ void main() {
 
       // Type Swiggy in merchant field
       final merchantField = find.byWidgetPredicate(
-        (w) => w is TextField && w.decoration?.labelText == 'Payee / Merchant',
+        (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
       );
       expect(merchantField, findsOneWidget);
 

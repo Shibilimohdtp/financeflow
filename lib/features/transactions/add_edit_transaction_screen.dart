@@ -20,13 +20,11 @@ import '../../repositories/investment_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../services/categorization_service.dart';
 import '../../services/default_account_service.dart';
-import '../../services/merchant_normalization_service.dart';
 import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
-import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_snackbar.dart';
 import '../../theme/stillwater_colors.dart';
 import '../../theme/stillwater_tokens.dart';
@@ -34,7 +32,9 @@ import '../../theme/stillwater_typography.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import '../personal_debts/money_records_controller.dart';
+import 'transaction_form.dart';
 import 'transactions_controller.dart';
+import 'widgets/transaction_pickers.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -515,7 +515,7 @@ class _AddEditTransactionScreenState
       enableDrag: false,
       backgroundColor: Colors.transparent,
       builder:
-          (context) => _CategoryPickerSheet(
+          (context) => CategoryPickerSheet(
             categories: categories,
             selected: _selectedCategory,
           ),
@@ -543,7 +543,7 @@ class _AddEditTransactionScreenState
       enableDrag: false,
       backgroundColor: Colors.transparent,
       builder:
-          (context) => _AccountPickerSheet(
+          (context) => AccountPickerSheet(
             title:
                 isDestination
                     ? 'Choose destination account'
@@ -605,241 +605,57 @@ class _AddEditTransactionScreenState
     });
   }
 
+  TransactionFormValues get _formValues => TransactionFormValues(
+    amountText: _amountController.text,
+    payeeText: _merchantController.text,
+    notesText: _notesController.text,
+    tagsText: _tagsController.text,
+    counterpartyText: _counterpartyController.text,
+    principalText: _principalController.text,
+    interestText: _interestController.text,
+    feeText: _feeController.text,
+    type: _selectedType,
+    purpose: _selectedPurpose,
+    category: _selectedCategory,
+    account: _selectedAccount,
+    toAccount: _selectedToAccount,
+    loan: _selectedLoan,
+    moneyRecord: _selectedMoneyRecord,
+    investment: _selectedInvestment,
+    subscription: _selectedSubscription,
+    date: _selectedDate,
+    debtDueDate: _debtDueDate,
+    createAsSeparateDebt: _createAsSeparateDebt,
+    paymentMethod: _selectedPaymentMethod,
+  );
+
   Future<void> _submit() async {
     if (_isSubmitting) return;
 
+    final values = _formValues;
+    final errors = validateTransactionForm(values);
     setState(() {
-      _amountError = null;
-      _merchantError = null;
-      _categoryError = null;
-      _accountError = null;
-      _toAccountError = null;
+      _amountError = errors.amount;
+      _merchantError = errors.payee;
+      _categoryError = errors.category;
+      _accountError = errors.account;
+      _toAccountError = errors.toAccount;
     });
-
-    final amount = CurrencyFormatter.parse(_amountController.text);
-    if (amount == null || amount <= 0) {
-      setState(
-        () => _amountError = 'Please enter an amount greater than zero.',
-      );
-      return;
-    }
-
-    final merchant = _merchantController.text.trim();
-    if (merchant.isEmpty) {
-      setState(
-        () =>
-            _merchantError = switch (_selectedType) {
-              TransactionType.transfer =>
-                'Enter a transfer reference or recipient.',
-              TransactionType.income => 'Enter a payer or source.',
-              TransactionType.investment =>
-                'Enter the investment name or platform.',
-              TransactionType.loanEmi => 'Enter the lender or loan name.',
-              _ => 'Payee / Merchant name is required.',
-            },
-      );
-      return;
-    }
-
-    if (_selectedAccount == null) {
-      setState(() => _accountError = 'Please select an account.');
-      return;
-    }
-
-    if (_selectedType == TransactionType.transfer) {
-      if (_selectedToAccount == null) {
-        setState(
-          () => _toAccountError = 'Please select a destination account.',
-        );
-        return;
-      }
-      if (_selectedAccount!.id == _selectedToAccount!.id) {
-        setState(
-          () =>
-              _toAccountError = 'Source and destination accounts must differ.',
-        );
-        return;
-      }
-    }
-
-    if ((_selectedPurpose == TransactionPurpose.lending ||
-            _selectedPurpose == TransactionPurpose.borrowing ||
-            _selectedPurpose == TransactionPurpose.loanDisbursement) &&
-        _counterpartyController.text.trim().isEmpty) {
-      setState(() => _merchantError = 'Enter the external person or lender.');
-      return;
-    }
-    if (<TransactionPurpose>{
-          TransactionPurpose.personalDebtRepaymentMade,
-          TransactionPurpose.personalDebtRepaymentReceived,
-        }.contains(_selectedPurpose) &&
-        _selectedMoneyRecord == null) {
-      setState(() => _merchantError = 'Select the debt record being repaid.');
-      return;
-    }
-
-    if (_needsCategory && _selectedCategory == null) {
-      setState(() => _categoryError = 'Please select a category.');
-      return;
-    }
+    if (!errors.isValid) return;
 
     setState(() => _isSubmitting = true);
 
     try {
-      final now = DateTime.now();
-      final txId = widget.initialTransaction?.id ?? const Uuid().v4();
-      final createsDebt = <TransactionPurpose>{
-        TransactionPurpose.lending,
-        TransactionPurpose.borrowing,
-      }.contains(_selectedPurpose);
-
-      String? debtRecordId;
-      MoneyRecord? debtDetails;
-      if (createsDebt) {
-        final counterparty = _counterpartyController.text.trim();
-        final normalizedCounterparty = MoneyRecord.normalizePersonName(
-          counterparty.isNotEmpty ? counterparty : merchant,
-        );
-        final debtType =
-            _selectedPurpose == TransactionPurpose.lending
-                ? MoneyRecordType.lent
-                : MoneyRecordType.borrowed;
-        final allDebts =
+      final built = buildTransactionFromForm(
+        values,
+        id: widget.initialTransaction?.id ?? const Uuid().v4(),
+        now: DateTime.now(),
+        initial: widget.initialTransaction,
+        existingDebts:
             ref.read(allMoneyRecordsStreamProvider).valueOrNull ??
-            const <MoneyRecord>[];
-        final matchingDebt =
-            allDebts
-                .where(
-                  (d) =>
-                      d.type == debtType &&
-                      d.settledAt == null &&
-                      !d.isCustomSeparateObligation &&
-                      d.normalizedPersonName == normalizedCounterparty,
-                )
-                .firstOrNull;
-
-        if (_createAsSeparateDebt) {
-          debtRecordId =
-              widget.initialTransaction?.linkedMoneyRecordId ?? 'debt_$txId';
-          debtDetails = MoneyRecord(
-            id: debtRecordId,
-            type: debtType,
-            personName: counterparty.isNotEmpty ? counterparty : merchant,
-            originalAmount: amount,
-            transactionDate: _selectedDate,
-            dueDate:
-                _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
-            notes:
-                _notesController.text.trim().isEmpty
-                    ? null
-                    : _notesController.text.trim(),
-            createdAt: now,
-            updatedAt: now,
-            isCustomSeparateObligation: true,
-            originTransactionId: txId,
-          );
-        } else {
-          debtRecordId =
-              _selectedMoneyRecord?.id ??
-              matchingDebt?.id ??
-              widget.initialTransaction?.linkedMoneyRecordId;
-          debtDetails = MoneyRecord(
-            id: debtRecordId ?? 'debt_$txId',
-            type: debtType,
-            personName: counterparty.isNotEmpty ? counterparty : merchant,
-            originalAmount: amount,
-            transactionDate: _selectedDate,
-            dueDate:
-                _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
-            notes:
-                _notesController.text.trim().isEmpty
-                    ? null
-                    : _notesController.text.trim(),
-            createdAt: now,
-            updatedAt: now,
-            originTransactionId: txId,
-          );
-        }
-      }
-
-      final tx = Transaction(
-        id: txId,
-        amount: amount,
-        type: _selectedType,
-        purpose: _selectedPurpose,
-        categoryId: _selectedCategory?.id ?? 'cat_transfer',
-        categoryName: _selectedCategory?.name ?? 'Transfer',
-        categoryIcon: _selectedCategory?.iconIdentifier ?? 'sync',
-        categoryColor: _selectedCategory?.colorTokenIdentifier ?? 'slate',
-        merchant: merchant,
-        normalizedMerchant: MerchantNormalizationService.normalize(merchant),
-        date: _selectedDate,
-        notes:
-            _notesController.text.trim().isEmpty
-                ? null
-                : _notesController.text.trim(),
-        source: widget.initialTransaction?.source ?? TransactionSource.manual,
-        paymentMethod: _selectedPaymentMethod,
-        accountId: _selectedAccount!.id,
-        toAccountId:
-            _selectedPurpose == TransactionPurpose.internalTransfer
-                ? _selectedToAccount?.id
-                : null,
-        externalCounterpartyName:
-            _counterpartyController.text.trim().isEmpty
-                ? _selectedMoneyRecord?.personName
-                : _counterpartyController.text.trim(),
-        linkedLoanId:
-            _selectedPurpose == TransactionPurpose.loanRepayment
-                ? _selectedLoan?.id
-                : null,
-        linkedMoneyRecordId:
-            createsDebt ? debtRecordId : _selectedMoneyRecord?.id,
-        linkedInvestmentId:
-            <TransactionPurpose>{
-                  TransactionPurpose.investmentPurchase,
-                  TransactionPurpose.investmentRedemption,
-                }.contains(_selectedPurpose)
-                ? _selectedInvestment?.id
-                : null,
-        linkedSubscriptionId:
-            _selectedPurpose == TransactionPurpose.subscriptionPayment
-                ? _selectedSubscription?.id
-                : null,
-        principalComponent:
-            _selectedLoan == null && _selectedInvestment == null
-                ? null
-                : CurrencyFormatter.parse(_principalController.text),
-        interestComponent:
-            _selectedLoan == null && _selectedInvestment == null
-                ? null
-                : CurrencyFormatter.parse(_interestController.text),
-        feeComponent:
-            _selectedLoan == null && _selectedInvestment == null
-                ? null
-                : CurrencyFormatter.parse(_feeController.text),
-        tags:
-            _tagsController.text
-                .split(',')
-                .map((tag) => tag.trim())
-                .where((tag) => tag.isNotEmpty)
-                .toList(),
-        isReviewed: true,
-        createdAt: widget.initialTransaction?.createdAt ?? now,
-        updatedAt: now,
-        originalMerchant: widget.initialTransaction?.originalMerchant,
-        sourceName: widget.initialTransaction?.sourceName,
-        sourceReference: widget.initialTransaction?.sourceReference,
-        sourceMessageId: widget.initialTransaction?.sourceMessageId,
-        fingerprint: widget.initialTransaction?.fingerprint,
-        duplicateGroupId: widget.initialTransaction?.duplicateGroupId,
-        mergedSources: widget.initialTransaction?.mergedSources ?? const [],
-        importedAt: widget.initialTransaction?.importedAt,
-        detectedAt: widget.initialTransaction?.detectedAt,
-        reviewStatus: widget.initialTransaction?.reviewStatus ?? 'confirmed',
-        categorizationConfidence:
-            widget.initialTransaction?.categorizationConfidence,
+            const <MoneyRecord>[],
       );
+      final tx = built.transaction;
 
       tx.validate();
       if (widget.onSave != null) {
@@ -847,12 +663,16 @@ class _AddEditTransactionScreenState
       } else {
         await ref
             .read(transactionsControllerProvider.notifier)
-            .saveTransaction(tx, moneyRecordDetails: debtDetails);
+            .saveTransaction(tx, moneyRecordDetails: built.debt);
       }
 
-      if (_selectedCategory != null && _needsCategory) {
+      // Learn payee → category only from payees the user actually typed.
+      final typedPayee = _merchantController.text.trim();
+      if (_selectedCategory != null &&
+          values.needsCategory &&
+          typedPayee.isNotEmpty) {
         CategorizationService.recordUserChoice(
-          rawMerchant: merchant,
+          rawMerchant: typedPayee,
           categoryId: _selectedCategory!.id,
           categoryName: _selectedCategory!.name,
           categoryIcon: _selectedCategory!.iconIdentifier,
@@ -1501,12 +1321,13 @@ class _AddEditTransactionScreenState
     final theme = context.theme;
     final isDark = theme.brightness == Brightness.dark;
 
+    // Optional: a blank payee is saved under the category name.
     final label = switch (_selectedType) {
-      TransactionType.income => 'Payer / Source',
-      TransactionType.transfer => 'Transfer Reference / Recipient',
-      TransactionType.investment => 'Asset / Platform',
-      TransactionType.loanEmi => 'Lender / Loan Name',
-      _ => 'Payee / Merchant',
+      TransactionType.income => 'Payer / Source (optional)',
+      TransactionType.transfer => 'Note (optional)',
+      TransactionType.investment => 'Asset / Platform (optional)',
+      TransactionType.loanEmi => 'Lender / Loan Name (optional)',
+      _ => 'Payee (optional)',
     };
 
     final hint = switch (_selectedType) {
@@ -2698,7 +2519,7 @@ class _AddEditTransactionScreenState
           const SizedBox(height: StillwaterTokens.space2Xs),
           Text('From Account', style: theme.textTheme.labelSmall),
           const SizedBox(height: StillwaterTokens.space2Xs),
-          _AccountTileButton(
+          AccountTileButton(
             label: 'From Account',
             account: _selectedAccount,
             error: _accountError,
@@ -2712,7 +2533,7 @@ class _AddEditTransactionScreenState
           const SizedBox(height: StillwaterTokens.spaceSm),
           Text('To Account', style: theme.textTheme.labelSmall),
           const SizedBox(height: StillwaterTokens.space2Xs),
-          _AccountTileButton(
+          AccountTileButton(
             label: 'To Account',
             account: _selectedToAccount,
             error: _toAccountError,
@@ -2730,7 +2551,7 @@ class _AddEditTransactionScreenState
       children: [
         Text('Account', style: theme.textTheme.labelLarge),
         const SizedBox(height: StillwaterTokens.space2Xs),
-        _AccountTileButton(
+        AccountTileButton(
           label: 'Account',
           account: _selectedAccount,
           error: _accountError,
@@ -2999,545 +2820,4 @@ class _AddEditTransactionScreenState
 
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
-}
-
-/// A compact, rich tile button for selecting an Account.
-class _AccountTileButton extends StatelessWidget {
-  final String label;
-  final Account? account;
-  final String? error;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _AccountTileButton({
-    required this.label,
-    required this.account,
-    required this.icon,
-    required this.onTap,
-    this.error,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: StillwaterTokens.spaceMd,
-              vertical: StillwaterTokens.spaceSm,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-              border: Border.all(
-                color:
-                    error != null
-                        ? theme.colorScheme.error
-                        : (isDark
-                            ? StillwaterColors.darkBorderDefault
-                            : StillwaterColors.lightBorderDefault),
-                width:
-                    error != null
-                        ? StillwaterTokens.borderWidthFocus
-                        : StillwaterTokens.borderWidthDefault,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(
-                      alpha: 0.4,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    account == null ? icon : _accountIcon(account!.type),
-                    size: 20,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: StillwaterTokens.spaceMd),
-                Expanded(
-                  child:
-                      account == null
-                          ? Text(
-                            'Select $label',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          )
-                          : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                account!.name,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                '${account!.displaySubtitle} • ${CurrencyFormatter.formatAmount(account!.currentBalance)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                ),
-                const Icon(Icons.expand_more_rounded, size: 20),
-              ],
-            ),
-          ),
-        ),
-        if (error != null) ...[
-          const SizedBox(height: StillwaterTokens.space2Xs),
-          Text(
-            error!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  IconData _accountIcon(AccountType type) => switch (type) {
-    AccountType.cash => Icons.payments_outlined,
-    AccountType.creditCard => Icons.credit_card_outlined,
-    AccountType.upi => Icons.account_balance_wallet_outlined,
-    AccountType.investment => Icons.trending_up_rounded,
-    _ => Icons.account_balance_outlined,
-  };
-}
-
-/// Category selection modal bottom sheet with instant search and multi-column visual grid.
-class _CategoryPickerSheet extends StatefulWidget {
-  final List<Category> categories;
-  final Category? selected;
-
-  const _CategoryPickerSheet({
-    required this.categories,
-    required this.selected,
-  });
-
-  @override
-  State<_CategoryPickerSheet> createState() => _CategoryPickerSheetState();
-}
-
-class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
-  String _query = '';
-  late final TextEditingController _searchController;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final filtered =
-        widget.categories
-            .where((c) => c.name.toLowerCase().contains(_query.toLowerCase()))
-            .toList();
-
-    return Material(
-      color:
-          isDark
-              ? StillwaterColors.darkSurfaceDefault
-              : StillwaterColors.lightSurfaceDefault,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(StillwaterTokens.radius2Xl),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceSm,
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceLg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: 'Choose Category',
-                padding: EdgeInsets.zero,
-                onClose: () => Navigator.pop(context),
-              ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
-              TextField(
-                controller: _searchController,
-                autofocus: false,
-                onChanged: (val) => setState(() => _query = val.trim()),
-                style: theme.textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor:
-                      isDark
-                          ? StillwaterColors.darkSurfaceContainerLow
-                          : StillwaterColors.lightSurfaceContainerLow,
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  suffixIcon:
-                      _query.isEmpty
-                          ? null
-                          : IconButton(
-                            icon: const Icon(Icons.clear_rounded, size: 18),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                          ),
-                  hintText: 'Search categories...',
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.7,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: StillwaterTokens.spaceMd,
-                    vertical: StillwaterTokens.spaceSm,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.35,
-                      ),
-                      width: StillwaterTokens.borderWidthHairline,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.35,
-                      ),
-                      width: StillwaterTokens.borderWidthHairline,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      StillwaterTokens.radiusFull,
-                    ),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: StillwaterTokens.borderWidthFocus,
-                    ),
-                  ),
-                  isDense: true,
-                ),
-              ),
-              const SizedBox(height: StillwaterTokens.spaceMd),
-              SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.50,
-                child:
-                    filtered.isEmpty
-                        ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.search_off_rounded,
-                                size: 40,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: StillwaterTokens.spaceXs),
-                              Text(
-                                'No matching category found',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        : LayoutBuilder(
-                          builder: (context, constraints) {
-                            final width = constraints.maxWidth;
-                            final crossAxisCount =
-                                width < 340 ? 2 : (width < 600 ? 3 : 4);
-
-                            return GridView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: filtered.length,
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: crossAxisCount,
-                                    crossAxisSpacing: StillwaterTokens.spaceSm,
-                                    mainAxisSpacing: StillwaterTokens.spaceSm,
-                                    childAspectRatio: 1.3,
-                                  ),
-                              itemBuilder: (context, index) {
-                                final category = filtered[index];
-                                final isSelected =
-                                    category.id == widget.selected?.id;
-
-                                return _CategoryGridTile(
-                                  category: category,
-                                  isSelected: isSelected,
-                                  onTap: () => Navigator.pop(context, category),
-                                );
-                              },
-                            );
-                          },
-                        ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Visual grid tile for selecting a category in the full picker sheet.
-class _CategoryGridTile extends StatelessWidget {
-  final Category category;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CategoryGridTile({
-    required this.category,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final selectedBg =
-        isDark
-            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
-            : theme.colorScheme.primaryContainer.withValues(alpha: 0.45);
-    final unselectedBg =
-        isDark
-            ? StillwaterColors.darkSurfaceContainerLow.withValues(alpha: 0.6)
-            : StillwaterColors.lightSurfaceContainerLow.withValues(alpha: 0.8);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: isSelected ? selectedBg : unselectedBg,
-            borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-            border: Border.all(
-              color:
-                  isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.35,
-                      ),
-              width:
-                  isSelected
-                      ? StillwaterTokens.borderWidthFocus
-                      : StillwaterTokens.borderWidthHairline,
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: StillwaterTokens.spaceXs,
-            vertical: StillwaterTokens.spaceSm,
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FfCategoryTile(
-                      iconIdentifier: category.iconIdentifier,
-                      colorTokenIdentifier: category.colorTokenIdentifier,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      category.name,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color:
-                            isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Positioned(
-                  top: 2,
-                  right: 2,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_rounded,
-                      size: 11,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Account selection bottom sheet with balance display.
-class _AccountPickerSheet extends StatelessWidget {
-  final String title;
-  final List<Account> accounts;
-  final Account? selected;
-
-  const _AccountPickerSheet({
-    required this.title,
-    required this.accounts,
-    required this.selected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Material(
-      color:
-          isDark
-              ? StillwaterColors.darkSurfaceDefault
-              : StillwaterColors.lightSurfaceDefault,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(StillwaterTokens.radius2Xl),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: title,
-                padding: EdgeInsets.zero,
-                onClose: () => Navigator.pop(context),
-              ),
-              const SizedBox(height: StillwaterTokens.spaceSm),
-              if (accounts.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(StillwaterTokens.spaceXl),
-                  child: Text('No eligible account available.'),
-                )
-              else
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: accounts.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final account = accounts[index];
-                      final isSelected = account.id == selected?.id;
-
-                      return ListTile(
-                        leading: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.4),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _icon(account.type),
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        title: Text(
-                          account.name,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        trailing:
-                            isSelected
-                                ? Icon(
-                                  Icons.check_circle_rounded,
-                                  color: theme.colorScheme.primary,
-                                )
-                                : null,
-                        onTap: () => Navigator.pop(context, account),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  IconData _icon(AccountType type) => switch (type) {
-    AccountType.cash => Icons.payments_outlined,
-    AccountType.creditCard => Icons.credit_card_outlined,
-    AccountType.upi => Icons.account_balance_wallet_outlined,
-    AccountType.investment => Icons.trending_up_rounded,
-    _ => Icons.account_balance_outlined,
-  };
 }
