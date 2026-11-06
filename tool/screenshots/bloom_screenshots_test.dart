@@ -605,10 +605,7 @@ Widget _accountSheet(BuildContext context) {
       const SizedBox(height: 24),
       Text('Account Type Tiles', style: ff.text.titleLg),
       const SizedBox(height: 12),
-      FfAccountTypeTiles(
-        selectedType: AccountType.bank,
-        onChanged: (_) {},
-      ),
+      FfAccountTypeTiles(selectedType: AccountType.bank, onChanged: (_) {}),
     ],
   );
 }
