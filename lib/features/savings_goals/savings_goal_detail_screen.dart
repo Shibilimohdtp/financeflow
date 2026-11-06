@@ -1,23 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../../models/goal_contribution.dart';
 import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../services/savings_goal_calculator.dart';
+import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_data_viz.dart';
+import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_hero.dart';
+import '../../theme/ff_tone.dart';
 import 'add_edit_savings_goal_sheet.dart';
 import 'add_goal_contribution_sheet.dart';
 import 'savings_goals_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_dialog.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_progress.dart';
-import '../../theme/ff.dart';
+import 'savings_goals_screen.dart';
 
 class SavingsGoalDetailScreen extends ConsumerWidget {
   final SavingsGoal goal;
@@ -38,7 +51,7 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _deleteGoal(
+  Future<void> _deleteGoal(
     BuildContext context,
     WidgetRef ref,
     SavingsGoal currentGoal,
@@ -94,17 +107,18 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: FfAppBar(
         title: currentGoal.name,
+        subtitle:
+            'Target: ${CurrencyFormatter.formatAmount(currentGoal.targetAmount)}',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit Goal',
+          FfCircleButton(
+            icon: Icons.edit_outlined,
+            tooltip: 'Edit goal',
             onPressed: () => _openEdit(context, currentGoal),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: FfSpace.md),
-            child: Center(
-              child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
-            ),
+          FfCircleButton(
+            icon: Icons.delete_outline_rounded,
+            tooltip: 'Delete goal',
+            onPressed: () => _deleteGoal(context, ref, currentGoal),
           ),
         ],
       ),
@@ -115,119 +129,129 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
             contributions,
           );
           final progress = summary.progressPercentage.clamp(0.0, 1.0);
+          final icon = SavingsGoalsScreen.getGoalIcon(currentGoal.name);
+
+          // Build points for progression chart
+          final sorted = List<GoalContribution>.from(contributions)
+            ..sort((a, b) => a.date.compareTo(b.date));
+
+          double runningTotal = 0.0;
+          final List<FfChartPoint> chartPoints = [];
+          for (final c in sorted) {
+            runningTotal += c.amount;
+            chartPoints.add(
+              FfChartPoint(DateFormatter.formatShortDate(c.date), runningTotal),
+            );
+          }
 
           return ListView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.lg,
-              vertical: FfSpace.md,
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.pageMargin,
+              FfSpace.md,
+              FfSpace.pageMargin,
+              FfSpace.x4l,
             ),
             children: [
-              // ── 1. Goal Progress Hero ───────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(FfSpace.lg),
-                decoration: BoxDecoration(
-                  color: context.ff.color.surfaceCard,
-                  borderRadius: BorderRadius.circular(FfRadius.lg),
-                  border: Border.all(
-                    color: context.ff.color.borderSubtle,
-                    width: FfBorderWidth.hairline,
-                  ),
+              // ── 1. Goal Progress Hero (Pattern D) ───────────────────────
+              FfHeroCard(
+                tone: FfHeroTone.tide,
+                title: 'Saved so far',
+                subtitle:
+                    'Target: ${CurrencyFormatter.formatAmount(currentGoal.targetAmount)} · Due ${DateFormatter.formatShortDate(currentGoal.targetDate)}',
+                leading: FfProgressRing(
+                  value: progress,
+                  icon: icon,
+                  semanticsLabel:
+                      '${(progress * 100).toStringAsFixed(0)}% of goal saved',
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'TOTAL ACCUMULATED',
-                          style: context.ff.text.labelSm.copyWith(
-                            letterSpacing: 0.8,
-                            color: context.ff.color.secondary,
+                child: Builder(
+                  builder:
+                      (ctx) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FfAmountText(
+                            amount: summary.currentAmount,
+                            size: FfAmountSize.hero,
+                            style: FfAmountStyle.split,
+                            tone: FfTone.neutral,
+                            showSign: false,
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: FfSpace.sm,
-                            vertical: FfSpace.x3s,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                summary.isTargetReached
-                                    ? context.ff.color.statusSuccess.withValues(
-                                      alpha: 0.15,
-                                    )
-                                    : context.ff.color.actionPrimary.withValues(
-                                      alpha: 0.12,
-                                    ),
-                            borderRadius: BorderRadius.circular(FfRadius.full),
-                          ),
-                          child: Text(
-                            summary.isTargetReached
-                                ? 'Target Reached'
-                                : '${(progress * 100).toStringAsFixed(1)}%',
-                            style: context.ff.text.labelSm.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  summary.isTargetReached
-                                      ? context.ff.color.statusSuccess
-                                      : context.ff.color.actionPrimary,
+                          const SizedBox(height: FfSpace.md),
+                          FfHeroFigures([
+                            FfHeroFigure(
+                              'Remaining',
+                              CurrencyFormatter.formatAmount(
+                                summary.remainingAmount,
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                    Text(
-                      CurrencyFormatter.formatAmount(summary.currentAmount),
-                      style: context.ff.text.headlineLg.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: context.ff.color.actionPrimary,
+                            FfHeroFigure(
+                              'Pace needed',
+                              summary.suggestedMonthlyContribution > 0
+                                  ? '${CurrencyFormatter.formatAmount(summary.suggestedMonthlyContribution)}/mo'
+                                  : 'Achieved',
+                            ),
+                            FfHeroFigure(
+                              'Time left',
+                              daysRemaining > 0
+                                  ? '$daysRemaining days'
+                                  : 'Due date passed',
+                            ),
+                          ]),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: FfSpace.x3s),
-                    Text(
-                      'Target: ${CurrencyFormatter.formatAmount(currentGoal.targetAmount)} · Due ${DateFormat('dd MMM yyyy').format(currentGoal.targetDate)} (${daysRemaining > 0 ? "$daysRemaining days left" : "Reached"})',
-                      style: context.ff.text.bodySm.copyWith(
-                        color: context.ff.color.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: FfSpace.md),
-                    FfProgressBar(
-                      value: progress,
-                      color:
-                          summary.isTargetReached
-                              ? context.ff.color.statusSuccess
-                              : context.ff.color.actionPrimary,
-                      size: FfProgressSize.lg,
-                    ),
-                  ],
                 ),
               ),
 
               const SizedBox(height: FfSpace.lg),
 
-              // ── 2. Savings Pace & Guidance ──────────────────────────────
-              if (!summary.isTargetReached &&
-                  summary.suggestedMonthlyContribution > 0)
-                Container(
-                  padding: const EdgeInsets.all(FfSpace.md),
-                  decoration: BoxDecoration(
-                    color: context.ff.color.surfaceContainerHighest.withValues(
-                      alpha: 0.4,
-                    ),
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    border: Border.all(
-                      color: context.ff.color.borderSubtle,
-                      width: FfBorderWidth.hairline,
-                    ),
+              // ── 2. Primary Action ────────────────────────────────────────
+              FfButton(
+                label: 'Add Funds to Goal',
+                leadingIcon: const Icon(Icons.add_rounded, size: 18),
+                onPressed: () => _openAddContribution(context, currentGoal),
+              ),
+
+              const SizedBox(height: FfSpace.lg),
+
+              // ── 3. Progression Chart or Guidance ────────────────────────
+              if (chartPoints.length >= 2) ...[
+                FfCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Savings trend', style: context.ff.text.title),
+                          Text(
+                            '${chartPoints.length} deposits',
+                            style: context.ff.text.labelSm.copyWith(
+                              color: context.ff.color.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: FfSpace.md),
+                      FfLineChart(
+                        points: chartPoints,
+                        valueLabel:
+                            (p) => CurrencyFormatter.formatAmount(p.value),
+                        height: 160,
+                      ),
+                    ],
                   ),
+                ),
+                const SizedBox(height: FfSpace.lg),
+              ] else if (!summary.isTargetReached &&
+                  summary.suggestedMonthlyContribution > 0) ...[
+                FfCard(
+                  variant: FfCardVariant.tinted,
+                  tone: FfTone.savings,
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.savings_outlined,
-                        size: 20,
-                        color: context.ff.color.actionPrimary,
+                      FfIconTile(
+                        icon: Icons.savings_outlined,
+                        tone: FfTone.savings,
                       ),
                       const SizedBox(width: FfSpace.md),
                       Expanded(
@@ -235,16 +259,13 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Required Savings Pace',
-                              style: context.ff.text.body.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              'Required savings pace',
+                              style: context.ff.text.titleSm,
                             ),
+                            const SizedBox(height: FfSpace.x3s),
                             Text(
-                              'Save ${CurrencyFormatter.formatAmount(summary.suggestedMonthlyContribution)} / month to hit your goal on schedule.',
-                              style: context.ff.text.bodySm.copyWith(
-                                color: context.ff.color.secondary,
-                              ),
+                              'Save ${CurrencyFormatter.formatAmount(summary.suggestedMonthlyContribution)} a month to hit your target by ${DateFormatter.formatShortDate(currentGoal.targetDate)}.',
+                              style: context.ff.text.bodySm,
                             ),
                           ],
                         ),
@@ -252,23 +273,14 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: FfSpace.lg),
+              ],
 
-              const SizedBox(height: FfSpace.x2l),
-
-              // ── 3. Actions ──────────────────────────────────────────────
-              FfButton(
-                label: 'Add Funds to Goal',
-                leadingIcon: const Icon(Icons.add_rounded, size: 18),
-                onPressed: () => _openAddContribution(context, currentGoal),
+              // ── 4. Contribution History ──────────────────────────────────
+              FfSectionHeader(
+                title: 'Contribution history',
+                count: contributions.length,
               ),
-
-              const SizedBox(height: FfSpace.x2l),
-
-              // ── 4. Contribution History ─────────────────────────────────
-              _SectionLabel(
-                label: 'Contribution History (${contributions.length})',
-              ),
-              const SizedBox(height: FfSpace.xs),
 
               if (contributions.isEmpty)
                 Padding(
@@ -283,176 +295,93 @@ class SavingsGoalDetailScreen extends ConsumerWidget {
                   ),
                 )
               else
-                Container(
-                  decoration: BoxDecoration(
-                    color: context.ff.color.surfaceCard,
-                    borderRadius: BorderRadius.circular(FfRadius.lg),
-                    border: Border.all(
-                      color: context.ff.color.borderSubtle,
-                      width: FfBorderWidth.hairline,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < contributions.length; i++) ...[
-                        _ContributionRow(
-                          contribution: contributions[i],
-                          accounts: accountsAsync.value ?? [],
-                          onDelete: () async {
-                            final confirmed = await FfDialog.confirm(
-                              context,
-                              title: 'Remove Contribution?',
-                              message:
-                                  'Remove ${CurrencyFormatter.formatAmount(contributions[i].amount)} deposit from this goal?',
-                              confirmLabel: 'Remove',
-                              destructive: true,
-                            );
-                            if (confirmed == true && context.mounted) {
-                              await ref
-                                  .read(savingsGoalsControllerProvider.notifier)
-                                  .deleteContribution(contributions[i].id);
-                              if (context.mounted) {
-                                FfToast.show(
-                                  context,
-                                  message: 'Contribution removed.',
-                                );
-                              }
-                            }
-                          },
-                        ),
-                        if (i < contributions.length - 1)
-                          Divider(
-                            height: 1,
-                            thickness: FfBorderWidth.hairline,
-                            indent: FfSpace.md,
+                FfGroupedContainer(
+                  children:
+                      contributions.map((c) {
+                        final accounts = accountsAsync.value ?? const [];
+                        final accountName =
+                            accounts
+                                .where((a) => a.id == c.accountId)
+                                .firstOrNull
+                                ?.name ??
+                            'Direct Deposit';
+
+                        return FfRow(
+                          leading: FfIconTile(
+                            icon: Icons.arrow_downward_rounded,
+                            tone: FfTone.savings,
                           ),
-                      ],
-                    ],
-                  ),
+                          title: accountName,
+                          subtitle: DateFormatter.formatTransactionDate(c.date),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FfAmountText(
+                                amount: c.amount,
+                                size: FfAmountSize.sm,
+                                style: FfAmountStyle.inline,
+                                tone: FfTone.savings,
+                                showSign: true,
+                              ),
+                              const SizedBox(width: FfSpace.xs),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 16,
+                                  color: context.ff.color.textSecondary,
+                                ),
+                                tooltip: 'Remove contribution',
+                                onPressed: () async {
+                                  final confirmed = await FfDialog.confirm(
+                                    context,
+                                    title: 'Remove Contribution?',
+                                    message:
+                                        'Remove ${CurrencyFormatter.formatAmount(c.amount)} deposit from this goal?',
+                                    confirmLabel: 'Remove',
+                                    destructive: true,
+                                  );
+                                  if (confirmed == true && context.mounted) {
+                                    await ref
+                                        .read(
+                                          savingsGoalsControllerProvider
+                                              .notifier,
+                                        )
+                                        .deleteContribution(c.id);
+                                    if (context.mounted) {
+                                      FfToast.show(
+                                        context,
+                                        message: 'Contribution removed.',
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                 ),
 
               const SizedBox(height: FfSpace.x2l),
 
-              // Destructive Delete Goal
+              // ── 5. Destructive Delete Goal ───────────────────────────────
               FfButton(
                 label: 'Delete Savings Goal',
                 variant: FfButtonVariant.destructive,
                 leadingIcon: const Icon(Icons.delete_outline_rounded, size: 16),
                 onPressed: () => _deleteGoal(context, ref, currentGoal),
               ),
-
-              const SizedBox(height: FfSpace.x4l),
             ],
           );
         },
-        loading: () => const FfLoading(),
-        error: (e, _) => Center(child: Text('Error: $e')),
-      ),
-    );
-  }
-}
-
-class _ContributionRow extends StatelessWidget {
-  final dynamic contribution;
-  final List<dynamic> accounts;
-  final VoidCallback onDelete;
-
-  const _ContributionRow({
-    required this.contribution,
-    required this.accounts,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final accountName =
-        accounts
-            .firstWhere(
-              (a) => a.id == contribution.accountId,
-              orElse: () => null,
-            )
-            ?.name ??
-        'Direct Deposit';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: FfSpace.md,
-        vertical: FfSpace.sm,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: context.ff.color.statusSuccess.withValues(
-                alpha: FfTint.subtle.alpha,
+        loading:
+            () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(FfSpace.x4l),
+                child: FfLoading(),
               ),
-              borderRadius: BorderRadius.circular(FfRadius.sm),
             ),
-            child: Icon(
-              Icons.arrow_downward_rounded,
-              size: 16,
-              color: context.ff.color.statusSuccess,
-            ),
-          ),
-          const SizedBox(width: FfSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  accountName,
-                  style: context.ff.text.body.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  DateFormatter.formatTransactionDate(contribution.date),
-                  style: context.ff.text.labelSm.copyWith(
-                    color: context.ff.color.secondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '+ ${CurrencyFormatter.formatAmount(contribution.amount)}',
-            style: context.ff.text.body.copyWith(
-              fontWeight: FontWeight.w600,
-              color: context.ff.color.statusSuccess,
-            ),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.delete_outline_rounded,
-              size: 16,
-              color: context.ff.color.secondary,
-            ),
-            tooltip: 'Remove contribution',
-            visualDensity: VisualDensity.compact,
-            onPressed: onDelete,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
-        ),
+        error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
   }

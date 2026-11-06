@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+
 import '../../core/formatting/currency_formatter.dart';
+import '../../core/formatting/date_formatter.dart';
 import '../../models/account.dart';
 import '../../models/goal_contribution.dart';
 import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_consequence_line.dart';
+import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import 'savings_goals_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_pickers.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
-import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import 'savings_goals_controller.dart';
 
 class AddGoalContributionSheet extends ConsumerStatefulWidget {
   final SavingsGoal goal;
@@ -42,13 +48,29 @@ class _AddGoalContributionSheetState
     super.initState();
     _amountController = TextEditingController();
     _notesController = TextEditingController();
+    _amountController.addListener(_onAmountChanged);
+  }
+
+  void _onAmountChanged() {
+    setState(() {});
   }
 
   @override
   void dispose() {
+    _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _setAmount(double amount) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _amountController.text =
+          amount.truncateToDouble() == amount
+              ? amount.toInt().toString()
+              : amount.toString();
+    });
   }
 
   Future<void> _selectDate() async {
@@ -119,6 +141,25 @@ class _AddGoalContributionSheetState
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(allAccountsStreamProvider);
+    final depositAmount =
+        CurrencyFormatter.parse(_amountController.text) ?? 0.0;
+
+    // Watch live goal contributions to show projected %
+    final contributionsAsync = ref.watch(
+      goalContributionsForGoalProvider(widget.goal.id),
+    );
+    final currentSaved =
+        contributionsAsync.value?.fold<double>(0.0, (s, c) => s + c.amount) ??
+        0.0;
+    final newTotal = currentSaved + depositAmount;
+    final currentPct =
+        widget.goal.targetAmount > 0
+            ? (currentSaved / widget.goal.targetAmount * 100).clamp(0, 100)
+            : 100.0;
+    final projectedPct =
+        widget.goal.targetAmount > 0
+            ? (newTotal / widget.goal.targetAmount * 100).clamp(0, 100)
+            : 100.0;
 
     return FfSheet(
       children: [
@@ -131,64 +172,138 @@ class _AddGoalContributionSheetState
         // Form Content
         Flexible(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Deposit Amount
-                  _SectionLabel(label: 'Deposit Amount'),
+                  const SizedBox(height: FfSpace.sm),
+
+                  // ── Consequence / Projection Line ────────────────────────
+                  FfConsequenceLine(
+                    text:
+                        depositAmount > 0
+                            ? 'Reaches ${projectedPct.toStringAsFixed(0)}% of target (+${(projectedPct - currentPct).toStringAsFixed(0)}%)'
+                            : 'Currently at ${currentPct.toStringAsFixed(0)}% of ${CurrencyFormatter.formatAmount(widget.goal.targetAmount)}',
+                    icon: Icons.trending_up_rounded,
+                    tone: FfTone.savings,
+                  ),
+
+                  const SizedBox(height: FfSpace.lg),
+
+                  // ── Deposit Amount ────────────────────────────────────────
+                  Text(
+                    'Deposit amount',
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: FfSpace.xs),
-                  FfTextField(
+                  FfAmountField(
                     controller: _amountController,
+                    hint: '5,000',
                     autofocus: true,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    hint: '5000',
-                    prefixText: '${CurrencyFormatter.currencySymbol} ',
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter amount';
-                      }
-                      return null;
-                    },
+                  ),
+
+                  const SizedBox(height: FfSpace.sm),
+
+                  // ── Quick Amount Presets ──────────────────────────────────
+                  Wrap(
+                    spacing: FfSpace.xs,
+                    runSpacing: FfSpace.xs,
+                    children: [
+                      FfChip(
+                        label: '+₹1,000',
+                        isSelected: false,
+                        onSelected: () => _setAmount(depositAmount + 1000),
+                      ),
+                      FfChip(
+                        label: '+₹5,000',
+                        isSelected: false,
+                        onSelected: () => _setAmount(depositAmount + 5000),
+                      ),
+                      FfChip(
+                        label: '+₹10,000',
+                        isSelected: false,
+                        onSelected: () => _setAmount(depositAmount + 10000),
+                      ),
+                      if (widget.goal.targetAmount > currentSaved)
+                        FfChip(
+                          label:
+                              'Remaining (${CurrencyFormatter.formatAmount(widget.goal.targetAmount - currentSaved)})',
+                          isSelected: false,
+                          onSelected:
+                              () => _setAmount(
+                                widget.goal.targetAmount - currentSaved,
+                              ),
+                        ),
+                    ],
                   ),
 
                   const SizedBox(height: FfSpace.lg),
 
-                  // Date
-                  _SectionLabel(label: 'Deposit Date'),
+                  // ── Date ──────────────────────────────────────────────────
+                  Text(
+                    'Deposit date',
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: FfSpace.xs),
-                  InkWell(
-                    onTap: _selectDate,
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: FfSpace.md,
-                          vertical: FfSpace.sm,
+                  Wrap(
+                    spacing: FfSpace.xs,
+                    runSpacing: FfSpace.xs,
+                    children: [
+                      FfChip(
+                        label: 'Today',
+                        isSelected: DateUtils.isSameDay(_date, DateTime.now()),
+                        onSelected:
+                            () => setState(() => _date = DateTime.now()),
+                      ),
+                      FfChip(
+                        label: 'Yesterday',
+                        isSelected: DateUtils.isSameDay(
+                          _date,
+                          DateTime.now().subtract(const Duration(days: 1)),
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(FfRadius.md),
-                        ),
-                        suffixIcon: const Icon(
+                        onSelected:
+                            () => setState(
+                              () =>
+                                  _date = DateTime.now().subtract(
+                                    const Duration(days: 1),
+                                  ),
+                            ),
+                      ),
+                      FfChip(
+                        label: DateFormatter.formatShortDate(_date),
+                        leading: const Icon(
                           Icons.calendar_today_outlined,
-                          size: 18,
+                          size: 14,
                         ),
+                        isSelected:
+                            !DateUtils.isSameDay(_date, DateTime.now()) &&
+                            !DateUtils.isSameDay(
+                              _date,
+                              DateTime.now().subtract(const Duration(days: 1)),
+                            ),
+                        onSelected: _selectDate,
                       ),
-                      child: Text(
-                        DateFormat('dd MMMM yyyy').format(_date),
-                        style: context.ff.text.body,
-                      ),
-                    ),
+                    ],
                   ),
 
                   const SizedBox(height: FfSpace.lg),
 
-                  // Source Account
-                  _SectionLabel(label: 'Source Account (Optional)'),
+                  // ── Source Account ────────────────────────────────────────
+                  Text(
+                    'Source account (optional)',
+                    style: context.ff.text.labelSm.copyWith(
+                      color: context.ff.color.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: FfSpace.xs),
                   accountsAsync.when(
                     data: (accounts) {
@@ -199,7 +314,7 @@ class _AddGoalContributionSheetState
                         items: [
                           const DropdownMenuItem(
                             value: null,
-                            child: Text('Direct / Cash Deposit'),
+                            child: Text('Direct / Cash deposit'),
                           ),
                           ...activeAccounts.map(
                             (a) =>
@@ -216,15 +331,14 @@ class _AddGoalContributionSheetState
 
                   const SizedBox(height: FfSpace.lg),
 
-                  // Notes
-                  _SectionLabel(label: 'Notes (Optional)'),
-                  const SizedBox(height: FfSpace.xs),
+                  // ── Notes ─────────────────────────────────────────────────
                   FfTextField(
                     controller: _notesController,
+                    label: 'Notes (optional)',
                     hint: 'e.g. Monthly salary savings transfer',
                   ),
 
-                  const SizedBox(height: FfSpace.md),
+                  const SizedBox(height: FfSpace.xl),
                 ],
               ),
             ),
@@ -237,25 +351,6 @@ class _AddGoalContributionSheetState
           onPrimaryPressed: _isSubmitting ? null : _submit,
         ),
       ],
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
-        ),
-      ),
     );
   }
 }

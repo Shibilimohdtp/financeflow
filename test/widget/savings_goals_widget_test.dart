@@ -59,7 +59,8 @@ void main() {
 
     expect(find.text('Savings Goals'), findsOneWidget);
     expect(find.text('MacBook Pro'), findsOneWidget);
-    expect(find.text('₹60,000'), findsOneWidget);
+    // ₹60,000 appears in both the Tide summary hero and the active goal card
+    expect(find.text('₹60,000'), findsNWidgets(2));
     expect(find.text('50%'), findsOneWidget);
     expect(find.text('Add Goal'), findsOneWidget);
   });
