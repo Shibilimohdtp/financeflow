@@ -381,7 +381,13 @@ class BudgetsScreen extends ConsumerWidget {
 
   void _openBudget(BuildContext context, BudgetPeriodResult r) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => BudgetDetailScreen(budget: r.budget)),
+      MaterialPageRoute(
+        builder:
+            (_) => BudgetDetailScreen(
+              budget: r.budget,
+              onShowTransactions: onShowTransactions,
+            ),
+      ),
     );
   }
 

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/budgets/budget_detail_screen.dart';
-import 'package:financeflow/features/dashboard/dashboard_controller.dart';
+import 'package:financeflow/features/budgets/plan_providers.dart';
 import 'package:financeflow/models/budget.dart';
 import 'package:financeflow/models/category.dart';
 import 'package:financeflow/models/transaction.dart';
@@ -41,14 +41,12 @@ void main() {
   );
 
   testWidgets(
-    'BudgetDetailScreen renders hero metrics, pace and transactions',
+    'BudgetDetailScreen shows the hero, trend and the counted payments',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            selectedDashboardMonthProvider.overrideWith(
-              (ref) => DateTime(2026, 8, 1),
-            ),
+            planNowProvider.overrideWithValue(DateTime(2026, 8, 15, 12)),
             allTransactionsStreamProvider.overrideWith(
               (ref) => Stream.value([testTransaction]),
             ),
@@ -63,13 +61,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Food & Dining'), findsWidgets);
-      expect(find.text('DAILY ALLOWANCE'), findsOneWidget);
-      expect(find.text('PROJECTED SPEND'), findsOneWidget);
-      expect(find.text('Budget Settings'), findsOneWidget);
+      expect(find.text('Left to spend'), findsOneWidget);
+      expect(find.text('Per day'), findsOneWidget);
+      expect(find.text('Forecast'), findsOneWidget);
+      expect(find.byKey(const ValueKey('budget-trend')), findsOneWidget);
 
-      await tester.drag(find.byType(ListView), const Offset(0, -300));
-      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Cafe Delight'), 200);
       expect(find.text('Cafe Delight'), findsOneWidget);
+      await tester.scrollUntilVisible(find.textContaining('1 payment'), 200);
     },
   );
 }
