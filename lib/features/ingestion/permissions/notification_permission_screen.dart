@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/ff_button.dart';
-import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../settings/settings_controller.dart';
+
 import '../../../services/ingestion/ingestion_coordinator.dart';
-import '../../../shared/widgets/ff_toast.dart';
 import '../../../shared/widgets/ff_app_bar.dart';
+import '../../../shared/widgets/ff_button.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_grouped_container.dart';
+import '../../../shared/widgets/ff_privacy_badge.dart';
 import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_section_header.dart';
+import '../../../shared/widgets/ff_surfaces.dart';
+import '../../../shared/widgets/ff_toast.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
+import '../../settings/settings_controller.dart';
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -20,7 +26,7 @@ class NotificationPermissionScreen extends ConsumerStatefulWidget {
 
 class _NotificationPermissionScreenState
     extends ConsumerState<NotificationPermissionScreen> {
-  final Map<String, String> _supportedApps = {
+  final Map<String, String> _supportedApps = const {
     'com.google.android.apps.nbu.paisa.user': 'Google Pay',
     'com.phonepe.app': 'PhonePe',
     'net.one97.paytm': 'Paytm',
@@ -41,185 +47,190 @@ class _NotificationPermissionScreenState
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
     final hasAccess =
         ref.watch(ingestionPlatformStatusProvider).value?.notificationAccess ??
         false;
 
-    return Scaffold(
-      appBar: FfAppBar(title: 'Notification Detection'),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
-          vertical: FfSpace.md,
-        ),
-        children: [
-          // ── 1. Privacy Guarantee Hero ─────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(FfSpace.lg),
-            decoration: BoxDecoration(
-              color: context.ff.color.surfaceCard,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.borderSubtle,
-                width: FfBorderWidth.hairline,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.shield_outlined,
-                          color: context.ff.color.statusSuccess,
-                          size: 20,
-                        ),
-                        const SizedBox(width: FfSpace.sm),
-                        Text(
-                          '100% On-Device Reading',
-                          style: context.ff.text.body.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: context.ff.color.statusSuccess,
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: const FfAppBar(title: 'Notification Detection'),
+        body: ListView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.pageMargin,
+            vertical: FfSpace.md,
+          ),
+          children: [
+            // ── 1. Privacy Guarantee Hero Card ───────────────────────────
+            FfCard(
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.shield_outlined,
+                            color: ff.color.statusSuccess,
+                            size: 20,
                           ),
-                        ),
-                      ],
-                    ),
-                    const FfPrivacyBadge(label: 'Zero Upload'),
-                  ],
-                ),
-                const SizedBox(height: FfSpace.sm),
-                Padding(
-                  padding: const EdgeInsets.only(left: FfSpace.lg),
-                  child: Text(
-                    '• Notification text is parsed locally in memory on your phone.\n'
+                          const SizedBox(width: FfSpace.xs),
+                          Text(
+                            '100% On-Device Reading',
+                            style: ff.text.titleSm.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: ff.color.statusSuccess,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const FfPrivacyBadge(label: 'Zero Upload'),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.sm),
+                  Text(
+                    '• Notification text is parsed strictly in memory on this device.\n'
                     '• No notification content is ever sent to any remote server.\n'
-                    '• Non-financial notifications (WhatsApp, social media) are strictly ignored.\n'
+                    '• Non-financial notifications (messages, chats, social media) are ignored.\n'
                     '• You can revoke or disable this permission at any time.',
-                    style: context.ff.text.bodySm.copyWith(
-                      color: context.ff.color.secondary,
+                    style: ff.text.bodySm.copyWith(
+                      color: ff.color.textSecondary,
                       height: 1.5,
                     ),
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.lg),
+
+            // ── 2. On-Device Pipeline Visualization ─────────────────────
+            FfCard(
+              variant: FfCardVariant.tinted,
+              tone: FfTone.success,
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.memory_rounded,
+                        size: 18,
+                        color: ff.color.statusSuccess,
+                      ),
+                      const SizedBox(width: FfSpace.xs),
+                      Text(
+                        'On-Device Ingestion Pipeline',
+                        style: ff.text.titleSm.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: ff.color.statusSuccess,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.xs),
+                  Text(
+                    'Push Notification ➔ Regex Engine (Device RAM) ➔ Needs Review Queue\nZero network calls. Zero third-party telemetry.',
+                    style: ff.text.labelSm.copyWith(
+                      color: ff.color.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.xl),
+
+            // ── 3. OS Permission Status ──────────────────────────────────
+            const FfSectionHeader(title: 'System permission status'),
+            FfGroupedContainer(
+              dividerInset: FfRowLeading.icon,
+              children: [
+                FfRow(
+                  icon:
+                      hasAccess
+                          ? Icons.check_circle_outline
+                          : Icons.info_outline,
+                  title:
+                      'Android notification access: ${hasAccess ? 'Allowed' : 'Not allowed'}',
+                  subtitle:
+                      hasAccess
+                          ? 'The system notification-listener service is available.'
+                          : 'Android requires enabling access in Notification Listener settings.',
                 ),
               ],
             ),
-          ),
 
-          const SizedBox(height: FfSpace.x2l),
+            const SizedBox(height: FfSpace.xl),
 
-          FfRow(
-            icon: hasAccess ? Icons.check_circle_outline : Icons.info_outline,
-            title:
-                'Android notification access: ${hasAccess ? 'Allowed' : 'Not allowed'}',
-            subtitle:
-                hasAccess
-                    ? 'The system notification-listener service is available.'
-                    : 'Android requires a separate action in Notification Access settings.',
-          ),
-
-          const SizedBox(height: FfSpace.md),
-
-          // ── 2. Supported Apps List ────────────────────────────────────
-          _SectionLabel(label: 'Select Payment Apps to Monitor'),
-          const SizedBox(height: FfSpace.xs),
-          Container(
-            decoration: BoxDecoration(
-              color: context.ff.color.surfaceCard,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.borderSubtle,
-                width: FfBorderWidth.hairline,
-              ),
-            ),
-            child: Column(
+            // ── 4. Supported Apps List ────────────────────────────────────
+            const FfSectionHeader(title: 'Payment apps to monitor'),
+            FfGroupedContainer(
               children: [
-                for (int i = 0; i < _supportedApps.entries.length; i++) ...[
+                for (final entry in _supportedApps.entries)
                   FfRow.checkbox(
-                    title: _supportedApps.entries.elementAt(i).value,
-                    subtitle: _supportedApps.entries.elementAt(i).key,
-                    checked: _selectedPackages.contains(
-                      _supportedApps.entries.elementAt(i).key,
-                    ),
+                    title: entry.value,
+                    subtitle: entry.key,
+                    checked: _selectedPackages.contains(entry.key),
                     onChanged:
                         (checked) => setState(() {
                           if (checked) {
-                            _selectedPackages.add(
-                              _supportedApps.entries.elementAt(i).key,
-                            );
+                            _selectedPackages.add(entry.key);
                           } else {
-                            _selectedPackages.remove(
-                              _supportedApps.entries.elementAt(i).key,
-                            );
+                            _selectedPackages.remove(entry.key);
                           }
                         }),
                   ),
-                  if (i < _supportedApps.entries.length - 1) const FfDivider(),
-                ],
               ],
             ),
-          ),
 
-          const SizedBox(height: FfSpace.x2l),
+            const SizedBox(height: FfSpace.x2l),
 
-          // ── 3. Save Controls ─────────────────────────────────────────
-          FfButton(
-            label:
-                hasAccess
-                    ? 'Enable On-Device Notification Detection'
-                    : 'Open Android Notification Access',
-            leadingIcon: const Icon(Icons.check_rounded, size: 18),
-            onPressed: () async {
-              if (!hasAccess) {
-                await ref
-                    .read(ingestionCoordinatorProvider)
-                    .openNotificationAccessSettings();
-                return;
-              }
-              final settings = ref.read(settingsStreamProvider).value;
-              if (settings != null) {
-                final enabledSettings = settings.copyWith(
-                  isNotificationDetectionEnabled: true,
-                  selectedNotificationPackages: _selectedPackages.toList(),
-                );
-                await ref
-                    .read(settingsControllerProvider.notifier)
-                    .updateSettings(enabledSettings);
-                await ref
-                    .read(ingestionCoordinatorProvider)
-                    .configure(enabledSettings);
-                if (context.mounted) {
-                  FfToast.show(
-                    context,
-                    message: 'On-device notification detection enabled.',
-                  );
+            // ── 5. Save Controls ─────────────────────────────────────────
+            FfButton(
+              label:
+                  hasAccess
+                      ? 'Enable On-Device Notification Detection'
+                      : 'Open Android Notification Access',
+              variant: FfButtonVariant.primary,
+              leadingIcon: const Icon(Icons.check_rounded, size: 18),
+              onPressed: () async {
+                if (!hasAccess) {
+                  await ref
+                      .read(ingestionCoordinatorProvider)
+                      .openNotificationAccessSettings();
+                  return;
                 }
-              }
-            },
-          ),
+                final settings = ref.read(settingsStreamProvider).value;
+                if (settings != null) {
+                  final enabledSettings = settings.copyWith(
+                    isNotificationDetectionEnabled: true,
+                    selectedNotificationPackages: _selectedPackages.toList(),
+                  );
+                  await ref
+                      .read(settingsControllerProvider.notifier)
+                      .updateSettings(enabledSettings);
+                  await ref
+                      .read(ingestionCoordinatorProvider)
+                      .configure(enabledSettings);
+                  if (context.mounted) {
+                    FfToast.show(
+                      context,
+                      message: 'On-device notification detection enabled.',
+                    );
+                  }
+                }
+              },
+            ),
 
-          const SizedBox(height: FfSpace.x4l),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
+            const SizedBox(height: FfSpace.x4l),
+          ],
         ),
       ),
     );
