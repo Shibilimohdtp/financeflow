@@ -41,7 +41,8 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | More | Backup, restore preview, export | `backup/backup_screen.dart`, `restore_preview_screen.dart`, `export/export_screen.dart` | F | Bloom (this commit) | DS-B9 chat | Backup in Pattern F status hero, restore preview 2-step breakdown, export with pills & privacy badge |
 | More | Alerts inbox, alert settings | `alerts/alerts_inbox_screen.dart`, `alert_settings_sheet.dart` | A/B hybrid / E | Bloom (this commit) | — | Alerts inbox redesigned as Pattern A/B hybrid on FfAurora with command hero card (dusk/moss/rose), split Geist numerals, FfPillBar filter, FfGroupedContainer sections, contextual CTAs, FfShape squircle swipe-to-dismiss, and calm empty state; alert settings in Pattern E |
 | More | Branding preview | `settings/branding_preview_screen.dart` | — | Tokens | — | Replaced by the debug gallery (DS-10) |
-| Accounts | Accounts list | `accounts/accounts_screen.dart` | C | Bloom (65ff966) | — | Add/edit account sheet inside the file is Tokens |
+| Accounts | Accounts list | `accounts/accounts_screen.dart` | C | Bloom (65ff966) | — | Add/edit account sheet extracted to add_edit_account_sheet.dart (DS-B11 in progress) |
+| Accounts | Add/edit account sheet | `accounts/add_edit_account_sheet.dart` | E | Tokens (B11a extracted) | DS-B11 chat | Extracted in B11a with dedicated widget tests; Stillwater Bloom redesign in progress |
 | Loans | Loans list | `loans/loans_screen.dart` | C | Bloom (65ff966) | — | |
 | Loans | Loan detail | `loans/loan_detail_screen.dart` | D | Bloom (65ff966) | — | Next-EMI and info sections inside are Tokens; hero figures use `FfHeroFigures` (DS-B7a) |
 | Loans | EMI schedule, add/edit loan, payment account picker | `loans/widgets/emi_schedule_view.dart`, `add_edit_loan_sheet.dart`, `payment_account_picker.dart` | B / E | Tokens | — | |
