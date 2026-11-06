@@ -66,6 +66,14 @@ copy the reference imagery.
 - In `05-screen-status.md` and `CHANGELOG.md` change only your own rows, re-reading each file right before editing.
   Commit only your own paths.
 
+## Overlap with DS-B17
+
+App Lock / Security / PIN / lock screen, Export, and CSV import also have their own prompt
+(`17-lock-export-import-redesign.md`, DS-B17). Check the CHANGELOG In flight table. If DS-B17 is running or has
+landed, **skip B16f, the Export part of B16g and any CSV import work**, keep only their entry rows working, and design
+the Settings hub around them (status cards and links). If DS-B17 has not started, ask me which chat owns them before
+touching those files.
+
 ## What exists today (verify, do not trust)
 
 - **More hub**: vault card (backup freshness, lock state, "data stays on this device"), then sections "Your data"
