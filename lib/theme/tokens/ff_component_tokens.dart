@@ -367,6 +367,25 @@ abstract final class FfBadgeTokens {
   static const double gap = FfSpace.x2s;
 }
 
+/// Quick toggle tiles on More hub (DS-B16a).
+abstract final class FfQuickToggleTokens {
+  static const double minHeight = 76;
+  static const double radius = FfRadius.md;
+  static const double iconSize = 20;
+}
+
+/// Theme preview cards (DS-B16a).
+abstract final class FfThemePreviewTokens {
+  static const double width = 96;
+  static const double height = 132;
+  static const double radius = FfRadius.lg;
+}
+
+/// Hold to confirm destructive button (DS-B16a).
+abstract final class FfHoldToConfirmTokens {
+  static const Duration holdDuration = Duration(milliseconds: 2500);
+}
+
 /// Same geometry as list rows, so dividers line up across both.
 abstract final class FfKeyValueTokens {
   static const double paddingH = FfRowTokens.paddingH;
