@@ -10,6 +10,7 @@ import '../../repositories/loan_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_navigation.dart';
 import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
 import '../../shared/widgets/ff_surfaces.dart';
@@ -142,6 +143,7 @@ class DashboardScreen extends ConsumerWidget {
           icon: const Icon(Icons.add_rounded),
           label: const Text('Add'),
         ),
+        floatingActionButtonLocation: FfDock.fabLocation,
         body: RefreshIndicator(
           color: context.ff.color.actionPrimary,
           onRefresh: () async {
@@ -473,7 +475,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
 
-                const SizedBox(height: FfSpace.x4l),
+                SizedBox(height: FfDock.insetOf(context)),
               ],
             ),
           ),

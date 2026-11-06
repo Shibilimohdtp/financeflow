@@ -59,40 +59,35 @@ class TotalBalanceHero extends StatelessWidget {
                 ),
               ),
               if (onManageAccounts == null)
-                Flexible(child: Text(accountLabel, style: ff.text.label))
+                Text(accountLabel, style: ff.text.label)
               else
-                Flexible(
-                  child: TextButton(
-                    key: const ValueKey('balance-accounts'),
-                    onPressed: onManageAccounts,
-                    style: TextButton.styleFrom(
-                      foregroundColor: ff.color.textSecondary,
-                      minimumSize: const Size(
-                        FfTouch.minTarget,
-                        FfTouch.minTarget,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.xs,
-                      ),
-                      tapTargetSize: MaterialTapTargetSize.padded,
+                TextButton(
+                  key: const ValueKey('balance-accounts'),
+                  onPressed: onManageAccounts,
+                  style: TextButton.styleFrom(
+                    foregroundColor: ff.color.textSecondary,
+                    minimumSize: const Size(0, FfTouch.minTarget),
+                    padding: const EdgeInsetsDirectional.only(
+                      start: FfSpace.sm,
+                      end: FfSpace.x2s,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            accountLabel,
-                            style: ff.text.label.copyWith(
-                              color: ff.color.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    alignment: Alignment.centerRight,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        accountLabel,
+                        style: ff.text.label.copyWith(
+                          color: ff.color.textSecondary,
                         ),
-                        const SizedBox(width: FfSpace.x3s),
-                        const Icon(Icons.arrow_outward_rounded, size: 14),
-                      ],
-                    ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(width: FfSpace.x3s),
+                      const Icon(Icons.arrow_outward_rounded, size: 14),
+                    ],
                   ),
                 ),
             ],

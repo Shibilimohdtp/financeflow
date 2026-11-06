@@ -5,6 +5,7 @@ import '../../core/extensions/context_extensions.dart';
 import '../../models/budget.dart';
 import '../../shared/widgets/ff_confirm_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
+import '../../shared/widgets/ff_navigation.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
@@ -104,6 +105,7 @@ class BudgetsScreen extends ConsumerWidget {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Budget'),
       ),
+      floatingActionButtonLocation: FfDock.fabLocation,
       body: RefreshIndicator(
         color: theme.colorScheme.primary,
         onRefresh: () async {

@@ -26,6 +26,7 @@ import 'widgets/transaction_list_summary.dart';
 import 'widgets/transaction_tile.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_navigation.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
@@ -300,6 +301,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Add'),
               ),
+      floatingActionButtonLocation: FfDock.fabLocation,
       body: Column(
         children: [
           if (pendingCount > 0 && !isReviewSnoozed && !selecting)

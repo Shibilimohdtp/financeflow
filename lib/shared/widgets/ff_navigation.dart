@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -95,15 +97,22 @@ class FfDock extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
+  /// A floating action button location that floats in the bottom-right corner
+  /// cleanly above the dock.
+  static const FloatingActionButtonLocation fabLocation = _FfDockFabLocation();
+
   /// Bottom padding a page needs so its last item clears the dock.
   static double insetOf(BuildContext context) {
     final media = MediaQuery.of(context);
-    if (_useBar(context)) return 0; // a Scaffold bottom bar takes its space
+    if (useBar(context)) return 0; // a Scaffold bottom bar takes its space
     return FfDockTokens.height +
         FfDockTokens.bottomMargin +
         media.padding.bottom +
         FfSpace.sm;
   }
+
+  /// Whether the dock falls back to a full-width bottom bar.
+  static bool useBar(BuildContext context) => _useBar(context);
 
   static bool _useBar(BuildContext context) =>
       MediaQuery.textScalerOf(context).scale(10) / 10 >=
@@ -331,4 +340,37 @@ class _FfCarouselState extends State<FfCarousel> {
       ),
     );
   }
+}
+
+class _FfDockFabLocation extends StandardFabLocation with FabEndOffsetX {
+  const _FfDockFabLocation();
+
+  @override
+  double getOffsetY(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    final double fabHeight = scaffoldGeometry.floatingActionButtonSize.height;
+    final double dockClearance =
+        FfDockTokens.height +
+        FfDockTokens.bottomMargin +
+        scaffoldGeometry.minViewPadding.bottom +
+        FfSpace.md;
+    double fabY =
+        scaffoldGeometry.scaffoldSize.height - dockClearance - fabHeight;
+    final double snackBarHeight = scaffoldGeometry.snackBarSize.height;
+    if (snackBarHeight > 0.0) {
+      fabY = math.min(
+        fabY,
+        scaffoldGeometry.scaffoldSize.height -
+            snackBarHeight -
+            fabHeight -
+            kFloatingActionButtonMargin,
+      );
+    }
+    return fabY + adjustment;
+  }
+
+  @override
+  String toString() => 'FfDock.fabLocation';
 }

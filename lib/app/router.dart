@@ -107,6 +107,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         }
       },
       child: Scaffold(
+        extendBody: !FfDock.useBar(context),
         body: IndexedStack(index: currentIndex, children: screens),
         // The floating dock sits in the bottom bar slot (not over the body),
         // so every tab keeps its own scroll padding and FAB placement.
