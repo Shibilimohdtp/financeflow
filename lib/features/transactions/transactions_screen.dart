@@ -33,7 +33,6 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_corner_badge.dart';
 import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
@@ -371,6 +370,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             onPressed: _openReviewQueue,
           ),
         FfCircleButton(
+          icon: Icons.search_rounded,
+          tooltip: 'Search transactions',
+          soft: true,
+          onPressed: _openSearch,
+        ),
+        const SizedBox(width: FfSpace.xs),
+        FfCircleButton(
           icon: Icons.tune_rounded,
           tooltip: 'Filter & sort',
           soft: true,
@@ -388,106 +394,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ),
           child: Center(
             child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Search pill and kind pills above the list. Tapping the pill opens the
-  /// search bar; the kind pills set a single kind (or All).
-  Widget _filterHeader(TransactionQuery query) {
-    final ff = context.ff;
-    final single = query.kinds.length == 1 ? query.kinds.first : null;
-    void pick(TransactionKind? kind) =>
-        _setQuery(query.copyWith(kinds: kind == null ? const {} : {kind}));
-    const kinds = [
-      TransactionKind.spending,
-      TransactionKind.income,
-      TransactionKind.transfer,
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!_isSearchOpen)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.pageMargin,
-              FfSpace.xs,
-              FfSpace.pageMargin,
-              FfSpace.xs,
-            ),
-            child: Tooltip(
-              message: 'Search transactions',
-              excludeFromSemantics: true,
-              child: Semantics(
-                button: true,
-                label: 'Search transactions',
-                excludeSemantics: true,
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: InkWell(
-                    onTap: _openSearch,
-                    customBorder: FfShape.of(FfRadius.full),
-                    child: Container(
-                      height: FfTouch.minTarget,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.md,
-                      ),
-                      decoration: ShapeDecoration(
-                        shape: FfShape.of(
-                          FfRadius.full,
-                          side: BorderSide(
-                            color: ff.color.borderControl,
-                            width: FfBorderWidth.regular,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search_rounded,
-                            size: FfIconSize.lg,
-                            color: ff.color.textSecondary,
-                          ),
-                          const SizedBox(width: FfSpace.sm),
-                          Expanded(
-                            child: Text(
-                              'Search payee, note or amount',
-                              style: ff.text.body.copyWith(
-                                color: ff.color.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
-          child: Row(
-            children: [
-              FfChip(
-                label: 'All',
-                isSelected: query.kinds.isEmpty,
-                onSelected: () => pick(null),
-              ),
-              for (final kind in kinds) ...[
-                const SizedBox(width: FfPillTokens.gap),
-                FfChip(
-                  label: kind.label,
-                  isSelected: single == kind,
-                  onSelected: () => pick(single == kind ? null : kind),
-                ),
-              ],
-            ],
           ),
         ),
       ],
@@ -587,7 +493,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       controller: _scrollController,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
-        if (!selecting) SliverToBoxAdapter(child: _filterHeader(query)),
         SliverToBoxAdapter(
           child: FfPeriodBar(
             allowAllTime: true,
