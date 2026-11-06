@@ -34,7 +34,6 @@ import '../subscriptions/subscriptions_screen.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
 import 'settings_detail_screen.dart';
-import 'widgets/more_vault_card.dart';
 
 /// The More navigation hub (tab 4): redesigned to Stillwater Bloom as the
 /// launcher hub on FfAurora, combining quick settings toggles, vault status,
@@ -187,16 +186,6 @@ class MoreScreen extends ConsumerWidget {
                     ),
 
                     const SizedBox(height: FfSpace.lg),
-
-                    // ── Vault Hero Card ───────────────────────────────────────────
-                    MoreVaultCard(
-                      settings: settings,
-                      onBackupTap: () => _push(context, const BackupScreen()),
-                      onSecurityTap:
-                          () => _push(context, const SecuritySettingsScreen()),
-                    ),
-
-                    const SizedBox(height: FfSpace.xl),
 
                     // ── 1. Your Data (Finance Modules) ─────────────────────────────
                     const FfSectionHeader(title: 'Your data'),

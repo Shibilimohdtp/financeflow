@@ -85,12 +85,6 @@ void main() {
       expect(find.text('More'), findsOneWidget);
       expect(find.text('Modules & preferences'), findsOneWidget);
 
-      // Vault card
-      expect(find.text('Device Vault'), findsOneWidget);
-      expect(find.text('No backup created yet'), findsOneWidget);
-      expect(find.text('Back up now'), findsOneWidget);
-      expect(find.text('All data stays on this device'), findsOneWidget);
-
       // Section titles (sentence case)
       expect(find.text('Your data'), findsOneWidget);
       expect(find.text('Alerts'), findsOneWidget);
@@ -111,29 +105,6 @@ void main() {
       expect(find.text('Export Data'), findsOneWidget);
       expect(find.text('Import CSV Statement'), findsOneWidget);
       expect(find.text('App Settings'), findsOneWidget);
-    });
-
-    testWidgets('vault card displays backup freshness when backup exists', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final settings = AppSettings(
-        lastBackupDate: DateTime.now(),
-        isPinEnabled: true,
-        isBiometricEnabled: true,
-      );
-
-      await tester.pumpWidget(createMoreScreen(settings: settings));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Backed up today'), findsOneWidget);
-      expect(find.text('App lock active (PIN & Biometrics)'), findsOneWidget);
-      // No "Back up now" warning button when up-to-date
-      expect(find.text('Back up now'), findsNothing);
     });
 
     testWidgets('navigates to SettingsDetailScreen on tapping App Settings', (
