@@ -98,6 +98,11 @@ void main() {
   testWidgets(
     'LendingBorrowingScreen renders hero cards, filters, and records list with advance count badge',
     (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeRepo = FakeMoneyRecordRepository(
         initialRecords: [testRecord1, testRecord2],
         initialAdvances: [testAdvance1, testAdvance2],
