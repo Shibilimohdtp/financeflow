@@ -42,6 +42,12 @@ class ActiveFilterChips extends StatelessWidget {
           'Account';
       chips.add((label: name, without: query.copyWith(clearAccount: true)));
     }
+    if (query.budgetScope != null) {
+      chips.add((
+        label: query.budgetScope!.label,
+        without: query.copyWith(clearBudgetScope: true),
+      ));
+    }
     if (query.categoryId != null) {
       final name =
           categories.where((c) => c.id == query.categoryId).firstOrNull?.name ??

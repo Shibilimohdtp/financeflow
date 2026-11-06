@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/ff_card.dart';
+
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_badge.dart';
+import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_data_viz.dart';
 import '../../../shared/widgets/ff_progress.dart';
+import '../../../shared/widgets/ff_section_header.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
 
 class SavingsGoalsOverviewCard extends StatelessWidget {
   final double totalTarget;
@@ -27,7 +31,8 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final finColors = context.ff.color;
+    final ff = context.ff;
+    final c = ff.color;
 
     if (totalTarget <= 0) return const SizedBox.shrink();
 
@@ -37,142 +42,104 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Savings Goals',
-                  style: context.ff.text.titleSm.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              TextButton(
-                onPressed: onViewGoals,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: const Text('View all'),
-              ),
-            ],
+          FfSectionHeader(
+            title: 'Savings Goals',
+            padding: const EdgeInsets.only(bottom: FfSpace.xs),
+            trailing: TextButton(
+              onPressed: onViewGoals,
+              child: const Text('View all'),
+            ),
           ),
-          const SizedBox(height: FfSpace.xs),
           Semantics(
             container: true,
             label:
                 isPrivacyBlur
                     ? 'Savings goals hidden'
                     : 'Savings Goals: $totalSaved saved towards $totalTarget, $completedCount of $totalGoals reached',
-            child: Material(
-              type: MaterialType.transparency,
-              shape: FfCard.shapeOf(FfDensity.comfortable),
-              child: InkWell(
-                customBorder: FfCard.shapeOf(FfDensity.comfortable),
-                onTap: onViewGoals,
-                child: Ink(
-                  padding: const EdgeInsets.all(FfSpace.md),
-                  decoration: FfCard.decorationOf(
-                    context,
-                    density: FfDensity.comfortable,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: FfCard(
+              density: FfDensity.comfortable,
+              onTap: onViewGoals,
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(FfSpace.x2s),
-                                decoration: BoxDecoration(
-                                  color: finColors.moneyIncome.withValues(
-                                    alpha: 0.12,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    FfRadius.sm,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.flag_rounded,
-                                  color: finColors.moneyIncome,
-                                  size: 16,
-                                ),
-                              ),
-                              const SizedBox(width: FfSpace.sm),
-                              Row(
-                                children: [
-                                  FfAmountText(
-                                    amount: totalSaved,
-                                    size: FfAmountSize.sm,
-                                    isBlurred: isPrivacyBlur,
-                                    showSign: false,
-                                    tone: FfTone.income,
-                                  ),
-                                  const SizedBox(width: FfSpace.x3s),
-                                  Text(
-                                    'Saved',
-                                    style: context.ff.text.body.copyWith(
-                                      color: finColors.moneyIncome,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '$completedCount of $totalGoals reached',
-                            style: context.ff.text.labelSm.copyWith(
-                              color: context.ff.color.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: FfSpace.sm),
-                      FfProgressBar(
+                      FfProgressRing(
                         value: progress,
-                        color: finColors.moneyIncome,
-                        size: FfProgressSize.md,
+                        icon: Icons.savings_outlined,
+                        size: 40,
+                        semanticsLabel:
+                            '${(progress * 100).toStringAsFixed(0)}% of target saved',
+                        color: c.moneyIncome,
                       ),
-                      const SizedBox(height: FfSpace.sm),
+                      const SizedBox(width: FfSpace.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Saved',
+                              style: ff.text.labelSm.copyWith(
+                                color: c.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: FfSpace.x3s),
+                            FfAmountText(
+                              amount: totalSaved,
+                              size: FfAmountSize.lg,
+                              style: FfAmountStyle.split,
+                              tone: FfTone.savings,
+                              showSign: false,
+                              isBlurred: isPrivacyBlur,
+                            ),
+                          ],
+                        ),
+                      ),
+                      FfBadge(
+                        label: '$completedCount of $totalGoals reached',
+                        tone: FfTone.savings,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.md),
+                  FfProgressBar(
+                    value: progress,
+                    tone: FfTone.savings,
+                    size: FfProgressSize.md,
+                  ),
+                  const SizedBox(height: FfSpace.sm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}% of target',
+                        style: ff.text.bodySm.copyWith(color: c.textSecondary),
+                      ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${(progress * 100).toStringAsFixed(0)}% of target',
-                            style: context.ff.text.bodySm.copyWith(
-                              color: context.ff.color.secondary,
+                            'Goal: ',
+                            style: ff.text.bodySm.copyWith(
+                              color: c.textSecondary,
                             ),
                           ),
-                          Row(
-                            children: [
-                              Text(
-                                'Goal: ',
-                                style: context.ff.text.bodySm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                              FfAmountText(
-                                amount: totalTarget,
-                                size: FfAmountSize.sm,
-                                isBlurred: isPrivacyBlur,
-                                showSign: false,
-                                tone: FfTone.neutral,
-                              ),
-                            ],
+                          FfAmountText(
+                            amount: totalTarget,
+                            size: FfAmountSize.sm,
+                            style: FfAmountStyle.inline,
+                            isBlurred: isPrivacyBlur,
+                            showSign: false,
+                            tone: FfTone.neutral,
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
           ),

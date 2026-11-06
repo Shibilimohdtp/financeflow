@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/ff_card.dart';
-import '../../../core/extensions/context_extensions.dart';
+
 import '../../../models/alert_item.dart';
 import '../../../models/loan.dart';
 import '../../../models/subscription.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_badge.dart';
+import '../../../shared/widgets/ff_corner_badge.dart';
+import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_grouped_container.dart';
+import '../../../shared/widgets/ff_icon_tile.dart';
+import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_section_header.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
 
-class ActionableItemData {
+class _ActionableRowData {
   final String id;
   final IconData icon;
-  final Color iconColor;
-  final Color? backgroundColor;
+  final FfTone tone;
+  final FfCorner? corner;
   final String title;
   final String? subtitle;
   final double? amount;
   final String? badgeText;
   final VoidCallback onTap;
 
-  const ActionableItemData({
+  const _ActionableRowData({
     required this.id,
     required this.icon,
-    required this.iconColor,
-    this.backgroundColor,
+    required this.tone,
+    this.corner,
     required this.title,
     this.subtitle,
     this.amount,
@@ -62,21 +68,17 @@ class ActionableItemsSection extends StatelessWidget {
     required this.onOpenAlerts,
   });
 
-  List<ActionableItemData> _buildActionableItems(BuildContext context) {
-    final finColors = context.ff.color;
-    final accentColors = context.ff.color;
-    final items = <ActionableItemData>[];
+  List<_ActionableRowData> _buildItems() {
+    final items = <_ActionableRowData>[];
 
     // 1. Pending Review Imports
     if (pendingReviewCount > 0) {
       items.add(
-        ActionableItemData(
+        _ActionableRowData(
           id: 'pending_review',
           icon: Icons.rate_review_outlined,
-          iconColor: accentColors.accent,
-          backgroundColor: accentColors.accent.withValues(
-            alpha: FfTint.subtle.alpha,
-          ),
+          tone: FfTone.accent,
+          corner: FfCorner.warning,
           title:
               pendingReviewCount == 1
                   ? '1 imported transaction needs review'
@@ -101,14 +103,11 @@ class ActionableItemsSection extends StatelessWidget {
               : 'Due in $days days';
 
       items.add(
-        ActionableItemData(
+        _ActionableRowData(
           id: 'loan_${loan.id}',
           icon: Icons.account_balance_outlined,
-          iconColor: isOverdue ? finColors.moneyExpense : finColors.moneyDebt,
-          backgroundColor: (isOverdue
-                  ? finColors.moneyExpense
-                  : finColors.moneyDebt)
-              .withValues(alpha: FfTint.subtle.alpha),
+          tone: isOverdue ? FfTone.expense : FfTone.debt,
+          corner: isOverdue ? FfCorner.warning : null,
           title: '${loan.name} (${loan.lender})',
           subtitle: badge,
           amount: loan.emiAmount,
@@ -129,13 +128,10 @@ class ActionableItemsSection extends StatelessWidget {
               : 'Renews in $days days';
 
       items.add(
-        ActionableItemData(
+        _ActionableRowData(
           id: 'sub_${sub.id}',
           icon: Icons.repeat_rounded,
-          iconColor: context.ff.color.secondary,
-          backgroundColor: context.ff.color.secondary.withValues(
-            alpha: FfTint.subtle.alpha,
-          ),
+          tone: FfTone.neutral,
           title: sub.merchant,
           subtitle: dueText,
           amount: sub.amount,
@@ -147,13 +143,11 @@ class ActionableItemsSection extends StatelessWidget {
     // 4. Over Budget Notice
     if (overBudgetCount > 0) {
       items.add(
-        ActionableItemData(
+        _ActionableRowData(
           id: 'over_budget',
           icon: Icons.pie_chart_outline_rounded,
-          iconColor: finColors.moneyExpense,
-          backgroundColor: finColors.moneyExpense.withValues(
-            alpha: FfTint.subtle.alpha,
-          ),
+          tone: FfTone.expense,
+          corner: FfCorner.warning,
           title:
               overBudgetCount == 1
                   ? '1 budget reached limit'
@@ -169,129 +163,64 @@ class ActionableItemsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final items = _buildActionableItems(context);
-
+    final items = _buildItems();
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          FfSectionHeader(
+            title: 'Actionable & Upcoming',
+            padding: const EdgeInsets.only(bottom: FfSpace.xs),
+            trailing:
+                items.length > 2
+                    ? Text(
+                      '${items.length} items',
+                      style: context.ff.text.labelSm.copyWith(
+                        color: context.ff.color.textSecondary,
+                      ),
+                    )
+                    : null,
+          ),
+          FfGroupedContainer(
+            dividerInset: FfRowLeading.tile,
             children: [
-              Text(
-                'Actionable & Upcoming',
-                style: context.ff.text.titleSm.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.1,
-                ),
-              ),
-              if (items.length > 2)
-                Text(
-                  '${items.length} items',
-                  style: context.ff.text.labelSm.copyWith(
-                    color: context.ff.color.secondary,
+              for (final item in items)
+                FfRow(
+                  leading: FfIconTile(
+                    icon: item.icon,
+                    tone: item.tone,
+                    corner: item.corner,
                   ),
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.badgeText != null) ...[
+                        FfBadge(label: item.badgeText!, tone: item.tone),
+                        if (item.amount != null)
+                          const SizedBox(width: FfSpace.xs),
+                      ],
+                      if (item.amount != null)
+                        FfAmountText(
+                          amount: item.amount!,
+                          size: FfAmountSize.sm,
+                          style: FfAmountStyle.inline,
+                          isBlurred: isPrivacyBlur,
+                          showSign: false,
+                          tone: FfTone.neutral,
+                        ),
+                    ],
+                  ),
+                  showChevron: true,
+                  onTap: item.onTap,
                 ),
             ],
-          ),
-          const SizedBox(height: FfSpace.xs),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            separatorBuilder:
-                (context, index) => const SizedBox(height: FfSpace.xs),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _buildItemCard(context, theme, item);
-            },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildItemCard(
-    BuildContext context,
-    ThemeData theme,
-    ActionableItemData item,
-  ) {
-    return Material(
-      type: MaterialType.transparency,
-      shape: FfCard.shapeOf(FfDensity.compact),
-      child: InkWell(
-        onTap: item.onTap,
-        borderRadius: BorderRadius.circular(FfRadius.md),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(
-            horizontal: FfSpace.md,
-            vertical: FfSpace.sm,
-          ),
-          decoration: FfCard.decorationOf(context, density: FfDensity.compact),
-          child: Row(
-            children: [
-              Container(
-                width: FfRowTokens.iconTile,
-                height: FfRowTokens.iconTile,
-                decoration: BoxDecoration(
-                  color:
-                      item.backgroundColor ??
-                      item.iconColor.withValues(alpha: FfTint.subtle.alpha),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(item.icon, size: 18, color: item.iconColor),
-              ),
-              const SizedBox(width: FfSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.title,
-                      style: context.ff.text.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (item.subtitle != null) ...[
-                      const SizedBox(height: FfSpace.x3s),
-                      Text(
-                        item.subtitle!,
-                        style: context.ff.text.label.copyWith(
-                          color: context.ff.color.secondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (item.amount != null) ...[
-                const SizedBox(width: FfSpace.sm),
-                FfAmountText(
-                  amount: item.amount!,
-                  size: FfAmountSize.sm,
-                  isBlurred: isPrivacyBlur,
-                  showSign: false,
-                  tone: FfTone.neutral,
-                ),
-              ],
-              const SizedBox(width: FfSpace.xs),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: context.ff.color.secondary,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

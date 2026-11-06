@@ -53,8 +53,10 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
                 FfSpace.pageMargin -
                 (FfTouch.minTarget - FfRoundButtonTokens.size) / 2,
             top: FfSpace.xs,
+            bottom: FfSpace.x2s,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
@@ -63,10 +65,13 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     Text(
                       '${_getGreeting()} · $formattedDate',
-                      style: ff.text.label,
+                      style: ff.text.labelSm.copyWith(
+                        color: ff.color.textSecondary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: FfSpace.x3s),
                     Text(
                       'FinanceFlow',
                       style: ff.text.titleLg,

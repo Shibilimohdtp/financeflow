@@ -53,7 +53,7 @@ class TotalBalanceHero extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Total Balance',
-                  style: ff.text.label,
+                  style: ff.text.label.copyWith(color: ff.color.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -71,8 +71,8 @@ class TotalBalanceHero extends StatelessWidget {
                         FfTouch.minTarget,
                         FfTouch.minTarget,
                       ),
-                      padding: const EdgeInsetsDirectional.only(
-                        start: FfSpace.sm,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: FfSpace.xs,
                       ),
                       tapTargetSize: MaterialTapTargetSize.padded,
                     ),
@@ -82,15 +82,15 @@ class TotalBalanceHero extends StatelessWidget {
                         Flexible(
                           child: Text(
                             accountLabel,
-                            style: ff.text.label,
+                            style: ff.text.label.copyWith(
+                              color: ff.color.textSecondary,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          size: FfIconSize.sm,
-                        ),
+                        const SizedBox(width: FfSpace.x3s),
+                        const Icon(Icons.arrow_outward_rounded, size: 14),
                       ],
                     ),
                   ),
@@ -133,11 +133,14 @@ class TotalBalanceHero extends StatelessWidget {
             ],
           ),
           if (activeAccountsCount == 0 && onAddAccount != null)
-            TextButton.icon(
-              key: const ValueKey('balance-add-account'),
-              onPressed: onAddAccount,
-              icon: const Icon(Icons.add_rounded, size: FfIconSize.md),
-              label: const Text('Add your first account'),
+            Padding(
+              padding: const EdgeInsets.only(top: FfSpace.xs),
+              child: TextButton.icon(
+                key: const ValueKey('balance-add-account'),
+                onPressed: onAddAccount,
+                icon: const Icon(Icons.add_rounded, size: FfIconSize.md),
+                label: const Text('Add your first account'),
+              ),
             ),
         ],
       ),

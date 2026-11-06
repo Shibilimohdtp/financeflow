@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/ff_card.dart';
+
 import '../../../models/budget.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
+import '../../../shared/widgets/ff_badge.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_divider.dart';
-import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_icon_tile.dart';
 import '../../../shared/widgets/ff_progress.dart';
+import '../../../shared/widgets/ff_section_header.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
   final double totalBudgeted;
@@ -30,7 +34,8 @@ class BudgetOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final finColors = context.ff.color;
+    final ff = context.ff;
+    final c = ff.color;
 
     if (totalBudgeted <= 0) return const SizedBox.shrink();
 
@@ -41,32 +46,16 @@ class BudgetOverviewCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Budgets & Spending',
-                  style: context.ff.text.titleSm.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              TextButton(
-                onPressed: onViewBudgets,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: const Text('Manage'),
-              ),
-            ],
+          FfSectionHeader(
+            title: 'Budgets & Spending',
+            padding: const EdgeInsets.only(bottom: FfSpace.xs),
+            trailing: TextButton(
+              onPressed: onViewBudgets,
+              child: const Text('Manage'),
+            ),
           ),
-          const SizedBox(height: FfSpace.xs),
           Semantics(
             container: true,
             label:
@@ -75,208 +64,178 @@ class BudgetOverviewCard extends StatelessWidget {
                     : isExceeded
                     ? 'Budget exceeded by ${totalSpent - totalBudgeted}'
                     : 'Budget remaining: $totalRemaining out of $totalBudgeted',
-            child: Material(
-              type: MaterialType.transparency,
-              shape: FfCard.shapeOf(FfDensity.comfortable),
-              child: InkWell(
-                customBorder: FfCard.shapeOf(FfDensity.comfortable),
-                onTap: onViewBudgets,
-                child: Ink(
-                  padding: const EdgeInsets.all(FfSpace.md),
-                  decoration: FfCard.decorationOf(
-                    context,
-                    density: FfDensity.comfortable,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: FfCard(
+              density: FfDensity.comfortable,
+              onTap: onViewBudgets,
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Overall Status Row
+                      FfIconTile(
+                        icon: Icons.pie_chart_outline_rounded,
+                        tone: isExceeded ? FfTone.expense : FfTone.primary,
+                      ),
+                      const SizedBox(width: FfSpace.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isExceeded
+                                  ? 'Over planned budget'
+                                  : 'Remaining budget',
+                              style: ff.text.labelSm.copyWith(
+                                color: c.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: FfSpace.x3s),
+                            FfAmountText(
+                              amount:
+                                  isExceeded
+                                      ? (totalSpent - totalBudgeted)
+                                      : totalRemaining,
+                              size: FfAmountSize.lg,
+                              style: FfAmountStyle.split,
+                              tone:
+                                  isExceeded ? FfTone.expense : FfTone.neutral,
+                              showSign: isExceeded,
+                              isBlurred: isPrivacyBlur,
+                            ),
+                          ],
+                        ),
+                      ),
+                      FfBadge(
+                        label:
+                            isExceeded
+                                ? 'Over limit'
+                                : '${(percentage * 100).toStringAsFixed(0)}% used',
+                        tone: isExceeded ? FfTone.expense : FfTone.primary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.md),
+                  FfProgressBar(
+                    value: percentage,
+                    tone: isExceeded ? FfTone.expense : FfTone.primary,
+                    size: FfProgressSize.md,
+                  ),
+                  const SizedBox(height: FfSpace.sm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(FfSpace.x2s),
-                                decoration: BoxDecoration(
-                                  color: (isExceeded
-                                          ? finColors.moneyExpense
-                                          : context.ff.color.actionPrimary)
-                                      .withValues(alpha: FfTint.subtle.alpha),
-                                  borderRadius: BorderRadius.circular(
-                                    FfRadius.sm,
+                          Text(
+                            'Spent: ',
+                            style: ff.text.bodySm.copyWith(
+                              color: c.textSecondary,
+                            ),
+                          ),
+                          FfAmountText(
+                            amount: totalSpent,
+                            size: FfAmountSize.sm,
+                            style: FfAmountStyle.inline,
+                            isBlurred: isPrivacyBlur,
+                            showSign: false,
+                            tone: FfTone.neutral,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            'Limit: ',
+                            style: ff.text.bodySm.copyWith(
+                              color: c.textSecondary,
+                            ),
+                          ),
+                          FfAmountText(
+                            amount: totalBudgeted,
+                            size: FfAmountSize.sm,
+                            style: FfAmountStyle.inline,
+                            isBlurred: isPrivacyBlur,
+                            showSign: false,
+                            tone: FfTone.neutral,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (activeBudgets != null && activeBudgets!.isNotEmpty) ...[
+                    const SizedBox(height: FfSpace.sm),
+                    const FfDivider(),
+                    const SizedBox(height: FfSpace.sm),
+                    for (final summary in activeBudgets!.take(3)) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: FfSpace.x3s,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                if (summary.budget.categoryIcon != null) ...[
+                                  FfCategoryTile(
+                                    iconIdentifier:
+                                        summary.budget.categoryIcon!,
+                                    colorTokenIdentifier:
+                                        summary.budget.categoryColor ?? 'blue',
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: FfSpace.xs),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    summary.budget.name,
+                                    style: ff.text.titleSm,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                child: Icon(
-                                  Icons.pie_chart_outline_rounded,
-                                  color:
-                                      isExceeded
-                                          ? finColors.moneyExpense
-                                          : context.ff.color.actionPrimary,
-                                  size: 16,
+                                FfAmountText(
+                                  amount: summary.amountSpent,
+                                  size: FfAmountSize.sm,
+                                  style: FfAmountStyle.inline,
+                                  isBlurred: isPrivacyBlur,
+                                  showSign: false,
                                 ),
-                              ),
-                              const SizedBox(width: FfSpace.sm),
-                              Text(
-                                isExceeded
-                                    ? 'Over planned budget'
-                                    : 'Remaining budget',
-                                style: context.ff.text.body.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isExceeded
-                                          ? finColors.moneyExpense
-                                          : context.ff.color.textPrimary,
+                                Text(
+                                  ' / ',
+                                  style: ff.text.labelSm.copyWith(
+                                    color: c.textSecondary,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '${(percentage * 100).toStringAsFixed(0)}% used',
-                            style: context.ff.text.labelSm.copyWith(
-                              color:
-                                  isExceeded
-                                      ? finColors.moneyExpense
-                                      : context.ff.color.secondary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: FfSpace.sm),
-                      FfProgressBar(
-                        value: percentage,
-                        color:
-                            isExceeded
-                                ? finColors.moneyExpense
-                                : context.ff.color.actionPrimary,
-                        size: FfProgressSize.md,
-                      ),
-                      const SizedBox(height: FfSpace.sm),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Spent: ',
-                                style: context.ff.text.bodySm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                              FfAmountText(
-                                amount: totalSpent,
-                                size: FfAmountSize.sm,
-                                isBlurred: isPrivacyBlur,
-                                showSign: false,
-                                tone: FfTone.neutral,
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                'Limit: ',
-                                style: context.ff.text.bodySm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                              FfAmountText(
-                                amount: totalBudgeted,
-                                size: FfAmountSize.sm,
-                                isBlurred: isPrivacyBlur,
-                                showSign: false,
-                                tone: FfTone.neutral,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      // Optional Individual Active Budgets Breakdown
-                      if (activeBudgets != null &&
-                          activeBudgets!.isNotEmpty) ...[
-                        const SizedBox(height: FfSpace.sm),
-                        const FfDivider(),
-                        const SizedBox(height: FfSpace.sm),
-                        ...activeBudgets!.take(3).map((summary) {
-                          final pct = summary.percentageUsed.clamp(0.0, 1.0);
-                          final isOver = summary.isExceeded;
-                          final isNear = summary.isApproachingThreshold;
-                          final barColor =
-                              isOver
-                                  ? finColors.moneyExpense
-                                  : isNear
-                                  ? context.ff.color.statusWarning
-                                  : context.ff.color.actionPrimary;
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: FfSpace.x3s,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    if (summary.budget.categoryIcon !=
-                                        null) ...[
-                                      FfCategoryTile(
-                                        iconIdentifier:
-                                            summary.budget.categoryIcon!,
-                                        colorTokenIdentifier:
-                                            summary.budget.categoryColor ??
-                                            'blue',
-                                        size: 24,
-                                      ),
-                                      const SizedBox(width: FfSpace.xs),
-                                    ],
-                                    Expanded(
-                                      child: Text(
-                                        summary.budget.name,
-                                        style: context.ff.text.bodySm.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    FfAmountText(
-                                      amount: summary.amountSpent,
-                                      size: FfAmountSize.sm,
-                                      isBlurred: isPrivacyBlur,
-                                      showSign: false,
-                                    ),
-                                    Text(
-                                      ' / ',
-                                      style: context.ff.text.bodySm.copyWith(
-                                        color: context.ff.color.secondary,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    FfAmountText(
-                                      amount: summary.budget.amountLimit,
-                                      size: FfAmountSize.sm,
-                                      isBlurred: isPrivacyBlur,
-                                      showSign: false,
-                                      tone: FfTone.neutral,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: FfSpace.x3s),
-                                FfProgressBar(
-                                  value: pct,
-                                  color: barColor,
-                                  size: FfProgressSize.sm,
+                                FfAmountText(
+                                  amount: summary.budget.amountLimit,
+                                  size: FfAmountSize.sm,
+                                  style: FfAmountStyle.inline,
+                                  isBlurred: isPrivacyBlur,
+                                  showSign: false,
+                                  tone: FfTone.neutral,
                                 ),
                               ],
                             ),
-                          );
-                        }),
-                      ],
+                            const SizedBox(height: FfSpace.x3s),
+                            FfProgressBar(
+                              value: summary.percentageUsed.clamp(0.0, 1.0),
+                              tone:
+                                  summary.isExceeded
+                                      ? FfTone.expense
+                                      : summary.isApproachingThreshold
+                                      ? FfTone.warning
+                                      : FfTone.primary,
+                              size: FfProgressSize.sm,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
-                  ),
-                ),
+                  ],
+                ],
               ),
             ),
           ),

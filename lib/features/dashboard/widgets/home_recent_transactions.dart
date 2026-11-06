@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/ff_card.dart';
+
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/transaction.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
-import '../../../shared/widgets/ff_empty_state.dart';
-import '../../../shared/widgets/ff_source_badge.dart';
 import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_empty_state.dart';
+import '../../../shared/widgets/ff_grouped_container.dart';
+import '../../../shared/widgets/ff_section_header.dart';
+import '../../../shared/widgets/ff_source_badge.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
 
 class HomeRecentTransactions extends StatelessWidget {
   final List<Transaction> transactions;
@@ -27,42 +31,25 @@ class HomeRecentTransactions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Recent Transactions',
-                  style: context.ff.text.titleSm.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                ),
-                onPressed: onViewAll,
-                child: const Text('View all'),
-              ),
-            ],
+          FfSectionHeader(
+            title: 'Recent Transactions',
+            padding: const EdgeInsets.only(bottom: FfSpace.xs),
+            trailing: TextButton(
+              onPressed: onViewAll,
+              child: const Text('View all'),
+            ),
           ),
-          const SizedBox(height: FfSpace.xs),
           if (transactions.isEmpty)
-            Container(
+            FfCard(
+              density: FfDensity.compact,
               padding: const EdgeInsets.all(FfSpace.lg),
-              decoration: FfCard.decorationOf(
-                context,
-                density: FfDensity.compact,
-              ),
               child: FfEmptyState(
                 icon: Icons.receipt_long_outlined,
                 title: 'No transactions yet',
@@ -73,101 +60,94 @@ class HomeRecentTransactions extends StatelessWidget {
               ),
             )
           else
-            Container(
-              decoration: FfCard.decorationOf(
-                context,
-                density: FfDensity.compact,
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: transactions.length,
-                separatorBuilder: (context, index) => const FfDivider(),
-                itemBuilder: (context, index) {
-                  final tx = transactions[index];
-                  return InkWell(
-                    onTap: () => onOpenDetail(tx),
-                    borderRadius: BorderRadius.vertical(
-                      top:
-                          index == 0
-                              ? const Radius.circular(FfRadius.lg)
-                              : Radius.zero,
-                      bottom:
-                          index == transactions.length - 1
-                              ? const Radius.circular(FfRadius.lg)
-                              : Radius.zero,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.md,
-                        vertical: FfSpace.sm,
-                      ),
-                      child: Row(
-                        children: [
-                          FfCategoryTile(
-                            iconIdentifier: tx.categoryIcon,
-                            colorTokenIdentifier: tx.categoryColor,
-                            size: 36,
-                          ),
-                          const SizedBox(width: FfSpace.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  tx.merchant.isNotEmpty
-                                      ? tx.merchant
-                                      : tx.categoryName,
-                                  style: context.ff.text.titleSm.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: FfSpace.x3s),
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        DateFormatter.formatTransactionDate(
-                                          tx.date,
-                                        ),
-                                        style: context.ff.text.bodySm.copyWith(
-                                          fontSize: 11,
-                                          color: context.ff.color.secondary,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: FfSpace.xs),
-                                    Flexible(
-                                      child: FfSourceBadge(
-                                        source: tx.source,
-                                        sourceName: tx.sourceName,
-                                        isMerged: tx.mergedSources.length > 1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+            FfGroupedContainer(
+              dividerInset: FfRowLeading.tile,
+              children: [
+                for (final tx in transactions)
+                  Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      onTap: () => onOpenDetail(tx),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: FfSpace.md,
+                          vertical: FfSpace.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            FfCategoryTile(
+                              iconIdentifier: tx.categoryIcon,
+                              colorTokenIdentifier: tx.categoryColor,
+                              size: 40,
                             ),
-                          ),
-                          const SizedBox(width: FfSpace.sm),
-                          FfAmountText(
-                            amount: tx.amount,
-                            type: tx.type,
-                            size: FfAmountSize.md,
-                            isBlurred: isPrivacyBlur,
-                            showSign: true,
-                          ),
-                        ],
+                            const SizedBox(width: FfSpace.sm),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    tx.merchant.isNotEmpty
+                                        ? tx.merchant
+                                        : tx.categoryName,
+                                    style: ff.text.titleSm,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: FfSpace.x3s),
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          DateFormatter.formatTransactionDate(
+                                            tx.date,
+                                          ),
+                                          style: ff.text.labelSm.copyWith(
+                                            color: ff.color.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: FfSpace.xs),
+                                      Flexible(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerLeft,
+                                          child: FfSourceBadge(
+                                            source: tx.source,
+                                            sourceName: tx.sourceName,
+                                            isMerged:
+                                                tx.mergedSources.length > 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: FfSpace.sm),
+                            FfAmountText(
+                              amount:
+                                  tx.type == TransactionType.income
+                                      ? tx.amount
+                                      : -tx.amount,
+                              size: FfAmountSize.sm,
+                              style: FfAmountStyle.inline,
+                              isBlurred: isPrivacyBlur,
+                              tone:
+                                  tx.type == TransactionType.income
+                                      ? FfTone.income
+                                      : FfTone.neutral,
+                              showSign: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+              ],
             ),
         ],
       ),

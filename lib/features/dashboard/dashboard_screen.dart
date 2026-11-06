@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/period/period_format.dart';
+import '../../core/period/report_period_provider.dart';
 import '../../models/loan.dart';
 import '../../models/subscription.dart';
 import '../../models/transaction.dart';
 import '../../repositories/alert_repository.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/subscription_repository.dart';
+import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../theme/ff.dart';
 import '../accounts/accounts_controller.dart';
 import '../alerts/alerts_inbox_screen.dart';
 import '../budgets/budgets_controller.dart';
@@ -28,13 +35,6 @@ import 'widgets/home_loans_overview.dart';
 import 'widgets/home_recent_transactions.dart';
 import 'widgets/savings_goals_overview_card.dart';
 import 'widgets/total_balance_hero.dart';
-import '../../core/period/period_format.dart';
-import '../../core/period/report_period_provider.dart';
-import '../../shared/widgets/ff_period_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_surfaces.dart';
-import '../../theme/ff.dart';
 
 class DashboardScreen extends ConsumerWidget {
   final VoidCallback onAddTransaction;
@@ -190,7 +190,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
 
-                const SizedBox(height: FfSpace.md),
+                const SizedBox(height: FfSpace.lg),
 
                 // 3. Actionable & Upcoming Items
                 ActionableItemsSection(
@@ -256,17 +256,13 @@ class DashboardScreen extends ConsumerWidget {
                           onOpenAnalytics: onOpenAnalytics,
                         ),
                     loading:
-                        () => FfSkeletonLoader(
-                          child: Container(
-                            height: 160,
-                            decoration: FfCard.decorationOf(
-                              context,
-                              density: FfDensity.compact,
-                            ),
-                            padding: const EdgeInsets.all(FfSpace.lg),
+                        () => const FfCard(
+                          density: FfDensity.comfortable,
+                          padding: EdgeInsets.all(FfSpace.lg),
+                          child: FfSkeletonLoader(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
+                              children: [
                                 FfSkeletonBlock(width: 100, height: 12),
                                 SizedBox(height: FfSpace.sm),
                                 FfSkeletonBlock(width: 140, height: 28),
@@ -287,27 +283,26 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ),
                     error:
-                        (e, _) => Container(
+                        (e, _) => FfCard(
+                          density: FfDensity.comfortable,
                           padding: const EdgeInsets.symmetric(
                             horizontal: FfSpace.md,
                             vertical: FfSpace.sm,
-                          ),
-                          decoration: FfCard.decorationOf(
-                            context,
-                            density: FfDensity.compact,
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.wifi_off_rounded,
                                 size: 16,
-                                color: context.ff.color.secondary,
+                                color: context.ff.color.textSecondary,
                               ),
                               const SizedBox(width: FfSpace.sm),
                               Expanded(
                                 child: Text(
                                   'Could not load cash flow data',
-                                  style: context.ff.text.bodySm,
+                                  style: context.ff.text.bodySm.copyWith(
+                                    color: context.ff.color.textSecondary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -315,8 +310,6 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                   ),
                 ),
-
-                const SizedBox(height: FfSpace.lg),
 
                 // 5. Budgets & Spending Overview
                 overallBudgetAsync.when(
@@ -403,11 +396,9 @@ class DashboardScreen extends ConsumerWidget {
                           horizontal: FfSpace.pageMargin,
                         ),
                         child: FfSkeletonLoader(
-                          child: Container(
-                            decoration: FfCard.decorationOf(
-                              context,
-                              density: FfDensity.compact,
-                            ),
+                          child: FfCard(
+                            density: FfDensity.compact,
+                            padding: const EdgeInsets.all(FfSpace.md),
                             child: Column(
                               children: const [
                                 FfTransactionSkeletonRow(),
@@ -425,24 +416,23 @@ class DashboardScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                           horizontal: FfSpace.pageMargin,
                         ),
-                        child: Container(
+                        child: FfCard(
+                          density: FfDensity.compact,
                           padding: const EdgeInsets.all(FfSpace.md),
-                          decoration: FfCard.decorationOf(
-                            context,
-                            density: FfDensity.compact,
-                          ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.error_outline_rounded,
                                 size: 18,
-                                color: context.ff.color.secondary,
+                                color: context.ff.color.textSecondary,
                               ),
                               const SizedBox(width: FfSpace.sm),
                               Expanded(
                                 child: Text(
                                   'Could not load transactions',
-                                  style: context.ff.text.bodySm,
+                                  style: context.ff.text.bodySm.copyWith(
+                                    color: context.ff.color.textSecondary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -453,7 +443,7 @@ class DashboardScreen extends ConsumerWidget {
 
                 const SizedBox(height: FfSpace.x2l),
 
-                // 13. Reassuring Offline Status Badge Footer
+                // 9. Reassuring Offline Status Badge Footer
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: FfSpace.pageMargin,
@@ -466,14 +456,14 @@ class DashboardScreen extends ConsumerWidget {
                         Icon(
                           Icons.shield_outlined,
                           size: 14,
-                          color: context.ff.color.secondary,
+                          color: context.ff.color.textSecondary,
                         ),
                         const SizedBox(width: FfSpace.xs),
                         Flexible(
                           child: Text(
                             'On-device & private — offline first.',
                             style: context.ff.text.bodySm.copyWith(
-                              color: context.ff.color.secondary,
+                              color: context.ff.color.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),

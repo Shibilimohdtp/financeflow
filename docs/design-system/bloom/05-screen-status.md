@@ -23,10 +23,7 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 
 | Area | Screen / widget | File(s) | Pattern | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
-| Home | Dashboard | `dashboard/dashboard_screen.dart` | A | Bloom (759f13b) | — | |
-| Home | Header, balance, accounts carousel, loans hero | `dashboard/widgets/home_header.dart`, `total_balance_hero.dart`, `home_accounts_carousel.dart`, `home_loans_overview.dart` | A | Bloom (759f13b) | — | |
-| Home | Cash flow, actionable, recent, goals cards | `dashboard/widgets/cash_flow_card.dart`, `actionable_items_section.dart`, `home_recent_transactions.dart`, `savings_goals_overview_card.dart` | A | Bloom shell, inner layout Tokens | — | Inner layouts can be refined (e.g. cash flow chart → `FfLineChart`, goals → tide hero) |
-| Home | Budget overview card | `dashboard/widgets/budget_overview_card.dart` | A | Bloom shell, inner Tokens | DS-B7 chat | Redo together with Budgets |
+| Home | Dashboard & all widgets (header, balance, carousel, actionable, cash flow, budgets, loans, goals, recent transactions) | `dashboard/dashboard_screen.dart`, `dashboard/widgets/*` | A | Bloom (0b40da9) | — | Full Stillwater Bloom redesign: bespoke header with brand mark, command balance anchor, FfGroupedContainer actionable rows with FfIconTiles, restyled CashFlowCard with FfBarChart & calm income/expense tiles, Bloom budget card with FfProgressBar, Bloom savings goals with FfProgressRing, and Money-matched recent transactions |
 | Home | Month selector header | `dashboard/widgets/month_selector_header.dart` | — | Tokens | DS-B7 chat | Not imported anywhere (Budgets has a private copy); delete in B7d |
 | Money | Transactions list | `transactions/transactions_screen.dart` + `widgets/transaction_tile.dart`, `transaction_list_summary.dart`, `transaction_day_header.dart`, `pending_review_task_card.dart` | B | Bloom (1482d5a) | — | |
 | Money | Filter sheet, active filter chips | `transactions/widgets/transaction_filter_sheet.dart`, `active_filter_chips.dart` | E / B | Tokens | — | Chips are old `InputChip`s |

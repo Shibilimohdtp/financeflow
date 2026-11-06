@@ -3,6 +3,7 @@ import '../../core/period/period.dart';
 export '../../core/period/period_format.dart';
 import '../../models/account.dart';
 import '../../models/transaction.dart';
+import '../../services/budgets/budget_ledger.dart';
 import '../../services/ledger_totals.dart';
 
 /// How a transaction is shown and filtered in the list. Derived from
@@ -41,6 +42,33 @@ enum TransactionSort {
   bool get isByDate => this == newest || this == oldest;
 }
 
+/// Limits the list to exactly what one or more budgets count: transactions
+/// in [categoryIds] whose budget amount is above zero
+/// ([BudgetLedger.countedMinor]). Bill and EMI payments linked to a tracked
+/// subscription or loan, transfers, lending and income are left out, so the
+/// list's "Spent" equals the budget figure it was opened from, to the cent.
+class BudgetScope {
+  final Set<String> categoryIds;
+
+  /// Shown on the filter chip, e.g. "Dining budget" or "November plan".
+  final String label;
+
+  const BudgetScope({required this.categoryIds, required this.label});
+
+  bool matches(Transaction tx) =>
+      categoryIds.contains(tx.categoryId) && BudgetLedger.countedMinor(tx) > 0;
+
+  @override
+  bool operator ==(Object other) =>
+      other is BudgetScope &&
+      other.label == label &&
+      other.categoryIds.length == categoryIds.length &&
+      other.categoryIds.containsAll(categoryIds);
+
+  @override
+  int get hashCode => Object.hash(label, Object.hashAllUnordered(categoryIds));
+}
+
 /// Everything that decides which transactions the list shows. A null
 /// [period] means all time.
 class TransactionQuery {
@@ -55,6 +83,9 @@ class TransactionQuery {
   final String search;
   final TransactionSort sort;
 
+  /// Opened from a budget figure: only what those budgets count.
+  final BudgetScope? budgetScope;
+
   const TransactionQuery({
     this.period,
     this.kinds = const {},
@@ -66,6 +97,7 @@ class TransactionQuery {
     this.maxAmount,
     this.search = '',
     this.sort = TransactionSort.newest,
+    this.budgetScope,
   });
 
   /// The default view: the current month, newest first.
@@ -90,6 +122,8 @@ class TransactionQuery {
     bool clearAmount = false,
     String? search,
     TransactionSort? sort,
+    BudgetScope? budgetScope,
+    bool clearBudgetScope = false,
   }) {
     return TransactionQuery(
       period: allTime ? null : (period ?? this.period),
@@ -103,6 +137,8 @@ class TransactionQuery {
       maxAmount: clearAmount ? null : (maxAmount ?? this.maxAmount),
       search: search ?? this.search,
       sort: sort ?? this.sort,
+      budgetScope:
+          clearBudgetScope ? null : (budgetScope ?? this.budgetScope),
     );
   }
 
@@ -114,7 +150,8 @@ class TransactionQuery {
       tag != null ||
       paymentMethod != null ||
       minAmount != null ||
-      maxAmount != null;
+      maxAmount != null ||
+      budgetScope != null;
 
   bool get hasSearch => search.trim().isNotEmpty;
 
@@ -133,6 +170,7 @@ class TransactionQuery {
       return false;
     }
     if (categoryId != null && tx.categoryId != categoryId) return false;
+    if (budgetScope != null && !budgetScope!.matches(tx)) return false;
     if (tag != null &&
         !tx.tags.any((t) => t.toLowerCase() == tag!.toLowerCase())) {
       return false;
@@ -160,7 +198,8 @@ class TransactionQuery {
       other.minAmount == minAmount &&
       other.maxAmount == maxAmount &&
       other.search == search &&
-      other.sort == sort;
+      other.sort == sort &&
+      other.budgetScope == budgetScope;
 
   @override
   int get hashCode => Object.hash(
@@ -174,6 +213,7 @@ class TransactionQuery {
     maxAmount,
     search,
     sort,
+    budgetScope,
   );
 }
 

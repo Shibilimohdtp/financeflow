@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/ff_card.dart';
+
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/transaction.dart';
 import '../../../services/balance_calculator.dart';
 import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../dashboard_controller.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_divider.dart';
-import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_icon_tile.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
+import '../dashboard_controller.dart';
 
 class CashFlowCard extends StatelessWidget {
   final MonthlyCashFlow cashFlow;
@@ -40,7 +42,8 @@ class CashFlowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final finColors = context.ff.color;
+    final ff = context.ff;
+    final c = ff.color;
     final displayPeriod = periodLabel ?? DateFormatter.formatMonthYear(month);
 
     final hasActivity =
@@ -57,111 +60,89 @@ class CashFlowCard extends StatelessWidget {
           isPrivacyBlur
               ? 'Monthly cash flow hidden for privacy'
               : 'Cash flow for $displayPeriod: Net savings ${cashFlow.netSavings}, Income ${cashFlow.totalIncome}, Expenses ${cashFlow.totalExpense}',
-      child: Container(
+      child: FfCard(
+        density: FfDensity.comfortable,
         padding: const EdgeInsets.all(FfSpace.lg),
-        decoration: FfCard.decorationOf(
-          context,
-          density: FfDensity.comfortable,
-        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header Row: Period Title, Date Navigators, and Analytics CTA
+            // Header Row: Section Title and Analytics CTA
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: InkWell(
-                    onTap: onPickMonth,
-                    borderRadius: BorderRadius.circular(FfRadius.sm),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: FfSpace.x3s,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Cash Flow', style: ff.text.title),
+                      const SizedBox(height: FfSpace.x3s),
+                      Text(
+                        displayPeriod,
+                        style: ff.text.bodySm.copyWith(color: c.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              displayPeriod,
-                              style: context.ff.text.title.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (onPickMonth != null) ...[
-                            const SizedBox(width: FfSpace.x3s),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 18,
-                              color: context.ff.color.secondary,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (onPreviousMonth != null)
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                        tooltip: 'Previous period',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                        onPressed: onPreviousMonth,
+                if (onPreviousMonth != null || onNextMonth != null) ...[
+                  if (onPreviousMonth != null)
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                      tooltip: 'Previous period',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onPreviousMonth,
+                    ),
+                  if (onNextMonth != null)
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                      tooltip: 'Next period',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onNextMonth,
+                    ),
+                ],
+                if (onOpenAnalytics != null)
+                  TextButton(
+                    onPressed: onOpenAnalytics,
+                    style: TextButton.styleFrom(
+                      foregroundColor: c.textSecondary,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: FfSpace.xs,
                       ),
-                    if (onNextMonth != null)
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                        tooltip: 'Next period',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Analytics',
+                          style: ff.text.label.copyWith(color: c.textSecondary),
                         ),
-                        onPressed: onNextMonth,
-                      ),
-                    if (onOpenAnalytics != null)
-                      TextButton(
-                        onPressed: onOpenAnalytics,
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        child: const Text('Analytics'),
-                      ),
-                  ],
-                ),
+                        const SizedBox(width: FfSpace.x3s),
+                        const Icon(Icons.arrow_outward_rounded, size: 14),
+                      ],
+                    ),
+                  ),
               ],
             ),
 
             const SizedBox(height: FfSpace.md),
 
-            // Net Savings Metric
+            // Net Savings Hero Metric
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Net Savings',
-                  style: context.ff.text.labelSm.copyWith(
-                    color: context.ff.color.secondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1,
-                  ),
+                  style: ff.text.labelSm.copyWith(color: c.textSecondary),
                 ),
                 const SizedBox(height: FfSpace.x3s),
                 FfAmountText(
                   amount: cashFlow.netSavings,
                   size: FfAmountSize.lg,
+                  style: FfAmountStyle.split,
                   isBlurred: isPrivacyBlur,
                   tone:
                       cashFlow.isPositiveSavings
@@ -172,61 +153,55 @@ class CashFlowCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: FfSpace.md),
-            const FfDivider(),
-            const SizedBox(height: FfSpace.sm),
-
             if (trendMetric?.hasPreviousData == true && !isPrivacyBlur) ...[
+              const SizedBox(height: FfSpace.xs),
               Text(
                 trendMetric!.expenseChangePct == 0
                     ? 'Spending unchanged vs previous period'
                     : 'Spending ${trendMetric!.expenseChangePct < 0 ? 'down' : 'up'} ${trendMetric!.expenseChangePct.abs().toStringAsFixed(1)}% vs previous period',
-                style: context.ff.text.bodySm.copyWith(
-                  color: context.ff.color.textSecondary,
-                ),
+                style: ff.text.bodySm.copyWith(color: c.textSecondary),
               ),
-              const SizedBox(height: FfSpace.sm),
             ],
 
-            // Income and Expense Two-Column Strip
+            const SizedBox(height: FfSpace.md),
+            const FfDivider(),
+            const SizedBox(height: FfSpace.md),
+
+            // Income and Expense Two-Column Cards
             Row(
               children: [
                 // Income Column
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: FfSpace.sm,
-                      vertical: FfSpace.sm,
-                    ),
+                    padding: const EdgeInsets.all(FfSpace.sm),
                     decoration: BoxDecoration(
-                      color: finColors.moneyIncome.withValues(
-                        alpha: FfTint.faint.alpha,
-                      ),
+                      color: c.tint(c.moneyIncome, FfTint.faint),
                       borderRadius: BorderRadius.circular(FfRadius.md),
-                      border: Border.all(
-                        color: finColors.moneyIncome.withValues(
-                          alpha: FfTint.subtle.alpha,
-                        ),
-                        width: FfBorderWidth.hairline,
-                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.arrow_downward_rounded,
-                              size: 13,
-                              color: finColors.moneyIncome,
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: c.tint(c.moneyIncome, FfTint.subtle),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.arrow_downward_rounded,
+                                size: 12,
+                                color: c.moneyIncome,
+                              ),
                             ),
-                            const SizedBox(width: FfSpace.x3s),
+                            const SizedBox(width: FfSpace.xs),
                             Flexible(
                               child: Text(
                                 'Income',
-                                style: context.ff.text.labelSm.copyWith(
-                                  color: context.ff.color.secondary,
-                                  fontWeight: FontWeight.w600,
+                                style: ff.text.labelSm.copyWith(
+                                  color: c.textSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -234,12 +209,17 @@ class CashFlowCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: FfSpace.x3s),
-                        FfAmountText(
-                          amount: cashFlow.totalIncome,
-                          type: TransactionType.income,
-                          size: FfAmountSize.md,
-                          isBlurred: isPrivacyBlur,
+                        const SizedBox(height: FfSpace.xs),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: FfAmountText(
+                            amount: cashFlow.totalIncome,
+                            type: TransactionType.income,
+                            size: FfAmountSize.md,
+                            style: FfAmountStyle.inline,
+                            isBlurred: isPrivacyBlur,
+                          ),
                         ),
                       ],
                     ),
@@ -251,39 +231,35 @@ class CashFlowCard extends StatelessWidget {
                 // Expense Column
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: FfSpace.sm,
-                      vertical: FfSpace.sm,
-                    ),
+                    padding: const EdgeInsets.all(FfSpace.sm),
                     decoration: BoxDecoration(
-                      color: finColors.moneyExpense.withValues(
-                        alpha: FfTint.faint.alpha,
-                      ),
+                      color: c.tint(c.moneyExpense, FfTint.faint),
                       borderRadius: BorderRadius.circular(FfRadius.md),
-                      border: Border.all(
-                        color: finColors.moneyExpense.withValues(
-                          alpha: FfTint.subtle.alpha,
-                        ),
-                        width: FfBorderWidth.hairline,
-                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.arrow_upward_rounded,
-                              size: 13,
-                              color: finColors.moneyExpense,
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: c.tint(c.moneyExpense, FfTint.subtle),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.arrow_upward_rounded,
+                                size: 12,
+                                color: c.moneyExpense,
+                              ),
                             ),
-                            const SizedBox(width: FfSpace.x3s),
+                            const SizedBox(width: FfSpace.xs),
                             Flexible(
                               child: Text(
                                 'Expenses',
-                                style: context.ff.text.labelSm.copyWith(
-                                  color: context.ff.color.secondary,
-                                  fontWeight: FontWeight.w600,
+                                style: ff.text.labelSm.copyWith(
+                                  color: c.textSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -291,12 +267,17 @@ class CashFlowCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: FfSpace.x3s),
-                        FfAmountText(
-                          amount: cashFlow.totalExpense,
-                          type: TransactionType.expense,
-                          size: FfAmountSize.md,
-                          isBlurred: isPrivacyBlur,
+                        const SizedBox(height: FfSpace.xs),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: FfAmountText(
+                            amount: cashFlow.totalExpense,
+                            type: TransactionType.expense,
+                            size: FfAmountSize.md,
+                            style: FfAmountStyle.inline,
+                            isBlurred: isPrivacyBlur,
+                          ),
                         ),
                       ],
                     ),
@@ -315,10 +296,7 @@ class CashFlowCard extends StatelessWidget {
                 children: [
                   Text(
                     'Activity Breakdown',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.secondary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: ff.text.labelSm.copyWith(color: c.textSecondary),
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -327,39 +305,39 @@ class CashFlowCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 8,
-                            height: 8,
+                            width: 6,
+                            height: 6,
                             decoration: BoxDecoration(
-                              color: finColors.moneyExpense,
+                              color: c.moneyExpense,
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: FfSpace.x2s),
                           Text(
                             'Expenses',
-                            style: context.ff.text.labelSm.copyWith(
-                              color: context.ff.color.secondary,
+                            style: ff.text.labelSm.copyWith(
+                              color: c.textSecondary,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(width: FfSpace.md),
+                      const SizedBox(width: FfSpace.sm),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 8,
-                            height: 8,
+                            width: 6,
+                            height: 6,
                             decoration: BoxDecoration(
-                              color: finColors.moneyIncome,
+                              color: c.moneyIncome,
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: FfSpace.x2s),
                           Text(
                             'Income',
-                            style: context.ff.text.labelSm.copyWith(
-                              color: context.ff.color.secondary,
+                            style: ff.text.labelSm.copyWith(
+                              color: c.textSecondary,
                             ),
                           ),
                         ],
@@ -385,16 +363,12 @@ class CashFlowCard extends StatelessWidget {
                       Icon(
                         Icons.bar_chart_rounded,
                         size: 18,
-                        color: context.ff.color.secondary.withValues(
-                          alpha: 0.6,
-                        ),
+                        color: c.textSecondary,
                       ),
                       const SizedBox(width: FfSpace.xs),
                       Text(
                         'No transactions recorded for this period.',
-                        style: context.ff.text.bodySm.copyWith(
-                          color: context.ff.color.secondary,
-                        ),
+                        style: ff.text.bodySm.copyWith(color: c.textSecondary),
                       ),
                     ],
                   ),
