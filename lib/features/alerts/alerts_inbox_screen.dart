@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/alert_item.dart';
 import '../../repositories/alert_repository.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_data_viz.dart';
 import '../../shared/widgets/ff_divider.dart';
@@ -13,7 +12,7 @@ import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
 import '../../shared/widgets/ff_navigation.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_page_header.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_section_header.dart';
@@ -245,77 +244,78 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
   @override
   Widget build(BuildContext context) {
     final alertsAsync = ref.watch(activeAlertsStreamProvider);
+    final canPop = Navigator.of(context).canPop();
+
+    // Same non-sticky header as the other Bloom screens: it sits at the top of
+    // the scrolling content on the aurora, not in a separate app bar.
+    final header = FfPageHeader(
+      title: 'Alerts & Reminders',
+      onBack: canPop ? () => Navigator.of(context).pop() : null,
+      actions: [
+        FfCircleButton(
+          icon: Icons.done_all_rounded,
+          tooltip: 'Mark All Read',
+          soft: true,
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            ref.read(alertsControllerProvider.notifier).markAllAsRead();
+          },
+        ),
+        const SizedBox(width: FfSpace.xs),
+        FfCircleButton(
+          icon: Icons.tune_rounded,
+          tooltip: 'Alert Settings',
+          soft: true,
+          onPressed: () => AlertSettingsSheet.show(context),
+        ),
+      ],
+    );
 
     return FfAurora(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: FfAppBar(
-          title: 'Alerts & Reminders',
-          titleWidget: Text(
-            'Alerts & Reminders',
-            style: context.ff.text.headline,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          leading:
-              Navigator.of(context).canPop()
-                  ? IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    tooltip: 'Back',
-                    onPressed: () => Navigator.of(context).pop(),
-                  )
-                  : null,
-          actions: [
-            FfCircleButton(
-              icon: Icons.done_all_rounded,
-              tooltip: 'Mark All Read',
-              soft: true,
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                ref.read(alertsControllerProvider.notifier).markAllAsRead();
-              },
-            ),
-            const SizedBox(width: FfSpace.xs),
-            FfCircleButton(
-              icon: Icons.tune_rounded,
-              tooltip: 'Alert Settings',
-              soft: true,
-              onPressed: () => AlertSettingsSheet.show(context),
-            ),
-            const SizedBox(width: FfSpace.xs),
-            const Padding(
-              padding: EdgeInsets.only(right: FfSpace.pageMargin),
-              child: Center(child: FfPrivacyBadge(label: 'On-device rules')),
-            ),
-          ],
-        ),
-        body: alertsAsync.when(
-          data: (alerts) => _buildBody(context, alerts),
-          loading:
-              () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(FfSpace.x4l),
-                  child: FfLoading(),
-                ),
-              ),
-          error:
-              (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(FfSpace.xl),
-                  child: Text(
-                    'Error loading alerts: $e',
-                    style: context.ff.text.body.copyWith(
-                      color: context.ff.color.statusError,
+        body: SafeArea(
+          bottom: false,
+          child: alertsAsync.when(
+            data: (alerts) => _buildBody(context, header, alerts),
+            loading:
+                () => ListView(
+                  padding: const EdgeInsets.only(top: FfSpace.xs),
+                  children: [
+                    header,
+                    const Padding(
+                      padding: EdgeInsets.all(FfSpace.x4l),
+                      child: FfLoading(),
                     ),
-                  ),
+                  ],
                 ),
-              ),
+            error:
+                (e, _) => ListView(
+                  padding: const EdgeInsets.only(top: FfSpace.xs),
+                  children: [
+                    header,
+                    Padding(
+                      padding: const EdgeInsets.all(FfSpace.xl),
+                      child: Text(
+                        'Error loading alerts: $e',
+                        style: context.ff.text.body.copyWith(
+                          color: context.ff.color.statusError,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, List<AlertItem> alerts) {
+  Widget _buildBody(
+    BuildContext context,
+    Widget header,
+    List<AlertItem> alerts,
+  ) {
     final totalCount = alerts.length;
     final unreadCount = alerts.where((a) => !a.isRead).length;
     final urgentCount =
@@ -343,6 +343,7 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
       child: ListView(
         padding: const EdgeInsets.only(top: FfSpace.xs, bottom: FfSpace.x4l),
         children: [
+          header,
           // ── Command Status Hero Card ───────────────────────────────────────
           _buildCommandHero(
             context: context,

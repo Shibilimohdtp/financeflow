@@ -2,19 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../shared/widgets/ff_round_buttons.dart';
 import '../../../theme/ff.dart';
 import '../../../theme/ff_tone.dart';
 
-/// The total balance, set large and light straight on the aurora, with the
-/// account count (opens Accounts) and the hide-amounts toggle. Period cash
-/// flow belongs in its own card.
+/// The total balance, set large and light straight on the aurora. Hiding
+/// amounts lives in the Home header; period cash flow belongs in its own card.
 class TotalBalanceHero extends StatelessWidget {
   final double totalBalance;
   final int activeAccountsCount;
   final bool isPrivacyBlur;
-  final VoidCallback onToggleBlur;
-  final VoidCallback? onManageAccounts;
 
   /// Shown as a call to action when there are no active accounts.
   final VoidCallback? onAddAccount;
@@ -24,18 +20,11 @@ class TotalBalanceHero extends StatelessWidget {
     required this.totalBalance,
     required this.activeAccountsCount,
     required this.isPrivacyBlur,
-    required this.onToggleBlur,
-    this.onManageAccounts,
     this.onAddAccount,
   });
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
-    final accountLabel =
-        activeAccountsCount == 1
-            ? '1 account'
-            : '$activeAccountsCount accounts';
     final spoken =
         isPrivacyBlur
             ? 'Total balance hidden for privacy'
@@ -48,84 +37,22 @@ class TotalBalanceHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Total Balance',
-                  style: ff.text.label.copyWith(color: ff.color.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (onManageAccounts == null)
-                Text(accountLabel, style: ff.text.label)
-              else
-                TextButton(
-                  key: const ValueKey('balance-accounts'),
-                  onPressed: onManageAccounts,
-                  style: TextButton.styleFrom(
-                    foregroundColor: ff.color.textSecondary,
-                    minimumSize: const Size(0, FfTouch.minTarget),
-                    padding: const EdgeInsetsDirectional.only(
-                      start: FfSpace.sm,
-                      end: FfSpace.x2s,
-                    ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    alignment: Alignment.centerRight,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        accountLabel,
-                        style: ff.text.label.copyWith(
-                          color: ff.color.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(width: FfSpace.x3s),
-                      const Icon(Icons.arrow_outward_rounded, size: 14),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Semantics(
-                  key: const ValueKey('balance-amount'),
-                  liveRegion: true,
-                  label: spoken,
-                  excludeSemantics: true,
-                  child: FfAmountText(
-                    amount: totalBalance,
-                    size: FfAmountSize.hero,
-                    style: FfAmountStyle.split,
-                    tone:
-                        !isPrivacyBlur && totalBalance < 0
-                            ? FfTone.expense
-                            : FfTone.neutral,
-                    showSign: totalBalance < 0,
-                    isBlurred: isPrivacyBlur,
-                  ),
-                ),
-              ),
-              const SizedBox(width: FfSpace.xs),
-              FfCircleButton(
-                key: const ValueKey('balance-privacy'),
-                icon:
-                    isPrivacyBlur
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                tooltip: isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
-                soft: true,
-                onPressed: onToggleBlur,
-              ),
-            ],
+          Semantics(
+            key: const ValueKey('balance-amount'),
+            liveRegion: true,
+            label: spoken,
+            excludeSemantics: true,
+            child: FfAmountText(
+              amount: totalBalance,
+              size: FfAmountSize.hero,
+              style: FfAmountStyle.split,
+              tone:
+                  !isPrivacyBlur && totalBalance < 0
+                      ? FfTone.expense
+                      : FfTone.neutral,
+              showSign: totalBalance < 0,
+              isBlurred: isPrivacyBlur,
+            ),
           ),
           if (activeAccountsCount == 0 && onAddAccount != null)
             Padding(

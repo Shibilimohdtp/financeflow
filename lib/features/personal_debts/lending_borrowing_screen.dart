@@ -1,32 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/formatting/currency_formatter.dart';
+
 import '../../models/money_advance.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../services/money_lending_calculator.dart';
 import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_navigation.dart';
+import '../../shared/widgets/ff_page_header.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../theme/ff.dart';
 import 'add_edit_money_record_sheet.dart';
+import 'add_repayment_sheet.dart';
 import 'money_record_detail_screen.dart';
 import 'money_records_controller.dart';
-import 'widgets/lending_summary_box.dart';
-import 'widgets/money_record_card.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../theme/ff.dart';
+import 'widgets/lending_attention_lane.dart';
+import 'widgets/lending_net_position_hero.dart';
+import 'widgets/lending_person_card.dart';
+import 'widgets/lending_settled_group.dart';
 
-class LendingBorrowingScreen extends ConsumerWidget {
+/// Direction axis for the two-axis filter.
+enum LendingDirectionFilter { all, owedToMe, iOwe }
+
+/// Status lens for the two-axis filter.
+enum LendingStatusLens { all, overdue, dueSoon, settled }
+
+/// Stillwater Bloom Lending & Borrowing overview screen (Pattern C on `FfAurora`).
+///
+/// Designed around what people ask of personal lending:
+/// "Who owes me, whom do I owe, what is overdue or due soon, what is my net position?"
+class LendingBorrowingScreen extends ConsumerStatefulWidget {
   const LendingBorrowingScreen({super.key});
 
-  void _openAddSheet(BuildContext context, {MoneyRecordType? defaultType}) {
+  @override
+  ConsumerState<LendingBorrowingScreen> createState() =>
+      _LendingBorrowingScreenState();
+}
+
+class _LendingBorrowingScreenState
+    extends ConsumerState<LendingBorrowingScreen> {
+  LendingDirectionFilter _directionFilter = LendingDirectionFilter.all;
+  LendingStatusLens _statusLens = LendingStatusLens.all;
+
+  void _openAddSheet({MoneyRecordType? defaultType}) {
     showFfSheet(
       context,
       builder: (_) => AddEditMoneyRecordSheet(defaultType: defaultType),
     );
   }
 
-  void _openDetail(BuildContext context, MoneyRecord record) {
+  void _openDetail(MoneyRecord record) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MoneyRecordDetailScreen(record: record),
@@ -34,11 +60,29 @@ class LendingBorrowingScreen extends ConsumerWidget {
     );
   }
 
+  void _openPayback(
+    MoneyRecord record,
+    List<MoneyAdvance> advances,
+    List<MoneyRepayment> repayments,
+  ) {
+    final remaining = record.calculateRemainingAmount(
+      repayments,
+      advances: advances,
+    );
+    showFfSheet(
+      context,
+      builder: (_) => AddRepaymentSheet(
+        record: record,
+        remainingBalance: remaining,
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final summary = ref.watch(moneyLendingSummaryProvider);
-    final currentFilter = ref.watch(moneyRecordFilterProvider);
-    final records = ref.watch(filteredMoneyRecordsProvider);
+    final allRecords =
+        ref.watch(allMoneyRecordsStreamProvider).value ?? const [];
     final allAdvances =
         ref.watch(allMoneyAdvancesStreamProvider).value ?? const [];
     final allRepayments =
@@ -54,210 +98,276 @@ class LendingBorrowingScreen extends ConsumerWidget {
       advancesByRecord.putIfAbsent(a.moneyRecordId, () => []).add(a);
     }
 
+    // Filter by direction
+    var records = allRecords.where((r) {
+      switch (_directionFilter) {
+        case LendingDirectionFilter.all:
+          return true;
+        case LendingDirectionFilter.owedToMe:
+          return r.type == MoneyRecordType.lent;
+        case LendingDirectionFilter.iOwe:
+          return r.type == MoneyRecordType.borrowed;
+      }
+    }).toList();
+
+    // Sort records: overdue first, then nearest due, settled last
+    records = MoneyLendingCalculator.sortRecords(
+      records,
+      allRepayments,
+      advances: allAdvances,
+    );
+
+    // Identify attention items (overdue or due in <= 7 days)
+    final attentionRecords = allRecords.where((r) {
+      final reps = repaymentsByRecord[r.id] ?? const [];
+      final advs = advancesByRecord[r.id] ?? const [];
+      if (r.isFullySettled(reps, advances: advs)) return false;
+      return r.isOverdue(repayments: reps, advances: advs) ||
+          r.isDueSoon(repayments: reps, advances: advs);
+    }).toList();
+
+    // Split into active and settled
+    final activeRecords = <MoneyRecord>[];
+    final settledRecords = <MoneyRecord>[];
+
+    for (final r in records) {
+      final reps = repaymentsByRecord[r.id] ?? const [];
+      final advs = advancesByRecord[r.id] ?? const [];
+      final isSettled = r.isFullySettled(reps, advances: advs);
+
+      // Apply status lens
+      if (_statusLens == LendingStatusLens.settled) {
+        if (isSettled) settledRecords.add(r);
+      } else if (_statusLens == LendingStatusLens.overdue) {
+        if (!isSettled && r.isOverdue(repayments: reps, advances: advs)) {
+          activeRecords.add(r);
+        }
+      } else if (_statusLens == LendingStatusLens.dueSoon) {
+        if (!isSettled &&
+            r.isDueSoon(repayments: reps, advances: advs)) {
+          activeRecords.add(r);
+        }
+      } else {
+        // Lens is all
+        if (isSettled) {
+          settledRecords.add(r);
+        } else {
+          activeRecords.add(r);
+        }
+      }
+    }
+
     return Scaffold(
-      appBar: FfAppBar(
-        title: 'Lending & Borrowing',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
-            child: Center(
-              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'lending_borrowing_add_fab',
-        tooltip: 'Add lending or borrowing record',
-        onPressed: () => _openAddSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Record'),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          // ── 1. Hero Summary Cards ─────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                FfSpace.lg,
-                FfSpace.md,
-                FfSpace.lg,
-                FfSpace.sm,
+      body: FfAurora(
+        child: SafeArea(
+          bottom: false,
+          child: CustomScrollView(
+            slivers: [
+              // ── 1. Page Header (Canonical Bloom, no shield icon) ───────────
+              SliverToBoxAdapter(
+                child: FfPageHeader(
+                  title: 'Lending & Borrowing',
+                  onBack: () => Navigator.of(context).maybePop(),
+                  actions: [
+                    FfCircleButton(
+                      icon: Icons.add_rounded,
+                      tooltip: 'Add Record',
+                      onPressed: () => _openAddSheet(),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      // Owed to Me (Lent)
-                      Expanded(
-                        child: LendingSummaryBox(
-                          title: 'OWED TO ME',
-                          amount: summary.totalOwedToMe,
-                          subtitle:
-                              '${summary.activeLentCount} active${summary.overdueOwedToMe > 0 ? ' · ${CurrencyFormatter.format(summary.overdueOwedToMe)} overdue' : ''}',
-                          color: context.ff.color.moneyIncome,
-                          icon: Icons.call_made_rounded,
-                          onAddTap:
-                              () => _openAddSheet(
-                                context,
-                                defaultType: MoneyRecordType.lent,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(width: FfSpace.md),
-                      // I Owe (Borrowed)
-                      Expanded(
-                        child: LendingSummaryBox(
-                          title: 'I OWE',
-                          amount: summary.totalIOwe,
-                          subtitle:
-                              '${summary.activeBorrowedCount} active${summary.overdueIOwe > 0 ? ' · ${CurrencyFormatter.format(summary.overdueIOwe)} overdue' : ''}',
-                          color: context.ff.color.moneyExpense,
-                          icon: Icons.call_received_rounded,
-                          onAddTap:
-                              () => _openAddSheet(
-                                context,
-                                defaultType: MoneyRecordType.borrowed,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
 
-          // ── 2. Filter Pills ───────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: FfSpace.lg,
-                vertical: FfSpace.sm,
-              ),
-              child: Row(
-                children: [
-                  LendingFilterChipItem(
-                    label: 'All',
-                    isSelected: currentFilter == MoneyRecordFilter.all,
-                    onTap: () {
-                      ref.read(moneyRecordFilterProvider.notifier).state =
-                          MoneyRecordFilter.all;
-                    },
-                  ),
-                  const SizedBox(width: FfSpace.sm),
-                  LendingFilterChipItem(
-                    label: 'Owed to Me',
-                    count: summary.activeLentCount,
-                    isSelected: currentFilter == MoneyRecordFilter.owedToMe,
-                    onTap: () {
-                      ref.read(moneyRecordFilterProvider.notifier).state =
-                          MoneyRecordFilter.owedToMe;
-                    },
-                  ),
-                  const SizedBox(width: FfSpace.sm),
-                  LendingFilterChipItem(
-                    label: 'I Owe',
-                    count: summary.activeBorrowedCount,
-                    isSelected: currentFilter == MoneyRecordFilter.iOwe,
-                    onTap: () {
-                      ref.read(moneyRecordFilterProvider.notifier).state =
-                          MoneyRecordFilter.iOwe;
-                    },
-                  ),
-                  const SizedBox(width: FfSpace.sm),
-                  LendingFilterChipItem(
-                    label: 'Overdue',
-                    count: summary.overdueCount,
-                    color: context.ff.color.moneyExpense,
-                    isSelected: currentFilter == MoneyRecordFilter.overdue,
-                    onTap: () {
-                      ref.read(moneyRecordFilterProvider.notifier).state =
-                          MoneyRecordFilter.overdue;
-                    },
-                  ),
-                  const SizedBox(width: FfSpace.sm),
-                  LendingFilterChipItem(
-                    label: 'Due Soon',
-                    count: summary.dueSoonCount,
-                    color: context.ff.color.moneyDebt,
-                    isSelected: currentFilter == MoneyRecordFilter.dueSoon,
-                    onTap: () {
-                      ref.read(moneyRecordFilterProvider.notifier).state =
-                          MoneyRecordFilter.dueSoon;
-                    },
-                  ),
-                  const SizedBox(width: FfSpace.sm),
-                  LendingFilterChipItem(
-                    label: 'Settled',
-                    count: summary.settledCount,
-                    isSelected: currentFilter == MoneyRecordFilter.settled,
-                    onTap: () {
-                      ref.read(moneyRecordFilterProvider.notifier).state =
-                          MoneyRecordFilter.settled;
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── 3. Record Cards List ──────────────────────────────────────────
-          if (records.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
+              // ── 2. Net Position Hero Card (Pattern C) ──────────────────────
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(FfSpace.x2l),
-                  child: FfEmptyState(
-                    icon: Icons.handshake_outlined,
-                    title:
-                        currentFilter == MoneyRecordFilter.all
-                            ? 'No Lending or Borrowing Records'
-                            : 'No ${currentFilter.displayName} Records',
-                    description:
-                        currentFilter == MoneyRecordFilter.all
-                            ? 'Keep track of money you have lent to friends or borrowed from others.'
-                            : 'No records matching the current filter.',
-                    actionLabel:
-                        currentFilter == MoneyRecordFilter.all
-                            ? 'Add First Record'
-                            : null,
-                    onAction:
-                        currentFilter == MoneyRecordFilter.all
-                            ? () => _openAddSheet(context)
-                            : null,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FfSpace.pageMargin,
+                    vertical: FfSpace.sm,
+                  ),
+                  child: LendingNetPositionHero(
+                    summary: summary,
+                    onAddLent: () => _openAddSheet(
+                      defaultType: MoneyRecordType.lent,
+                    ),
+                    onAddBorrowed: () => _openAddSheet(
+                      defaultType: MoneyRecordType.borrowed,
+                    ),
                   ),
                 ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                FfSpace.lg,
-                FfSpace.sm,
-                FfSpace.lg,
-                104, // Space for FAB and bottom padding
+
+              // ── 3. Needs Attention First Lane ──────────────────────────────
+              if (_statusLens == LendingStatusLens.all &&
+                  _directionFilter == LendingDirectionFilter.all)
+                LendingAttentionLane(
+                  attentionRecords: attentionRecords,
+                  advancesByRecord: advancesByRecord,
+                  repaymentsByRecord: repaymentsByRecord,
+                  onTapRecord: _openDetail,
+                  onPaybackRecord: (r) => _openPayback(
+                    r,
+                    advancesByRecord[r.id] ?? const [],
+                    repaymentsByRecord[r.id] ?? const [],
+                  ),
+                ),
+
+              // ── 4. Two-Axis Filter ─────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FfSpace.pageMargin,
+                    vertical: FfSpace.xs,
+                  ),
+                  child: Column(
+                    children: [
+                      // Direction Segmented Pill
+                      FfSegmentedPill<LendingDirectionFilter>(
+                        options: const [
+                          FfSegmentOption(
+                            value: LendingDirectionFilter.all,
+                            label: 'All',
+                          ),
+                          FfSegmentOption(
+                            value: LendingDirectionFilter.owedToMe,
+                            label: 'Owed to Me',
+                          ),
+                          FfSegmentOption(
+                            value: LendingDirectionFilter.iOwe,
+                            label: 'I Owe',
+                          ),
+                        ],
+                        selectedValue: _directionFilter,
+                        onSelected: (val) {
+                          setState(() => _directionFilter = val);
+                          // Keep riverpod filter provider in sync for test/external listeners
+                          ref.read(moneyRecordFilterProvider.notifier).state =
+                              val == LendingDirectionFilter.owedToMe
+                                  ? MoneyRecordFilter.owedToMe
+                                  : val == LendingDirectionFilter.iOwe
+                                      ? MoneyRecordFilter.iOwe
+                                      : MoneyRecordFilter.all;
+                        },
+                      ),
+                      const SizedBox(height: FfSpace.sm),
+
+                      // Status Lenses Bar
+                      FfPillBar<LendingStatusLens>(
+                        padding: EdgeInsets.zero,
+                        values: LendingStatusLens.values,
+                        selected: _statusLens,
+                        label: (lens) => switch (lens) {
+                          LendingStatusLens.all => 'All',
+                          LendingStatusLens.overdue =>
+                            summary.overdueCount > 0
+                                ? 'Overdue (${summary.overdueCount})'
+                                : 'Overdue',
+                          LendingStatusLens.dueSoon =>
+                            summary.dueSoonCount > 0
+                                ? 'Due Soon (${summary.dueSoonCount})'
+                                : 'Due Soon',
+                          LendingStatusLens.settled =>
+                            summary.settledCount > 0
+                                ? 'Settled (${summary.settledCount})'
+                                : 'Settled',
+                        },
+                        onSelected: (val) {
+                          setState(() => _statusLens = val);
+                          ref.read(moneyRecordFilterProvider.notifier).state =
+                              val == LendingStatusLens.overdue
+                                  ? MoneyRecordFilter.overdue
+                                  : val == LendingStatusLens.dueSoon
+                                      ? MoneyRecordFilter.dueSoon
+                                      : val == LendingStatusLens.settled
+                                          ? MoneyRecordFilter.settled
+                                          : MoneyRecordFilter.all;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((ctx, index) {
-                  final record = records[index];
-                  final reps = repaymentsByRecord[record.id] ?? const [];
-                  final advs = advancesByRecord[record.id] ?? const [];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: FfSpace.sm),
-                    child: MoneyRecordCard(
-                      record: record,
-                      advances: advs,
-                      repayments: reps,
-                      onTap: () => _openDetail(context, record),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: FfSpace.sm),
+              ),
+
+              // ── 5. Empty State or Records List ─────────────────────────────
+              if (allRecords.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: FfEmptyState(
+                      icon: Icons.handshake_outlined,
+                      title: 'No Lending or Borrowing Records',
+                      message:
+                          'Keep track of money lent to friends or borrowed from family calmly and privately.',
+                      actionLabel: 'Add Record',
+                      onAction: () => _openAddSheet(),
                     ),
-                  );
-                }, childCount: records.length),
-              ),
-            ),
-        ],
+                  ),
+                )
+              else if (activeRecords.isEmpty && settledRecords.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: FfEmptyState(
+                      icon: Icons.filter_list_off_rounded,
+                      title: 'No Matching Records',
+                      message: 'No records match the active filter criteria.',
+                      actionLabel: 'Clear Filters',
+                      onAction: () {
+                        setState(() {
+                          _directionFilter = LendingDirectionFilter.all;
+                          _statusLens = LendingStatusLens.all;
+                        });
+                        ref.read(moneyRecordFilterProvider.notifier).state =
+                            MoneyRecordFilter.all;
+                      },
+                    ),
+                  ),
+                )
+              else ...[
+                // Active Records
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final record = activeRecords[index];
+                      return LendingPersonCard(
+                        record: record,
+                        advances: advancesByRecord[record.id] ?? const [],
+                        repayments: repaymentsByRecord[record.id] ?? const [],
+                        onTap: () => _openDetail(record),
+                        onPayback: () => _openPayback(
+                          record,
+                          advancesByRecord[record.id] ?? const [],
+                          repaymentsByRecord[record.id] ?? const [],
+                        ),
+                      );
+                    },
+                    childCount: activeRecords.length,
+                  ),
+                ),
+
+                // Collapsible Settled Group
+                if (settledRecords.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: LendingSettledGroup(
+                      settledRecords: settledRecords,
+                      advancesByRecord: advancesByRecord,
+                      repaymentsByRecord: repaymentsByRecord,
+                      onTapRecord: _openDetail,
+                    ),
+                  ),
+
+                // Bottom padding
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: FfSpace.x3l),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

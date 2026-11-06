@@ -22,7 +22,7 @@ import 'package:financeflow/services/balance_calculator.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
 void main() {
-  testWidgets('Compact balance card preserves account and privacy controls', (
+  testWidgets('Compact balance card shows only the amount, blurred on demand', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 400);
@@ -30,37 +30,42 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final semantics = tester.ensureSemantics();
-    var hidden = false;
-    var accountTaps = 0;
     await tester.pumpWidget(
       MaterialApp(
         theme: StillwaterTheme.deepWater,
-        home: Scaffold(
-          body: StatefulBuilder(
-            builder:
-                (context, setState) => TotalBalanceHero(
-                  totalBalance: 48500,
-                  activeAccountsCount: 3,
-                  isPrivacyBlur: hidden,
-                  onToggleBlur: () => setState(() => hidden = !hidden),
-                  onManageAccounts: () => accountTaps++,
-                ),
+        home: const Scaffold(
+          body: TotalBalanceHero(
+            totalBalance: 48500,
+            activeAccountsCount: 3,
+            isPrivacyBlur: false,
           ),
         ),
       ),
     );
     expect(
       tester.getSize(find.byKey(const ValueKey('total-balance-card'))).height,
-      lessThan(140),
+      lessThan(100),
     );
-    final accounts = find.byKey(const ValueKey('balance-accounts'));
-    final privacy = find.byKey(const ValueKey('balance-privacy'));
-    expect(tester.getSize(accounts).height, greaterThanOrEqualTo(48));
-    expect(tester.getSize(privacy).height, greaterThanOrEqualTo(48));
-    await tester.tap(accounts);
-    expect(accountTaps, 1);
+    expect(find.text('Total Balance'), findsNothing);
+    expect(find.textContaining('accounts'), findsNothing);
+    expect(find.byIcon(Icons.visibility_outlined), findsNothing);
     expect(find.text('₹48,500'), findsOneWidget);
-    await tester.tap(privacy);
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('balance-amount'))).label,
+      'Total Balance: ₹48,500',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: StillwaterTheme.deepWater,
+        home: const Scaffold(
+          body: TotalBalanceHero(
+            totalBalance: 48500,
+            activeAccountsCount: 3,
+            isPrivacyBlur: true,
+          ),
+        ),
+      ),
+    );
     await tester.pump();
     expect(find.text('₹48,500'), findsNothing);
     expect(find.text('₹ ••••••'), findsOneWidget);
@@ -68,9 +73,6 @@ void main() {
       tester.getSemantics(find.byKey(const ValueKey('balance-amount'))).label,
       'Total balance hidden for privacy',
     );
-    await tester.tap(privacy);
-    await tester.pump();
-    expect(find.text('₹48,500'), findsOneWidget);
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });
@@ -96,8 +98,6 @@ void main() {
                   totalBalance: -12345678.90,
                   activeAccountsCount: 1,
                   isPrivacyBlur: false,
-                  onToggleBlur: () {},
-                  onManageAccounts: () {},
                 ),
               ),
             ),
@@ -105,7 +105,6 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(find.text('− ₹1,23,45,678.90'), findsOneWidget);
-        expect(find.text('1 account'), findsOneWidget);
         expect(tester.takeException(), isNull);
       }
     },
@@ -188,9 +187,9 @@ void main() {
       expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
       expect(find.text('On-device'), findsNothing);
 
-      // Verify Total Balance Hero
-      expect(find.text('Total Balance'), findsOneWidget);
-      expect(find.text('1 account'), findsOneWidget);
+      // Verify Total Balance Hero (amount only; the title row is gone)
+      expect(find.byKey(const ValueKey('total-balance-card')), findsOneWidget);
+      expect(find.text('Total Balance'), findsNothing);
       expect(find.text('₹48,500'), findsWidgets);
 
       // Logging is the primary action
@@ -379,8 +378,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify Total Balance with 0 accounts
-      expect(find.text('0 accounts'), findsOneWidget);
+      // Verify Total Balance with 0 accounts shows the add call to action
+      expect(find.text('Add your first account'), findsOneWidget);
 
       // Verify Add first account empty state
       expect(find.text('Add your first account'), findsOneWidget);
@@ -437,8 +436,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(addTapped, isTrue);
 
-      // Tap Accounts quick action
-      await tester.tap(find.byKey(const ValueKey('balance-accounts')));
+      // Tap the account hero in the accounts carousel
+      await tester.tap(find.byTooltip('Open accounts').first);
       await tester.pumpAndSettle();
       expect(manageAccountsTapped, isTrue);
 
@@ -508,7 +507,7 @@ void main() {
       // Ensure zero overflow errors and correct rendering
       final greeting = HomeHeader.greetingFor(DateTime.now());
       expect(find.text(greeting), findsOneWidget);
-      expect(find.text('Total Balance'), findsOneWidget);
+      expect(find.byKey(const ValueKey('total-balance-card')), findsOneWidget);
       expect(find.text('Net this period'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

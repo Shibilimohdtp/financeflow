@@ -188,12 +188,6 @@ class DashboardScreen extends ConsumerWidget {
                     totalBalance: totalBalance,
                     activeAccountsCount: activeAccountsCount,
                     isPrivacyBlur: isPrivacyBlur,
-                    onToggleBlur: () {
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .setPrivacyBlurEnabled(!isPrivacyBlur);
-                    },
-                    onManageAccounts: onManageAccounts,
                     onAddAccount: onAddAccount,
                   ),
 
