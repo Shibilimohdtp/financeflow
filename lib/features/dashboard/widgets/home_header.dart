@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../../../core/formatting/date_formatter.dart';
+import '../../../shared/widgets/ff_corner_badge.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../shared/widgets/ff_app_bar.dart';
+import '../../../shared/widgets/ff_round_buttons.dart';
 import '../../../theme/ff.dart';
 
+/// Home's header, drawn straight on the aurora (no bar background): the
+/// greeting and date, the wordmark, the on-device cue and the alerts button.
 class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
   final int unreadAlerts;
   final VoidCallback onOpenAlerts;
@@ -28,72 +33,65 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      const Size.fromHeight(FfTouch.minTarget + FfSpace.md);
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final formattedDate = DateFormatter.formatFullDate(now);
+    final ff = context.ff;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formattedDate = DateFormatter.formatFullDate(DateTime.now());
 
-    return FfAppBar(
-      titleWidget: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _getGreeting(),
-                  style: context.ff.text.labelSm.copyWith(
-                    color: context.ff.color.secondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1,
-                  ),
-                ),
-                const SizedBox(width: FfSpace.x2s),
-                Text(
-                  '· $formattedDate',
-                  style: context.ff.text.labelSm.copyWith(
-                    color: context.ff.color.secondary.withValues(
-                      alpha: FfOpacity.muted,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: FfSpace.pageMargin,
+            end:
+                FfSpace.pageMargin -
+                (FfTouch.minTarget - FfRoundButtonTokens.size) / 2,
+            top: FfSpace.xs,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_getGreeting()} · $formattedDate',
+                      style: ff.text.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    Text(
+                      'FinanceFlow',
+                      style: ff.text.titleLg,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: FfSpace.x3s),
-            Text(
-              'FinanceFlow',
-              style: context.ff.text.title.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.2,
               ),
-            ),
-          ],
+              const FfPrivacyBadge(label: 'On-device'),
+              const SizedBox(width: FfSpace.x2s),
+              FfCircleButton(
+                icon: Icons.notifications_none_rounded,
+                tooltip:
+                    unreadAlerts > 0
+                        ? 'Alerts & Reminders, $unreadAlerts unread'
+                        : 'Alerts & Reminders',
+                corner: unreadAlerts > 0 ? FfCorner.dot : null,
+                soft: true,
+                onPressed: onOpenAlerts,
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        // Alerts & Reminders with Badge
-        IconButton(
-          icon: Badge(
-            isLabelVisible: unreadAlerts > 0,
-            label: Text('$unreadAlerts'),
-            child: const Icon(Icons.notifications_outlined),
-          ),
-          tooltip: 'Alerts & Reminders',
-          visualDensity: VisualDensity.compact,
-          onPressed: onOpenAlerts,
-        ),
-        // On-Device Privacy Badge
-        const Padding(
-          padding: EdgeInsets.only(right: FfSpace.lg),
-          child: Center(child: FfPrivacyBadge(label: 'On-device')),
-        ),
-      ],
     );
   }
 }

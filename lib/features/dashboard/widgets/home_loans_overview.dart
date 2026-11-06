@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/loan.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
-import '../../../theme/ff_tone.dart';
+import '../../../shared/widgets/ff_data_viz.dart';
+import '../../../shared/widgets/ff_section_header.dart';
+import '../../../shared/widgets/ff_surfaces.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
 
+/// Loans on Home: the next EMI on a rose hero card. The ring around the
+/// icon shows how much of that loan's principal is paid off.
 class HomeLoansOverview extends StatelessWidget {
   final List<Loan> activeLoans;
   final double totalOutstanding;
@@ -25,182 +31,87 @@ class HomeLoansOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final finColors = context.ff.color;
-
     if (activeLoans.isEmpty) return const SizedBox.shrink();
 
-    // Find next upcoming loan
     final sortedLoans = List<Loan>.from(activeLoans)
       ..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
     final nextLoan = sortedLoans.first;
+    final paid = nextLoan.progressPercentage;
+    final open =
+        onOpenLoanDetail != null
+            ? () => onOpenLoanDetail!(nextLoan)
+            : onViewLoans;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Loans & EMI',
-                  style: context.ff.text.titleSm.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              TextButton(
-                onPressed: onViewLoans,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: const Text('Manage'),
-              ),
-            ],
+          FfSectionHeader(
+            title: 'Loans & EMI',
+            padding: EdgeInsets.zero,
+            trailing: TextButton(
+              onPressed: onViewLoans,
+              child: const Text('Manage'),
+            ),
           ),
-          const SizedBox(height: FfSpace.xs),
-          Material(
-            color: context.ff.color.surfaceCard,
-            borderRadius: BorderRadius.circular(FfRadius.lg),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              onTap:
-                  onOpenLoanDetail != null
-                      ? () => onOpenLoanDetail!(nextLoan)
-                      : onViewLoans,
-              child: Container(
-                padding: const EdgeInsets.all(FfSpace.md),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(FfRadius.lg),
-                  border: Border.all(
-                    color: context.ff.color.borderSubtle,
-                    width: FfBorderWidth.hairline,
-                  ),
-                ),
-                child: Column(
+          FfHeroCard(
+            tone: FfHeroTone.rose,
+            leading: FfProgressRing(
+              value: paid,
+              icon: Icons.account_balance_outlined,
+              semanticsLabel: '${(paid * 100).round()}% of the principal paid',
+            ),
+            title: nextLoan.name,
+            subtitle:
+                activeLoans.length == 1
+                    ? '1 active loan'
+                    : '${activeLoans.length} active loans',
+            onOpen: open,
+            openTooltip: 'Open ${nextLoan.name}',
+            child: Builder(
+              builder: (context) {
+                final ff = context.ff;
+                Widget stat(String label, double amount, String caption) =>
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: ff.text.label),
+                        const SizedBox(height: FfSpace.x3s),
+                        FfAmountText(
+                          amount: amount,
+                          size: FfAmountSize.md,
+                          isBlurred: isPrivacyBlur,
+                          showSign: false,
+                          tone: FfTone.neutral,
+                        ),
+                        const SizedBox(height: FfSpace.x3s),
+                        Text(caption, style: ff.text.label),
+                      ],
+                    );
+                return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(FfSpace.x2s),
-                                decoration: BoxDecoration(
-                                  color: finColors.moneyDebt.withValues(
-                                    alpha: FfTint.subtle.alpha,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    FfRadius.sm,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.account_balance_outlined,
-                                  size: 16,
-                                  color: finColors.moneyDebt,
-                                ),
-                              ),
-                              const SizedBox(width: FfSpace.sm),
-                              Flexible(
-                                child: Text(
-                                  nextLoan.name,
-                                  style: context.ff.text.body.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
+                    Expanded(
+                      child: stat(
+                        'Next EMI Due',
+                        nextLoan.emiAmount,
+                        DateFormatter.formatTransactionDate(
+                          nextLoan.nextDueDate,
                         ),
-                        const SizedBox(width: FfSpace.xs),
-                        Text(
-                          '${activeLoans.length} active',
-                          style: context.ff.text.labelSm.copyWith(
-                            color: context.ff.color.secondary,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: FfSpace.md),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Next EMI Due',
-                                style: context.ff.text.labelSm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                              const SizedBox(height: FfSpace.x3s),
-                              FfAmountText(
-                                amount: nextLoan.emiAmount,
-                                size: FfAmountSize.md,
-                                isBlurred: isPrivacyBlur,
-                                showSign: false,
-                                tone: FfTone.debt,
-                              ),
-                              const SizedBox(height: FfSpace.x3s),
-                              Text(
-                                DateFormatter.formatTransactionDate(
-                                  nextLoan.nextDueDate,
-                                ),
-                                style: context.ff.text.labelSm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: context.ff.color.borderSubtle,
-                        ),
-                        const SizedBox(width: FfSpace.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Left to pay',
-                                style: context.ff.text.labelSm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                              const SizedBox(height: FfSpace.x3s),
-                              FfAmountText(
-                                amount: totalOutstanding,
-                                size: FfAmountSize.md,
-                                isBlurred: isPrivacyBlur,
-                                showSign: false,
-                                tone: FfTone.neutral,
-                              ),
-                              const SizedBox(height: FfSpace.x3s),
-                              Text(
-                                'Principal + interest',
-                                style: context.ff.text.labelSm.copyWith(
-                                  color: context.ff.color.secondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: FfSpace.md),
+                    Expanded(
+                      child: stat(
+                        'Left to pay',
+                        totalOutstanding,
+                        'Principal + interest',
+                      ),
                     ),
                   ],
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],

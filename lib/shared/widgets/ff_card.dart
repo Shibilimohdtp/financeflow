@@ -50,6 +50,24 @@ class FfCard extends StatelessWidget {
   final double? width;
   final double? height;
 
+  /// The standard card look as a decoration, for containers that need their
+  /// own `Material`/`InkWell` (use `Ink` so the ripple shows on top).
+  static ShapeDecoration decorationOf(
+    BuildContext context, {
+    FfDensity density = FfDensity.comfortable,
+  }) {
+    final c = context.ff.color;
+    return ShapeDecoration(
+      shape: FfShape.of(density.cardRadius),
+      color: c.surfaceCard,
+      shadows: FfElevation.card(c.shadow, Theme.of(context).brightness),
+    );
+  }
+
+  /// The card outline for [density], for `InkWell.customBorder`.
+  static ShapeBorder shapeOf(FfDensity density) =>
+      FfShape.of(density.cardRadius);
+
   @override
   Widget build(BuildContext context) {
     final c = context.ff.color;

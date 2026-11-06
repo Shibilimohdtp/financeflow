@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../theme/ff_tone.dart';
 import '../../../shared/widgets/ff_progress.dart';
@@ -34,7 +35,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
         totalTarget > 0 ? (totalSaved / totalTarget).clamp(0.0, 1.0) : 0.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -69,19 +70,16 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                     ? 'Savings goals hidden'
                     : 'Savings Goals: $totalSaved saved towards $totalTarget, $completedCount of $totalGoals reached',
             child: Material(
-              color: context.ff.color.surfaceCard,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
+              type: MaterialType.transparency,
+              shape: FfCard.shapeOf(FfDensity.comfortable),
               child: InkWell(
-                borderRadius: BorderRadius.circular(FfRadius.lg),
+                customBorder: FfCard.shapeOf(FfDensity.comfortable),
                 onTap: onViewGoals,
-                child: Container(
+                child: Ink(
                   padding: const EdgeInsets.all(FfSpace.md),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(FfRadius.lg),
-                    border: Border.all(
-                      color: context.ff.color.borderSubtle,
-                      width: FfBorderWidth.hairline,
-                    ),
+                  decoration: FfCard.decorationOf(
+                    context,
+                    density: FfDensity.comfortable,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

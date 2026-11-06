@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/transaction.dart';
 import '../../../services/balance_calculator.dart';
@@ -58,22 +59,9 @@ class CashFlowCard extends StatelessWidget {
               : 'Cash flow for $displayPeriod: Net savings ${cashFlow.netSavings}, Income ${cashFlow.totalIncome}, Expenses ${cashFlow.totalExpense}',
       child: Container(
         padding: const EdgeInsets.all(FfSpace.lg),
-        decoration: BoxDecoration(
-          color: context.ff.color.surfaceCard,
-          borderRadius: BorderRadius.circular(FfRadius.xl),
-          border: Border.all(
-            color: context.ff.color.borderSubtle,
-            width: FfBorderWidth.hairline,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.ff.color.shadow.withValues(
-                alpha: FfTint.whisper.alpha,
-              ),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
+        decoration: FfCard.decorationOf(
+          context,
+          density: FfDensity.comfortable,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

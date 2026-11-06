@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/transaction.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
@@ -27,7 +28,7 @@ class HomeRecentTransactions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -58,13 +59,9 @@ class HomeRecentTransactions extends StatelessWidget {
           if (transactions.isEmpty)
             Container(
               padding: const EdgeInsets.all(FfSpace.lg),
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceCard,
-                borderRadius: BorderRadius.circular(FfRadius.lg),
-                border: Border.all(
-                  color: context.ff.color.borderSubtle,
-                  width: FfBorderWidth.hairline,
-                ),
+              decoration: FfCard.decorationOf(
+                context,
+                density: FfDensity.compact,
               ),
               child: FfEmptyState(
                 icon: Icons.receipt_long_outlined,
@@ -77,13 +74,9 @@ class HomeRecentTransactions extends StatelessWidget {
             )
           else
             Container(
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceCard,
-                borderRadius: BorderRadius.circular(FfRadius.lg),
-                border: Border.all(
-                  color: context.ff.color.borderSubtle,
-                  width: FfBorderWidth.hairline,
-                ),
+              decoration: FfCard.decorationOf(
+                context,
+                density: FfDensity.compact,
               ),
               child: ListView.separated(
                 shrinkWrap: true,

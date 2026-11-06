@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../core/extensions/context_extensions.dart';
 import '../../../models/alert_item.dart';
 import '../../../models/loan.dart';
@@ -174,7 +175,7 @@ class ActionableItemsSection extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -220,33 +221,27 @@ class ActionableItemsSection extends StatelessWidget {
     ActionableItemData item,
   ) {
     return Material(
-      color: context.ff.color.surfaceCard,
-      borderRadius: BorderRadius.circular(FfRadius.md),
+      type: MaterialType.transparency,
+      shape: FfCard.shapeOf(FfDensity.compact),
       child: InkWell(
         onTap: item.onTap,
         borderRadius: BorderRadius.circular(FfRadius.md),
-        child: Container(
+        child: Ink(
           padding: const EdgeInsets.symmetric(
             horizontal: FfSpace.md,
             vertical: FfSpace.sm,
           ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(FfRadius.md),
-            border: Border.all(
-              color: context.ff.color.borderSubtle,
-              width: FfBorderWidth.hairline,
-            ),
-          ),
+          decoration: FfCard.decorationOf(context, density: FfDensity.compact),
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: FfRowTokens.iconTile,
+                height: FfRowTokens.iconTile,
                 decoration: BoxDecoration(
                   color:
                       item.backgroundColor ??
                       item.iconColor.withValues(alpha: FfTint.subtle.alpha),
-                  borderRadius: BorderRadius.circular(FfRadius.sm),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(item.icon, size: 18, color: item.iconColor),
               ),

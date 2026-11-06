@@ -14,7 +14,7 @@ import '../features/ingestion/needs_review_controller.dart';
 import '../models/transaction.dart';
 import '../repositories/alert_repository.dart';
 import '../services/notifications/notification_coordinator.dart';
-import '../shared/widgets/stillwater_bottom_navigation_bar.dart';
+import '../shared/widgets/ff_navigation.dart';
 
 final currentNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -108,13 +108,41 @@ class _AppShellState extends ConsumerState<AppShell> {
       },
       child: Scaffold(
         body: IndexedStack(index: currentIndex, children: screens),
-        bottomNavigationBar: StillwaterBottomNavigationBar(
+        // The floating dock sits in the bottom bar slot (not over the body),
+        // so every tab keeps its own scroll padding and FAB placement.
+        bottomNavigationBar: FfDock(
           selectedIndex: currentIndex,
-          pendingReviewCount: pendingCount,
-          unreadAlertsCount: unreadAlerts,
-          onDestinationSelected: (index) {
+          onSelected: (index) {
             ref.read(currentNavIndexProvider.notifier).state = index;
           },
+          items: [
+            const FfDockItem(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
+              label: 'Home',
+            ),
+            FfDockItem(
+              icon: Icons.receipt_long_outlined,
+              selectedIcon: Icons.receipt_long_rounded,
+              label: 'Money',
+              badgeCount: pendingCount,
+            ),
+            const FfDockItem(
+              icon: Icons.pie_chart_outline_rounded,
+              selectedIcon: Icons.pie_chart_rounded,
+              label: 'Plan',
+            ),
+            const FfDockItem(
+              icon: Icons.insights_outlined,
+              selectedIcon: Icons.insights_rounded,
+              label: 'Insights',
+            ),
+            FfDockItem(
+              icon: Icons.more_horiz_rounded,
+              label: 'More',
+              showDot: unreadAlerts > 0,
+            ),
+          ],
         ),
       ),
     );

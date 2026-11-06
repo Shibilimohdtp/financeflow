@@ -100,7 +100,7 @@ void main() {
       expect(navIndexController.state, 0);
 
       // 1. Navigate to Money (index 1)
-      await tester.tap(find.text('Money'));
+      await tester.tap(find.byTooltip('Money'));
       await tester.pumpAndSettle();
       expect(navIndexController.state, 1);
 
@@ -111,7 +111,7 @@ void main() {
       expect(navIndexController.state, 0);
 
       // 2. Navigate to Plan (index 2)
-      await tester.tap(find.text('Plan'));
+      await tester.tap(find.byTooltip('Plan'));
       await tester.pumpAndSettle();
       expect(navIndexController.state, 2);
 
@@ -122,7 +122,7 @@ void main() {
       expect(navIndexController.state, 0);
 
       // 3. Navigate to Insights (index 3)
-      await tester.tap(find.text('Insights'));
+      await tester.tap(find.byTooltip('Insights'));
       await tester.pumpAndSettle();
       expect(navIndexController.state, 3);
 
@@ -133,7 +133,7 @@ void main() {
       expect(navIndexController.state, 0);
 
       // 4. Navigate to More (index 4)
-      await tester.tap(find.text('More'));
+      await tester.tap(find.byTooltip('More'));
       await tester.pumpAndSettle();
       expect(navIndexController.state, 4);
 
