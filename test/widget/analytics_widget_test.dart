@@ -119,7 +119,7 @@ void main() {
     expect(find.text('Total Outflow'), findsOneWidget);
     expect(find.text('₹25,000'), findsOneWidget);
     expect(find.text('Net Savings'), findsOneWidget);
-    expect(find.text('₹50,000'), findsOneWidget);
+    expect(find.textContaining('₹50,000'), findsOneWidget);
     expect(find.text('Where your money went'), findsOneWidget);
     expect(find.text('Dining'), findsWidgets);
     expect(find.text('Swiggy'), findsOneWidget);

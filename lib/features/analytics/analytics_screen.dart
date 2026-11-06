@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
@@ -11,23 +12,28 @@ import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_icon_tile.dart';
 import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
+import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import '../financial_health/financial_health_screen.dart';
+import '../settings/settings_controller.dart';
 import '../transactions/transaction_detail_screen.dart';
 import '../transactions/transaction_list_utils.dart';
 import 'analytics_controller.dart';
 import 'widgets/analytics_cash_flow_card.dart';
 import 'widgets/analytics_metrics_hero.dart';
 import 'widgets/expense_category_breakdown.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_row.dart';
-import '../../theme/ff_tone.dart';
-import '../../theme/ff.dart';
 
-/// "Where did my money go" for the shared report period. Every category and
-/// payee opens the Money tab filtered to exactly the transactions behind it.
+/// "Where did my money go" for the shared report period in Stillwater Bloom (Pattern A).
+/// Sits on [FfAurora] with an [AnalyticsMetricsHero] dusk card, interactive cash flow,
+/// category donut, ranked payees, and direct drill-downs into Money.
 class AnalyticsScreen extends ConsumerWidget {
   /// Opens the transaction list with a query; supplied by the app shell.
   final ValueChanged<TransactionQuery>? onShowTransactions;
@@ -42,77 +48,106 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
+  void _openFinancialHealth(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const FinancialHealthScreen()));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final period = ref.watch(reportPeriodProvider);
     final reportAsync = ref.watch(analyticsReportProvider);
+    final settings = ref.watch(settingsStreamProvider).valueOrNull;
+    final isPrivacyBlur = settings?.isPrivacyBlurEnabled ?? false;
 
     VoidCallback? show(TransactionQuery query) =>
         onShowTransactions == null ? null : () => onShowTransactions!(query);
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Insights',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
-            child: Center(
-              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: _InsightsHeader(
+          isPrivacyBlur: isPrivacyBlur,
+          onToggleBlur: () {
+            ref
+                .read(settingsControllerProvider.notifier)
+                .setPrivacyBlurEnabled(!isPrivacyBlur);
+          },
+          onOpenHealth: () => _openFinancialHealth(context),
+        ),
+        body: RefreshIndicator(
+          color: context.ff.color.actionPrimary,
+          onRefresh:
+              () async => ref.invalidate(analyticsRawTransactionsProvider),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.pageMargin,
+              FfSpace.xs,
+              FfSpace.pageMargin,
+              FfSpace.x4l,
             ),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        color: context.ff.color.actionPrimary,
-        onRefresh: () async => ref.invalidate(analyticsRawTransactionsProvider),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            FfSpace.lg,
-            FfSpace.xs,
-            FfSpace.lg,
-            FfSpace.x4l,
-          ),
-          children: [
-            FfPeriodBar(
-              period: period,
-              onChanged: (p) {
-                if (p != null) {
-                  ref.read(reportPeriodProvider.notifier).state = p;
-                }
-              },
-            ),
-            const SizedBox(height: FfSpace.sm),
-            reportAsync.when(
-              data:
-                  (report) =>
-                      report.totalExpense == 0 && report.totalIncome == 0
-                          ? const FfCard(
-                            child: FfEmptyState(
-                              icon: Icons.insights_rounded,
-                              title: 'No spending or income in this period',
-                              description:
-                                  'Pick another period, or add transactions to see where your money goes.',
+            children: [
+              FfPeriodBar(
+                period: period,
+                onChanged: (p) {
+                  if (p != null) {
+                    ref.read(reportPeriodProvider.notifier).state = p;
+                  }
+                },
+              ),
+              const SizedBox(height: FfSpace.md),
+              reportAsync.when(
+                data:
+                    (report) =>
+                        report.totalExpense == 0 && report.totalIncome == 0
+                            ? const FfCard(
+                              child: FfEmptyState(
+                                icon: Icons.insights_rounded,
+                                title: 'No spending or income in this period',
+                                description:
+                                    'Pick another period, or add transactions to see where your money goes.',
+                              ),
+                            )
+                            : _report(
+                              context,
+                              report,
+                              period,
+                              show,
+                              isPrivacyBlur,
                             ),
-                          )
-                          : _report(context, report, period, show),
-              loading:
-                  () => const Column(
-                    children: [
-                      FfMetricSkeletonCard(),
-                      SizedBox(height: FfSpace.lg),
-                      FfMetricSkeletonCard(),
-                    ],
-                  ),
-              error:
-                  (e, _) => const FfCard(
-                    child: FfEmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Could not calculate insights',
-                      description: 'Pull down to refresh and try again.',
+                loading:
+                    () => const FfSkeletonLoader(
+                      child: Column(
+                        children: [
+                          FfSkeletonBlock(
+                            height: 190,
+                            borderRadius: FfRadius.x2l,
+                          ),
+                          SizedBox(height: FfSpace.md),
+                          FfSkeletonBlock(
+                            height: 68,
+                            borderRadius: FfRadius.lg,
+                          ),
+                          SizedBox(height: FfSpace.md),
+                          FfSkeletonBlock(
+                            height: 260,
+                            borderRadius: FfRadius.xl,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-            ),
-          ],
+                error:
+                    (e, _) => const FfCard(
+                      child: FfEmptyState(
+                        icon: Icons.error_outline_rounded,
+                        title: 'Could not calculate insights',
+                        description: 'Pull down to refresh and try again.',
+                      ),
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -123,6 +158,7 @@ class AnalyticsScreen extends ConsumerWidget {
     AnalyticsReport report,
     Period period,
     VoidCallback? Function(TransactionQuery) show,
+    bool isPrivacyBlur,
   ) {
     final categoryRows =
         report.categoryBreakdown
@@ -132,25 +168,35 @@ class AnalyticsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. How much came in and went out, vs the same point last period.
-        AnalyticsMetricsHero(report: report),
-        const SizedBox(height: FfSpace.x2l),
+        // 1. Hero Card: Net savings, Inflow, Outflow, Savings rate (Dusk tone)
+        AnalyticsMetricsHero(
+          report: report,
+          isPrivacyBlur: isPrivacyBlur,
+          onOpenHealth: () => _openFinancialHealth(context),
+        ),
+        const SizedBox(height: FfSpace.md),
 
-        // 2. Trend through the period.
+        // 2. One Insight Card: Top observation with a CTA into Money
+        _buildInsightCard(context, report, show, period),
+        const SizedBox(height: FfSpace.xl),
+
+        // 3. Cash flow: Spending & income trend
         const FfSectionHeader(title: 'Spending & income'),
         AnalyticsCashFlowCard(
           points: report.timeSeries,
           range: report.timeRange,
           start: report.startDate,
           end: report.endDate,
+          isPrivacyBlur: isPrivacyBlur,
         ),
 
-        // 3. Where it went.
+        // 4. Where it went (Donut + ranked category rows)
         if (report.categoryBreakdown.isNotEmpty) ...[
-          const SizedBox(height: FfSpace.x2l),
+          const SizedBox(height: FfSpace.xl),
           const FfSectionHeader(title: 'Where your money went'),
           ExpenseCategoryBreakdown(
             categories: report.categoryBreakdown,
+            isPrivacyBlur: isPrivacyBlur,
             onOpenCategory: (category) {
               final open =
                   category.categoryId == 'cat_other_grouped'
@@ -182,10 +228,10 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
         ],
 
-        // 4. Where it came from.
+        // 5. Where it came from (Income sources)
         if (report.incomeSources.isNotEmpty) ...[
-          const SizedBox(height: FfSpace.x2l),
-          const FfSectionHeader(title: 'Income'),
+          const SizedBox(height: FfSpace.xl),
+          const FfSectionHeader(title: 'Income sources'),
           FfGroupedContainer(
             children: [
               for (final src in report.incomeSources)
@@ -198,7 +244,13 @@ class AnalyticsScreen extends ConsumerWidget {
                   title: src.categoryName,
                   subtitle:
                       '${src.transactionCount} · ${(src.percentage * 100).toStringAsFixed(0)}%',
-                  detail: CurrencyFormatter.formatAmount(src.amount),
+                  trailing: FfAmountText(
+                    amount: src.amount,
+                    size: FfAmountSize.sm,
+                    tone: FfTone.income,
+                    showSign: true,
+                    isBlurred: isPrivacyBlur,
+                  ),
                   onTap: show(
                     TransactionQuery(
                       period: period,
@@ -212,9 +264,9 @@ class AnalyticsScreen extends ConsumerWidget {
           ),
         ],
 
-        // 5. Who it went to.
+        // 6. Top Payees
         if (report.topMerchants.isNotEmpty) ...[
-          const SizedBox(height: FfSpace.x2l),
+          const SizedBox(height: FfSpace.xl),
           const FfSectionHeader(title: 'Top payees'),
           FfGroupedContainer(
             children: [
@@ -227,7 +279,12 @@ class AnalyticsScreen extends ConsumerWidget {
                       merch.transactionCount == 1
                           ? '1 transaction'
                           : '${merch.transactionCount} transactions',
-                  detail: CurrencyFormatter.formatAmount(merch.totalAmount),
+                  trailing: FfAmountText(
+                    amount: -merch.totalAmount,
+                    size: FfAmountSize.sm,
+                    tone: FfTone.expense,
+                    isBlurred: isPrivacyBlur,
+                  ),
                   onTap: show(
                     TransactionQuery(
                       period: period,
@@ -241,9 +298,9 @@ class AnalyticsScreen extends ConsumerWidget {
           ),
         ],
 
-        // 6. The biggest single items.
+        // 7. Largest individual expenses
         if (report.largestTransactions.isNotEmpty) ...[
-          const SizedBox(height: FfSpace.x2l),
+          const SizedBox(height: FfSpace.xl),
           const FfSectionHeader(title: 'Largest expenses'),
           FfGroupedContainer(
             children: [
@@ -260,13 +317,198 @@ class AnalyticsScreen extends ConsumerWidget {
                     amount: -tx.consumptionExpenseAmount,
                     size: FfAmountSize.sm,
                     tone: FfTone.expense,
+                    isBlurred: isPrivacyBlur,
                   ),
                   onTap: () => _openTransactionDetail(context, tx),
                 ),
             ],
           ),
         ],
+
+        const SizedBox(height: FfSpace.xl),
+
+        // 8. Privacy Guarantee Note
+        FfCard(
+          variant: FfCardVariant.tinted,
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.md,
+            vertical: FfSpace.sm,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.privacy_tip_outlined,
+                size: 16,
+                color: context.ff.color.statusSuccess,
+              ),
+              const SizedBox(width: FfSpace.xs),
+              Expanded(
+                child: Text(
+                  'On-device analysis · All calculations run locally on your device.',
+                  style: context.ff.text.labelSm.copyWith(
+                    color: context.ff.color.secondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildInsightCard(
+    BuildContext context,
+    AnalyticsReport report,
+    VoidCallback? Function(TransactionQuery) show,
+    Period period,
+  ) {
+    final ff = context.ff;
+    final String observation;
+    final VoidCallback? cta;
+
+    if (report.categoryBreakdown.isNotEmpty) {
+      final topCat = report.categoryBreakdown.first;
+      final share = (topCat.percentage * 100).toStringAsFixed(0);
+      observation =
+          '${topCat.categoryName} is your largest expense at ${CurrencyFormatter.formatAmount(topCat.amount)} ($share% of spending).';
+      cta = show(
+        TransactionQuery(
+          period: period,
+          categoryId: topCat.categoryId,
+          kinds: const {TransactionKind.spending},
+        ),
+      );
+    } else if (report.netSavings >= 0) {
+      final rate = (report.savingsRate * 100).toStringAsFixed(0);
+      observation =
+          'Positive net cash flow of ${CurrencyFormatter.formatAmount(report.netSavings)} ($rate% savings rate).';
+      cta = show(
+        TransactionQuery(
+          period: period,
+          kinds: const {TransactionKind.spending},
+        ),
+      );
+    } else {
+      observation =
+          'Spending exceeded income by ${CurrencyFormatter.formatAmount(-report.netSavings)} this period.';
+      cta = show(
+        TransactionQuery(
+          period: period,
+          kinds: const {TransactionKind.spending},
+        ),
+      );
+    }
+
+    return FfCard(
+      variant: FfCardVariant.tinted,
+      density: FfDensity.compact,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const FfIconTile(
+            icon: Icons.lightbulb_outline_rounded,
+            tone: FfTone.accent,
+          ),
+          const SizedBox(width: FfSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Key insight',
+                  style: ff.text.labelSm.copyWith(
+                    color: ff.color.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: FfSpace.x3s),
+                Text(
+                  observation,
+                  style: ff.text.bodySm.copyWith(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          if (cta != null) ...[
+            const SizedBox(width: FfSpace.xs),
+            FfInkButton.open(
+              onPressed: cta,
+              tooltip: 'Review in Money',
+              small: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Header for Insights drawn directly on the aurora canvas.
+class _InsightsHeader extends StatelessWidget implements PreferredSizeWidget {
+  final bool isPrivacyBlur;
+  final VoidCallback onToggleBlur;
+  final VoidCallback onOpenHealth;
+
+  const _InsightsHeader({
+    required this.isPrivacyBlur,
+    required this.onToggleBlur,
+    required this.onOpenHealth,
+  });
+
+  @override
+  Size get preferredSize =>
+      const Size.fromHeight(FfTouch.minTarget + FfSpace.md);
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: FfSpace.pageMargin,
+            end:
+                FfSpace.pageMargin -
+                (FfTouch.minTarget - FfRoundButtonTokens.size) / 2,
+            top: FfSpace.xs,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Insights',
+                  style: ff.text.headlineSm.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const FfPrivacyBadge(label: 'On-device', iconOnly: true),
+              const SizedBox(width: FfSpace.xs),
+              FfCircleButton(
+                icon:
+                    isPrivacyBlur
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                tooltip: isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
+                soft: true,
+                onPressed: onToggleBlur,
+              ),
+              const SizedBox(width: FfSpace.x2s),
+              FfCircleButton(
+                icon: Icons.health_and_safety_outlined,
+                tooltip: 'Financial health',
+                soft: true,
+                onPressed: onOpenHealth,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

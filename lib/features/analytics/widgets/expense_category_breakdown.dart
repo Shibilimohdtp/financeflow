@@ -3,7 +3,9 @@ import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/category_colors.dart';
 import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/charts/ff_donut_chart.dart';
+import '../../../shared/widgets/ff_button.dart';
 import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_progress.dart';
 import '../../../theme/ff.dart';
@@ -13,11 +15,13 @@ import '../../../theme/ff.dart';
 class ExpenseCategoryBreakdown extends StatefulWidget {
   final List<CategorySpend> categories;
   final ValueChanged<CategorySpend> onOpenCategory;
+  final bool isPrivacyBlur;
 
   const ExpenseCategoryBreakdown({
     super.key,
     required this.categories,
     required this.onOpenCategory,
+    this.isPrivacyBlur = false,
   });
 
   @override
@@ -36,18 +40,28 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
+    final c = ff.color;
     final categories =
         widget.categories
             .where((c) => c.amount.isFinite && c.amount > 0)
             .toList();
+
     if (categories.isEmpty) {
-      return const FfCard(
+      return FfCard(
+        density: FfDensity.comfortable,
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: FfSpace.lg),
-          child: Text('No expenses recorded for this period.'),
+          padding: const EdgeInsets.symmetric(vertical: FfSpace.lg),
+          child: Center(
+            child: Text(
+              'No expenses recorded for this period.',
+              style: ff.text.bodySm.copyWith(color: c.textSecondary),
+            ),
+          ),
         ),
       );
     }
+
     final total = categories.fold<double>(0, (sum, c) => sum + c.amount);
     final count = categories.fold<int>(0, (sum, c) => sum + c.transactionCount);
     final largest = categories.reduce((a, b) => a.amount >= b.amount ? a : b);
@@ -60,30 +74,27 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
     final share = _percentage(selected.amount / total);
 
     return FfCard(
-      padding: const EdgeInsets.all(FfSpace.md),
+      density: FfDensity.comfortable,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'Total expenses',
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
+            style: ff.text.bodySm.copyWith(color: c.textSecondary),
           ),
           const SizedBox(height: FfSpace.x2s),
           Text(
             CurrencyFormatter.format(total),
             key: const ValueKey('category-expense-total'),
-            style: context.ff.text.headlineSm.copyWith(
-              fontWeight: FontWeight.w700,
+            style: ff.text.headlineSm.copyWith(
+              fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           const SizedBox(height: FfSpace.x2s),
           Text(
             '$count ${count == 1 ? 'payment' : 'payments'} in this period',
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
+            style: ff.text.bodySm.copyWith(color: c.textSecondary),
           ),
           const SizedBox(height: FfSpace.lg),
           FfDonutChart(
@@ -110,38 +121,31 @@ class _ExpenseCategoryBreakdownState extends State<ExpenseCategoryBreakdown> {
               '${selected == largest ? 'Largest category' : 'Selected category'} · ${selected.categoryName} · $share',
               key: const ValueKey('category-selection-summary'),
               textAlign: TextAlign.center,
-              style: context.ff.text.bodySm.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: ff.text.bodySm.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
+          const SizedBox(height: FfSpace.xs),
           Center(
-            child: TextButton.icon(
+            child: FfButton(
               key: const ValueKey('view-category-payments'),
-              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              variant: FfButtonVariant.secondary,
+              label:
+                  'View ${selected.transactionCount} ${selected.transactionCount == 1 ? 'payment' : 'payments'}',
               onPressed: () => widget.onOpenCategory(selected),
-              label: Text(
-                'View ${selected.transactionCount} ${selected.transactionCount == 1 ? 'payment' : 'payments'}',
-              ),
-              icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-              iconAlignment: IconAlignment.end,
             ),
           ),
+          const SizedBox(height: FfSpace.xs),
           Text(
             'Tap a segment to explore. Tap a category for payments.',
             textAlign: TextAlign.center,
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
+            style: ff.text.bodySm.copyWith(color: c.textSecondary),
           ),
           const SizedBox(height: FfSpace.md),
           const FfDivider(),
           const SizedBox(height: FfSpace.md),
           Text(
             'Share of total spending',
-            style: context.ff.text.label.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
+            style: ff.text.label.copyWith(color: c.textSecondary),
           ),
           const SizedBox(height: FfSpace.xs),
           for (var i = 0; i < categories.length; i++)
@@ -184,6 +188,7 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ff = context.ff;
     final color = CategoryColors.getColor(
       category.categoryColor,
       isDark: theme.brightness == Brightness.dark,
@@ -192,6 +197,7 @@ class _CategoryRow extends StatelessWidget {
     final percent = _percentage(fraction);
     final payments =
         '${category.transactionCount} ${category.transactionCount == 1 ? 'payment' : 'payments'}';
+
     return Semantics(
       button: true,
       selected: selected,
@@ -204,15 +210,12 @@ class _CategoryRow extends StatelessWidget {
         child: Material(
           color:
               selected
-                  ? context.ff.color.textPrimary.withValues(
-                    alpha: FfTint.whisper.alpha,
-                  )
+                  ? ff.color.textPrimary.withValues(alpha: FfTint.whisper.alpha)
                   : Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(FfRadius.md),
+          shape: FfShape.of(
+            FfRadius.md,
             side: BorderSide(
-              color:
-                  selected ? context.ff.color.borderSubtle : Colors.transparent,
+              color: selected ? ff.color.borderSubtle : Colors.transparent,
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -236,12 +239,19 @@ class _CategoryRow extends StatelessWidget {
                     ),
                     child: Text(
                       '$number',
-                      style: context.ff.text.label.copyWith(
+                      style: ff.text.label.copyWith(
                         fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                   ),
                   const SizedBox(width: FfSpace.xs),
+                  FfCategoryTile(
+                    iconIdentifier: category.categoryIcon,
+                    colorTokenIdentifier: category.categoryColor,
+                    size: 36,
+                  ),
+                  const SizedBox(width: FfSpace.sm),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
@@ -250,14 +260,15 @@ class _CategoryRow extends StatelessWidget {
                             MediaQuery.textScalerOf(context).scale(14) > 19;
                         final name = Text(
                           category.categoryName,
-                          style: context.ff.text.body.copyWith(
+                          style: ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         );
                         final value = Text(
                           amount,
-                          style: context.ff.text.body.copyWith(
+                          style: ff.text.body.copyWith(
                             fontWeight: FontWeight.w600,
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         );
                         return Column(
@@ -282,14 +293,17 @@ class _CategoryRow extends StatelessWidget {
                               children: [
                                 Text(
                                   payments,
-                                  style: context.ff.text.bodySm.copyWith(
-                                    color: context.ff.color.textSecondary,
+                                  style: ff.text.bodySm.copyWith(
+                                    color: ff.color.textSecondary,
                                   ),
                                 ),
                                 Text(
                                   percent,
-                                  style: context.ff.text.label.copyWith(
-                                    fontWeight: FontWeight.w700,
+                                  style: ff.text.label.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -311,7 +325,7 @@ class _CategoryRow extends StatelessWidget {
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: context.ff.color.textSecondary,
+                    color: ff.color.textSecondary,
                   ),
                 ],
               ),

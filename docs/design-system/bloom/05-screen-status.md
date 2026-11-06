@@ -37,7 +37,7 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | Plan | Add/edit budget | `budgets/add_edit_budget_sheet.dart` | E | Legacy | DS-B7 chat | Raw sheet + pickers |
 | Plan | Budget card, insights card, visual summary | `budgets/widgets/*.dart` | A/C | Legacy | DS-B7 chat | Three overlapping summaries → merge |
 | Plan | Placeholder | `budgets/budgets_placeholder_screen.dart` | — | Legacy | DS-B7 chat | Not referenced anywhere in `lib/`; delete |
-| Insights | Analytics | `analytics/analytics_screen.dart`, `widgets/analytics_metrics_hero.dart`, `analytics_cash_flow_card.dart`, `expense_category_breakdown.dart` | A | Tokens | — | Restyle `FfBarChart`/`FfDonutChart` here |
+| Insights | Analytics | `analytics/analytics_screen.dart`, `widgets/analytics_metrics_hero.dart`, `analytics_cash_flow_card.dart`, `expense_category_breakdown.dart` | A | Bloom (7f05c84) | DS-B8b | Pattern A on FfAurora, dusk hero card, single insight card, restyled charts |
 | Insights | Financial health | `financial_health/financial_health_screen.dart` | D | Tokens | — | Good fit for `FfRangeBand` |
 | More | Settings hub | `settings/more_screen.dart`, `settings_screen.dart`, `settings_detail_screen.dart` | F | Bloom (this commit) | DS-B9 chat | Redesigned on FfAurora with sand vault hero and split files |
 | More | Security, lock | `security/security_settings_screen.dart`, `lock_screen.dart` | F / G | Bloom (this commit) | DS-B9 chat | Security in Pattern F; Lock in Pattern G with calm aurora, squircle mark, and zero static colours |

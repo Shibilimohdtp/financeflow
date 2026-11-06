@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/analytics_calculator.dart';
 import '../../../shared/widgets/charts/ff_bar_chart.dart';
 import '../../../shared/widgets/ff_card.dart';
-import '../cash_flow_chart_data.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../theme/ff.dart';
+import '../cash_flow_chart_data.dart';
 
 enum _FlowView { compare, expenses, income }
 
@@ -16,6 +15,7 @@ class AnalyticsCashFlowCard extends StatefulWidget {
   final AnalyticsTimeRange range;
   final DateTime start;
   final DateTime end;
+  final bool isPrivacyBlur;
 
   const AnalyticsCashFlowCard({
     super.key,
@@ -23,6 +23,7 @@ class AnalyticsCashFlowCard extends StatefulWidget {
     required this.range,
     required this.start,
     required this.end,
+    this.isPrivacyBlur = false,
   });
 
   @override
@@ -46,7 +47,8 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.finColors;
+    final ff = context.ff;
+    final c = ff.color;
     final data = CashFlowChartData.fromPoints(
       points: widget.points,
       range: widget.range,
@@ -55,10 +57,15 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
     );
     if (data.buckets.isEmpty ||
         data.buckets.every((b) => b.income == 0 && b.expense == 0)) {
-      return const FfCard(
+      return FfCard(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: FfSpace.xl),
-          child: Text('No income or expenses in this period.'),
+          padding: const EdgeInsets.symmetric(vertical: FfSpace.xl),
+          child: Center(
+            child: Text(
+              'No income or expenses in this period.',
+              style: ff.text.bodySm.copyWith(color: c.textSecondary),
+            ),
+          ),
         ),
       );
     }
@@ -88,23 +95,23 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
         children: [
           Text(
             '${data.groupingLabel} · $period',
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
+            style: ff.text.bodySm.copyWith(color: c.textSecondary),
           ),
           const SizedBox(height: FfSpace.x2s),
           Text(
-            net == 0
+            widget.isPrivacyBlur
+                ? 'Cash flow for period'
+                : net == 0
                 ? 'Income matched expenses'
                 : net > 0
                 ? '${CurrencyFormatter.format(net)} more in than out'
                 : '${CurrencyFormatter.format(-net)} more out than in',
-            style: context.ff.text.title.copyWith(fontWeight: FontWeight.w700),
+            style: ff.text.title.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: FfSpace.sm),
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: FfSpace.xs,
+            runSpacing: FfSpace.x2s,
             children: [
               for (final view in _FlowView.values)
                 ChoiceChip(
@@ -115,13 +122,10 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                     _FlowView.income => 'Income',
                   }),
                   selected: _view == view,
-                  selectedColor: context.ff.color.actionPrimaryContainer,
-                  checkmarkColor: context.ff.color.actionPrimary,
-                  labelStyle: context.ff.text.label.copyWith(
-                    color:
-                        _view == view
-                            ? context.ff.color.actionPrimary
-                            : context.ff.color.textPrimary,
+                  selectedColor: c.actionPrimaryContainer,
+                  checkmarkColor: c.actionPrimary,
+                  labelStyle: ff.text.label.copyWith(
+                    color: _view == view ? c.actionPrimary : c.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                   onSelected: (_) => setState(() => _view = view),
@@ -130,19 +134,19 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
           ),
           const SizedBox(height: FfSpace.sm),
           Wrap(
-            spacing: 18,
-            runSpacing: 8,
+            spacing: FfSpace.lg,
+            runSpacing: FfSpace.xs,
             children: [
               if (_view != _FlowView.income)
                 _FlowLegend(
                   label: 'Expenses',
-                  color: colors.expense,
+                  color: c.moneyExpense,
                   icon: Icons.arrow_upward_rounded,
                 ),
               if (_view != _FlowView.expenses)
                 _FlowLegend(
                   label: 'Income',
-                  color: colors.income,
+                  color: c.moneyIncome,
                   icon: Icons.arrow_downward_rounded,
                 ),
             ],
@@ -159,9 +163,9 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                             _view == _FlowView.compare ? b.income : null,
                         color:
                             _view == _FlowView.income
-                                ? colors.income
-                                : colors.expense,
-                        secondaryColor: colors.income,
+                                ? c.moneyIncome
+                                : c.moneyExpense,
+                        secondaryColor: c.moneyIncome,
                       ),
                     )
                     .toList(),
@@ -179,11 +183,9 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                 ? 'Same scale · Tap a period for exact values'
                 : '${_view == _FlowView.expenses ? 'Expense' : 'Income'} scale · Tap a period for exact values',
             textAlign: TextAlign.center,
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
+            style: ff.text.bodySm.copyWith(color: c.textSecondary),
           ),
-          const SizedBox(height: FfSpace.sm),
+          const SizedBox(height: FfSpace.md),
           Container(
             padding: const EdgeInsets.fromLTRB(
               FfSpace.sm,
@@ -192,11 +194,9 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
               FfSpace.sm,
             ),
             decoration: BoxDecoration(
-              color: context.ff.color.textPrimary.withValues(
-                alpha: FfTint.whisper.alpha,
-              ),
+              color: c.textPrimary.withValues(alpha: FfTint.whisper.alpha),
               borderRadius: BorderRadius.circular(FfRadius.md),
-              border: Border.all(color: context.ff.color.borderSubtle),
+              border: Border.all(color: c.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -209,8 +209,8 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                         child: Text(
                           selected.dateLabel,
                           key: const ValueKey('flow-selected-period'),
-                          style: context.ff.text.labelLg.copyWith(
-                            fontWeight: FontWeight.w700,
+                          style: ff.text.labelLg.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -246,12 +246,14 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                         _FlowValue(
                           label: 'Income',
                           amount: selected.income,
-                          color: colors.income,
+                          color: c.moneyIncome,
+                          isBlurred: widget.isPrivacyBlur,
                         ),
                         _FlowValue(
                           label: 'Expenses',
                           amount: selected.expense,
-                          color: colors.expense,
+                          color: c.moneyExpense,
+                          isBlurred: widget.isPrivacyBlur,
                         ),
                       ];
                       return stacked
@@ -278,11 +280,11 @@ class _AnalyticsCashFlowCardState extends State<AnalyticsCashFlowCard> {
                 const FfDivider(),
                 const SizedBox(height: FfSpace.xs),
                 Text(
-                  'Net ${CurrencyFormatter.format(selected.net, showSign: selected.net != 0)}',
+                  widget.isPrivacyBlur
+                      ? 'Net ••••••'
+                      : 'Net ${CurrencyFormatter.format(selected.net, showSign: selected.net != 0)}',
                   key: const ValueKey('flow-selected-net'),
-                  style: context.ff.text.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: ff.text.body.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -297,6 +299,7 @@ class _FlowLegend extends StatelessWidget {
   final String label;
   final Color color;
   final IconData icon;
+
   const _FlowLegend({
     required this.label,
     required this.color,
@@ -304,39 +307,47 @@ class _FlowLegend extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(icon, size: 14, color: color),
-      const SizedBox(width: FfSpace.x2s),
-      Text(label, style: context.ff.text.bodySm),
-    ],
-  );
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: FfSpace.x2s),
+        Text(label, style: context.ff.text.bodySm),
+      ],
+    );
+  }
 }
 
 class _FlowValue extends StatelessWidget {
   final String label;
   final double amount;
   final Color color;
+  final bool isBlurred;
+
   const _FlowValue({
     required this.label,
     required this.amount,
     required this.color,
+    this.isBlurred = false,
   });
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label, style: context.ff.text.bodySm),
-      const SizedBox(height: FfSpace.x2s),
-      Text(
-        CurrencyFormatter.format(amount),
-        style: context.ff.text.title.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: ff.text.bodySm),
+        const SizedBox(height: FfSpace.x2s),
+        Text(
+          isBlurred ? '••••••' : CurrencyFormatter.format(amount),
+          style: ff.text.title.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
