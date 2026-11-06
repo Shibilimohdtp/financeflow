@@ -17,7 +17,7 @@ import '../../../theme/ff.dart';
 import '../../../theme/ff_tone.dart';
 
 /// Where this month's spending stands against plan.
-enum BudgetPace { onPace, fast, over }
+enum BudgetPace { onPace, fast, someOver, over }
 
 /// Home's budget card (DS-B12c; DS-B7d reuses it): "Left to spend" as the key
 /// figure, a pace bar (where spending is vs where it should be today), a
@@ -59,8 +59,14 @@ class BudgetOverviewCard extends StatelessWidget {
     return limit > 0 ? expected / limit : null;
   }
 
-  static BudgetPace paceStatus(double spent, double budgeted, double? pace) {
+  static BudgetPace paceStatus(
+    double spent,
+    double budgeted,
+    double? pace, {
+    int overBudgetCount = 0,
+  }) {
     if (spent > budgeted) return BudgetPace.over;
+    if (overBudgetCount > 0) return BudgetPace.someOver;
     if (pace != null && budgeted > 0 && spent / budgeted > pace + 0.05) {
       return BudgetPace.fast;
     }
@@ -111,7 +117,12 @@ class BudgetOverviewCard extends StatelessWidget {
     final ff = context.ff;
     final c = ff.color;
     final pace = paceOf(activeBudgets);
-    final status = paceStatus(totalSpent, totalBudgeted, pace);
+    final status = paceStatus(
+      totalSpent,
+      totalBudgeted,
+      pace,
+      overBudgetCount: overBudgetCount,
+    );
     final isOver = status == BudgetPace.over;
     final attention = needingAttention(activeBudgets);
     final daysLeft =
@@ -124,6 +135,11 @@ class BudgetOverviewCard extends StatelessWidget {
     final (statusLabel, statusIcon, statusTone) = switch (status) {
       BudgetPace.over => (
         overBudgetCount > 1 ? '$overBudgetCount over plan' : 'Over plan',
+        Icons.error_outline_rounded,
+        FfTone.expense,
+      ),
+      BudgetPace.someOver => (
+        '$overBudgetCount over plan',
         Icons.error_outline_rounded,
         FfTone.expense,
       ),
@@ -182,6 +198,7 @@ class BudgetOverviewCard extends StatelessWidget {
                               size: FfAmountSize.lg,
                               style: FfAmountStyle.split,
                               tone: isOver ? FfTone.expense : FfTone.neutral,
+                              showSign: false,
                               isBlurred: isPrivacyBlur,
                             ),
                           ],
@@ -201,29 +218,17 @@ class BudgetOverviewCard extends StatelessWidget {
                     tone: isOver ? FfTone.expense : null,
                   ),
                   const SizedBox(height: FfSpace.xs),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _SpentOfLimit(
-                          spent: totalSpent,
-                          limit: totalBudgeted,
-                          isBlurred: isPrivacyBlur,
-                        ),
-                      ),
-                      if (perDay != null && !isPrivacyBlur)
-                        Flexible(
-                          child: Text(
-                            '${CurrencyFormatter.format(perDay.floorToDouble())} a day',
-                            style: ff.text.bodySm.copyWith(
-                              color: c.textSecondary,
-                            ),
-                            textAlign: TextAlign.end,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
+                  _SpentOfLimit(
+                    spent: totalSpent,
+                    limit: totalBudgeted,
+                    isBlurred: isPrivacyBlur,
                   ),
+                  if (perDay != null && !isPrivacyBlur)
+                    Text(
+                      'About ${CurrencyFormatter.format(perDay.floorToDouble())} '
+                      'a day for the $daysLeft days left',
+                      style: ff.text.bodySm.copyWith(color: c.textSecondary),
+                    ),
                 ],
               ),
             ),
@@ -284,11 +289,13 @@ class _SpentOfLimit extends StatelessWidget {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        Text('Spent ', style: quiet),
         FfAmountText(
           amount: spent,
           size: FfAmountSize.sm,
           style: FfAmountStyle.inline,
           tone: FfTone.neutral,
+          showSign: false,
           isBlurred: isBlurred,
         ),
         Text(' of ', style: quiet),
@@ -297,9 +304,9 @@ class _SpentOfLimit extends StatelessWidget {
           size: FfAmountSize.sm,
           style: FfAmountStyle.inline,
           tone: FfTone.neutral,
+          showSign: false,
           isBlurred: isBlurred,
         ),
-        Text(' spent', style: quiet),
       ],
     );
   }

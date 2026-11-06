@@ -60,7 +60,8 @@ class CashFlowCard extends StatelessWidget {
     final items = chartItems ?? const <BarChartItem>[];
     final showChart = items.where(_active).length >= 2;
     final trend = trendMetric;
-    final showTrend = trend != null && trend.hasPreviousData && !isPrivacyBlur;
+    final showTrend =
+        trend != null && trend.hasPreviousData && hasActivity && !isPrivacyBlur;
 
     final spoken =
         isPrivacyBlur
@@ -169,6 +170,9 @@ class CashFlowCard extends StatelessWidget {
                       value: FfAmountText(
                         amount: cashFlow.totalExpense,
                         type: TransactionType.expense,
+                        // Everyday spending is ink with a minus sign; brick
+                        // is for over-budget and errors.
+                        tone: FfTone.neutral,
                         size: FfAmountSize.md,
                         style: FfAmountStyle.inline,
                         showSign: true,

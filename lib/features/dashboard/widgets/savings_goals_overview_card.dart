@@ -123,6 +123,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                                 size: FfAmountSize.lg,
                                 style: FfAmountStyle.split,
                                 tone: FfTone.neutral,
+                                showSign: false,
                                 isBlurred: isPrivacyBlur,
                               ),
                               const SizedBox(height: FfSpace.x3s),
@@ -140,6 +141,7 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
                                     size: FfAmountSize.sm,
                                     style: FfAmountStyle.inline,
                                     tone: FfTone.neutral,
+                                    showSign: false,
                                     isBlurred: isPrivacyBlur,
                                   ),
                                   Text(

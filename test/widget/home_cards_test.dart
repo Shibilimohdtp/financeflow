@@ -256,6 +256,17 @@ void main() {
       expect(opened, 2);
     });
 
+    testWidgets('one budget over while the total is not says so', (
+      tester,
+    ) async {
+      await pumpCard(
+        tester,
+        _budgets([_budget('a', 11000, 9000), _budget('b', 1000, 12000)]),
+      );
+      expect(find.text('Left to spend'), findsOneWidget);
+      expect(find.text('1 over plan'), findsOneWidget);
+    });
+
     testWidgets('hidden amounts show percentages, never figures', (
       tester,
     ) async {
