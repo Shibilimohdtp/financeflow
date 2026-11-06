@@ -41,7 +41,7 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | Insights | Financial health | `financial_health/financial_health_screen.dart` | D | Tokens | — | Good fit for `FfRangeBand` |
 | More | Settings hub | `settings/more_screen.dart`, `settings_screen.dart`, `settings_detail_screen.dart` | F | Bloom (this commit) | DS-B9 chat | Redesigned on FfAurora with sand vault hero and split files |
 | More | Security, lock | `security/security_settings_screen.dart`, `lock_screen.dart` | F / G | Bloom (this commit) | DS-B9 chat | Security in Pattern F; Lock in Pattern G with calm aurora, squircle mark, and zero static colours |
-| More | Backup, restore preview, export | `backup/backup_screen.dart`, `restore_preview_screen.dart`, `export/export_screen.dart` | F | Tokens | DS-B9 chat | In progress (B9c) |
+| More | Backup, restore preview, export | `backup/backup_screen.dart`, `restore_preview_screen.dart`, `export/export_screen.dart` | F | Bloom (this commit) | DS-B9 chat | Backup in Pattern F status hero, restore preview 2-step breakdown, export with pills & privacy badge |
 | More | Alerts inbox, alert settings | `alerts/alerts_inbox_screen.dart`, `alert_settings_sheet.dart` | B / F | Tokens | DS-B9 chat | In progress (B9d) |
 | More | Branding preview | `settings/branding_preview_screen.dart` | — | Tokens | — | Replaced by the debug gallery (DS-10) |
 | Accounts | Accounts list | `accounts/accounts_screen.dart` | C | Bloom (65ff966) | — | Add/edit account sheet inside the file is Tokens |

@@ -1,23 +1,29 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/formatting/date_formatter.dart';
 import '../../models/backup_payload.dart';
 import '../../services/backup_service.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_badge.dart';
+import '../../shared/widgets/ff_banner.dart';
 import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_key_value_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
 import '../accounts/accounts_controller.dart';
 import '../transactions/transactions_controller.dart';
 import 'backup_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_dialog.dart';
-import '../../shared/widgets/ff_banner.dart';
-import '../../theme/ff.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_row.dart';
-import '../../shared/widgets/ff_text_field.dart';
-import '../../shared/widgets/ff_key_value_row.dart';
 
 class RestorePreviewScreen extends ConsumerStatefulWidget {
   final File backupFile;
@@ -167,32 +173,22 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
         title: 'Restore Encrypted Backup',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
+            padding: EdgeInsets.only(right: FfSpace.pageMargin),
             child: Center(
-              child: FfPrivacyBadge(label: 'AES Decryption', iconOnly: true),
+              child: FfPrivacyBadge(label: 'AES Decryption'),
             ),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
+          horizontal: FfSpace.pageMargin,
           vertical: FfSpace.md,
         ),
         children: [
-          // File Name Pill
-          Container(
+          // File Name Card
+          FfCard(
             padding: const EdgeInsets.all(FfSpace.md),
-            decoration: BoxDecoration(
-              color: context.ff.color.surfaceContainerHighest.withValues(
-                alpha: 0.4,
-              ),
-              borderRadius: BorderRadius.circular(FfRadius.md),
-              border: Border.all(
-                color: context.ff.color.borderSubtle,
-                width: FfBorderWidth.hairline,
-              ),
-            ),
             child: Row(
               children: [
                 Icon(
@@ -217,18 +213,9 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
 
           // Passphrase Input Card
           if (_decryptedPayload == null) ...[
-            _SectionLabel(label: 'Enter Passphrase to Unlock'),
-            const SizedBox(height: FfSpace.xs),
-            Container(
-              padding: const EdgeInsets.all(FfSpace.lg),
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceCard,
-                borderRadius: BorderRadius.circular(FfRadius.lg),
-                border: Border.all(
-                  color: context.ff.color.borderSubtle,
-                  width: FfBorderWidth.hairline,
-                ),
-              ),
+            const FfSectionHeader(title: 'Enter passphrase to unlock'),
+            FfCard(
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -253,49 +240,20 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
             ),
           ] else ...[
             // Decrypted Contents Overview
-            _SectionLabel(label: 'Decrypted Backup Contents'),
-            const SizedBox(height: FfSpace.xs),
-            Container(
-              padding: const EdgeInsets.all(FfSpace.lg),
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceCard,
-                borderRadius: BorderRadius.circular(FfRadius.lg),
-                border: Border.all(
-                  color: context.ff.color.borderSubtle,
-                  width: FfBorderWidth.hairline,
-                ),
-              ),
+            const FfSectionHeader(title: 'Decrypted backup contents'),
+            FfCard(
+              padding: const EdgeInsets.all(FfSpace.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'PAYLOAD METRICS',
-                        style: context.ff.text.labelSm.copyWith(
-                          letterSpacing: 0.8,
-                          color: context.ff.color.secondary,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: FfSpace.sm,
-                          vertical: FfSpace.x3s,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.ff.color.statusSuccess.withValues(
-                            alpha: 0.15,
-                          ),
-                          borderRadius: BorderRadius.circular(FfRadius.full),
-                        ),
-                        child: Text(
-                          'Verified AES',
-                          style: context.ff.text.labelSm.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: context.ff.color.statusSuccess,
-                          ),
-                        ),
+                      Text('PAYLOAD METRICS', style: context.ff.text.labelSm),
+                      const FfBadge(
+                        label: 'Verified AES',
+                        tone: FfTone.success,
+                        icon: Icons.verified_rounded,
                       ),
                     ],
                   ),
@@ -362,45 +320,32 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
               ),
             ),
 
-            const SizedBox(height: FfSpace.x2l),
+            const SizedBox(height: FfSpace.xl),
 
-            // Restore Mode Selector
-            _SectionLabel(label: 'Choose Restore Method'),
-            const SizedBox(height: FfSpace.xs),
-            Container(
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceCard,
-                borderRadius: BorderRadius.circular(FfRadius.lg),
-                border: Border.all(
-                  color: context.ff.color.borderSubtle,
-                  width: FfBorderWidth.hairline,
+            // Restore Method Selector
+            const FfSectionHeader(title: 'Choose restore method'),
+            FfGroupedContainer(
+              children: [
+                FfRow.radio(
+                  title: 'Merge with Existing Data',
+                  subtitle:
+                      'Safely skip duplicate records and add missing entries.',
+                  selected: _selectedMode == RestoreMode.merge,
+                  onTap:
+                      () => setState(() => _selectedMode = RestoreMode.merge),
                 ),
-              ),
-              child: Column(
-                children: [
-                  FfRow.radio(
-                    title: 'Merge with Existing Data',
-                    subtitle:
-                        'Safely skip duplicate records and add missing entries.',
-                    selected: _selectedMode == RestoreMode.merge,
-                    onTap:
-                        () => setState(() => _selectedMode = RestoreMode.merge),
-                  ),
-                  const FfDivider(),
-                  FfRow.radio(
-                    title: 'Clean Replace (Overwrite)',
-                    subtitle:
-                        'Clear current database and restore state from this backup.',
-                    selected: _selectedMode == RestoreMode.replace,
-                    onTap:
-                        () =>
-                            setState(() => _selectedMode = RestoreMode.replace),
-                  ),
-                ],
-              ),
+                FfRow.radio(
+                  title: 'Clean Replace (Overwrite)',
+                  subtitle:
+                      'Clear current database and restore state from this backup.',
+                  selected: _selectedMode == RestoreMode.replace,
+                  onTap:
+                      () => setState(() => _selectedMode = RestoreMode.replace),
+                ),
+              ],
             ),
 
-            const SizedBox(height: FfSpace.x2l),
+            const SizedBox(height: FfSpace.xl),
 
             FfButton(
               label:
@@ -436,24 +381,5 @@ class _MetricRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FfKeyValueRow(label: label, value: '$count');
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
-        ),
-      ),
-    );
   }
 }

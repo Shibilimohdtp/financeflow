@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../core/formatting/date_formatter.dart';
 import '../../services/export_service.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import '../accounts/accounts_controller.dart';
 import '../backup/backup_screen.dart';
 import 'export_controller.dart';
-import '../accounts/accounts_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_pickers.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_row.dart';
-import '../../theme/ff.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
@@ -97,34 +98,23 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         title: 'Export Reports',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
+            padding: EdgeInsets.only(right: FfSpace.pageMargin),
             child: Center(
-              child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
+              child: FfPrivacyBadge(label: '100% Local'),
             ),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
+          horizontal: FfSpace.pageMargin,
           vertical: FfSpace.md,
         ),
         children: [
-          // ── Device Migration & Disaster Recovery Notice ───────────────
-          Container(
+          // ── Device Migration Notice ───────────────────────────────────
+          FfCard(
+            variant: FfCardVariant.tinted,
             padding: const EdgeInsets.all(FfSpace.md),
-            decoration: BoxDecoration(
-              color: context.ff.color.actionPrimaryContainer.withValues(
-                alpha: FfTint.strong.alpha,
-              ),
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.actionPrimary.withValues(
-                  alpha: FfTint.strong.alpha,
-                ),
-                width: FfBorderWidth.hairline,
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -149,7 +139,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 Text(
                   'Exports below are designed for external spreadsheets and reports. To transfer 100% of your data (all accounts, loans, settings, and histories) to another device, use Encrypted Backup & Restore.',
                   style: context.ff.text.bodySm.copyWith(
-                    color: context.ff.color.textSecondary,
+                    color: context.ff.color.secondary,
                   ),
                 ),
                 const SizedBox(height: FfSpace.sm),
@@ -191,23 +181,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           // ── 1. Local Processing Guarantee ─────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
+            tone: FfTone.success,
             padding: const EdgeInsets.all(FfSpace.md),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.ff.color.statusSuccess.withValues(
-                      alpha: FfTint.subtle.alpha,
-                    ),
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                  ),
-                  child: Icon(
-                    Icons.shield_outlined,
-                    color: context.ff.color.statusSuccess,
-                    size: 20,
-                  ),
+                Icon(
+                  Icons.shield_outlined,
+                  color: context.ff.color.statusSuccess,
+                  size: 24,
                 ),
                 const SizedBox(width: FfSpace.md),
                 Expanded(
@@ -235,10 +216,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ),
 
-          const SizedBox(height: FfSpace.lg),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 2. Format Selection ───────────────────────────────────────
-          const FfSectionHeader(title: 'Export Format'),
+          const FfSectionHeader(title: 'Export format'),
           FfSegmentedPill<ExportFormat>(
             options: const [
               FfSegmentOption(
@@ -256,10 +237,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             },
           ),
 
-          const SizedBox(height: FfSpace.lg),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 3. Export Scope ───────────────────────────────────────────
-          const FfSectionHeader(title: 'Data Scope'),
+          const FfSectionHeader(title: 'Data scope'),
           FfGroupedContainer(
             children: [
               FfRow.radio(
@@ -272,7 +253,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       () => _selectedScope = ExportScope.allTransactions,
                     ),
               ),
-              const FfDivider(),
               FfRow.radio(
                 title: 'Specific Date Range',
                 subtitle:
@@ -290,7 +270,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ],
           ),
 
-          const SizedBox(height: FfSpace.lg),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 4. Export Action Button ───────────────────────────────────
           FfButton(
