@@ -43,7 +43,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfPeriodBar` | Shared period selector (prev/next, picker, all time) | `FfPeriodBar(period:, onChanged:, allowAllTime:, units: {week, month, year}, chooserTitle:)`; `units` limits the chooser (Plan offers week/month/year only; `day` = Today, `custom` = Custom range) |
 | `FfAppBar` | Top bar of pushed/sub-screens with back/close button | `FfAppBar(title:, subtitle:, actions:)` |
 | `FfPageHeader` (`ff_page_header.dart`) | Canonical non-sticky top header for all 5 primary tab screens (title in `headline`, subtitle in `label`, zero shield icons, actions, dynamic search & selection) | `FfPageHeader(title:, subtitle:, actions:, isSearchOpen:, ...)` |
-| `FfMenuButton` / `FfSelect` | Overflow menus / field dropdowns | |
+| `FfMenuButton` / `FfSelect` | Overflow menus / single-choice fields | `FfSelect` looks like `FfTextField` and opens a Bloom sheet of options with a check on the selected one (same API as the old dropdown; `null` options still work). `FfMenuButton` lists actions, destructive ones marked |
 
 ## Rows and text
 
