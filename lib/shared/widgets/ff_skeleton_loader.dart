@@ -102,13 +102,33 @@ class FfHeroSkeletonCard extends StatelessWidget {
             const SizedBox(height: FfSpace.sm),
             const FfSkeletonBlock(width: 220, height: 44),
             const SizedBox(height: FfSpace.md),
+            // Flexible, so the three pills shrink on narrow phones instead
+            // of overflowing (fixed 88 dp blocks overflowed below ~370 dp).
             Row(
               children: const [
-                FfSkeletonBlock(width: 88, height: 30, borderRadius: 20),
+                Flexible(
+                  child: FfSkeletonBlock(
+                    width: 88,
+                    height: 30,
+                    borderRadius: 20,
+                  ),
+                ),
                 SizedBox(width: FfSpace.sm),
-                FfSkeletonBlock(width: 88, height: 30, borderRadius: 20),
+                Flexible(
+                  child: FfSkeletonBlock(
+                    width: 88,
+                    height: 30,
+                    borderRadius: 20,
+                  ),
+                ),
                 SizedBox(width: FfSpace.sm),
-                FfSkeletonBlock(width: 88, height: 30, borderRadius: 20),
+                Flexible(
+                  child: FfSkeletonBlock(
+                    width: 88,
+                    height: 30,
+                    borderRadius: 20,
+                  ),
+                ),
               ],
             ),
           ],

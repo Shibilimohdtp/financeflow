@@ -1,23 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/extensions/context_extensions.dart';
+
 import '../../core/formatting/currency_formatter.dart';
-import '../../core/formatting/date_formatter.dart';
+import '../../core/money/money_math.dart';
+import '../../core/period/period.dart';
 import '../../models/budget.dart';
 import '../../models/category.dart';
-import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_category_tile.dart';
+import '../../models/category_icons.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_snackbar.dart';
-import '../../theme/stillwater_tokens.dart';
-import '../../theme/stillwater_typography.dart';
+import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
 import '../categories/categories_controller.dart';
+import 'budget_format.dart';
 import 'budgets_controller.dart';
+import 'plan_providers.dart';
 
+/// Add or edit a budget (Stillwater Bloom recipe E), opened with
+/// `openBudgetSheet`.
+///
+/// The limit comes first, large, with a live preview of what it means per
+/// day ("₹6,500 a month · about ₹217 a day"). Choosing a category offers
+/// what it usually costs ("Usually ₹5,840 · use ₹6,000"). Then the category
+/// chips, how often it repeats, when to be nudged, and an optional name
+/// (the category's name otherwise). Group and rollover arrive with the
+/// persistence slice.
 class AddEditBudgetSheet extends ConsumerStatefulWidget {
   final Budget? initialBudget;
 
@@ -28,532 +44,536 @@ class AddEditBudgetSheet extends ConsumerStatefulWidget {
 }
 
 class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
-  late TextEditingController _nameController;
-  late TextEditingController _amountController;
-  Category? _selectedCategory;
-  BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
-  DateTime _startDate = DateTime.now();
-  DateTime? _endDate;
-  double _alertThreshold = 0.8; // 80%
+  late final TextEditingController _amount;
+  late final TextEditingController _name;
+  String? _categoryId;
+  late BudgetPeriod _period;
+  DateTime? _customStart;
+  DateTime? _customEnd;
+  late double _threshold;
 
-  String? _nameError;
   String? _amountError;
   String? _categoryError;
-  bool _isSubmitting = false;
+  String? _datesError;
+  bool _saving = false;
+
+  /// Alert choices; an older budget's own value (say 85%) is kept as a
+  /// fifth choice so editing never silently changes it.
+  static const _thresholds = [0.75, 0.8, 0.9, 1.0];
+
+  bool get _isEditing => widget.initialBudget != null;
 
   @override
   void initState() {
     super.initState();
-    final initial = widget.initialBudget;
-    _nameController = TextEditingController(text: initial?.name ?? '');
-    _amountController = TextEditingController(
+    final b = widget.initialBudget;
+    _amount = TextEditingController(
       text:
-          initial != null
-              ? initial.amountLimit.toStringAsFixed(
-                initial.amountLimit.truncateToDouble() == initial.amountLimit
-                    ? 0
-                    : 2,
-              )
-              : '',
+          b == null
+              ? ''
+              : b.amountLimit.toStringAsFixed(
+                b.amountLimit == b.amountLimit.truncateToDouble() ? 0 : 2,
+              ),
     );
-    _selectedPeriod = initial?.period ?? BudgetPeriod.monthly;
-    _startDate =
-        initial?.startDate ??
-        DateTime(DateTime.now().year, DateTime.now().month, 1);
-    _endDate = initial?.endDate;
-    _alertThreshold = initial?.alertThreshold ?? 0.8;
+    _name = TextEditingController(
+      text: b == null || b.name == b.categoryName ? '' : b.name,
+    );
+    _categoryId = b?.categoryId;
+    _period = b?.period ?? BudgetPeriod.monthly;
+    if (b?.period == BudgetPeriod.custom) {
+      _customStart = b!.startDate;
+      _customEnd = b.endDate;
+    }
+    _threshold = b?.alertThreshold ?? 0.8;
+    _amount.addListener(_onAmountChanged);
+  }
+
+  void _onAmountChanged() {
+    if (_amountError != null) _amountError = null;
+    setState(() {});
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _amountController.dispose();
+    _amount.removeListener(_onAmountChanged);
+    _amount.dispose();
+    _name.dispose();
     super.dispose();
   }
 
-  void _onCategorySelected(Category category) {
+  int? get _amountMinor {
+    final v = CurrencyFormatter.parse(_amount.text);
+    return v == null ? null : MoneyMath.toMinor(v);
+  }
+
+  /// The period this budget would cover if it started today, for the
+  /// preview and the start date.
+  Period _previewPeriod(DateTime now) => switch (_period) {
+    BudgetPeriod.weekly => Period.containing(PeriodUnit.week, now),
+    BudgetPeriod.yearly => Period.containing(PeriodUnit.year, now),
+    BudgetPeriod.monthly => Period.containing(PeriodUnit.month, now),
+    BudgetPeriod.custom =>
+      _customStart != null && _customEnd != null
+          ? Period.custom(_customStart!, _customEnd!)
+          : Period.containing(PeriodUnit.month, now),
+  };
+
+  Future<void> _pickDates() async {
+    final now = ref.read(planNowProvider);
+    final picked = await pickFfDateRange(
+      context,
+      firstDate: DateTime(now.year - 2),
+      lastDate: DateTime(now.year + 3, 12, 31),
+      initialDateRange:
+          _customStart != null && _customEnd != null
+              ? DateTimeRange(start: _customStart!, end: _customEnd!)
+              : null,
+      helpText: 'Budget dates',
+    );
+    if (picked == null || !mounted) return;
     setState(() {
-      _selectedCategory = category;
-      _categoryError = null;
-      if (_nameController.text.trim().isEmpty ||
-          (widget.initialBudget == null &&
-              _nameController.text.endsWith(' Budget'))) {
-        _nameController.text = '${category.name} Budget';
-      }
+      _customStart = picked.start;
+      _customEnd = picked.end;
+      _datesError = null;
     });
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit(List<Category> categories) async {
+    final minor = _amountMinor;
+    final category = categories.where((c) => c.id == _categoryId).firstOrNull;
     setState(() {
-      _nameError = null;
-      _amountError = null;
-      _categoryError = null;
+      _amountError =
+          minor == null || minor <= 0 ? 'Enter a limit above zero.' : null;
+      _categoryError = category == null ? 'Choose a category.' : null;
+      _datesError =
+          _period == BudgetPeriod.custom &&
+                  (_customStart == null || _customEnd == null)
+              ? 'Choose the dates this budget covers.'
+              : null;
     });
-
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() {
-        _nameError = 'Budget name is required.';
-      });
+    if (_amountError != null || _categoryError != null || _datesError != null) {
       return;
     }
 
-    final amount = CurrencyFormatter.parse(_amountController.text);
-    if (amount == null || amount <= 0) {
-      setState(() {
-        _amountError = 'Please enter an amount limit greater than zero.';
-      });
-      return;
-    }
-
-    if (_selectedCategory == null) {
-      setState(() {
-        _categoryError = 'Please select a category for this budget.';
-      });
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _saving = true);
+    // The plan's day decides the period; the record's timestamps are real.
+    final now = ref.read(planNowProvider);
+    final stamp = DateTime.now();
+    final initial = widget.initialBudget;
+    final keepsDates =
+        initial != null &&
+        initial.period == _period &&
+        _period != BudgetPeriod.custom;
+    final name = _name.text.trim().isEmpty ? category!.name : _name.text.trim();
+    final budget = Budget(
+      id: initial?.id ?? const Uuid().v4(),
+      name: name,
+      categoryId: category!.id,
+      categoryName: category.name,
+      categoryIcon: category.iconIdentifier,
+      categoryColor: category.colorTokenIdentifier,
+      amountLimit: MoneyMath.fromMinor(minor!),
+      period: _period,
+      // A new budget starts with the current period, so spending earlier in
+      // it counts (limits are not pro-rated).
+      startDate:
+          _period == BudgetPeriod.custom
+              ? _customStart!
+              : keepsDates
+              ? initial.startDate
+              : _previewPeriod(now).start,
+      endDate: _period == BudgetPeriod.custom ? _customEnd : null,
+      alertThreshold: _threshold,
+      isArchived: initial?.isArchived ?? false,
+      createdAt: initial?.createdAt ?? stamp,
+      updatedAt: stamp,
+    );
 
     try {
-      final now = DateTime.now();
-      final budget = Budget(
-        id: widget.initialBudget?.id ?? const Uuid().v4(),
-        name: name,
-        categoryId: _selectedCategory!.id,
-        categoryName: _selectedCategory!.name,
-        categoryIcon: _selectedCategory!.iconIdentifier,
-        categoryColor: _selectedCategory!.colorTokenIdentifier,
-        amountLimit: amount,
-        period: _selectedPeriod,
-        startDate: _startDate,
-        endDate: _endDate,
-        alertThreshold: _alertThreshold,
-        isArchived: widget.initialBudget?.isArchived ?? false,
-        createdAt: widget.initialBudget?.createdAt ?? now,
-        updatedAt: now,
-      );
-
       await ref.read(budgetsControllerProvider.notifier).saveBudget(budget);
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        FfSnackbar.show(
-          context,
-          message:
-              widget.initialBudget != null
-                  ? 'Budget updated.'
-                  : 'Budget created.',
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      Navigator.of(context).pop();
+      if (messenger != null && messenger.mounted) {
+        FfToast.show(
+          messenger.context,
+          message: _isEditing ? '$name updated.' : '$name budget created.',
         );
       }
-    } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
-      if (mounted) {
-        FfSnackbar.show(context, message: 'Could not save budget: $e');
-      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      FfToast.show(
+        context,
+        message: 'Could not save the budget. Nothing changed.',
+        tone: FfToastTone.error,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isEditing = widget.initialBudget != null;
-    final categoriesAsync = ref.watch(categoriesStreamProvider);
-    final categories =
-        (categoriesAsync.value ?? [])
-            .where(
-              (c) => !c.isArchived && c.typeCompatibility.contains('expense'),
-            )
-            .toList()
-          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final ff = context.ff;
+    final all = ref.watch(categoriesStreamProvider).valueOrNull ?? const [];
+    final categories = [
+      for (final c in all)
+        if ((!c.isArchived && c.typeCompatibility.contains('expense')) ||
+            c.id == _categoryId)
+          c,
+    ];
+    final usual =
+        _categoryId == null
+            ? null
+            : ref.watch(categoryUsualProvider(_categoryId!));
 
-    if (_selectedCategory == null &&
-        widget.initialBudget != null &&
-        categories.isNotEmpty) {
-      _selectedCategory = categories.firstWhere(
-        (c) => c.id == widget.initialBudget!.categoryId,
-        orElse: () => categories.first,
-      );
+    return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FfSheetHeader(
+          title: _isEditing ? 'Edit budget' : 'New budget',
+          subtitle:
+              _isEditing
+                  ? 'Changes apply from this period on'
+                  : 'A spending limit for one category',
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.pageMargin,
+              FfSpace.xs,
+              FfSpace.pageMargin,
+              FfSpace.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _LimitBlock(
+                  controller: _amount,
+                  autofocus: !_isEditing,
+                  preview: _preview(),
+                  error: _amountError,
+                  usual: usual,
+                  onUseSuggestion:
+                      usual == null
+                          ? null
+                          : () =>
+                              _amount.text = MoneyMath.fromMinor(
+                                usual.suggestedMinor,
+                              ).toStringAsFixed(0),
+                ),
+                const SizedBox(height: FfSpace.xl),
+                _Label('Category', error: _categoryError),
+                const SizedBox(height: FfSpace.xs),
+                if (categories.isEmpty)
+                  Text(
+                    'Add a spending category first, in Settings.',
+                    style: ff.text.bodySm,
+                  )
+                else
+                  Wrap(
+                    spacing: FfSpace.xs,
+                    runSpacing: FfSpace.xs,
+                    children: [
+                      for (final c in categories)
+                        FfChip(
+                          key: ValueKey('budget-category-${c.id}'),
+                          label: c.name,
+                          isSelected: c.id == _categoryId,
+                          leading: Icon(
+                            CategoryIcons.getIcon(c.iconIdentifier),
+                            size: FfIconSize.sm,
+                          ),
+                          onSelected:
+                              () => setState(() {
+                                _categoryId = c.id;
+                                _categoryError = null;
+                              }),
+                        ),
+                    ],
+                  ),
+                const SizedBox(height: FfSpace.xl),
+                const _Label('Repeats'),
+                const SizedBox(height: FfSpace.xs),
+                FfSegmentedPill<BudgetPeriod>(
+                  options: const [
+                    FfSegmentOption(
+                      value: BudgetPeriod.monthly,
+                      label: 'Monthly',
+                    ),
+                    FfSegmentOption(
+                      value: BudgetPeriod.weekly,
+                      label: 'Weekly',
+                    ),
+                    FfSegmentOption(
+                      value: BudgetPeriod.yearly,
+                      label: 'Yearly',
+                    ),
+                    FfSegmentOption(value: BudgetPeriod.custom, label: 'Once'),
+                  ],
+                  selectedValue: _period,
+                  onSelected: (p) => setState(() => _period = p),
+                ),
+                if (_period == BudgetPeriod.custom) ...[
+                  const SizedBox(height: FfSpace.sm),
+                  FfGroupedContainer(
+                    children: [
+                      FfRow(
+                        key: const ValueKey('budget-dates'),
+                        icon: Icons.date_range_rounded,
+                        title:
+                            _customStart == null || _customEnd == null
+                                ? 'Choose dates'
+                                : '${BudgetFormat.shortDate(_customStart!)} – '
+                                    '${BudgetFormat.shortDate(_customEnd!)} '
+                                    '${_customEnd!.year}',
+                        subtitle: 'One period, start and end days included',
+                        onTap: _pickDates,
+                      ),
+                    ],
+                  ),
+                  if (_datesError != null) ...[
+                    const SizedBox(height: FfSpace.x2s),
+                    _ErrorLine(_datesError!),
+                  ],
+                ],
+                const SizedBox(height: FfSpace.xl),
+                const _Label('Alert me at'),
+                const SizedBox(height: FfSpace.xs),
+                FfSegmentedPill<double>(
+                  options: [
+                    for (final t
+                        in {..._thresholds, _threshold}.toList()..sort())
+                      FfSegmentOption(
+                        value: t,
+                        label: '${(t * 100).round()}%',
+                      ),
+                  ],
+                  selectedValue: _threshold,
+                  onSelected: (t) => setState(() => _threshold = t),
+                ),
+                const SizedBox(height: FfSpace.x2s),
+                Text(_alertLine(), style: ff.text.label),
+                const SizedBox(height: FfSpace.xl),
+                FfTextField(
+                  controller: _name,
+                  label: 'Name (optional)',
+                  hint:
+                      categories
+                          .where((c) => c.id == _categoryId)
+                          .firstOrNull
+                          ?.name ??
+                      'Same as the category',
+                  helper: 'Shown on the Plan tab',
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.done,
+                ),
+                if (!_isEditing && _period != BudgetPeriod.custom) ...[
+                  const SizedBox(height: FfSpace.lg),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: FfIconSize.sm,
+                        color: ff.color.textSecondary,
+                      ),
+                      const SizedBox(width: FfSpace.xs),
+                      Expanded(
+                        child: Text(
+                          'It starts with this '
+                          '${BudgetFormat.periodNoun(_period)}, and spending '
+                          'from earlier in it counts too.',
+                          style: ff.text.label,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        FfSheetFooter(
+          primaryLabel: _isEditing ? 'Save changes' : 'Create budget',
+          isPrimaryLoading: _saving,
+          onPrimaryPressed: _saving ? null : () => _submit(categories),
+          secondaryLabel: 'Cancel',
+          onSecondaryPressed:
+              _saving ? null : () => Navigator.of(context).maybePop(),
+        ),
+      ],
+    );
+  }
+
+  /// "₹6,500 a month · about ₹217 a day".
+  String _preview() {
+    final minor = _amountMinor;
+    if (minor == null || minor <= 0) {
+      return switch (_period) {
+        BudgetPeriod.weekly => 'How much for a week?',
+        BudgetPeriod.yearly => 'How much for a year?',
+        BudgetPeriod.custom => 'How much for these dates?',
+        BudgetPeriod.monthly => 'How much for a month?',
+      };
     }
+    final p = _previewPeriod(ref.read(planNowProvider));
+    final per =
+        _period == BudgetPeriod.yearly
+            ? 'about ${BudgetFormat.estimate(minor ~/ 12)} a month'
+            : 'about ${BudgetFormat.estimate(minor ~/ p.dayCount)} a day';
+    final span = switch (_period) {
+      BudgetPeriod.weekly => 'a week',
+      BudgetPeriod.yearly => 'a year',
+      BudgetPeriod.custom => 'over ${p.dayCount} days',
+      BudgetPeriod.monthly => 'a month',
+    };
+    return '${BudgetFormat.money(minor)} $span · $per';
+  }
 
-    final parsedAmount = CurrencyFormatter.parse(_amountController.text) ?? 0.0;
-    final alertRupeeValue = parsedAmount * _alertThreshold;
+  String _alertLine() {
+    final minor = _amountMinor;
+    final at =
+        minor == null || minor <= 0
+            ? ''
+            : ' (${BudgetFormat.estimate((minor * _threshold).round())})';
+    return _threshold >= 1.0
+        ? 'A nudge only when the limit is reached.'
+        : 'A gentle nudge on this device at ${(_threshold * 100).round()}% '
+            'of the limit$at.';
+  }
+}
 
+/// The sheet's lead: the limit as a large light amount on a soft card, the
+/// live preview under it, and the category's usual spending as a one-tap
+/// suggestion.
+class _LimitBlock extends StatelessWidget {
+  const _LimitBlock({
+    required this.controller,
+    required this.autofocus,
+    required this.preview,
+    required this.error,
+    required this.usual,
+    required this.onUseSuggestion,
+  });
+
+  final TextEditingController controller;
+  final bool autofocus;
+  final String preview;
+  final String? error;
+  final ({int medianMinor, int suggestedMinor})? usual;
+  final VoidCallback? onUseSuggestion;
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final u = usual;
     return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(StillwaterTokens.radius2Xl),
+      padding: const EdgeInsets.fromLTRB(
+        FfSpace.lg,
+        FfSpace.md,
+        FfSpace.lg,
+        FfSpace.md,
+      ),
+      decoration: ShapeDecoration(
+        color: ff.color.surfaceCard,
+        shape: FfShape.of(FfRadius.xl),
+        shadows: FfElevation.card(
+          ff.color.shadow,
+          Theme.of(context).brightness,
         ),
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Limit', style: ff.text.label),
+          const SizedBox(height: FfSpace.x2s),
+          FfAmountField.bare(
+            key: const ValueKey('budget-limit'),
+            controller: controller,
+            autofocus: autofocus,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FfSheetHeader(
-                title: isEditing ? 'Edit Budget' : 'New Budget Plan',
-                subtitle: 'Set a conscious spending limit on this device',
-              ),
-              const Divider(height: 1, thickness: 1),
-              Flexible(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    StillwaterTokens.spaceLg,
-                    StillwaterTokens.spaceMd,
-                    StillwaterTokens.spaceLg,
-                    StillwaterTokens.spaceMd,
-                  ),
-                  shrinkWrap: true,
-                  children: [
-                    // ── 1. Amount Hero Field ──────────────────────────
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StillwaterTokens.spaceMd,
-                        vertical: StillwaterTokens.spaceSm,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(
-                          StillwaterTokens.radiusLg,
-                        ),
-                        border: Border.all(
-                          color:
-                              _amountError != null
-                                  ? theme.colorScheme.error
-                                  : theme.dividerColor,
-                          width: StillwaterTokens.borderWidthDefault,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'PLANNED SPENDING LIMIT',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.secondary,
-                              letterSpacing: 1.0,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                CurrencyFormatter.currencySymbol,
-                                style: StillwaterTypography.numHero(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(width: StillwaterTokens.spaceSm),
-                              Expanded(
-                                child: TextField(
-                                  controller: _amountController,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d+\.?\d{0,2}'),
-                                    ),
-                                  ],
-                                  style: StillwaterTypography.numHero(
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: '0',
-                                    hintStyle: StillwaterTypography.numHero(
-                                      color: theme.colorScheme.outline
-                                          .withValues(alpha: 0.4),
-                                    ),
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_amountError != null) ...[
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Text(
-                          _amountError!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: StillwaterTokens.spaceLg),
-
-                    // ── 2. Category Selector ──────────────────────────
-                    Text(
-                      'Category',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
-                    if (categories.isEmpty)
-                      const Text('No categories found.')
-                    else
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children:
-                              categories.map((cat) {
-                                final isSelected =
-                                    _selectedCategory?.id == cat.id;
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    right: StillwaterTokens.spaceSm,
-                                  ),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(
-                                      StillwaterTokens.radiusMd,
-                                    ),
-                                    onTap: () => _onCategorySelected(cat),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: StillwaterTokens.spaceSm,
-                                        vertical: StillwaterTokens.spaceXs,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            isSelected
-                                                ? theme
-                                                    .colorScheme
-                                                    .primaryContainer
-                                                : theme.cardColor,
-                                        borderRadius: BorderRadius.circular(
-                                          StillwaterTokens.radiusMd,
-                                        ),
-                                        border: Border.all(
-                                          color:
-                                              isSelected
-                                                  ? theme.colorScheme.primary
-                                                  : theme.dividerColor,
-                                          width:
-                                              isSelected
-                                                  ? StillwaterTokens
-                                                      .borderWidthStrong
-                                                  : StillwaterTokens
-                                                      .borderWidthHairline,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          FfCategoryTile(
-                                            iconIdentifier: cat.iconIdentifier,
-                                            colorTokenIdentifier:
-                                                cat.colorTokenIdentifier,
-                                            size: 28,
-                                          ),
-                                          const SizedBox(
-                                            width: StillwaterTokens.spaceSm,
-                                          ),
-                                          Text(
-                                            cat.name,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                                  fontWeight:
-                                                      isSelected
-                                                          ? FontWeight.w700
-                                                          : FontWeight.w500,
-                                                  color:
-                                                      isSelected
-                                                          ? theme
-                                                              .colorScheme
-                                                              .onPrimaryContainer
-                                                          : theme
-                                                              .colorScheme
-                                                              .onSurface,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                        ),
-                      ),
-                    if (_categoryError != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        _categoryError!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: StillwaterTokens.spaceLg),
-
-                    // ── 3. Budget Name ────────────────────────────────
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Budget Name',
-                        hintText: 'e.g. Dining Out, Groceries',
-                        errorText: _nameError,
-                      ),
-                    ),
-
-                    const SizedBox(height: StillwaterTokens.spaceLg),
-
-                    // ── 4. Period Selector ────────────────────────────
-                    Text(
-                      'Period Cycle',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceXs),
-                    FfSegmentedPill<BudgetPeriod>(
-                      options: const [
-                        FfSegmentOption(
-                          value: BudgetPeriod.monthly,
-                          label: 'Monthly',
-                        ),
-                        FfSegmentOption(
-                          value: BudgetPeriod.weekly,
-                          label: 'Weekly',
-                        ),
-                        FfSegmentOption(
-                          value: BudgetPeriod.yearly,
-                          label: 'Yearly',
-                        ),
-                        FfSegmentOption(
-                          value: BudgetPeriod.custom,
-                          label: 'Custom',
-                        ),
-                      ],
-                      selectedValue: _selectedPeriod,
-                      onSelected: (period) async {
-                        if (period == BudgetPeriod.custom) {
-                          final range = await showDateRangePicker(
-                            context: context,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2035),
-                            initialDateRange: DateTimeRange(
-                              start: _startDate,
-                              end:
-                                  _endDate ??
-                                  _startDate.add(const Duration(days: 30)),
-                            ),
-                          );
-                          if (range != null) {
-                            setState(() {
-                              _selectedPeriod = period;
-                              _startDate = range.start;
-                              _endDate = range.end;
-                            });
-                          }
-                        } else {
-                          setState(() {
-                            _selectedPeriod = period;
-                          });
-                        }
-                      },
-                    ),
-
-                    if (_selectedPeriod == BudgetPeriod.custom &&
-                        _endDate != null) ...[
-                      const SizedBox(height: StillwaterTokens.spaceSm),
-                      Text(
-                        'Cycle: ${DateFormatter.formatShortDate(_startDate)} – ${DateFormatter.formatShortDate(_endDate!)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: StillwaterTokens.spaceLg),
-
-                    // ── 5. Alert Notification Threshold ───────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Alert Threshold',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          '${(_alertThreshold * 100).toInt()}% (${CurrencyFormatter.formatAmount(alertRupeeValue)})',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: _alertThreshold,
-                      min: 0.5,
-                      max: 1.0,
-                      divisions: 10,
-                      label: '${(_alertThreshold * 100).toInt()}%',
-                      onChanged: (val) {
-                        setState(() {
-                          _alertThreshold = val;
-                        });
-                      },
-                    ),
-                    Text(
-                      'You will receive a gentle on-device alert when your spending crosses this threshold.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, thickness: 1),
-              FfSheetFooter(
-                child: Row(
-                  children: [
-                    FfButton(
-                      label: 'Cancel',
-                      variant: FfButtonVariant.text,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    const Spacer(),
-                    FfButton(
-                      label: isEditing ? 'Update Budget' : 'Save Budget',
-                      variant: FfButtonVariant.primary,
-                      isLoading: _isSubmitting,
-                      onPressed: _submit,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          const SizedBox(height: FfSpace.xs),
+          Text(
+            preview,
+            key: const ValueKey('budget-preview'),
+            style: ff.text.label.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
-        ),
+          if (error != null) ...[
+            const SizedBox(height: FfSpace.x2s),
+            _ErrorLine(error!),
+          ],
+          if (u != null) ...[
+            const SizedBox(height: FfSpace.sm),
+            FfChip(
+              key: const ValueKey('budget-use-usual'),
+              label:
+                  'Usually ${BudgetFormat.money(u.medianMinor)} · '
+                  'use ${BudgetFormat.money(u.suggestedMinor)}',
+              isSelected: false,
+              leading: const Icon(
+                Icons.auto_graph_rounded,
+                size: FfIconSize.sm,
+              ),
+              onSelected: () => onUseSuggestion?.call(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A sentence-case field label, with its error underneath.
+class _Label extends StatelessWidget {
+  const _Label(this.text, {this.error});
+
+  final String text;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(text, style: ff.text.titleSm),
+        if (error != null) ...[
+          const SizedBox(height: FfSpace.x3s),
+          _ErrorLine(error!),
+        ],
+      ],
+    );
+  }
+}
+
+/// An error in words with an icon, never colour alone.
+class _ErrorLine extends StatelessWidget {
+  const _ErrorLine(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: FfIconSize.sm,
+            color: ff.color.statusError,
+          ),
+          const SizedBox(width: FfSpace.x2s),
+          Expanded(
+            child: Text(
+              message,
+              style: ff.text.label.copyWith(color: ff.color.statusError),
+            ),
+          ),
+        ],
       ),
     );
   }

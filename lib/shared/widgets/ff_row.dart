@@ -55,7 +55,8 @@ class FfRow extends StatelessWidget {
        selected = null,
        destructive = false;
 
-  /// A row with a checkbox.
+  /// A row with a checkbox. [detail] (a short value such as a suggested
+  /// amount) sits just before the checkbox.
   const FfRow.checkbox({
     super.key,
     required this.title,
@@ -63,13 +64,13 @@ class FfRow extends StatelessWidget {
     this.icon,
     this.iconTone,
     this.leading,
+    this.detail,
     required bool checked,
     required ValueChanged<bool>? onChanged,
     this.enabled = true,
   }) : _control = _FfRowControl.checkbox,
        _checked = checked,
        _onChanged = onChanged,
-       detail = null,
        trailing = null,
        showChevron = false,
        onTap = null,
@@ -181,11 +182,34 @@ class FfRow extends StatelessWidget {
           onChanged: interactive ? _onChanged : null,
         ),
       ),
-      _FfRowControl.checkbox => ExcludeSemantics(
-        child: Checkbox(
-          value: _checked,
-          onChanged: interactive ? (v) => _onChanged!(v ?? false) : null,
-        ),
+      _FfRowControl.checkbox => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (detail != null) ...[
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: FfRowTokens.detailMaxWidth,
+              ),
+              child: Text(
+                detail!,
+                style: ff.text.body.copyWith(
+                  color: ff.color.textPrimary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+              ),
+            ),
+            const SizedBox(width: FfSpace.x2s),
+          ],
+          ExcludeSemantics(
+            child: Checkbox(
+              value: _checked,
+              onChanged: interactive ? (v) => _onChanged!(v ?? false) : null,
+            ),
+          ),
+        ],
       ),
       _ => _trailing(ff, interactive),
     };

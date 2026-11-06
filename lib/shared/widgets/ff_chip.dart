@@ -67,9 +67,15 @@ class FfChip extends StatelessWidget {
                         _tinted(leading!, fg),
                         const SizedBox(width: FfChipTokens.gap),
                       ],
-                      Text(
-                        label,
-                        style: context.ff.text.labelLg.copyWith(color: fg),
+                      // Shrinks with an ellipsis instead of overflowing on
+                      // narrow screens or at large text.
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.ff.text.labelLg.copyWith(color: fg),
+                        ),
                       ),
                       if (trailing != null) ...[
                         const SizedBox(width: FfChipTokens.gap),

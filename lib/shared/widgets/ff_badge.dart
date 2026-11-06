@@ -40,11 +40,15 @@ class FfBadge extends StatelessWidget {
             Icon(icon, size: FfBadgeTokens.iconSize, color: fg),
             const SizedBox(width: FfBadgeTokens.gap),
           ],
-          Text(
-            label,
-            style: ff.text.labelSm.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ff.text.labelSm.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

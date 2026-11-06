@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/money/money_math.dart';
 
 import '../../core/period/period.dart';
 import '../../models/budget.dart';
@@ -15,10 +19,17 @@ import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import 'budgets_controller.dart';
 
-/// "Now" for the Plan tab, read once per provider build. Tests override it.
-/// Like Home, a screen left open across midnight keeps the old day until it
-/// rebuilds (`docs/architecture/periods.md`).
-final planNowProvider = Provider<DateTime>((ref) => DateTime.now());
+/// "Now" for the Plan tab. It refreshes itself at the next local midnight,
+/// so a phone left on the Plan tab overnight moves to the new day ("safe to
+/// spend today", days left, pace) instead of keeping yesterday. Tests
+/// override it with a fixed time.
+final planNowProvider = Provider<DateTime>((ref) {
+  final now = DateTime.now();
+  final midnight = DateTime(now.year, now.month, now.day + 1);
+  final timer = Timer(midnight.difference(now), ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
+  return now;
+});
 
 /// The period the Plan tab shows: a week, month or year (never a custom
 /// range or a single day, which budgets don't have). Starts on this month.
@@ -78,7 +89,9 @@ final budgetBoardProvider = Provider<AsyncValue<BudgetBoard>>((ref) {
   final bills = ref.watch(planBillsProvider);
   final engine = ref.watch(budgetEngineProvider);
   final budgets = ref.watch(planBudgetsProvider);
-  if (engine.hasError) return AsyncValue.error(engine.error!, engine.stackTrace!);
+  if (engine.hasError) {
+    return AsyncValue.error(engine.error!, engine.stackTrace!);
+  }
   if (budgets.hasError) {
     return AsyncValue.error(budgets.error!, budgets.stackTrace!);
   }
@@ -96,7 +109,7 @@ final budgetBoardProvider = Provider<AsyncValue<BudgetBoard>>((ref) {
   );
 });
 
-enum PlanInsightKind { raise, runOut, lower, closedWithinPlan }
+enum PlanInsightKind { raise, runOut, lower }
 
 /// The one suggestion the Plan tab shows, with what its button does.
 class PlanInsight {
@@ -110,9 +123,9 @@ class PlanInsight {
 }
 
 /// Picks the single most useful thing to say about the viewed period: raise
-/// a budget that keeps going over; warn when a budget will run out; lower a
-/// budget that is never used; or note a closed period that stayed within
-/// plan. Null when there is nothing worth saying.
+/// a budget that keeps going over; warn when a budget will run out; or lower
+/// a budget that is never used. Null when there is nothing worth saying (a
+/// closed period's result is already in the hero).
 final planInsightProvider = Provider<PlanInsight?>((ref) {
   final board = ref.watch(budgetBoardProvider).valueOrNull;
   final engine = ref.watch(budgetEngineProvider).valueOrNull;
@@ -122,7 +135,9 @@ final planInsightProvider = Provider<PlanInsight?>((ref) {
   BudgetInsight insightFor(BudgetPeriodResult r) =>
       BudgetInsight.compute(engine, r.budget, r.period, now: now);
 
-  for (final r in board.results.where((r) => r.status != BudgetStatus.onTrack)) {
+  for (final r in board.results.where(
+    (r) => r.status != BudgetStatus.onTrack,
+  )) {
     final i = insightFor(r);
     if (i.suggestion?.kind == BudgetSuggestionKind.raise) {
       return PlanInsight(PlanInsightKind.raise, result: r, insight: i);
@@ -142,9 +157,6 @@ final planInsightProvider = Provider<PlanInsight?>((ref) {
     if (kind == BudgetSuggestionKind.lower) {
       return PlanInsight(PlanInsightKind.lower, result: r, insight: i);
     }
-  }
-  if (board.closedWithinPlan) {
-    return const PlanInsight(PlanInsightKind.closedWithinPlan);
   }
   return null;
 });
@@ -173,7 +185,35 @@ final budgetSetupSuggestionProvider = Provider<BudgetSetupSuggestion?>((ref) {
   if (ledger == null) return null;
   return BudgetSetupSuggester.suggest(
     ledger: ledger,
-    eligibleCategoryIds: ref.watch(unbudgetedCategoriesProvider).map((c) => c.id),
+    eligibleCategoryIds: ref
+        .watch(unbudgetedCategoriesProvider)
+        .map((c) => c.id),
     now: ref.watch(planNowProvider),
   );
+});
+
+/// What a category usually costs a month: the median of the last three
+/// full months that had spending, and that rounded up to a friendly limit
+/// (`MoneyMath.niceCeilMinor`). Null with no spending in those months.
+final categoryUsualProvider = Provider.family<
+  ({int medianMinor, int suggestedMinor})?,
+  String
+>((ref, categoryId) {
+  final ledger = ref.watch(budgetLedgerProvider).valueOrNull;
+  if (ledger == null) return null;
+  final current = Period.containing(
+    PeriodUnit.month,
+    ref.watch(planNowProvider),
+  );
+  final totals =
+      [
+          for (var i = 1; i <= BudgetSetupSuggester.monthsAnalysed; i++)
+            ledger.spentMinor([categoryId], current.shift(-i)),
+        ].where((t) => t > 0).toList()
+        ..sort();
+  if (totals.isEmpty) return null;
+  final mid = totals.length ~/ 2;
+  final median =
+      totals.length.isOdd ? totals[mid] : (totals[mid - 1] + totals[mid]) ~/ 2;
+  return (medianMinor: median, suggestedMinor: MoneyMath.niceCeilMinor(median));
 });

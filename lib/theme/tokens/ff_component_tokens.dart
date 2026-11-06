@@ -342,6 +342,11 @@ abstract final class FfProgressTokens {
   static const double spinnerStroke = 3;
 }
 
+abstract final class FfSectionHeaderTokens {
+  /// The most of the row a header's trailing part may take.
+  static const double trailingShare = 0.6;
+}
+
 abstract final class FfBadgeTokens {
   static const double paddingH = FfSpace.xs;
   static const double paddingV = FfSpace.x3s;

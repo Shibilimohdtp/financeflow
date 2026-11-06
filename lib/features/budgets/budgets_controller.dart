@@ -19,10 +19,6 @@ final activeBudgetsStreamProvider = StreamProvider<List<Budget>>((ref) {
   return repo.watchActiveBudgets();
 });
 
-final selectedBudgetPeriodFilterProvider = StateProvider<BudgetPeriod?>(
-  (ref) => null,
-);
-
 /// Computed summaries for all active budgets using current month's transactions
 final budgetSummariesProvider = Provider<AsyncValue<List<BudgetSummary>>>((
   ref,
@@ -30,20 +26,13 @@ final budgetSummariesProvider = Provider<AsyncValue<List<BudgetSummary>>>((
   final budgetsAsync = ref.watch(activeBudgetsStreamProvider);
   final allTxAsync = ref.watch(allTransactionsStreamProvider);
   final selectedMonth = ref.watch(selectedDashboardMonthProvider);
-  final periodFilter = ref.watch(selectedBudgetPeriodFilterProvider);
 
   return budgetsAsync.when(
     data: (budgets) {
       return allTxAsync.when(
         data: (transactions) {
-          var filteredBudgets = budgets;
-          if (periodFilter != null) {
-            filteredBudgets =
-                filteredBudgets.where((b) => b.period == periodFilter).toList();
-          }
-
           final summaries =
-              filteredBudgets.map((b) {
+              budgets.map((b) {
                 return BudgetCalculator.calculateSummary(
                   b,
                   transactions,

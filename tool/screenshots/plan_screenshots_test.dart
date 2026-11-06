@@ -182,7 +182,7 @@ Future<void> _capture(
   Widget home, {
   List<Budget>? budgets,
   DateTime? month,
-  double height = 1500,
+  double height = 1780,
   Future<void> Function(WidgetTester tester)? act,
 }) async {
   tester.view.physicalSize = Size(390, height);
@@ -263,7 +263,17 @@ void main() {
         'b7_plan_closed_$mode',
         theme,
         const BudgetsScreen(),
-        month: DateTime(_month.year, _month.month - 1),
+        // The previous-period button, named "Previous month" before DS-B7b
+        // and "Previous period" (FfPeriodBar) after.
+        act:
+            (tester) => tester.tap(
+              find.byWidgetPredicate(
+                (w) =>
+                    w is Tooltip &&
+                    (w.message == 'Previous month' ||
+                        w.message == 'Previous period'),
+              ),
+            ),
       );
     });
     testWidgets('plan empty, $mode', (tester) async {
@@ -273,7 +283,7 @@ void main() {
         theme,
         const BudgetsScreen(),
         budgets: const [],
-        height: 900,
+        height: 1400,
       );
     });
     testWidgets('budget detail, $mode', (tester) async {
@@ -291,8 +301,24 @@ void main() {
         'b7_sheet_$mode',
         theme,
         _sheetHost(),
-        height: 900,
+        height: 1000,
         act: (tester) => tester.tap(find.text('open')),
+      );
+    });
+    testWidgets('add budget sheet filled in, $mode', (tester) async {
+      await _capture(
+        tester,
+        'b7_sheet_filled_$mode',
+        theme,
+        _sheetHost(),
+        height: 1000,
+        act: (tester) async {
+          await tester.tap(find.text('open'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Dining').last);
+          await tester.pumpAndSettle();
+          await tester.enterText(find.byType(TextField).first, '6500');
+        },
       );
     });
   }

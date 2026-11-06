@@ -3,9 +3,15 @@
 // of FfProgressBar, FfLineChart's reference series, FfMonthGrid's
 // within-plan/over-plan months, FfHeroFigures and FfPeriodBar(units:).
 import 'package:financeflow/core/period/period.dart';
+import 'package:financeflow/shared/widgets/ff_badge.dart';
+import 'package:financeflow/shared/widgets/ff_chip.dart';
 import 'package:financeflow/shared/widgets/ff_data_viz.dart';
+import 'package:financeflow/shared/widgets/ff_grouped_container.dart';
 import 'package:financeflow/shared/widgets/ff_period_bar.dart';
 import 'package:financeflow/shared/widgets/ff_progress.dart';
+import 'package:financeflow/shared/widgets/ff_row.dart';
+import 'package:financeflow/shared/widgets/ff_section_header.dart';
+import 'package:financeflow/shared/widgets/ff_skeleton_loader.dart';
 import 'package:financeflow/shared/widgets/ff_stat_tile.dart';
 import 'package:financeflow/shared/widgets/ff_surfaces.dart';
 import 'package:financeflow/theme/ff.dart';
@@ -323,6 +329,89 @@ void main() {
             expect(find.text(label), findsOneWidget, reason: label);
           }
           expect(find.text('All time'), findsNothing);
+        });
+
+        testWidgets('a checkbox row can show a value before its box', (
+          tester,
+        ) async {
+          var checked = false;
+          await _pump(
+            tester,
+            theme,
+            StatefulBuilder(
+              builder:
+                  (context, setState) => FfGroupedContainer(
+                    children: [
+                      FfRow.checkbox(
+                        title: 'Groceries',
+                        subtitle: 'Usually ₹9,300',
+                        detail: '₹9,500',
+                        checked: checked,
+                        onChanged: (v) => setState(() => checked = v),
+                      ),
+                    ],
+                  ),
+            ),
+          );
+          expect(find.text('₹9,500'), findsOneWidget);
+          expect(
+            tester.getRect(find.text('₹9,500')).right,
+            lessThan(tester.getRect(find.byType(Checkbox)).left),
+          );
+          await tester.tap(find.text('₹9,500'));
+          await tester.pump();
+          expect(checked, isTrue);
+        });
+
+        testWidgets('badges, chips and header figures shrink, not overflow', (
+          tester,
+        ) async {
+          for (final scale in [1.0, 2.0]) {
+            await _pump(
+              tester,
+              theme,
+              SizedBox(
+                width: 220,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const FfBadge(
+                      label: 'Needs attention before the end of the month',
+                      tone: FfTone.warning,
+                      icon: Icons.warning_amber_rounded,
+                    ),
+                    FfChip(
+                      label: 'Usually ₹1,23,456 · use ₹1,25,000 this month',
+                      isSelected: false,
+                      leading: const Icon(Icons.auto_graph_rounded),
+                      onSelected: () {},
+                    ),
+                    const FfSectionHeader(
+                      title: 'Essentials',
+                      padding: EdgeInsets.zero,
+                      trailing: Text(
+                        '₹1,23,45,678 of ₹2,00,00,000',
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              textScale: scale,
+            );
+            await tester.pump();
+            expect(tester.takeException(), isNull, reason: 'text scale $scale');
+          }
+        });
+
+        testWidgets('the hero skeleton fits a narrow phone', (tester) async {
+          await _pump(
+            tester,
+            theme,
+            const SizedBox(width: 320, child: FfHeroSkeletonCard()),
+          );
+          await tester.pump();
+          expect(tester.takeException(), isNull);
         });
       });
     }

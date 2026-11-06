@@ -19,7 +19,7 @@ import '../../theme/stillwater_tokens.dart';
 import '../../theme/stillwater_typography.dart';
 import '../dashboard/dashboard_controller.dart';
 import '../transactions/transaction_detail_screen.dart';
-import 'add_edit_budget_sheet.dart';
+import 'budget_sheets.dart';
 import 'budgets_controller.dart';
 import '../accounts/accounts_controller.dart';
 
@@ -29,12 +29,7 @@ class BudgetDetailScreen extends ConsumerWidget {
   const BudgetDetailScreen({super.key, required this.budget});
 
   void _editBudget(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AddEditBudgetSheet(initialBudget: budget),
-    );
+    openBudgetSheet(context, initial: budget);
   }
 
   void _deleteBudget(BuildContext context, WidgetRef ref) async {
@@ -89,7 +84,8 @@ class BudgetDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final finColors = context.finColors;
-    final allTransactions = ref.watch(allTransactionsStreamProvider).value ?? [];
+    final allTransactions =
+        ref.watch(allTransactionsStreamProvider).value ?? [];
     final selectedMonth = ref.watch(selectedDashboardMonthProvider);
 
     final summary = BudgetCalculator.calculateSummary(

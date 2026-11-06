@@ -2,6 +2,8 @@ import 'package:financeflow/app/router.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/analytics/analytics_controller.dart';
 import 'package:financeflow/features/budgets/budgets_controller.dart';
+import 'package:financeflow/models/budget.dart';
+import 'package:financeflow/shared/widgets/ff_navigation.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
 import 'package:financeflow/features/ingestion/needs_review_controller.dart';
@@ -18,7 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  List<dynamic> createOverrides() {
+  List<dynamic> createOverrides({List<Budget> budgets = const []}) {
     return [
       settingsStreamProvider.overrideWith(
         (ref) => Stream.value(const AppSettings()),
@@ -38,6 +40,7 @@ void main() {
       pendingTransactionsStreamProvider.overrideWith((ref) => Stream.value([])),
       pendingReviewCountProvider.overrideWithValue(0),
       unreadAlertsCountProvider.overrideWithValue(0),
+      activeBudgetsStreamProvider.overrideWith((ref) => Stream.value(budgets)),
       budgetSummariesProvider.overrideWithValue(const AsyncValue.data([])),
       overallBudgetSummaryProvider.overrideWithValue(
         const AsyncValue.data((
@@ -149,4 +152,53 @@ void main() {
       expect(handledHome, isFalse);
     },
   );
+
+  testWidgets('the Plan add button floats above the dock, like Money', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final now = DateTime(2026, 11, 1);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...createOverrides(
+            budgets: [
+              Budget(
+                id: 'b1',
+                name: 'Dining',
+                categoryId: 'cat_dining',
+                amountLimit: 6000,
+                startDate: now,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ],
+          ),
+        ],
+        child: MaterialApp(
+          theme: StillwaterTheme.daylight,
+          home: const AppShell(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Rect fab() => tester.getRect(find.byType(FloatingActionButton).last);
+    final dock = tester.getRect(find.byType(FfDock));
+
+    await tester.tap(find.byTooltip('Money'));
+    await tester.pumpAndSettle();
+    final money = fab();
+
+    await tester.tap(find.byTooltip('Plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add budget'), findsOneWidget);
+    final plan = fab();
+
+    expect(plan.bottom, lessThanOrEqualTo(dock.top));
+    expect(plan.bottom, closeTo(money.bottom, 0.5));
+    expect(plan.right, closeTo(money.right, 0.5));
+  });
 }

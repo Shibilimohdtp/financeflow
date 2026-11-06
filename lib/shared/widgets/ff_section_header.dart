@@ -24,26 +24,38 @@ class FfSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: padding,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              isUppercase ? title.toUpperCase() : title,
-              style:
-                  isUppercase
-                      ? context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.secondary,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w700,
-                      )
-                      : context.ff.text.title.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+      child: LayoutBuilder(
+        builder:
+            (context, box) => Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    isUppercase ? title.toUpperCase() : title,
+                    style:
+                        isUppercase
+                            ? context.ff.text.labelSm.copyWith(
+                              color: context.ff.color.secondary,
+                              letterSpacing: 1.1,
+                              fontWeight: FontWeight.w700,
+                            )
+                            : context.ff.text.title.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                  ),
+                ),
+                if (trailing != null)
+                  // Up to 60% of the row, so a long figure or large text wraps or
+                  // shrinks inside it instead of overflowing the header.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth:
+                          box.maxWidth * FfSectionHeaderTokens.trailingShare,
+                    ),
+                    child: trailing!,
+                  ),
+              ],
             ),
-          ),
-          if (trailing != null) trailing!,
-        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 # DS-B7 · Budgets (Plan tab) in Stillwater Bloom: audit and plan
 
-Status: **approved by the owner on 2026-11-06**, including every recommendation in section 7. B7a (shared additions) is done; B7b (Plan tab) is next.
+Status: **approved by the owner on 2026-11-06**, including every recommendation in section 7. B7a (shared additions) is done. B7b (Plan tab on `BudgetBoard`, exact Money link, suggested setup) is done, and the add/edit sheet redesign was pulled forward into it at the owner's request. B7c (detail) and the Home card remain. Shared fixes made along the way: `FfBadge`, `FfChip` labels and `FfSectionHeader` trailing shrink instead of overflowing; `FfHeroSkeletonCard` fits narrow phones; `FfRow.checkbox` takes a `detail`. Before/after sheets for B7b were not generated (stopped at the owner's request).
 Baseline at `6586edd`: `flutter analyze` clean; budgets widget, calculator, `test/unit/budgets/` and smoke tests all
 pass (80 tests); the audit numbers are in the CHANGELOG (DS-B6 row). The Budgets files together hold **138 legacy-shim
 references** and **65 raw style leaks** (`fontSize`, `TextStyle(`, raw alpha, `Colors.*`, raw sheets and pickers,

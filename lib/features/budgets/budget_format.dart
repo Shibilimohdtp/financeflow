@@ -10,6 +10,21 @@ import '../../services/budgets/budget_engine.dart';
 /// the budget detail and the Home card. Status is always words plus an icon,
 /// never colour alone.
 abstract final class BudgetFormat {
+  static double major(int minor) => MoneyMath.fromMinor(minor);
+
+  /// Estimates (forecasts, pace) in whole currency units: paise on a
+  /// projection would claim precision it doesn't have.
+  static String estimate(int minor) => money(
+    ((minor / MoneyMath.minorPerMajor).round()) * MoneyMath.minorPerMajor,
+  );
+
+  /// Rounded down to whole currency units, so "safe to spend" is never
+  /// overstated.
+  static int floorWhole(int minor) =>
+      minor <= 0
+          ? 0
+          : (minor ~/ MoneyMath.minorPerMajor) * MoneyMath.minorPerMajor;
+
   static String money(int minor) =>
       CurrencyFormatter.formatAmount(MoneyMath.fromMinor(minor));
 
@@ -90,8 +105,18 @@ abstract final class BudgetFormat {
   /// "1 Nov" style short date.
   static String shortDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${d.day} ${months[d.month - 1]}';
   }

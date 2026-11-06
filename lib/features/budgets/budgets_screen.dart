@@ -1,424 +1,492 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../core/extensions/context_extensions.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../core/money/money_math.dart';
+import '../../core/period/period.dart';
 import '../../models/budget.dart';
-import '../../shared/widgets/ff_confirm_dialog.dart';
+import '../../models/category.dart';
+import '../../services/budgets/budget_board.dart';
+import '../../services/budgets/budget_engine.dart';
+import '../../services/budgets/budget_setup_suggester.dart';
+import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_navigation.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_period_bar.dart';
 import '../../shared/widgets/ff_skeleton_loader.dart';
-import '../../shared/widgets/ff_snackbar.dart';
-import '../../theme/stillwater_tokens.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
+import '../categories/categories_controller.dart';
 import '../dashboard/dashboard_controller.dart';
-import 'add_edit_budget_sheet.dart';
+import '../loans/loans_screen.dart';
+import '../settings/settings_controller.dart';
+import '../subscriptions/subscriptions_screen.dart';
+import '../transactions/transaction_list_utils.dart';
 import 'budget_detail_screen.dart';
+import 'budget_format.dart';
+import 'budget_sheets.dart';
 import 'budgets_controller.dart';
-import 'widgets/budget_card.dart';
-import 'widgets/budget_insights_card.dart';
-import 'widgets/budget_visual_summary_card.dart';
+import 'plan_providers.dart';
+import 'widgets/budget_group_section.dart';
+import 'widgets/plan_bills_card.dart';
+import 'widgets/plan_insight_card.dart';
+import 'widgets/plan_setup.dart';
+import 'widgets/plan_summary.dart';
 
+/// The Plan tab (Stillwater Bloom recipe A, on the aurora): "Am I on track,
+/// what can I safely spend today, and what should I change?"
+///
+/// Top to bottom: header, period bar, the key figure (safe to spend today),
+/// the plan hero, one suggestion, Bills & EMIs, the budgets grouped by
+/// Essentials / Lifestyle / Other (most urgent first), budgets on other
+/// cadences, and the privacy footer. Before any budget exists it shows a
+/// suggested setup from real spending.
 class BudgetsScreen extends ConsumerWidget {
-  const BudgetsScreen({super.key});
+  const BudgetsScreen({super.key, this.onShowTransactions});
 
-  void _openAddBudget(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const AddEditBudgetSheet(),
+  /// Opens the Money tab with a query. When null (Plan pushed as a page)
+  /// the hero has no "see spending" button.
+  final ValueChanged<TransactionQuery>? onShowTransactions;
+
+  static const _units = {PeriodUnit.week, PeriodUnit.month, PeriodUnit.year};
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final boardAsync = ref.watch(budgetBoardProvider);
+    final period = ref.watch(planPeriodProvider);
+    final isPrivacyBlur =
+        ref.watch(settingsStreamProvider).valueOrNull?.isPrivacyBlurEnabled ??
+        false;
+    final budgetsAsync = ref.watch(activeBudgetsStreamProvider);
+    final hasAnyBudget = (budgetsAsync.valueOrNull ?? const []).isNotEmpty;
+    // Until the budgets have loaded, show the skeleton rather than the
+    // first-run setup.
+    final loading = !budgetsAsync.hasValue && !budgetsAsync.hasError;
+    final canPop = Navigator.of(context).canPop();
+
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButtonLocation: FfDock.fabLocation,
+        floatingActionButton:
+            hasAnyBudget
+                ? FloatingActionButton.extended(
+                  heroTag: 'budgets_add_fab',
+                  tooltip: 'Add budget',
+                  onPressed: () => openBudgetSheet(context),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add budget'),
+                )
+                : null,
+        body: AnnotatedRegion<SystemUiOverlayStyle>(
+          value:
+              Theme.of(context).brightness == Brightness.dark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark,
+          child: SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              color: context.ff.color.actionPrimary,
+              onRefresh: () async {
+                ref.invalidate(activeBudgetsStreamProvider);
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                // Room for the FAB, and for the floating dock when the shell
+                // draws content under it.
+                padding: EdgeInsets.only(
+                  top: FfSpace.xs,
+                  bottom: FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
+                ),
+                children: [
+                  PlanHeader(
+                    onBack:
+                        canPop ? () => Navigator.of(context).maybePop() : null,
+                  ),
+                  const SizedBox(height: FfSpace.sm),
+                  ...(loading
+                          ? const AsyncValue<BudgetBoard>.loading()
+                          : boardAsync)
+                      .when(
+                        loading: () => const [_PlanSkeleton()],
+                        error:
+                            (e, _) => [
+                              Padding(
+                                padding: const EdgeInsets.all(
+                                  FfSpace.pageMargin,
+                                ),
+                                child: FfEmptyState(
+                                  icon: Icons.error_outline_rounded,
+                                  title: 'Couldn\'t load your plan',
+                                  description:
+                                      'Your budgets and transactions are safe on this '
+                                      'device. Try again in a moment.',
+                                  actionLabel: 'Try again',
+                                  onAction: () {
+                                    ref.invalidate(activeBudgetsStreamProvider);
+                                  },
+                                ),
+                              ),
+                            ],
+                        data:
+                            (board) =>
+                                !hasAnyBudget
+                                    ? [_setup(context, ref, isPrivacyBlur)]
+                                    : _plan(
+                                      context,
+                                      ref,
+                                      board,
+                                      period,
+                                      isPrivacyBlur,
+                                    ),
+                      ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  void _openEditBudget(BuildContext context, Budget budget) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddEditBudgetSheet(initialBudget: budget),
-    );
-  }
-
-  void _confirmDeleteBudget(
+  List<Widget> _plan(
     BuildContext context,
     WidgetRef ref,
-    Budget budget,
-  ) async {
-    final confirmed = await FfConfirmDialog.show(
-      context,
-      title: 'Delete Budget?',
-      message:
-          'Are you sure you want to delete the budget "${budget.name}"? Past transactions will remain intact.',
-      confirmLabel: 'Delete',
-      isDestructive: true,
-    );
+    BudgetBoard board,
+    Period period,
+    bool isPrivacyBlur,
+  ) {
+    final insight = ref.watch(planInsightProvider);
+    final bills = board.bills;
+    const gap = SizedBox(height: FfSpace.xl);
+    final periodName = _periodName(period);
 
-    if (confirmed == true && context.mounted) {
-      try {
-        await ref
-            .read(budgetsControllerProvider.notifier)
-            .deleteBudget(budget.id);
-        if (context.mounted) {
-          FfSnackbar.show(context, message: 'Budget deleted.');
-        }
-      } catch (e) {
-        if (context.mounted) {
-          FfSnackbar.show(context, message: 'Could not delete budget: $e');
-        }
+    return [
+      FfPeriodBar(
+        period: period,
+        units: _units,
+        chooserTitle: 'Show plan for',
+        onChanged: (p) {
+          if (p == null) return;
+          ref.read(planPeriodProvider.notifier).state = p;
+          // The budget detail and Home's budget card still read the
+          // dashboard month until they move to the plan period (B7c, B7d).
+          if (p.unit == PeriodUnit.month) {
+            ref.read(selectedDashboardMonthProvider.notifier).state = p.start;
+          }
+        },
+      ),
+      const SizedBox(height: FfSpace.xs),
+      if (board.results.isNotEmpty) ...[
+        PlanKeyFigure(
+          board: board,
+          isPrivacyBlur: isPrivacyBlur,
+          onToggleBlur:
+              () => ref
+                  .read(settingsControllerProvider.notifier)
+                  .setPrivacyBlurEnabled(!isPrivacyBlur),
+        ),
+        const SizedBox(height: FfSpace.md),
+        PlanHero(
+          board: board,
+          isPrivacyBlur: isPrivacyBlur,
+          onOpenSpending:
+              onShowTransactions == null
+                  ? null
+                  : () => onShowTransactions!(
+                    TransactionQuery(
+                      period: board.period,
+                      budgetScope: BudgetScope(
+                        categoryIds: {
+                          for (final r in board.results)
+                            ...r.budget.categoryIds,
+                        },
+                        label: '$periodName plan',
+                      ),
+                    ),
+                  ),
+        ),
+      ] else
+        _NoBudgetsThisPeriod(period: period),
+      if (insight != null) ...[
+        const SizedBox(height: FfSpace.md),
+        PlanInsightCard(
+          insight: insight,
+          isPrivacyBlur: isPrivacyBlur,
+          periodName: periodName,
+          onApplyLimit:
+              insight.result == null
+                  ? null
+                  : (limit) =>
+                      _applyLimit(context, ref, insight.result!.budget, limit),
+          onOpenBudget:
+              insight.result == null
+                  ? null
+                  : () => _openBudget(context, insight.result!),
+        ),
+      ],
+      for (final group in board.groups) ...[
+        gap,
+        BudgetGroupSection(
+          key: ValueKey('group-${group.group.name}'),
+          title: group.group.label,
+          results: group.results,
+          isPrivacyBlur: isPrivacyBlur,
+          onOpen: (r) => _openBudget(context, r),
+        ),
+      ],
+      if (board.otherCadence.isNotEmpty) ...[
+        gap,
+        BudgetGroupSection(
+          key: const ValueKey('group-other-periods'),
+          title: 'Other periods',
+          results: board.otherCadence,
+          isPrivacyBlur: isPrivacyBlur,
+          showTotals: false,
+          showPeriod: true,
+          onOpen: (r) => _openBudget(context, r),
+        ),
+      ],
+      if (bills.occurrences.isNotEmpty) ...[
+        gap,
+        PlanBillsCard(
+          bills: bills,
+          isPrivacyBlur: isPrivacyBlur,
+          onOpenSubscriptions:
+              () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SubscriptionsScreen()),
+              ),
+          onOpenLoans:
+              () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const LoansScreen())),
+        ),
+      ],
+      gap,
+      const _PrivacyFooter(),
+    ];
+  }
+
+  Widget _setup(BuildContext context, WidgetRef ref, bool isPrivacyBlur) {
+    final suggestion = ref.watch(budgetSetupSuggestionProvider);
+    final categories = {
+      for (final c
+          in ref.watch(categoriesStreamProvider).valueOrNull ??
+              const <Category>[])
+        c.id: c,
+    };
+    final bills = ref.watch(budgetBoardProvider).valueOrNull?.bills;
+    return PlanSetup(
+      suggestion: suggestion,
+      categories: categories,
+      monthlyBillsMinor:
+          bills == null
+              ? 0
+              : bills.occurrences.fold(0, (s, o) => s + o.amountMinor),
+      isPrivacyBlur: isPrivacyBlur,
+      onAddBudget: () => openBudgetSheet(context),
+      onCreate: (picked) => _createSuggested(context, ref, picked, categories),
+    );
+  }
+
+  Future<void> _createSuggested(
+    BuildContext context,
+    WidgetRef ref,
+    List<SuggestedBudget> picked,
+    Map<String, Category> categories,
+  ) async {
+    final now = ref.read(planNowProvider);
+    final start = Period.containing(PeriodUnit.month, now).start;
+    final controller = ref.read(budgetsControllerProvider.notifier);
+    try {
+      for (final s in picked) {
+        final c = categories[s.categoryId]!;
+        await controller.saveBudget(
+          Budget(
+            id: const Uuid().v4(),
+            name: c.name,
+            categoryId: c.id,
+            categoryName: c.name,
+            categoryIcon: c.iconIdentifier,
+            categoryColor: c.colorTokenIdentifier,
+            amountLimit: MoneyMath.fromMinor(s.suggestedMinor),
+            startDate: start,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+      if (context.mounted) {
+        FfToast.show(
+          context,
+          message:
+              picked.length == 1
+                  ? 'Budget created.'
+                  : '${picked.length} budgets created.',
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        FfToast.show(
+          context,
+          message: 'Could not create the budgets. Nothing else changed.',
+          tone: FfToastTone.error,
+        );
       }
     }
   }
 
-  void _setMonth(WidgetRef ref, DateTime value) {
-    ref.read(selectedDashboardMonthProvider.notifier).state = DateTime(
-      value.year,
-      value.month,
-      1,
+  /// A one-tap suggestion: changes the budget's limit (not just this
+  /// period; that needs the persistence slice) and offers Undo.
+  Future<void> _applyLimit(
+    BuildContext context,
+    WidgetRef ref,
+    Budget budget,
+    int newLimitMinor,
+  ) async {
+    final controller = ref.read(budgetsControllerProvider.notifier);
+    final before = budget.amountLimit;
+    try {
+      await controller.saveBudget(
+        budget.copyWith(
+          amountLimit: MoneyMath.fromMinor(newLimitMinor),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      if (!context.mounted) return;
+      FfToast.show(
+        context,
+        message:
+            '${budget.name} is now ${BudgetFormat.money(newLimitMinor)} '
+            'a ${BudgetFormat.periodNoun(budget.period)}.',
+        actionLabel: 'Undo',
+        onAction:
+            () => controller.saveBudget(
+              budget.copyWith(amountLimit: before, updatedAt: DateTime.now()),
+            ),
+      );
+    } catch (_) {
+      if (context.mounted) {
+        FfToast.show(
+          context,
+          message: 'Could not change the limit.',
+          tone: FfToastTone.error,
+        );
+      }
+    }
+  }
+
+  void _openBudget(BuildContext context, BudgetPeriodResult r) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => BudgetDetailScreen(budget: r.budget)),
     );
   }
 
+  static String _periodName(Period p) =>
+      p.unit == PeriodUnit.month
+          ? periodLabel(p).split(' ').first
+          : periodLabel(p);
+}
+
+/// Budgets exist, but none on the viewed cadence (for example only weekly
+/// budgets while viewing a month).
+class _NoBudgetsThisPeriod extends StatelessWidget {
+  const _NoBudgetsThisPeriod({required this.period});
+
+  final Period period;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-    final month = ref.watch(selectedDashboardMonthProvider);
-    final summariesAsync = ref.watch(budgetSummariesProvider);
-    final overallAsync = ref.watch(overallBudgetSummaryProvider);
-    final selectedPeriodFilter = ref.watch(selectedBudgetPeriodFilterProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Budgets'),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: StillwaterTokens.spaceLg),
-            child: Center(
-              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'budgets_add_fab',
-        tooltip: 'Add budget',
-        onPressed: () => _openAddBudget(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Budget'),
-      ),
-      floatingActionButtonLocation: FfDock.fabLocation,
-      body: RefreshIndicator(
-        color: theme.colorScheme.primary,
-        onRefresh: () async {
-          ref.invalidate(activeBudgetsStreamProvider);
-          ref.invalidate(budgetSummariesProvider);
-          ref.invalidate(overallBudgetSummaryProvider);
-        },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            StillwaterTokens.spaceLg,
-            StillwaterTokens.spaceMd,
-            StillwaterTokens.spaceLg,
-            104,
-          ),
-          children: [
-            // ── 1. Month Selector Header ─────────────────────────────
-            _MonthSelectorHeader(
-              month: month,
-              onPrevious:
-                  () => _setMonth(ref, DateTime(month.year, month.month - 1)),
-              onNext:
-                  () => _setMonth(ref, DateTime(month.year, month.month + 1)),
-              onPickDate: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: month,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2035),
-                  helpText: 'Select budget month',
-                );
-                if (picked != null && context.mounted) {
-                  _setMonth(ref, picked);
-                }
-              },
-            ),
-
-            const SizedBox(height: StillwaterTokens.spaceMd),
-
-            // ── 2. Overall Budget Visual Summary ─────────────────────
-            overallAsync.when(
-              data: (overall) {
-                if (overall.totalBudgeted <= 0) {
-                  return const SizedBox.shrink();
-                }
-                final summaries = summariesAsync.valueOrNull ?? [];
-                return Column(
-                  children: [
-                    BudgetVisualSummaryCard(
-                      totalBudgeted: overall.totalBudgeted,
-                      totalSpent: overall.totalSpent,
-                      totalRemaining: overall.totalRemaining,
-                      overBudgetCount: overall.overBudgetCount,
-                      totalBudgetsCount: summaries.length,
-                    ),
-                    const SizedBox(height: StillwaterTokens.spaceMd),
-                    BudgetInsightsCard(
-                      summaries: summaries,
-                      totalBudgeted: overall.totalBudgeted,
-                      totalSpent: overall.totalSpent,
-                      totalRemaining: overall.totalRemaining,
-                    ),
-                  ],
-                );
-              },
-              loading:
-                  () => const Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.spaceMd,
-                    ),
-                    child: FfSkeletonLoader(
-                      child: FfSkeletonBlock(
-                        height: 180,
-                        borderRadius: StillwaterTokens.radiusLg,
-                      ),
-                    ),
-                  ),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-
-            const SizedBox(height: StillwaterTokens.spaceLg),
-
-            // ── 3. Category Budgets Header & Filter ──────────────────
-            FfSectionHeader(
-              title: 'Category Budgets',
-              padding: EdgeInsets.zero,
-              trailing:
-                  (summariesAsync.valueOrNull?.isNotEmpty ?? false)
-                      ? PopupMenuButton<BudgetPeriod?>(
-                        icon: Icon(
-                          Icons.filter_list_rounded,
-                          size: 20,
-                          color:
-                              selectedPeriodFilter != null
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.secondary,
-                        ),
-                        tooltip: 'Filter by period',
-                        onSelected: (period) {
-                          ref
-                              .read(selectedBudgetPeriodFilterProvider.notifier)
-                              .state = period;
-                        },
-                        itemBuilder:
-                            (ctx) => [
-                              const PopupMenuItem(
-                                value: null,
-                                child: Text('All Periods'),
-                              ),
-                              for (final p in BudgetPeriod.values)
-                                PopupMenuItem(
-                                  value: p,
-                                  child: Text(p.displayName),
-                                ),
-                            ],
-                      )
-                      : null,
-            ),
-
-            if (selectedPeriodFilter != null) ...[
-              const SizedBox(height: StillwaterTokens.spaceXs),
-              Row(
-                children: [
-                  Chip(
-                    label: Text(
-                      'Period: ${selectedPeriodFilter.displayName}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () {
-                      ref
-                          .read(selectedBudgetPeriodFilterProvider.notifier)
-                          .state = null;
-                    },
-                  ),
-                ],
-              ),
-            ],
-
-            const SizedBox(height: StillwaterTokens.spaceSm),
-
-            // ── 4. Category Budgets List ─────────────────────────────
-            summariesAsync.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: StillwaterTokens.space2Xl,
-                    ),
-                    child: FfEmptyState(
-                      icon: Icons.pie_chart_outline_rounded,
-                      title: 'No budgets for this month',
-                      description:
-                          'Set up a category spending limit to maintain control of your monthly cash flow.',
-                      actionLabel: 'Create Budget',
-                      onAction: () => _openAddBudget(context),
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: items.length,
-                  separatorBuilder:
-                      (_, __) =>
-                          const SizedBox(height: StillwaterTokens.spaceSm),
-                  itemBuilder: (context, index) {
-                    final summary = items[index];
-                    return BudgetCard(
-                      summary: summary,
-                      onTap: (budget) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => BudgetDetailScreen(budget: budget),
-                          ),
-                        );
-                      },
-                      onEdit: (budget) => _openEditBudget(context, budget),
-                      onDelete:
-                          (budget) =>
-                              _confirmDeleteBudget(context, ref, budget),
-                    );
-                  },
-                );
-              },
-              loading:
-                  () => const FfSkeletonLoader(
-                    child: Column(
-                      children: [
-                        FfSkeletonBlock(
-                          height: 100,
-                          borderRadius: StillwaterTokens.radiusLg,
-                        ),
-                        SizedBox(height: StillwaterTokens.spaceSm),
-                        FfSkeletonBlock(
-                          height: 100,
-                          borderRadius: StillwaterTokens.radiusLg,
-                        ),
-                        SizedBox(height: StillwaterTokens.spaceSm),
-                        FfSkeletonBlock(
-                          height: 100,
-                          borderRadius: StillwaterTokens.radiusLg,
-                        ),
-                      ],
-                    ),
-                  ),
-              error:
-                  (error, _) => Padding(
-                    padding: const EdgeInsets.all(StillwaterTokens.spaceLg),
-                    child: FfEmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Could not load budgets',
-                      description: '$error',
-                      actionLabel: 'Try again',
-                      onAction: () => ref.invalidate(budgetSummariesProvider),
-                    ),
-                  ),
-            ),
-          ],
+  Widget build(BuildContext context) {
+    final noun = switch (period.unit) {
+      PeriodUnit.week => 'weekly',
+      PeriodUnit.year => 'yearly',
+      _ => 'monthly',
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+      child: FfCard(
+        variant: FfCardVariant.tinted,
+        density: FfDensity.compact,
+        child: Text(
+          'No $noun budgets yet. Your other budgets are listed below in '
+          'their own periods.',
+          style: context.ff.text.bodySm,
         ),
       ),
     );
   }
 }
 
-class _MonthSelectorHeader extends StatelessWidget {
-  final DateTime month;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onPickDate;
-
-  const _MonthSelectorHeader({
-    required this.month,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onPickDate,
-  });
+class _PrivacyFooter extends StatelessWidget {
+  const _PrivacyFooter();
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final label = DateFormat('MMMM yyyy').format(month);
+    final ff = context.ff;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.shield_outlined,
+            size: FfIconSize.xs,
+            color: ff.color.textSecondary,
+          ),
+          const SizedBox(width: FfSpace.xs),
+          Flexible(
+            child: Text(
+              'Worked out on this device. Nothing leaves your phone.',
+              style: ff.text.label,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    return Semantics(
-      container: true,
-      label: 'Selected budget month: $label',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 56),
-        padding: const EdgeInsets.symmetric(
-          horizontal: StillwaterTokens.spaceXs,
-        ),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.45,
-          ),
-          borderRadius: BorderRadius.circular(StillwaterTokens.radiusLg),
-          border: Border.all(
-            color: theme.dividerColor.withValues(alpha: 0.7),
-            width: StillwaterTokens.borderWidthHairline,
-          ),
-        ),
-        child: Row(
+/// Loading: shaped like the key figure, the hero and a group card.
+class _PlanSkeleton extends StatelessWidget {
+  const _PlanSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+      child: FfSkeletonLoader(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left_rounded),
-              tooltip: 'Previous month',
-              onPressed: onPrevious,
+            const SizedBox(height: FfSpace.md),
+            const FfSkeletonBlock(width: FfSpace.x4l * 2, height: FfSpace.sm),
+            const SizedBox(height: FfSpace.xs),
+            const FfSkeletonBlock(width: FfSpace.x4l * 3, height: FfSpace.x3l),
+            const SizedBox(height: FfSpace.lg),
+            // Shaped like the rose plan hero.
+            const FfSkeletonBlock(
+              height: FfSpace.x4l * 3,
+              borderRadius: FfHeroTokens.radius,
             ),
-            Expanded(
-              child: InkWell(
-                onTap: onPickDate,
-                borderRadius: BorderRadius.circular(StillwaterTokens.radiusMd),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: StillwaterTokens.spaceSm,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.calendar_month_outlined,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: StillwaterTokens.spaceSm),
-                      Flexible(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: StillwaterTokens.space2Xs),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 18,
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ],
-                  ),
-                ),
+            const SizedBox(height: FfSpace.xl),
+            Container(
+              decoration: FfCard.decorationOf(
+                context,
+                density: FfDensity.compact,
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right_rounded),
-              tooltip: 'Next month',
-              onPressed: onNext,
+              child: const Column(
+                children: [
+                  FfTransactionSkeletonRow(),
+                  FfDivider(),
+                  FfTransactionSkeletonRow(),
+                  FfDivider(),
+                  FfTransactionSkeletonRow(),
+                ],
+              ),
             ),
           ],
         ),

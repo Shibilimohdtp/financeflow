@@ -29,10 +29,10 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | Money | Filter sheet, active filter chips | `transactions/widgets/transaction_filter_sheet.dart`, `active_filter_chips.dart` | E / B | Bloom (07fbca8) | — | Bloom Ledger Lens filter sheet with visual account/category selectors, amount presets, squircle inputs, and tokenized active chips |
 | Money | Add/edit transaction (full screen + sheet + form) | `transactions/add_edit_transaction_screen.dart`, `add_edit_transaction_sheet.dart`, `transaction_form.dart`, `widgets/transaction_pickers.dart` | E | Tokens (pickers and screen still read static `StillwaterColors`) | — | Biggest form (~2,700 lines); split before redesign |
 | Money | Transaction detail | `transactions/transaction_detail_screen.dart` | D | Tokens | — | |
-| Plan | Budgets list | `budgets/budgets_screen.dart` | A | **Legacy** | **DS-B7 chat** | In progress: plan in `../ds-b7-plan.md` |
+| Plan | Budgets list | `budgets/budgets_screen.dart` + `widgets/plan_summary.dart`, `budget_row.dart`, `budget_group_section.dart`, `plan_insight_card.dart`, `plan_bills_card.dart`, `plan_setup.dart` | A | Bloom (DS-B7b) | DS-B7 chat | On `BudgetBoard`; safe to spend, rose hero, one insight, groups, bills, suggested setup; hero ↗ opens Money with the exact budget scope |
 | Plan | Budget detail | `budgets/budget_detail_screen.dart` | D | Legacy | DS-B7 chat | |
-| Plan | Add/edit budget | `budgets/add_edit_budget_sheet.dart` | E | Legacy | DS-B7 chat | Raw sheet + pickers |
-| Plan | Budget card, insights card, visual summary | `budgets/widgets/*.dart` | A/C | Legacy | DS-B7 chat | Three overlapping summaries → merge |
+| Plan | Add/edit budget | `budgets/add_edit_budget_sheet.dart`, `budget_sheets.dart` | E | Bloom (DS-B7b) | DS-B7 chat | `showFfSheet`; limit first with live per-day preview, usual-spend suggestion, category chips, cadence and alert pills |
+| Plan | Budget card, insights card, visual summary | (deleted) | — | Removed (DS-B7b) | — | Merged into the plan hero and the single insight card |
 | Plan | Placeholder | `budgets/budgets_placeholder_screen.dart` | — | Legacy | DS-B7 chat | Not referenced anywhere in `lib/`; delete |
 | Insights | Analytics | `analytics/analytics_screen.dart`, `widgets/analytics_metrics_hero.dart`, `analytics_cash_flow_card.dart`, `expense_category_breakdown.dart` | A | Bloom (7f05c84) | DS-B8b | Pattern A on FfAurora, dusk hero card, single insight card, restyled charts |
 | Insights | Financial health | `financial_health/financial_health_screen.dart` | D | Bloom (431c504) | DS-B8c | Pattern D with wellness score hero, 4 indicator cards on FfRangeBand with CTAs |

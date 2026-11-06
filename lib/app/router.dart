@@ -88,7 +88,12 @@ class _AppShellState extends ConsumerState<AppShell> {
         onOpenDetail: (tx) => _openTransactionDetail(context, tx),
         onAddTransaction: () => _openAddTransactionScreen(context),
       ),
-      const BudgetsScreen(),
+      BudgetsScreen(
+        onShowTransactions: (query) {
+          ref.read(transactionQueryProvider.notifier).state = query;
+          ref.read(currentNavIndexProvider.notifier).state = 1;
+        },
+      ),
       AnalyticsScreen(
         onShowTransactions: (query) {
           ref.read(transactionQueryProvider.notifier).state = query;
