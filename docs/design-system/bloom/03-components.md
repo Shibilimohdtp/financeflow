@@ -33,7 +33,8 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfDock` (`ff_navigation.dart`) | The app's tab bar (already in the shell; don't add another) | `FfDockItem(icon:, label:, badgeCount:, showDot:)` |
 | `FfCarousel` | Peeking row of cards (hero carousel) | `FfCarousel(height:, children:, viewportFraction:)` |
 | `FfPeriodBar` | Shared period selector (prev/next, picker, all time) | `FfPeriodBar(period:, onChanged:, allowAllTime:, units: {week, month, year}, chooserTitle:)`; `units` limits the chooser (Plan offers week/month/year only; `day` = Today, `custom` = Custom range) |
-| `FfAppBar` | Every app bar (`.search`, `.selection`) | `FfAppBar(title:, subtitle:, actions:)` |
+| `FfAppBar` | Top bar of pushed/sub-screens with back/close button | `FfAppBar(title:, subtitle:, actions:)` |
+| `FfPageHeader` (`ff_page_header.dart`) | Canonical non-sticky top header for all 5 primary tab screens (title in `headline`, subtitle in `label`, zero shield icons, actions, dynamic search & selection) | `FfPageHeader(title:, subtitle:, actions:, isSearchOpen:, ...)` |
 | `FfMenuButton` / `FfSelect` | Overflow menus / field dropdowns | |
 
 ## Rows and text
