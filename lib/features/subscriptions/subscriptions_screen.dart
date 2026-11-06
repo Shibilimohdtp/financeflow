@@ -23,7 +23,6 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
 import '../../shared/widgets/ff_page_scaffold.dart';
-import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff_tone.dart';
 import '../settings/settings_controller.dart';
 import 'add_edit_subscription_sheet.dart';
@@ -116,13 +115,6 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     return FfPageScaffold(
       title: 'Subscriptions',
       subtitle: 'Recurring payments, on-device',
-      actions: [
-        FfCircleButton(
-          icon: Icons.add_rounded,
-          tooltip: 'Add subscription',
-          onPressed: () => _openAddSheet(context),
-        ),
-      ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'subscriptions_fab',
         tooltip: 'Add subscription',

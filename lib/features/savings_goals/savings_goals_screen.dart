@@ -86,13 +86,6 @@ class SavingsGoalsScreen extends ConsumerWidget {
     return FfPageScaffold(
       title: 'Savings Goals',
       subtitle: 'Targeted on-device savings',
-      actions: [
-        FfCircleButton(
-          icon: Icons.add_rounded,
-          tooltip: 'Add savings goal',
-          onPressed: () => _openAddGoal(context),
-        ),
-      ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'savings_goals_fab',
         tooltip: 'Add savings goal',

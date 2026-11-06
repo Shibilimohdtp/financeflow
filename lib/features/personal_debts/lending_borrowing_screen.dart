@@ -7,7 +7,6 @@ import '../../models/money_repayment.dart';
 import '../../services/money_lending_calculator.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_navigation.dart';
-import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_page_scaffold.dart';
@@ -159,13 +158,13 @@ class _LendingBorrowingScreenState
       onAurora: true,
       title: 'Lending & Borrowing',
       subtitle: 'Money lent and borrowed',
-      actions: [
-        FfCircleButton(
-          icon: Icons.add_rounded,
-          tooltip: 'Add Record',
-          onPressed: () => _openAddSheet(),
-        ),
-      ],
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'lending_borrowing_fab',
+        tooltip: 'Add lending or borrowing record',
+        onPressed: () => _openAddSheet(),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Record'),
+      ),
       slivers: [
         // ── 2. Net Position Hero Card (Pattern C) ──────────────────────
         SliverToBoxAdapter(

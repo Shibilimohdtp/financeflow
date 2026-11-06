@@ -19,7 +19,6 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
 import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_page_scaffold.dart';
-import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import 'add_edit_investment_sheet.dart';
@@ -66,13 +65,6 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> {
       onAurora: true,
       title: 'Investments',
       subtitle: 'Portfolio, on-device',
-      actions: [
-        FfCircleButton(
-          icon: Icons.add_rounded,
-          tooltip: 'Add investment',
-          onPressed: () => _openAddSheet(context),
-        ),
-      ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'investments_fab',
         tooltip: 'Add investment',
