@@ -306,10 +306,11 @@ void main() {
             tester
                 .widgetList<Container>(find.byType(Container))
                 .map((x) => x.decoration)
-                .whereType<BoxDecoration>()
+                .whereType<ShapeDecoration>()
                 .toList();
         expect(boxes.first.color, c.surfaceCard);
         expect(boxes.last.color, c.statusWarningContainer);
+        expect(boxes.last.shape, isA<OutlinedBorder>());
       });
     });
   }

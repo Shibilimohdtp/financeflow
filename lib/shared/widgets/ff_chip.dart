@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../../theme/ff.dart';
 
+/// A choice pill. Selected is a solid ink pill; unselected is outlined with
+/// the control border (3:1). The tap area is always a full touch target.
 class FfChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -19,59 +22,79 @@ class FfChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor =
-        isSelected
-            ? context.ff.color.actionPrimaryContainer
-            : context.ff.color.surfaceContainerLow;
+    final c = context.ff.color;
+    final fg = isSelected ? c.onActionPrimary : c.textPrimary;
+    final shape = FfShape.of(
+      FfChipTokens.radius,
+      side:
+          isSelected
+              ? BorderSide.none
+              : BorderSide(
+                color: c.borderControl,
+                width: FfBorderWidth.regular,
+              ),
+    );
 
-    final borderColor =
-        isSelected
-            ? context.ff.color.actionPrimary
-            : context.ff.color.borderSubtle;
-
-    final textColor =
-        isSelected
-            ? context.ff.color.onActionPrimaryContainer
-            : context.ff.text.body.color;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onSelected,
-        borderRadius: BorderRadius.circular(FfRadius.full),
-        child: Container(
-          height: FfChipTokens.height,
-          padding: const EdgeInsets.symmetric(horizontal: FfSpace.md),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(FfRadius.full),
-            border: Border.all(
-              color: borderColor,
-              width: FfBorderWidth.regular,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: FfSpace.xs),
-              ],
-              Text(
-                label,
-                style: context.ff.text.label.copyWith(
-                  color: textColor,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onSelected,
+          customBorder: shape,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: FfTouch.minTarget),
+            child: Center(
+              widthFactor: 1,
+              child: AnimatedContainer(
+                duration: FfMotion.fast,
+                curve: FfMotion.emphasized,
+                height: FfChipTokens.height,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: FfChipTokens.paddingH,
+                ),
+                decoration: ShapeDecoration(
+                  color: isSelected ? c.actionPrimary : Colors.transparent,
+                  shape: shape,
+                ),
+                child: IconTheme.merge(
+                  data: IconThemeData(color: fg, size: FfIconSize.sm),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (leading != null) ...[
+                        _tinted(leading!, fg),
+                        const SizedBox(width: FfChipTokens.gap),
+                      ],
+                      Text(
+                        label,
+                        style: context.ff.text.labelLg.copyWith(color: fg),
+                      ),
+                      if (trailing != null) ...[
+                        const SizedBox(width: FfChipTokens.gap),
+                        _tinted(trailing!, fg),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: FfSpace.xs),
-                trailing!,
-              ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  /// Icons always take the chip's foreground, so a caller's colour can never
+  /// vanish into the ink fill when the chip is selected.
+  static Widget _tinted(Widget w, Color fg) =>
+      w is Icon
+          ? Icon(
+            w.icon,
+            size: w.size ?? FfIconSize.sm,
+            color: fg,
+            semanticLabel: w.semanticLabel,
+          )
+          : w;
 }

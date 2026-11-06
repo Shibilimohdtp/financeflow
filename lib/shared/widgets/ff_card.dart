@@ -5,29 +5,31 @@ import '../../theme/ff_tone.dart';
 
 /// How a card sets itself apart from the page.
 enum FfCardVariant {
-  /// The default: card surface with a hairline border.
+  /// The default: card surface on a soft shadow (a faint rim in dark mode).
   standard,
 
   /// A soft wash of [FfCard.tone] (defaults to primary) for highlighted
-  /// summaries.
+  /// summaries. No shadow.
   tinted,
 
-  /// A raised surface, for heroes that sit above other cards.
+  /// A raised surface with a stronger shadow, for things that float.
   elevated,
 
   /// Warning wash and border, for attention items.
   warning,
 }
 
-/// A rounded content container. Colours, radius, border and padding come
-/// from tokens; pass [onTap] to make the whole card a button.
+/// A squircle content container. Colour, shape, shadow and padding come from
+/// tokens; [density] picks the comfortable (summary) or compact (list) size.
+/// Pass [onTap] to make the whole card a button.
 class FfCard extends StatelessWidget {
   const FfCard({
     super.key,
     required this.child,
     this.variant = FfCardVariant.standard,
     this.tone = FfTone.primary,
-    this.padding = const EdgeInsets.all(FfCardTokens.padding),
+    this.density = FfDensity.comfortable,
+    this.padding,
     this.margin,
     this.onTap,
     this.width,
@@ -39,6 +41,9 @@ class FfCard extends StatelessWidget {
 
   /// Tint colour of the [FfCardVariant.tinted] variant.
   final FfTone tone;
+  final FfDensity density;
+
+  /// Overrides the density's padding.
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
@@ -48,35 +53,58 @@ class FfCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.ff.color;
-    final (Color background, Color border) = switch (variant) {
-      FfCardVariant.standard => (c.surfaceCard, c.borderSubtle),
+    final brightness = Theme.of(context).brightness;
+    final (
+      Color background,
+      BorderSide side,
+      List<BoxShadow> shadows,
+    ) = switch (variant) {
+      FfCardVariant.standard => (
+        c.surfaceCard,
+        BorderSide.none,
+        FfElevation.card(c.shadow, brightness),
+      ),
       FfCardVariant.tinted => (
         c.tint(tone.container(c), FfTint.strong),
-        c.tint(tone.foreground(c), FfTint.medium),
+        BorderSide(
+          color: c.tint(tone.foreground(c), FfTint.medium),
+          width: FfCardTokens.borderWidth,
+        ),
+        const <BoxShadow>[],
       ),
-      FfCardVariant.elevated => (c.surfaceRaised, c.borderSubtle),
-      FfCardVariant.warning => (c.statusWarningContainer, c.statusWarning),
+      FfCardVariant.elevated => (
+        c.surfaceRaised,
+        BorderSide.none,
+        FfElevation.float(c.shadow, brightness),
+      ),
+      FfCardVariant.warning => (
+        c.statusWarningContainer,
+        BorderSide(color: c.statusWarning, width: FfCardTokens.borderWidth),
+        const <BoxShadow>[],
+      ),
     };
-    final radius = ffRadius(FfCardTokens.radius);
+    final shape = FfShape.of(density.cardRadius, side: side);
 
-    final content = Container(
+    Widget content = Container(
       width: width,
       height: height,
-      margin: margin,
-      padding: padding,
-      decoration: BoxDecoration(
+      padding: padding ?? EdgeInsets.all(density.cardPadding),
+      decoration: ShapeDecoration(
+        shape: shape,
         color: background,
-        borderRadius: radius,
-        border: Border.all(color: border, width: FfCardTokens.borderWidth),
+        shadows: shadows,
       ),
       child: child,
     );
 
-    if (onTap == null) return content;
-    return Material(
-      type: MaterialType.transparency,
-      borderRadius: radius,
-      child: InkWell(onTap: onTap, borderRadius: radius, child: content),
-    );
+    if (onTap != null) {
+      content = Material(
+        type: MaterialType.transparency,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(onTap: onTap, customBorder: shape, child: content),
+      );
+    }
+    return margin == null ? content : Padding(padding: margin!, child: content);
   }
 }

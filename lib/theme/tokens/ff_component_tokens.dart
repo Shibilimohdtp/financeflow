@@ -112,8 +112,11 @@ abstract final class FfFieldTokens {
 }
 
 abstract final class FfChipTokens {
-  static const double height = 36;
+  /// Visual height; the tap area is always a full touch target.
+  static const double height = 40;
   static const double radius = FfRadius.full;
+  static const double paddingH = FfSpace.md;
+  static const double gap = FfSpace.xs;
 }
 
 abstract final class FfRowTokens {
@@ -134,9 +137,9 @@ abstract final class FfRowTokens {
   /// Plain leading icon.
   static const double iconSize = 22;
 
-  /// Tinted leading tile (`FfIconTile`).
-  static const double iconTile = 36;
-  static const double iconTileRadius = FfRadius.sm;
+  /// Leading tile (`FfIconTile`): a tinted circle.
+  static const double iconTile = 40;
+  static const double iconTileRadius = FfRadius.full;
   static const double detailMaxWidth = 160;
 
   /// Where row text starts, for dividers that skip the leading element.
@@ -155,6 +158,103 @@ abstract final class FfSheetTokens {
 abstract final class FfDialogTokens {
   static const double radius = FfRadius.xl;
   static const double elevation = 4;
+}
+
+/// Round controls: the outlined circle button and the ink action button.
+abstract final class FfRoundButtonTokens {
+  /// Visual diameter; the tap target is [FfTouch.minTarget].
+  static const double size = 44;
+  static const double sizeSm = 36;
+  static const double iconSize = FfIconSize.lg;
+}
+
+/// Corner badge on an icon tile or circle button (the warning triangle).
+abstract final class FfCornerBadgeTokens {
+  static const double size = 16;
+  static const double offset = -4;
+}
+
+/// The floating dock that replaces the bottom bar.
+abstract final class FfDockTokens {
+  static const double itemSize = FfTouch.minTarget;
+  static const double padding = FfSpace.x2s + 2; // 6
+  static const double gap = FfSpace.x2s + 2;
+  static const double bottomMargin = FfSpace.md;
+  static const double iconSize = 21;
+
+  /// Text scale at which the dock becomes a full-width bar with labels.
+  static const double barTextScale = 1.5;
+
+  /// Height of the dock itself (without the margin or safe area).
+  static const double height = itemSize + 2 * padding;
+}
+
+/// Hero gradient cards.
+abstract final class FfHeroTokens {
+  static const double radius = FfCardTokens.radiusHero;
+  static const double padding = FfSpace.lg;
+  static const double leadingSize = 48;
+  static const double highlightAlpha = 0.28;
+  static const double glowRadius = 0.75; // of the card's longest side
+}
+
+/// Filter pills (`FfPillBar`).
+abstract final class FfPillTokens {
+  static const double height = 40;
+  static const double paddingH = FfSpace.md + 2; // 18
+  static const double gap = FfSpace.xs;
+}
+
+/// Dot-matrix progress ("spore grid").
+abstract final class FfDotMatrixTokens {
+  static const double dot = 4;
+  static const double gap = 5;
+  static const int rows = 3;
+  static const int maxColumns = 12;
+  static const double emptyAlpha = 0.25;
+}
+
+/// Progress ring around a leading icon.
+abstract final class FfRingTokens {
+  static const double size = 48;
+  static const double stroke = 1.8;
+  static const double trackAlpha = 0.22;
+}
+
+/// Month tiles for EMI and subscription timelines.
+abstract final class FfMonthGridTokens {
+  static const int columns = 6;
+  static const double gap = FfSpace.x2s + 2;
+  static const double radius = FfRadius.md;
+  static const double marker = 22;
+  static const double minTileHeight = 52;
+}
+
+/// Line chart with the spark value bubble.
+abstract final class FfLineChartTokens {
+  static const double height = 140;
+  static const double stroke = 1.5;
+  static const double dot = 2.6;
+  static const double bubble = 46;
+  static const double axisMarker = 8;
+  static const int gridLines = 3;
+  static const List<double> dash = [3, 4];
+}
+
+/// Range bands (budget pace, utilisation).
+abstract final class FfRangeBandTokens {
+  static const double height = 36;
+  static const double gap = FfSpace.x2s + 2;
+  static const double radius = FfRadius.sm;
+  static const double marker = 10;
+}
+
+/// Carousel of peeking cards.
+abstract final class FfCarouselTokens {
+  static const double gap = FfSpace.sm;
+
+  /// Share of the viewport a card takes, so the next one peeks.
+  static const double viewportFraction = 0.86;
 }
 
 abstract final class FfNavBarTokens {

@@ -416,6 +416,9 @@ typedef FfHeroContrast = ({String id, double ratio, double minimum});
 /// and the lightest point text may cross (`zone`), in full and secondary
 /// opacity, plus the spark marker on deep heroes.
 abstract final class FfHeroContrastRules {
+  /// The fill of `FfGlass(onHero: true)`.
+  static const Color heroGlass = Color(0x24FFFFFF); // 14% white
+
   static List<FfHeroContrast> measure(FfHeroes heroes, FfColors colors) => [
     for (final tone in FfHeroTone.values)
       ...() {
@@ -433,12 +436,28 @@ abstract final class FfHeroContrastRules {
               minimum: FfContrast.text,
             ),
           ],
-          if (!h.isPale)
+          if (!h.isPale) ...[
             (
               id: 'hero ${tone.name}: spark marker on zone',
               ratio: FfContrast.ratio(colors.spark, h.zone),
               minimum: FfContrast.ui,
             ),
+            // FfGlass(onHero: true): 14% white over the text zone.
+            (
+              id: 'hero ${tone.name}: text on glass pill',
+              ratio: FfContrast.ratio(
+                h.onHero,
+                Color.alphaBlend(heroGlass, h.zone),
+              ),
+              minimum: FfContrast.text,
+            ),
+          ],
+          // FfInkButton(onHero: true) and its icon.
+          (
+            id: 'hero ${tone.name}: ink button icon',
+            ratio: FfContrast.ratio(colors.onSurfaceInk, colors.surfaceInk),
+            minimum: FfContrast.ui,
+          ),
         ];
       }(),
   ];
