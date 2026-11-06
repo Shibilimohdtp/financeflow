@@ -3,14 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/formatting/app_currency.dart';
 import '../../../models/app_settings.dart';
+import '../../../shared/widgets/ff_chip.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
+import '../../../shared/widgets/ff_text_field.dart';
+import '../../../shared/widgets/ff_theme_preview_card.dart';
 import '../../../theme/ff.dart';
 import '../settings_controller.dart';
 
-/// Opens the theme preference bottom sheet.
+/// Opens the live theme preference bottom sheet with interactive miniature
+/// preview cards for Daylight, Deep Water, and System palettes.
 void showSettingsThemePicker(
   BuildContext context,
   WidgetRef ref,
@@ -19,94 +23,313 @@ void showSettingsThemePicker(
   showFfSheet(
     context,
     builder: (ctx) {
-      return FfSheet(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const FfSheetHeader(
-            title: 'Theme',
-            subtitle: 'Choose your visual preference',
-          ),
-          const FfDivider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.pageMargin,
-              vertical: FfSpace.sm,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ...AppThemePreference.values.map((pref) {
-                  final isSelected = settings.themePreference == pref;
-                  return FfRow(
-                    icon:
-                        pref == AppThemePreference.system
-                            ? Icons.brightness_auto_outlined
-                            : pref == AppThemePreference.daylight
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
-                    title: pref.displayName,
-                    selected: isSelected,
-                    onTap: () {
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .setThemePreference(pref);
-                      Navigator.of(ctx).pop();
-                    },
-                  );
-                }),
-                const SizedBox(height: FfSpace.sm),
-              ],
-            ),
-          ),
-        ],
+      return Consumer(
+        builder: (context, ref, _) {
+          final currentSettings =
+              ref.watch(settingsStreamProvider).value ?? settings;
+          final currentPref = currentSettings.themePreference;
+          final ff = context.ff;
+
+          return FfSheet(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const FfSheetHeader(
+                title: 'Theme Preference',
+                subtitle: 'Live visual miniatures. Updates immediately.',
+              ),
+              const FfDivider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: FfSpace.pageMargin,
+                  vertical: FfSpace.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Theme miniature cards row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        FfThemePreviewCard(
+                          preference: AppThemePreference.daylight,
+                          isSelected:
+                              currentPref == AppThemePreference.daylight,
+                          onTap: () {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .setThemePreference(
+                                  AppThemePreference.daylight,
+                                );
+                          },
+                        ),
+                        FfThemePreviewCard(
+                          preference: AppThemePreference.deepWater,
+                          isSelected:
+                              currentPref == AppThemePreference.deepWater,
+                          onTap: () {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .setThemePreference(
+                                  AppThemePreference.deepWater,
+                                );
+                          },
+                        ),
+                        FfThemePreviewCard(
+                          preference: AppThemePreference.system,
+                          isSelected: currentPref == AppThemePreference.system,
+                          onTap: () {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .setThemePreference(AppThemePreference.system);
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: FfSpace.lg),
+
+                    // Contextual descriptive copy
+                    Container(
+                      padding: const EdgeInsets.all(FfSpace.sm),
+                      decoration: ShapeDecoration(
+                        color: ff.color.surfacePage,
+                        shape: FfShape.of(FfRadius.md),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 16,
+                            color: ff.color.textSecondary,
+                          ),
+                          const SizedBox(width: FfSpace.xs),
+                          Expanded(
+                            child: Text(
+                              _themeDescription(currentPref),
+                              style: ff.text.labelSm.copyWith(
+                                color: ff.color.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: FfSpace.sm),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       );
     },
   );
 }
 
-/// Opens the currency selection bottom sheet.
+String _themeDescription(AppThemePreference pref) {
+  switch (pref) {
+    case AppThemePreference.daylight:
+      return 'Daylight: Calm lichen canvas with ink controls and lime highlights.';
+    case AppThemePreference.deepWater:
+      return 'Deep Water: Dark surface canvas with subtle aurora washes and soft contrast.';
+    case AppThemePreference.system:
+      return 'System: Automatically adapts between Daylight and Deep Water based on device settings.';
+  }
+}
+
+/// Opens the searchable currency selection bottom sheet.
 void showSettingsCurrencyPicker(
   BuildContext context,
   WidgetRef ref,
   AppSettings settings,
 ) {
-  final selected = AppCurrency.fromCode(settings.currencyCode);
   showFfSheet(
     context,
     builder: (ctx) {
-      return FfSheet(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const FfSheetHeader(
-            title: 'Currency',
-            subtitle: 'Changes how amounts are shown. No conversion.',
-          ),
-          const FfDivider(),
-          for (final currency in AppCurrency.values)
-            FfRow(
-              key: ValueKey('currency-${currency.code}'),
-              leading: SizedBox(
-                width: FfRowTokens.iconTile,
-                child: Center(
-                  child: Text(currency.symbol, style: context.ff.text.title),
-                ),
-              ),
-              title: currency.displayName,
-              subtitle: currency.code,
-              selected: currency == selected,
-              onTap: () {
-                Navigator.of(ctx).pop();
-                if (currency != selected) {
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateSettings(
-                        settings.copyWith(currencyCode: currency.code),
-                      );
-                }
-              },
-            ),
-        ],
-      );
+      return _CurrencyPickerSheet(initialSettings: settings);
     },
   );
+}
+
+class _CurrencyPickerSheet extends ConsumerStatefulWidget {
+  final AppSettings initialSettings;
+
+  const _CurrencyPickerSheet({required this.initialSettings});
+
+  @override
+  ConsumerState<_CurrencyPickerSheet> createState() =>
+      _CurrencyPickerSheetState();
+}
+
+class _CurrencyPickerSheetState extends ConsumerState<_CurrencyPickerSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  String _filterQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final currentSettings =
+        ref.watch(settingsStreamProvider).value ?? widget.initialSettings;
+    final selected = AppCurrency.fromCode(currentSettings.currencyCode);
+
+    final allCurrencies = AppCurrency.values;
+    final filtered =
+        _filterQuery.trim().isEmpty
+            ? allCurrencies
+            : allCurrencies.where((c) {
+              final query = _filterQuery.toLowerCase();
+              return c.code.toLowerCase().contains(query) ||
+                  c.displayName.toLowerCase().contains(query) ||
+                  c.symbol.toLowerCase().contains(query);
+            }).toList();
+
+    return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const FfSheetHeader(
+          title: 'Select Currency',
+          subtitle: 'Display formatting only. No conversion applied.',
+        ),
+        const FfDivider(),
+
+        // Search Input
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            FfSpace.pageMargin,
+            FfSpace.sm,
+            FfSpace.pageMargin,
+            FfSpace.xs,
+          ),
+          child: FfTextField.search(
+            controller: _searchController,
+            hint: 'Search currency (INR, USD, Euro...)',
+            onChanged: (val) => setState(() => _filterQuery = val),
+          ),
+        ),
+
+        // Quick Preset Chips
+        if (_filterQuery.trim().isEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: FfSpace.pageMargin,
+              vertical: FfSpace.xs,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'POPULAR',
+                  style: ff.text.labelSm.copyWith(
+                    color: ff.color.textTertiary,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: FfSpace.sm),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          allCurrencies.map((c) {
+                            final isSel = c == selected;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: FfSpace.xs),
+                              child: FfChip(
+                                label: '${c.symbol} ${c.code}',
+                                isSelected: isSel,
+                                onSelected: () {
+                                  _selectCurrency(c, currentSettings);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: FfSpace.xs),
+        ],
+
+        // Currencies List
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+            children: [
+              for (final currency in filtered)
+                FfRow(
+                  key: ValueKey('currency-${currency.code}'),
+                  leading: SizedBox(
+                    width: FfRowTokens.iconTile,
+                    child: Center(
+                      child: Text(
+                        currency.symbol,
+                        style: ff.text.titleLg.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  title: currency.displayName,
+                  subtitle:
+                      '${currency.code} · ${currency.usesIndianGrouping ? 'Lakh/Crore grouping' : 'Thousands grouping'}',
+                  selected: currency == selected,
+                  onTap: () => _selectCurrency(currency, currentSettings),
+                ),
+              if (filtered.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.xl),
+                  child: Center(
+                    child: Text(
+                      'No matching currencies found.',
+                      style: ff.text.bodySm.copyWith(
+                        color: ff.color.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: FfSpace.sm),
+            ],
+          ),
+        ),
+
+        // Bottom Disclaimer
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            FfSpace.pageMargin,
+            FfSpace.xs,
+            FfSpace.pageMargin,
+            FfSpace.md,
+          ),
+          child: Text(
+            'Note: FinanceFlow stores all amounts in local numerical format. Switching currency alters display symbols only and does not perform exchange rate conversions.',
+            style: ff.text.labelSm.copyWith(
+              color: ff.color.textTertiary,
+              height: 1.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _selectCurrency(AppCurrency currency, AppSettings currentSettings) {
+    Navigator.of(context).pop();
+    if (currency.code != currentSettings.currencyCode) {
+      ref
+          .read(settingsControllerProvider.notifier)
+          .updateSettings(
+            currentSettings.copyWith(currencyCode: currency.code),
+          );
+    }
+  }
 }

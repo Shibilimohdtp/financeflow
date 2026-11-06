@@ -6,7 +6,9 @@ import 'package:financeflow/features/transactions/transactions_controller.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/repositories/settings_repository.dart';
+import 'package:financeflow/shared/widgets/ff_sheet.dart';
 import 'package:financeflow/shared/widgets/ff_surfaces.dart';
+import 'package:financeflow/shared/widgets/ff_theme_preview_card.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +44,21 @@ void main() {
           ),
           child: const MoreScreen(),
         ),
+      ),
+    );
+  }
+
+  Widget createSettingsDetailScreen(AppSettings settings) {
+    return ProviderScope(
+      overrides: [
+        settingsStreamProvider.overrideWith((ref) => Stream.value(settings)),
+        settingsRepositoryProvider.overrideWithValue(
+          FakeSettingsRepository(settings),
+        ),
+      ],
+      child: MaterialApp(
+        theme: StillwaterTheme.daylight,
+        home: const SettingsDetailScreen(),
       ),
     );
   }
@@ -211,5 +228,63 @@ void main() {
         expect(find.text('Ledger View'), findsOneWidget);
       },
     );
+
+    testWidgets('theme picker sheet displays FfThemePreviewCards', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createSettingsDetailScreen(const AppSettings()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Theme'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Theme Preference'), findsOneWidget);
+      expect(
+        find.text('Live visual miniatures. Updates immediately.'),
+        findsOneWidget,
+      );
+      expect(find.byType(FfThemePreviewCard), findsNWidgets(3));
+    });
+
+    testWidgets('currency picker sheet filters and selects', (tester) async {
+      await tester.pumpWidget(createSettingsDetailScreen(const AppSettings()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Currency'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select Currency'), findsOneWidget);
+      expect(find.text('POPULAR'), findsOneWidget);
+
+      // Search for USD
+      final searchField = find.descendant(
+        of: find.byType(FfSheet),
+        matching: find.byType(TextField),
+      );
+      expect(searchField, findsOneWidget);
+      await tester.enterText(searchField, 'USD');
+      await tester.pumpAndSettle();
+
+      expect(find.text('US Dollar'), findsOneWidget);
+      await tester.tap(find.text('US Dollar'));
+      await tester.pumpAndSettle();
+
+      // Sheet dismissed
+      expect(find.text('Select Currency'), findsNothing);
+    });
+
+    testWidgets('density visualizer card toggles dense mode', (tester) async {
+      await tester.pumpWidget(
+        createSettingsDetailScreen(const AppSettings(isDenseMode: false)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Row Density'), findsOneWidget);
+      expect(find.text('Swiggy'), findsOneWidget);
+
+      // Tap 'Ledger View' option
+      await tester.tap(find.text('Ledger View'));
+      await tester.pumpAndSettle();
+    });
   });
 }

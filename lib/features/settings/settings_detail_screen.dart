@@ -28,6 +28,7 @@ import '../ingestion/permissions/sms_permission_screen.dart';
 import '../security/security_settings_screen.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
+import 'widgets/density_visualizer_card.dart';
 import 'widgets/developer_tools_card.dart';
 import 'widgets/ingestion_diagnostics_card.dart';
 import 'widgets/settings_picker_sheets.dart';
@@ -188,17 +189,6 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
                   detail: settings.themePreference.displayName,
                   onTap: () => showSettingsThemePicker(context, ref, settings),
                 ),
-                FfRow.toggle(
-                  icon: Icons.density_medium_rounded,
-                  title: 'Ledger View',
-                  subtitle: 'Compact list rows and reduced padding',
-                  value: settings.isDenseMode,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .setDenseMode(val);
-                  },
-                ),
                 FfRow(
                   icon: Icons.payments_outlined,
                   title: 'Currency',
@@ -213,6 +203,8 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: FfSpace.sm),
+            DensityVisualizerCard(settings: settings),
 
             const SizedBox(height: FfSpace.xl),
 
