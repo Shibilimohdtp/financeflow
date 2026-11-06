@@ -55,7 +55,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Add Financial Account'), findsOneWidget);
-      expect(find.text('Add Account'), findsOneWidget);
+      expect(find.text('Enter account name'), findsOneWidget);
       expect(find.text('Account Name'), findsOneWidget);
       expect(find.text('Opening Balance'), findsOneWidget);
     });
@@ -64,6 +64,10 @@ void main() {
       await tester.pumpWidget(createSheetWidget());
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
+
+      // Enter name so button switches from guidance to Add Account
+      final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+      await tester.enterText(nameFinder, 'My Bank');
 
       // Clear the default '0' in opening balance
       final balanceFinder = find.widgetWithText(
@@ -76,7 +80,6 @@ void main() {
       await tester.tap(find.text('Add Account'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Please enter an account name.'), findsOneWidget);
       expect(find.text('Please enter opening balance.'), findsOneWidget);
     });
 
@@ -125,7 +128,10 @@ void main() {
 
       expect(find.text('Edit Account'), findsOneWidget);
       expect(find.text('Save Changes'), findsOneWidget);
-      expect(find.text('ICICI Savings'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextFormField, 'ICICI Savings'),
+        findsOneWidget,
+      );
 
       final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
       await tester.enterText(nameFinder, 'ICICI Salary Account');
@@ -137,6 +143,116 @@ void main() {
       expect(updated, isNotNull);
       expect(updated!.name, 'ICICI Salary Account');
       expect(updated.currentBalance, 8500.0);
+    });
+
+    testWidgets('switching type adapts labels and live preview', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createSheetWidget());
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      // Tap Card in type tiles
+      await tester.tap(find.text('Card'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Current balance owed'), findsOneWidget);
+      expect(find.text('Balance'), findsOneWidget); // preview label
+
+      // Tap Invest
+      await tester.tap(find.text('Invest'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Opening portfolio value'), findsOneWidget);
+    });
+
+    testWidgets(
+      'shows duplicate-name warning when name matches active account',
+      (tester) async {
+        final existing = Account(
+          id: 'acc_dup_1',
+          name: 'HDFC Salary',
+          type: AccountType.bank,
+          currency: 'INR',
+          isArchived: false,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        );
+        fakeAccountRepo = FakeAccountRepository([existing]);
+
+        await tester.pumpWidget(createSheetWidget());
+        await tester.tap(find.text('Open Sheet'));
+        await tester.pumpAndSettle();
+
+        final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+        await tester.enterText(nameFinder, 'hdfc salary');
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('An active account with this name already exists'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'institution chip autofills institution and suggests account name',
+      (tester) async {
+        await tester.pumpWidget(createSheetWidget());
+        await tester.tap(find.text('Open Sheet'));
+        await tester.pumpAndSettle();
+
+        // Scroll to and expand optional details
+        final disclosureFinder = find.text(
+          'Bank and identifier details (optional)',
+        );
+        await tester.ensureVisible(disclosureFinder);
+        await tester.tap(disclosureFinder);
+        await tester.pumpAndSettle();
+
+        // Tap HDFC chip
+        final chipFinder = find.text('HDFC');
+        await tester.ensureVisible(chipFinder);
+        await tester.tap(chipFinder);
+        await tester.pumpAndSettle();
+
+        // Verifies institution field and name auto-suggestion
+        expect(find.widgetWithText(TextFormField, 'HDFC'), findsOneWidget);
+        expect(
+          find.widgetWithText(TextFormField, 'HDFC Savings'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('credit card saves entered debt as negative balance', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createSheetWidget());
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      // Select Card
+      await tester.tap(find.text('Card'));
+      await tester.pumpAndSettle();
+
+      final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+      await tester.enterText(nameFinder, 'ICICI Coral');
+
+      final balanceFinder = find.widgetWithText(
+        TextFormField,
+        'Current balance owed',
+      );
+      await tester.enterText(balanceFinder, '8500');
+
+      await tester.tap(find.text('Add Account'));
+      await tester.pumpAndSettle();
+
+      final accounts = await fakeAccountRepo.getAllAccounts();
+      expect(accounts.length, 1);
+      expect(accounts.first.type, AccountType.creditCard);
+      expect(accounts.first.openingBalance, -8500.0);
+      expect(accounts.first.currentBalance, -8500.0);
     });
   });
 }

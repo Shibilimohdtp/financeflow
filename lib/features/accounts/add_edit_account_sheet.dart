@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_account_preview_card.dart';
+import '../../shared/widgets/ff_account_type_tiles.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
-import '../dashboard/widgets/home_accounts_carousel.dart';
+import '../settings/settings_controller.dart';
 import 'accounts_controller.dart';
 
 /// Opens the Add / Edit Financial Account bottom sheet.
@@ -27,7 +29,19 @@ Future<T?> showAddEditAccountSheet<T>(
   );
 }
 
-/// Bottom sheet for creating or updating a financial account.
+/// Common Indian banking institutions, wallets, and brokers for fast autofill.
+const List<String> _kSuggestedInstitutions = [
+  'HDFC',
+  'SBI',
+  'ICICI',
+  'Axis',
+  'Kotak',
+  'Zerodha',
+  'Groww',
+  'PhonePe',
+];
+
+/// Stillwater Bloom Add / Edit Financial Account bottom sheet.
 class AddEditAccountSheet extends ConsumerStatefulWidget {
   final Account? account;
 
@@ -40,12 +54,17 @@ class AddEditAccountSheet extends ConsumerStatefulWidget {
 
 class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
   final _formKey = GlobalKey<FormState>();
+  final _nameFocusNode = FocusNode();
+  final _balanceFocusNode = FocusNode();
+
   late final TextEditingController _nameController;
   late final TextEditingController _institutionController;
   late final TextEditingController _maskedController;
   late final TextEditingController _openingBalanceController;
   late AccountType _selectedType;
+
   bool _isSaving = false;
+  bool _showDetails = false;
 
   bool get isEditing => widget.account != null;
 
@@ -60,19 +79,36 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
     _maskedController = TextEditingController(
       text: acc?.maskedIdentifier ?? '',
     );
-    _openingBalanceController = TextEditingController(
-      text:
-          acc != null
-              ? (acc.openingBalance.truncateToDouble() == acc.openingBalance
-                  ? acc.openingBalance.toInt().toString()
-                  : acc.openingBalance.toString())
-              : '0',
-    );
+
+    if (acc != null) {
+      final balanceVal =
+          acc.type == AccountType.creditCard
+              ? acc.openingBalance.abs()
+              : acc.openingBalance;
+      _openingBalanceController = TextEditingController(
+        text:
+            balanceVal.truncateToDouble() == balanceVal
+                ? balanceVal.toInt().toString()
+                : balanceVal.toString(),
+      );
+    } else {
+      _openingBalanceController = TextEditingController(text: '0');
+    }
+
     _selectedType = acc?.type ?? AccountType.bank;
+
+    // Expand details disclosure if editing an account with details
+    _showDetails =
+        isEditing &&
+        ((acc?.institutionName != null && acc!.institutionName!.isNotEmpty) ||
+            (acc?.maskedIdentifier != null &&
+                acc!.maskedIdentifier!.isNotEmpty));
   }
 
   @override
   void dispose() {
+    _nameFocusNode.dispose();
+    _balanceFocusNode.dispose();
     _nameController.dispose();
     _institutionController.dispose();
     _maskedController.dispose();
@@ -80,15 +116,60 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
     super.dispose();
   }
 
+  String _nameHintForType(AccountType type) => switch (type) {
+    AccountType.bank => 'e.g. HDFC Salary, SBI Savings',
+    AccountType.cash => 'e.g. Wallet, Pocket Cash',
+    AccountType.upi => 'e.g. PhonePe UPI, Google Pay',
+    AccountType.creditCard => 'e.g. ICICI Amazon Card',
+    AccountType.investment => 'e.g. Zerodha, Groww',
+    AccountType.business => 'e.g. Shop Account, Current Acc',
+  };
+
+  String _balanceLabelForType(AccountType type) => switch (type) {
+    AccountType.creditCard => 'Current balance owed',
+    AccountType.investment => 'Opening portfolio value',
+    _ => 'Opening Balance',
+  };
+
+  String _balanceHelperForType(AccountType type) => switch (type) {
+    AccountType.creditCard => 'Outstanding debt you currently owe to the bank',
+    AccountType.investment => 'Current value of holdings in this account',
+    _ => 'Starting balance when setting up this account',
+  };
+
+  void _onInstitutionChipSelected(String inst) {
+    setState(() {
+      _institutionController.text = inst;
+      if (_nameController.text.trim().isEmpty) {
+        final suffix = switch (_selectedType) {
+          AccountType.creditCard => 'Card',
+          AccountType.investment => 'Invest',
+          AccountType.upi => 'UPI',
+          AccountType.business => 'Business',
+          _ => 'Savings',
+        };
+        _nameController.text = '$inst $suffix';
+      }
+    });
+  }
+
   Future<void> _save() async {
+    if (_nameController.text.trim().isEmpty) {
+      _nameFocusNode.requestFocus();
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
     final name = _nameController.text.trim();
-    final opening =
+    var opening =
         CurrencyFormatter.parse(_openingBalanceController.text) ?? 0.0;
-    final now = DateTime.now();
+    if (_selectedType == AccountType.creditCard && opening > 0) {
+      opening = -opening;
+    }
 
+    final now = DateTime.now();
     final updatedAccount = Account(
       id: widget.account?.id ?? const Uuid().v4(),
       name: name,
@@ -127,18 +208,56 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
+    final c = ff.color;
+    final isPrivacyBlur =
+        ref.watch(settingsStreamProvider).value?.isPrivacyBlurEnabled ?? false;
+    final accountsList =
+        ref.watch(accountsWithBalancesProvider).valueOrNull ?? const [];
+
+    final rawBalance =
+        CurrencyFormatter.parse(_openingBalanceController.text) ?? 0.0;
+    final previewBalance =
+        _selectedType == AccountType.creditCard ? -rawBalance : rawBalance;
+
+    final trimmedName = _nameController.text.trim();
+    final hasDuplicateName =
+        trimmedName.isNotEmpty &&
+        accountsList.any(
+          (a) =>
+              a.id != widget.account?.id &&
+              !a.isArchived &&
+              a.name.trim().toLowerCase() == trimmedName.toLowerCase(),
+        );
+
+    final maskedText = _maskedController.text.trim();
+    final showMaskedLengthWarning =
+        _selectedType != AccountType.upi &&
+        !maskedText.contains('@') &&
+        maskedText.length > 4;
+
+    // Dynamic CTA label
+    String primaryLabel;
+    if (trimmedName.isEmpty) {
+      primaryLabel = 'Enter account name';
+    } else if (isEditing) {
+      primaryLabel = 'Save Changes';
+    } else {
+      primaryLabel = 'Add Account';
+    }
+
     return FfSheet(
       children: [
         FfSheetHeader(
           title: isEditing ? 'Edit Account' : 'Add Financial Account',
           subtitle: 'Stored 100% locally on device',
         ),
-        const FfDivider(),
         Flexible(
           child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(
               FfSpace.lg,
-              FfSpace.md,
+              FfSpace.sm,
               FfSpace.lg,
               FfSpace.md,
             ),
@@ -147,49 +266,46 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Account Type selector
+                  // ── 1. Live Account Preview Card ─────────────────────────────
+                  FfAccountPreviewCard(
+                    accountType: _selectedType,
+                    name: _nameController.text,
+                    institutionName: _institutionController.text,
+                    maskedIdentifier: _maskedController.text,
+                    balance: previewBalance,
+                    isPrivacyBlur: isPrivacyBlur,
+                  ),
+
+                  const SizedBox(height: FfSpace.lg),
+
+                  // ── 2. Account Type Selector Grid ────────────────────────────
                   Text(
-                    'ACCOUNT TYPE',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.secondary,
-                      letterSpacing: 1.0,
+                    'Account type',
+                    style: ff.text.label.copyWith(
+                      color: c.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfSelect<AccountType>(
-                    value: _selectedType,
-                    items:
-                        AccountType.values.map((type) {
-                          return DropdownMenuItem(
-                            value: type,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  HomeAccountsCarousel.iconFor(type),
-                                  size: 18,
-                                  color: context.ff.color.secondary,
-                                ),
-                                const SizedBox(width: FfSpace.sm),
-                                Text(type.displayName),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedType = val);
-                      }
+                  const SizedBox(height: FfSpace.sm),
+                  FfAccountTypeTiles(
+                    selectedType: _selectedType,
+                    onChanged: (newType) {
+                      setState(() {
+                        _selectedType = newType;
+                      });
                     },
                   ),
 
                   const SizedBox(height: FfSpace.lg),
 
-                  // Account Name field
+                  // ── 3. Account Name ──────────────────────────────────────────
                   FfTextField(
                     controller: _nameController,
+                    focusNode: _nameFocusNode,
                     label: 'Account Name',
-                    hint: 'e.g. HDFC Salary, Cash in Hand',
+                    hint: _nameHintForType(_selectedType),
+                    textInputAction: TextInputAction.next,
+                    onChanged: (_) => setState(() {}),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter an account name.';
@@ -198,21 +314,39 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                     },
                   ),
 
+                  // Duplicate name soft warning
+                  if (hasDuplicateName) ...[
+                    const SizedBox(height: FfSpace.xs),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 14,
+                          color: c.statusWarning,
+                        ),
+                        const SizedBox(width: FfSpace.xs),
+                        Expanded(
+                          child: Text(
+                            'An active account with this name already exists',
+                            style: ff.text.labelSm.copyWith(
+                              color: c.statusWarning,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: FfSpace.lg),
 
-                  // Opening Balance field
-                  FfTextField(
+                  // ── 4. Balance Entry (FfAmountField) ─────────────────────────
+                  FfAmountField(
                     controller: _openingBalanceController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d+\.?\d{0,2}'),
-                      ),
-                    ],
-                    label: 'Opening Balance',
-                    prefixText: '${CurrencyFormatter.currencySymbol} ',
+                    focusNode: _balanceFocusNode,
+                    label: _balanceLabelForType(_selectedType),
+                    hint: '0',
+                    size: FfAmountSize.lg,
+                    onChanged: (_) => setState(() {}),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Please enter opening balance.';
@@ -223,23 +357,122 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                       return null;
                     },
                   ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // Optional Details (Institution & Masked ID)
-                  FfTextField(
-                    controller: _institutionController,
-                    label: 'Institution Name (Optional)',
-                    hint: 'e.g. HDFC Bank, SBI, ICICI, Zerodha',
+                  const SizedBox(height: FfSpace.xs),
+                  Text(
+                    _balanceHelperForType(_selectedType),
+                    style: ff.text.labelSm.copyWith(color: c.textTertiary),
                   ),
 
                   const SizedBox(height: FfSpace.lg),
 
-                  FfTextField(
-                    controller: _maskedController,
-                    label: 'Masked Number / UPI ID (Optional)',
-                    hint: 'e.g. •••• 4235, user@okhdfcbank',
+                  // ── 5. Optional Details Disclosure ───────────────────────────
+                  InkWell(
+                    onTap: () {
+                      setState(() => _showDetails = !_showDetails);
+                    },
+                    borderRadius: BorderRadius.circular(FfRadius.md),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: FfSpace.sm),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _showDetails
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
+                            size: 20,
+                            color: c.textSecondary,
+                          ),
+                          const SizedBox(width: FfSpace.sm),
+                          Text(
+                            'Bank and identifier details (optional)',
+                            style: ff.text.titleSm.copyWith(
+                              color: c.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
+
+                  if (_showDetails) ...[
+                    const SizedBox(height: FfSpace.sm),
+
+                    // Institution suggestion chips
+                    Text(
+                      'Common institutions',
+                      style: ff.text.labelSm.copyWith(color: c.textTertiary),
+                    ),
+                    const SizedBox(height: FfSpace.xs),
+                    Wrap(
+                      spacing: FfSpace.xs,
+                      runSpacing: FfSpace.xs,
+                      children: [
+                        for (final inst in _kSuggestedInstitutions)
+                          FfChip(
+                            label: inst,
+                            isSelected:
+                                _institutionController.text
+                                    .trim()
+                                    .toLowerCase() ==
+                                inst.toLowerCase(),
+                            onSelected: () => _onInstitutionChipSelected(inst),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: FfSpace.md),
+
+                    // Institution field
+                    FfTextField(
+                      controller: _institutionController,
+                      label: 'Institution Name (Optional)',
+                      hint: 'e.g. HDFC Bank, SBI, Zerodha',
+                      textInputAction: TextInputAction.next,
+                      onChanged: (_) => setState(() {}),
+                    ),
+
+                    const SizedBox(height: FfSpace.md),
+
+                    // Masked identifier field
+                    FfTextField(
+                      controller: _maskedController,
+                      label: 'Masked Number / UPI ID (Optional)',
+                      hint:
+                          _selectedType == AccountType.upi
+                              ? 'e.g. user@okhdfcbank'
+                              : 'e.g. •••• 4235',
+                      onChanged: (_) => setState(() {}),
+                    ),
+
+                    const SizedBox(height: FfSpace.xs),
+                    Text(
+                      'Last 4 digits only, never enter the full card or account number.',
+                      style: ff.text.labelSm.copyWith(color: c.textTertiary),
+                    ),
+
+                    if (showMaskedLengthWarning) ...[
+                      const SizedBox(height: FfSpace.xs),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 14,
+                            color: c.textSecondary,
+                          ),
+                          const SizedBox(width: FfSpace.xs),
+                          Expanded(
+                            child: Text(
+                              'Only 4 digits are needed for privacy.',
+                              style: ff.text.labelSm.copyWith(
+                                color: c.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
 
                   const SizedBox(height: FfSpace.md),
                 ],
@@ -248,7 +481,7 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
           ),
         ),
         FfSheetFooter(
-          primaryLabel: isEditing ? 'Save Changes' : 'Add Account',
+          primaryLabel: primaryLabel,
           isPrimaryLoading: _isSaving,
           onPrimaryPressed: _save,
         ),

@@ -93,7 +93,8 @@ void main() {
       expect(find.text('Add Financial Account'), findsOneWidget);
       expect(find.text('Account Name'), findsOneWidget);
       expect(find.text('Opening Balance'), findsOneWidget);
-      expect(find.text('Add Account'), findsOneWidget);
+      // UX Goal 7: CTA guides user on what is missing ("Enter account name")
+      expect(find.text('Enter account name'), findsOneWidget);
     });
   });
 }
