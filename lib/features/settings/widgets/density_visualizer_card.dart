@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/app_settings.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_icon_tile.dart';
 import '../../../shared/widgets/ff_segmented_pill.dart';
 import '../../../theme/ff.dart';
@@ -66,7 +67,7 @@ class DensityVisualizerCard extends ConsumerWidget {
 
           // Live Miniature Preview Container
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: FfMotion.fast,
             curve: Curves.easeOutCubic,
             decoration: ShapeDecoration(
               color: ff.color.surfacePage,
@@ -93,11 +94,7 @@ class DensityVisualizerCard extends ConsumerWidget {
                   amount: -450.0,
                   isDense: isDense,
                 ),
-                Divider(
-                  height: 1,
-                  thickness: FfBorderWidth.hairline,
-                  color: ff.color.borderSubtle,
-                ),
+                const FfDivider(),
                 _buildMockRow(
                   context,
                   icon: Icons.payments_rounded,
@@ -138,8 +135,8 @@ class DensityVisualizerCard extends ConsumerWidget {
     final ff = context.ff;
     final rowPadding =
         isDense
-            ? const EdgeInsets.symmetric(vertical: 6)
-            : const EdgeInsets.symmetric(vertical: 12);
+            ? const EdgeInsets.symmetric(vertical: FfSpace.x2s)
+            : const EdgeInsets.symmetric(vertical: FfSpace.md);
 
     return Padding(
       padding: rowPadding,

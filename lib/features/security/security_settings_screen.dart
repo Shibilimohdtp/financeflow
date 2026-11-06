@@ -8,16 +8,15 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_protection_ring.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_sheet_footer.dart';
-import '../../shared/widgets/ff_sheet_header.dart';
-import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import '../settings/settings_controller.dart';
+import 'widgets/ff_guided_pin_sheet.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -30,88 +29,7 @@ class SecuritySettingsScreen extends ConsumerStatefulWidget {
 class _SecuritySettingsScreenState
     extends ConsumerState<SecuritySettingsScreen> {
   void _showSetPinSheet(BuildContext context) {
-    final pinController = TextEditingController();
-    final confirmController = TextEditingController();
-    String? errorText;
-
-    showFfSheet(
-      context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return FfSheet(
-              children: [
-                const FfSheetHeader(
-                  title: 'Set Security PIN',
-                  subtitle: 'PIN is stored in your device hardware keystore',
-                ),
-                const FfDivider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.pageMargin,
-                    vertical: FfSpace.md,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FfTextField(
-                        controller: pinController,
-                        obscureText: true,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        label: 'Enter 4-6 Digit PIN',
-                      ),
-                      const SizedBox(height: FfSpace.md),
-                      FfTextField(
-                        controller: confirmController,
-                        obscureText: true,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        label: 'Confirm PIN',
-                        errorText: errorText,
-                      ),
-                    ],
-                  ),
-                ),
-                FfSheetFooter(
-                  secondaryLabel: 'Cancel',
-                  primaryLabel: 'Save PIN',
-                  onPrimaryPressed: () async {
-                    final pin = pinController.text.trim();
-                    final confirm = confirmController.text.trim();
-
-                    if (pin.length < 4) {
-                      setSheetState(() {
-                        errorText = 'PIN must be at least 4 digits.';
-                      });
-                      return;
-                    }
-                    if (pin != confirm) {
-                      setSheetState(() {
-                        errorText = 'PINs do not match.';
-                      });
-                      return;
-                    }
-
-                    final securityService = ref.read(securityServiceProvider);
-                    await securityService.setPin(pin);
-                    await ref
-                        .read(settingsControllerProvider.notifier)
-                        .setPinEnabled(true);
-
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                      FfToast.show(context, message: 'App PIN set securely.');
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+    showGuidedPinSetupSheet(context, ref);
   }
 
   Future<void> _removePin(BuildContext context) async {
@@ -142,6 +60,12 @@ class _SecuritySettingsScreenState
     final isScreenshotProtection =
         settings?.isScreenshotProtectionEnabled ?? false;
 
+    int activeSafeguards = 0;
+    if (isBiometric) activeSafeguards++;
+    if (isPin) activeSafeguards++;
+    if (isPrivacyBlur) activeSafeguards++;
+    if (isScreenshotProtection) activeSafeguards++;
+
     return Scaffold(
       appBar: FfAppBar(
         title: 'Security & Privacy',
@@ -160,6 +84,14 @@ class _SecuritySettingsScreenState
           vertical: FfSpace.md,
         ),
         children: [
+          // ── 0. Protection Posture Ring Hero ──────────────────────────
+          FfProtectionRingCard(
+            activeProtections: activeSafeguards,
+            totalProtections: 4,
+          ),
+
+          const SizedBox(height: FfSpace.lg),
+
           // ── 1. Hardware Keystore Banner ──────────────────────────────
           FfCard(
             variant: FfCardVariant.tinted,
@@ -256,6 +188,32 @@ class _SecuritySettingsScreenState
                         )
                         : null,
                 onTap: () => _showSetPinSheet(context),
+              ),
+              FfRow(
+                icon: Icons.timer_outlined,
+                title: 'Auto-Lock Timeout',
+                subtitle: 'Lock app when backgrounded',
+                trailing: SizedBox(
+                  width: 175,
+                  child: FfSegmentedPill<int>(
+                    options: const [
+                      FfSegmentOption(value: 0, label: '0m'),
+                      FfSegmentOption(value: 1, label: '1m'),
+                      FfSegmentOption(value: 5, label: '5m'),
+                      FfSegmentOption(value: 15, label: '15m'),
+                    ],
+                    selectedValue: settings?.autoLockTimeoutMinutes ?? 0,
+                    onSelected: (val) {
+                      if (settings != null) {
+                        ref
+                            .read(settingsControllerProvider.notifier)
+                            .updateSettings(
+                              settings.copyWith(autoLockTimeoutMinutes: val),
+                            );
+                      }
+                    },
+                  ),
+                ),
               ),
             ],
           ),

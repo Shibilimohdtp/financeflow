@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_numeric_keypad.dart';
 import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/ff.dart';
@@ -109,7 +110,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     height: 76,
                     decoration: ShapeDecoration(
                       shape: FfShape.of(FfRadius.xl),
-                      color: onInk.withValues(alpha: FfTint.subtle.alpha),
+                      color: context.ff.color.tint(onInk, FfTint.subtle),
                       shadows: FfElevation.card(
                         context.ff.color.shadow,
                         Brightness.dark,
@@ -135,7 +136,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   Text(
                     'Your financial data is protected on this device.',
                     style: context.ff.text.bodySm.copyWith(
-                      color: onInk.withValues(alpha: FfOpacity.muted),
+                      color: context.ff.color.tint(onInk, FfTint.medium),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -143,10 +144,12 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   const SizedBox(height: FfSpace.x2l),
 
                   if (isPin) ...[
-                    // PIN Dots (6)
+                    // PIN Dots (4 or 6)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(6, (index) {
+                      children: List.generate(_enteredPin.length > 4 ? 6 : 4, (
+                        index,
+                      ) {
                         final isFilled = index < _enteredPin.length;
                         return Container(
                           margin: const EdgeInsets.symmetric(
@@ -161,8 +164,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                                 color:
                                     isFilled
                                         ? context.ff.color.spark
-                                        : onInk.withValues(
-                                          alpha: FfTint.strong.alpha,
+                                        : context.ff.color.tint(
+                                          onInk,
+                                          FfTint.strong,
                                         ),
                                 width: FfBorderWidth.regular,
                               ),
@@ -170,8 +174,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                             color:
                                 isFilled
                                     ? context.ff.color.spark
-                                    : onInk.withValues(
-                                      alpha: FfTint.faint.alpha,
+                                    : context.ff.color.tint(
+                                      onInk,
+                                      FfTint.faint,
                                     ),
                           ),
                         );
@@ -202,30 +207,13 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
                     const SizedBox(height: FfSpace.x2l),
 
-                    // PIN Pad Grid (48+ dp targets)
-                    SizedBox(
-                      width: 260,
-                      child: Column(
-                        children: [
-                          _buildPadRow(['1', '2', '3'], onInk),
-                          const SizedBox(height: FfSpace.sm),
-                          _buildPadRow(['4', '5', '6'], onInk),
-                          const SizedBox(height: FfSpace.sm),
-                          _buildPadRow(['7', '8', '9'], onInk),
-                          const SizedBox(height: FfSpace.sm),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              if (isBiometric)
-                                _buildBiometricButton(onInk)
-                              else
-                                const SizedBox(width: 64, height: 64),
-                              _buildPadKey('0', onInk),
-                              _buildDeleteKey(onInk),
-                            ],
-                          ),
-                        ],
-                      ),
+                    // Shared Tactile Numeric Keypad
+                    FfNumericKeypad(
+                      digitColor: onInk,
+                      showBiometric: isBiometric,
+                      onBiometric: _tryBiometricUnlock,
+                      onDigit: _onDigitPressed,
+                      onDelete: _onDeletePressed,
                     ),
                   ] else if (isBiometric) ...[
                     const SizedBox(height: FfSpace.x2l),
@@ -247,61 +235,6 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPadRow(List<String> digits, Color onInk) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: digits.map((d) => _buildPadKey(d, onInk)).toList(),
-    );
-  }
-
-  Widget _buildPadKey(String digit, Color onInk) {
-    return SizedBox(
-      width: 64,
-      height: 64,
-      child: Material(
-        color: onInk.withValues(alpha: FfTint.faint.alpha),
-        shape: FfShape.of(FfRadius.full),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => _onDigitPressed(digit),
-          child: Center(
-            child: Text(
-              digit,
-              style: context.ff.text.headlineSm.copyWith(
-                color: onInk,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBiometricButton(Color onInk) {
-    return SizedBox(
-      width: 64,
-      height: 64,
-      child: IconButton(
-        icon: Icon(Icons.fingerprint_rounded, color: onInk, size: 30),
-        tooltip: 'Unlock with biometrics',
-        onPressed: _tryBiometricUnlock,
-      ),
-    );
-  }
-
-  Widget _buildDeleteKey(Color onInk) {
-    return SizedBox(
-      width: 64,
-      height: 64,
-      child: IconButton(
-        icon: Icon(Icons.backspace_outlined, color: onInk, size: 22),
-        tooltip: 'Delete digit',
-        onPressed: _onDeletePressed,
       ),
     );
   }
