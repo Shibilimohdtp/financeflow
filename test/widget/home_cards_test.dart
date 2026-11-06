@@ -1,10 +1,13 @@
 // DS-B12: Home's redesigned cards in their states (normal, empty, negative,
 // hidden amounts, 2× text, light and dark) and their tap callbacks.
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
+import 'package:financeflow/features/dashboard/widgets/budget_overview_card.dart';
 import 'package:financeflow/features/dashboard/widgets/cash_flow_card.dart';
 import 'package:financeflow/features/dashboard/widgets/home_card_error.dart';
+import 'package:financeflow/models/budget.dart';
 import 'package:financeflow/services/balance_calculator.dart';
 import 'package:financeflow/shared/widgets/charts/ff_bar_chart.dart';
+import 'package:financeflow/shared/widgets/ff_row.dart';
 import 'package:financeflow/theme/ff_theme.dart';
 import 'package:financeflow/theme/palettes/ff_palette.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +67,143 @@ CashFlowCard _cashFlow({
   onOpenAnalytics: onOpen ?? () {},
 );
 
+BudgetSummary _budget(String id, double spent, double limit) {
+  final now = DateTime(2026, 11, 15);
+  final used = spent / limit;
+  return BudgetSummary(
+    budget: Budget(
+      id: id,
+      name: 'Budget $id',
+      categoryId: 'cat_$id',
+      categoryName: 'Dining',
+      categoryIcon: 'restaurant',
+      categoryColor: 'clay',
+      amountLimit: limit,
+      startDate: DateTime(2026, 11, 1),
+      createdAt: now,
+      updatedAt: now,
+    ),
+    amountSpent: spent,
+    remainingAmount: limit - spent,
+    percentageUsed: used,
+    amountOverBudget: spent > limit ? spent - limit : 0,
+    daysRemaining: 15,
+    totalDaysInPeriod: 30,
+    daysElapsed: 15,
+    dailyAllowanceRemaining: 0,
+    projectedPeriodEndSpending: spent * 2,
+    isApproachingThreshold: used >= 0.8 && used <= 1,
+    isExceeded: used > 1,
+  );
+}
+
+BudgetOverviewCard _budgets(
+  List<BudgetSummary> list, {
+  bool hidden = false,
+  VoidCallback? onOpen,
+}) {
+  final limit = list.fold<double>(0, (s, b) => s + b.budget.amountLimit);
+  final spent = list.fold<double>(0, (s, b) => s + b.amountSpent);
+  return BudgetOverviewCard(
+    totalBudgeted: limit,
+    totalSpent: spent,
+    totalRemaining: limit - spent,
+    overBudgetCount: list.where((b) => b.isExceeded).length,
+    activeBudgets: list,
+    isPrivacyBlur: hidden,
+    onViewBudgets: onOpen ?? () {},
+  );
+}
+
 void main() {
+  group('BudgetOverviewCard', () {
+    for (final brightness in Brightness.values) {
+      for (final scale in [1.0, 2.0]) {
+        testWidgets('on pace, ${brightness.name}, ${scale}x', (tester) async {
+          await pumpCard(
+            tester,
+            _budgets([_budget('a', 2000, 10000), _budget('b', 1000, 6000)]),
+            brightness: brightness,
+            textScale: scale,
+          );
+          expect(tester.takeException(), isNull);
+          expect(find.text('Left to spend'), findsOneWidget);
+          expect(find.text('On pace'), findsOneWidget);
+          expect(find.byType(FfRow), findsNothing);
+        });
+      }
+    }
+
+    testWidgets('spending fast lists the budgets near their limit', (
+      tester,
+    ) async {
+      await pumpCard(
+        tester,
+        _budgets([_budget('a', 9000, 10000), _budget('b', 1000, 6000)]),
+      );
+      expect(find.text('Spending fast'), findsOneWidget);
+      expect(find.text('Budget a'), findsOneWidget);
+      expect(find.text('Near limit'), findsOneWidget);
+      expect(find.text('Budget b'), findsNothing);
+    });
+
+    testWidgets('over plan leads with the overspend, worst first', (
+      tester,
+    ) async {
+      var opened = 0;
+      await pumpCard(
+        tester,
+        _budgets([
+          _budget('a', 8500, 10000),
+          _budget('b', 9000, 6000),
+        ], onOpen: () => opened++),
+      );
+      expect(find.text('Over plan by'), findsOneWidget);
+      expect(find.text('Over plan'), findsOneWidget);
+      expect(find.text('Over'), findsOneWidget);
+      final rows = tester.widgetList<FfRow>(find.byType(FfRow)).toList();
+      expect(rows.first.title, 'Budget b');
+      await tester.tap(find.text('Budget b'));
+      await tester.tap(find.text('See all'));
+      expect(opened, 2);
+    });
+
+    testWidgets('hidden amounts show percentages, never figures', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpCard(
+        tester,
+        _budgets([_budget('a', 9000, 10000)], hidden: true),
+      );
+      expect(find.textContaining('₹9,000'), findsNothing);
+      expect(find.text('90% used'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('9,000')), findsNothing);
+      handle.dispose();
+    });
+
+    testWidgets('no budgets leads into setup', (tester) async {
+      var opened = 0;
+      await pumpCard(
+        tester,
+        BudgetOverviewCard(
+          totalBudgeted: 0,
+          totalSpent: 0,
+          totalRemaining: 0,
+          overBudgetCount: 0,
+          onViewBudgets: () => opened++,
+        ),
+      );
+      expect(find.text('Plan this month'), findsOneWidget);
+      await tester.tap(find.text('Set up budgets'));
+      expect(opened, 1);
+    });
+
+    testWidgets('skeleton renders', (tester) async {
+      await pumpCard(tester, const BudgetOverviewCardSkeleton());
+      expect(tester.takeException(), isNull);
+    });
+  });
   group('CashFlowCard', () {
     for (final brightness in Brightness.values) {
       for (final scale in [1.0, 2.0]) {
