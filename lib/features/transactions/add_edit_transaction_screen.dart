@@ -1,48 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/extensions/context_extensions.dart';
-import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/category.dart';
-import '../../models/loan.dart';
 import '../../models/investment.dart';
-import '../../models/money_advance.dart';
+import '../../models/loan.dart';
 import '../../models/money_record.dart';
-import '../../models/money_repayment.dart';
 import '../../models/subscription.dart';
 import '../../models/transaction.dart';
 import '../../repositories/loan_repository.dart';
-import '../../repositories/investment_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../services/categorization_service.dart';
 import '../../services/default_account_service.dart';
 import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
-import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_category_tile.dart';
-import '../../theme/stillwater_colors.dart';
-import '../../theme/stillwater_typography.dart';
-import '../accounts/accounts_controller.dart';
-import '../categories/categories_controller.dart';
-import '../personal_debts/money_records_controller.dart';
-import 'transaction_form.dart';
-import 'transactions_controller.dart';
-import 'widgets/transaction_pickers.dart';
-import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_text_field.dart';
-import '../../shared/widgets/ff_select.dart';
-import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../../theme/stillwater_colors.dart';
+import '../accounts/accounts_controller.dart';
+import '../categories/categories_controller.dart';
+import '../personal_debts/money_records_controller.dart';
+import 'form/widgets/transaction_account_section.dart';
+import 'form/widgets/transaction_action_bar.dart';
+import 'form/widgets/transaction_category_section.dart';
+import 'form/widgets/transaction_date_section.dart';
+import 'form/widgets/transaction_merchant_section.dart';
+import 'form/widgets/transaction_more_details_section.dart';
+import 'form/widgets/transaction_purpose_amount_row.dart';
+import 'form/widgets/transaction_purpose_fields.dart';
+import 'form/widgets/transaction_type_selector.dart';
+import 'transaction_form.dart';
+import 'transactions_controller.dart';
+import 'widgets/transaction_pickers.dart';
 
 /// A first-class, dedicated full-screen page for creating and editing transactions.
 /// Principles: Calm, Precise, Local-First, Fast.
@@ -142,17 +137,6 @@ class _AddEditTransactionScreenState
   late final TransactionType _initialType;
   late final TransactionPurpose _initialPurpose;
 
-  static const _allPaymentMethods = <String>[
-    'UPI',
-    'Debit Card',
-    'Credit Card',
-    'Cash',
-    'Net Banking',
-    'Auto Debit',
-    'IMPS / NEFT',
-    'Other',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -163,7 +147,9 @@ class _AddEditTransactionScreenState
     _initialPurpose = _selectedPurpose;
 
     _initialAmount =
-        initial == null ? '' : _formatInitialAmount(initial.amount);
+        initial == null
+            ? ''
+            : TransactionFormValues.formatInitialAmount(initial.amount);
     _amountController = TextEditingController(text: _initialAmount);
 
     _initialMerchant = initial?.merchant ?? '';
@@ -189,7 +175,8 @@ class _AddEditTransactionScreenState
     );
     _selectedDate = initial?.date ?? DateTime.now();
     _selectedPaymentMethod =
-        initial?.paymentMethod ?? _defaultPaymentFor(_selectedType);
+        initial?.paymentMethod ??
+        TransactionFormValues.defaultPaymentFor(_selectedType);
 
     _merchantFocusNode = FocusNode();
     _merchantFocusNode.addListener(_onMerchantFocusChanged);
@@ -219,11 +206,6 @@ class _AddEditTransactionScreenState
 
     _merchantController.addListener(_onMerchantChanged);
   }
-
-  String _formatInitialAmount(double amount) =>
-      amount == amount.truncateToDouble()
-          ? amount.toInt().toString()
-          : amount.toStringAsFixed(2);
 
   @override
   void dispose() {
@@ -296,29 +278,8 @@ class _AddEditTransactionScreenState
     }
   }
 
-  String _defaultPaymentFor(TransactionType type) => switch (type) {
-    TransactionType.cash => 'Cash',
-    TransactionType.loanEmi => 'Auto Debit',
-    TransactionType.transfer => 'IMPS / NEFT',
-    _ => 'UPI',
-  };
-
-  List<String> get _paymentMethods => switch (_selectedType) {
-    TransactionType.cash => const ['Cash', 'Other'],
-    TransactionType.loanEmi => const [
-      'Auto Debit',
-      'UPI',
-      'Net Banking',
-      'Other',
-    ],
-    TransactionType.transfer => const [
-      'IMPS / NEFT',
-      'UPI',
-      'Net Banking',
-      'Other',
-    ],
-    _ => _allPaymentMethods,
-  };
+  List<String> get _paymentMethods =>
+      TransactionFormValues.paymentMethodsFor(_selectedType);
 
   bool get _needsCategory =>
       _selectedPurpose != TransactionPurpose.internalTransfer;
@@ -355,9 +316,6 @@ class _AddEditTransactionScreenState
     }
     _defaultsApplied = true;
 
-    // The newest account is the user's intentional default. Keep category
-    // and payment-method suggestions based on transaction history, but do not
-    // let an older transaction force the account back to Cash Wallet.
     _selectedAccount = defaultTransactionAccount(accounts);
 
     final recentForType =
@@ -426,7 +384,7 @@ class _AddEditTransactionScreenState
       _toAccountError = null;
 
       if (!_paymentMethods.contains(_selectedPaymentMethod)) {
-        _selectedPaymentMethod = _defaultPaymentFor(type);
+        _selectedPaymentMethod = TransactionFormValues.defaultPaymentFor(type);
       }
 
       final relevant = _prioritizedCategories(categories, history);
@@ -442,21 +400,6 @@ class _AddEditTransactionScreenState
     });
   }
 
-  TransactionType _typeForPurpose(
-    TransactionPurpose purpose,
-  ) => switch (purpose) {
-    TransactionPurpose.income ||
-    TransactionPurpose.borrowing ||
-    TransactionPurpose.loanDisbursement ||
-    TransactionPurpose.personalDebtRepaymentReceived => TransactionType.income,
-    TransactionPurpose.internalTransfer => TransactionType.transfer,
-    TransactionPurpose.investmentPurchase ||
-    TransactionPurpose.investmentRedemption => TransactionType.investment,
-    TransactionPurpose.loanRepayment => TransactionType.loanEmi,
-    TransactionPurpose.legacyCash => TransactionType.cash,
-    _ => TransactionType.expense,
-  };
-
   void _changePurpose(
     TransactionPurpose purpose,
     List<Category> categories,
@@ -464,7 +407,7 @@ class _AddEditTransactionScreenState
     List<Transaction> history,
   ) {
     if (_selectedPurpose == purpose) return;
-    final type = _typeForPurpose(purpose);
+    final type = TransactionFormValues.typeForPurpose(purpose);
     setState(() {
       _selectedPurpose = purpose;
       _selectedLoan = null;
@@ -657,7 +600,6 @@ class _AddEditTransactionScreenState
             .saveTransaction(tx, moneyRecordDetails: built.debt);
       }
 
-      // Learn payee → category only from payees the user actually typed.
       final typedPayee = _merchantController.text.trim();
       if (_selectedCategory != null &&
           values.needsCategory &&
@@ -827,32 +769,153 @@ class _AddEditTransactionScreenState
                           const SizedBox(height: FfSpace.md),
                         ],
                         // 1. Transaction Type Selector Bar
-                        _buildTypeSelector(
+                        TransactionTypeSelector(
+                          selectedPurpose: _selectedPurpose,
                           categories: categories,
                           accounts: accounts,
                           history: history,
+                          onPurposeChanged: _changePurpose,
                         ),
                         const SizedBox(height: FfSpace.sm),
 
                         // 2. Purpose & Amount in a Single Unified Row
-                        _buildPurposeAndAmountRow(
+                        TransactionPurposeAmountRow(
+                          selectedPurpose: _selectedPurpose,
                           activeTypeColor: activeTypeColor,
+                          amountController: _amountController,
+                          amountError: _amountError,
+                          autofocus: widget.initialTransaction == null,
                           categories: categories,
                           accounts: accounts,
                           history: history,
+                          onPurposeChanged: _changePurpose,
+                          onAmountChanged: (val) {
+                            if (_amountError != null) {
+                              setState(() => _amountError = null);
+                            }
+                          },
+                          onClearAmount:
+                              () => setState(() => _amountController.clear()),
                         ),
                         const SizedBox(height: FfSpace.md),
 
                         // 3. Payee / Merchant Field with dynamic focused suggestions
-                        _buildMerchantField(
+                        TransactionMerchantSection(
+                          merchantFieldKey: _merchantFieldKey,
+                          merchantController: _merchantController,
+                          merchantFocusNode: _merchantFocusNode,
+                          selectedType: _selectedType,
+                          selectedCategory: _selectedCategory,
+                          needsCategory: _needsCategory,
+                          merchantError: _merchantError,
+                          showMerchantSuggestions: _showMerchantSuggestions,
                           suggestions: payeeSuggestions,
+                          suggestedCategory: _suggestedCategory,
                           categories: categories,
                           history: history,
+                          onSelectSuggestion: (suggestion) {
+                            _merchantController.text = suggestion.displayName;
+                            _merchantController
+                                .selection = TextSelection.fromPosition(
+                              TextPosition(
+                                offset: suggestion.displayName.length,
+                              ),
+                            );
+                            if (_needsCategory) {
+                              final targetCatId =
+                                  suggestion.primaryCategoryId ??
+                                  CategorizationService.suggestCategory(
+                                    suggestion.displayName,
+                                    history: history,
+                                  )?.categoryId;
+                              if (targetCatId != null) {
+                                final match =
+                                    categories
+                                        .where((c) => c.id == targetCatId)
+                                        .firstOrNull;
+                                if (match != null) {
+                                  setState(() {
+                                    _selectedCategory = match;
+                                    _categoryError = null;
+                                  });
+                                }
+                              }
+                            }
+                            if (_merchantError != null) {
+                              setState(() => _merchantError = null);
+                            }
+                            setState(() {
+                              _showMerchantSuggestions = false;
+                            });
+                            _merchantFocusNode.unfocus();
+                          },
+                          onApplySuggestedCategory: () {
+                            if (_suggestedCategory == null) return;
+                            final match =
+                                categories
+                                    .where(
+                                      (c) =>
+                                          c.id ==
+                                          _suggestedCategory!.categoryId,
+                                    )
+                                    .firstOrNull;
+                            if (match != null) {
+                              setState(() {
+                                _selectedCategory = match;
+                                _categoryError = null;
+                              });
+                            }
+                          },
+                          onCloseSuggestions: () {
+                            setState(() {
+                              _showMerchantSuggestions = false;
+                            });
+                            _merchantFocusNode.unfocus();
+                          },
+                          onChanged: (text) {
+                            if (_merchantError != null) {
+                              setState(() => _merchantError = null);
+                            }
+                          },
+                          onClearPayee: () {
+                            _merchantController.clear();
+                            setState(() => _merchantError = null);
+                          },
                         ),
                         const SizedBox(height: FfSpace.md),
 
                         // 4. Purpose-Specific Detailed Fields (Loans, Debts, Investments)
-                        _buildPurposeFields(),
+                        TransactionPurposeFields(
+                          selectedPurpose: _selectedPurpose,
+                          initialTransaction: widget.initialTransaction,
+                          amountController: _amountController,
+                          merchantController: _merchantController,
+                          counterpartyController: _counterpartyController,
+                          principalController: _principalController,
+                          interestController: _interestController,
+                          feeController: _feeController,
+                          selectedDate: _selectedDate,
+                          debtDueDate: _debtDueDate,
+                          createAsSeparateDebt: _createAsSeparateDebt,
+                          selectedLoan: _selectedLoan,
+                          selectedMoneyRecord: _selectedMoneyRecord,
+                          selectedInvestment: _selectedInvestment,
+                          selectedSubscription: _selectedSubscription,
+                          selectedAccount: _selectedAccount,
+                          needsCounterparty: _needsCounterparty,
+                          onSelectLoan: _selectLoan,
+                          onSelectMoneyRecord:
+                              (r) => setState(() => _selectedMoneyRecord = r),
+                          onSelectInvestment:
+                              (i) => setState(() => _selectedInvestment = i),
+                          onSelectSubscription:
+                              (s) => setState(() => _selectedSubscription = s),
+                          onSelectDebtDueDate:
+                              (d) => setState(() => _debtDueDate = d),
+                          onToggleCreateAsSeparateDebt:
+                              (val) =>
+                                  setState(() => _createAsSeparateDebt = val),
+                        ),
                         if (_selectedPurpose != TransactionPurpose.expense &&
                             _selectedPurpose != TransactionPurpose.income &&
                             _selectedPurpose !=
@@ -861,20 +924,67 @@ class _AddEditTransactionScreenState
 
                         // 5. Category Section (Top 3 quick + All Categories button)
                         if (_needsCategory) ...[
-                          _buildCategorySection(categoriesForType),
+                          TransactionCategorySection(
+                            categoriesForType: categoriesForType,
+                            selectedCategory: _selectedCategory,
+                            categoryError: _categoryError,
+                            onSelectCategory: (cat) {
+                              setState(() {
+                                _selectedCategory = cat;
+                                _categoryError = null;
+                              });
+                            },
+                            onOpenCategoryPicker:
+                                () => _showCategoryPicker(categoriesForType),
+                          ),
                           const SizedBox(height: FfSpace.md),
                         ],
 
                         // 6. Account Section (Single or Directional Transfer)
-                        _buildAccountSection(accounts),
+                        TransactionAccountSection(
+                          selectedType: _selectedType,
+                          accounts: accounts,
+                          selectedAccount: _selectedAccount,
+                          selectedToAccount: _selectedToAccount,
+                          accountError: _accountError,
+                          toAccountError: _toAccountError,
+                          onSwapAccounts: _swapTransferAccounts,
+                          onPickSourceAccount:
+                              () => _showAccountPicker(
+                                accounts: accounts,
+                                isDestination: false,
+                              ),
+                          onPickDestinationAccount:
+                              () => _showAccountPicker(
+                                accounts: accounts,
+                                isDestination: true,
+                              ),
+                        ),
                         const SizedBox(height: FfSpace.md),
 
                         // 7. Single-Row Quick Date Selector
-                        _buildDateSection(),
+                        TransactionDateSection(
+                          selectedDate: _selectedDate,
+                          onSelectDate: _setDate,
+                          onPickCustomDate: _pickCustomDate,
+                        ),
                         const SizedBox(height: FfSpace.lg),
 
                         // 8. Progressive Disclosure: Expandable More Details
-                        _buildMoreDetailsSection(),
+                        TransactionMoreDetailsSection(
+                          initiallyExpanded: _moreDetailsOpen,
+                          onExpansionChanged:
+                              (open) => setState(() => _moreDetailsOpen = open),
+                          selectedPaymentMethod: _selectedPaymentMethod,
+                          paymentMethods: _paymentMethods,
+                          onPaymentMethodChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedPaymentMethod = val);
+                            }
+                          },
+                          notesController: _notesController,
+                          tagsController: _tagsController,
+                        ),
 
                         const SizedBox(height: FfSpace.xl),
                       ],
@@ -884,1851 +994,15 @@ class _AddEditTransactionScreenState
               ),
 
               // 9. Sticky Action Bar pinned at bottom
-              _buildStickyActionBar(saveButtonText),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTypeSelector({
-    required List<Category> categories,
-    required List<Account> accounts,
-    required List<Transaction> history,
-  }) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final incoming = <TransactionPurpose>{
-      TransactionPurpose.income,
-      TransactionPurpose.borrowing,
-      TransactionPurpose.personalDebtRepaymentReceived,
-      TransactionPurpose.loanDisbursement,
-      TransactionPurpose.investmentRedemption,
-    };
-    final intent =
-        _selectedPurpose == TransactionPurpose.internalTransfer
-            ? 'Move Money'
-            : incoming.contains(_selectedPurpose)
-            ? 'Money In'
-            : 'Money Out';
-
-    final tabs = const [
-      (label: 'Money Out', icon: Icons.arrow_outward_rounded),
-      (label: 'Money In', icon: Icons.arrow_downward_rounded),
-      (label: 'Move Money', icon: Icons.swap_horiz_rounded),
-    ];
-
-    return Container(
-      height: 46,
-      padding: const EdgeInsets.all(FfSpace.x3s),
-      decoration: BoxDecoration(
-        color:
-            isDark
-                ? StillwaterColors.darkSurfaceContainerLow
-                : StillwaterColors.lightSurfaceContainerLow,
-        borderRadius: BorderRadius.circular(FfRadius.lg),
-        border: Border.all(
-          color: context.ff.color.borderSubtle.withValues(
-            alpha: FfTint.strong.alpha,
-          ),
-          width: FfBorderWidth.hairline,
-        ),
-      ),
-      child: Row(
-        children:
-            tabs.map((tab) {
-              final isSelected = intent == tab.label;
-              return Expanded(
-                child: InkWell(
-                  onTap: () {
-                    final purpose = switch (tab.label) {
-                      'Money In' => TransactionPurpose.income,
-                      'Move Money' => TransactionPurpose.internalTransfer,
-                      _ => TransactionPurpose.expense,
-                    };
-                    _changePurpose(purpose, categories, accounts, history);
-                  },
-                  borderRadius: BorderRadius.circular(FfRadius.md),
-                  child: AnimatedContainer(
-                    duration: FfMotion.fast,
-                    curve: Curves.easeOutCubic,
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? (isDark
-                                  ? context.ff.color.actionPrimaryContainer
-                                      .withValues(alpha: FfTint.strong.alpha)
-                                  : context.ff.color.actionPrimaryContainer
-                                      .withValues(alpha: FfOpacity.muted))
-                              : Colors.transparent,
-                      borderRadius: BorderRadius.circular(FfRadius.md),
-                      border: Border.all(
-                        color:
-                            isSelected
-                                ? context.ff.color.actionPrimary.withValues(
-                                  alpha: 0.8,
-                                )
-                                : Colors.transparent,
-                        width: isSelected ? FfBorderWidth.focus : 0,
-                      ),
-                    ),
-                    child: Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: FfSpace.x2s,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                tab.icon,
-                                size: 15,
-                                color:
-                                    isSelected
-                                        ? context.ff.color.actionPrimary
-                                        : context.ff.color.textSecondary,
-                              ),
-                              const SizedBox(width: FfSpace.x2s),
-                              Text(
-                                tab.label,
-                                style: context.ff.text.label.copyWith(
-                                  fontWeight:
-                                      isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                  color:
-                                      isSelected
-                                          ? context.ff.color.actionPrimary
-                                          : context.ff.color.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildPurposeAndAmountRow({
-    required Color activeTypeColor,
-    required List<Category> categories,
-    required List<Account> accounts,
-    required List<Transaction> history,
-  }) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final incoming = <TransactionPurpose>{
-      TransactionPurpose.income,
-      TransactionPurpose.borrowing,
-      TransactionPurpose.personalDebtRepaymentReceived,
-      TransactionPurpose.loanDisbursement,
-      TransactionPurpose.investmentRedemption,
-    };
-    final intent =
-        _selectedPurpose == TransactionPurpose.internalTransfer
-            ? 'Move Money'
-            : incoming.contains(_selectedPurpose)
-            ? 'Money In'
-            : 'Money Out';
-    final purposes = switch (intent) {
-      'Money In' => const [
-        TransactionPurpose.income,
-        TransactionPurpose.borrowing,
-        TransactionPurpose.personalDebtRepaymentReceived,
-        TransactionPurpose.loanDisbursement,
-        TransactionPurpose.investmentRedemption,
-      ],
-      'Move Money' => const [TransactionPurpose.internalTransfer],
-      _ => const [
-        TransactionPurpose.expense,
-        TransactionPurpose.lending,
-        TransactionPurpose.personalDebtRepaymentMade,
-        TransactionPurpose.loanRepayment,
-        TransactionPurpose.investmentPurchase,
-        TransactionPurpose.subscriptionPayment,
-      ],
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Purpose Field (Left Column, ~42% width)
-            Expanded(
-              flex: 4,
-              child: Container(
-                height: 58,
-                padding: const EdgeInsets.fromLTRB(
-                  FfSpace.sm,
-                  FfSpace.x2s,
-                  FfSpace.xs,
-                  FfSpace.x2s,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      isDark
-                          ? StillwaterColors.darkSurfaceContainerLow
-                          : StillwaterColors.lightSurfaceContainerLow,
-                  borderRadius: BorderRadius.circular(FfRadius.lg),
-                  border: Border.all(
-                    color: context.ff.color.borderSubtle.withValues(
-                      alpha: 0.35,
-                    ),
-                    width: FfBorderWidth.hairline,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Purpose',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Expanded(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<TransactionPurpose>(
-                          key: ValueKey(intent),
-                          value:
-                              purposes.contains(_selectedPurpose)
-                                  ? _selectedPurpose
-                                  : purposes.first,
-                          isExpanded: true,
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 18,
-                            color: context.ff.color.textSecondary,
-                          ),
-                          style: context.ff.text.bodySm.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: context.ff.color.textPrimary,
-                          ),
-                          items:
-                              purposes.map((purpose) {
-                                return DropdownMenuItem(
-                                  value: purpose,
-                                  child: Text(
-                                    purpose.displayName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                );
-                              }).toList(),
-                          onChanged: (purpose) {
-                            if (purpose != null) {
-                              _changePurpose(
-                                purpose,
-                                categories,
-                                accounts,
-                                history,
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: FfSpace.sm),
-
-            // 2. Hero Amount Field (Right Column, ~58% width)
-            Expanded(
-              flex: 5,
-              child: Container(
-                height: 58,
-                padding: const EdgeInsets.fromLTRB(
-                  FfSpace.sm,
-                  FfSpace.x2s,
-                  FfSpace.sm,
-                  FfSpace.x2s,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      isDark
-                          ? StillwaterColors.darkSurfaceContainerLow
-                          : StillwaterColors.lightSurfaceContainerLow,
-                  borderRadius: BorderRadius.circular(FfRadius.lg),
-                  border: Border.all(
-                    color:
-                        _amountError != null
-                            ? context.ff.color.statusError
-                            : context.ff.color.borderSubtle.withValues(
-                              alpha: 0.35,
-                            ),
-                    width:
-                        _amountError != null
-                            ? FfBorderWidth.focus
-                            : FfBorderWidth.hairline,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Amount',
-                          style: context.ff.text.labelSm.copyWith(
-                            color: context.ff.color.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (_amountController.text.isNotEmpty)
-                          InkWell(
-                            onTap:
-                                () => setState(() => _amountController.clear()),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 14,
-                              color: context.ff.color.textSecondary,
-                            ),
-                          ),
-                      ],
-                    ),
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${CurrencyFormatter.currencySymbol} ',
-                            style: StillwaterTypography.numHero(
-                              color: activeTypeColor,
-                            ).copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Expanded(
-                            child: FfAmountField.bare(
-                              controller: _amountController,
-                              size: FfAmountSize.md,
-                              autofocus: widget.initialTransaction == null,
-                              onChanged: (val) {
-                                if (_amountError != null) {
-                                  setState(() => _amountError = null);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (_amountError != null) ...[
-          const SizedBox(height: FfSpace.x2s),
-          Text(
-            _amountError!,
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.statusError,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-        if (_selectedPurpose == TransactionPurpose.internalTransfer) ...[
-          const SizedBox(height: FfSpace.xs),
-          Text(
-            'Move money between accounts you own. This is not income or spending.',
-            style: context.ff.text.bodySm,
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildMerchantField({
-    required List<PayeeSuggestion> suggestions,
-    required List<Category> categories,
-    required List<Transaction> history,
-  }) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Optional: a blank payee is saved under the category name.
-    final label = switch (_selectedType) {
-      TransactionType.income => 'Payer / Source (optional)',
-      TransactionType.transfer => 'Note (optional)',
-      TransactionType.investment => 'Asset / Platform (optional)',
-      TransactionType.loanEmi => 'Lender / Loan Name (optional)',
-      _ => 'Payee (optional)',
-    };
-
-    final hint = switch (_selectedType) {
-      TransactionType.income => 'e.g. Employer, Client, Refund',
-      TransactionType.transfer => 'e.g. Move to savings, Shared bill',
-      TransactionType.investment => 'e.g. Zerodha, Parag Parikh Flexi Cap',
-      TransactionType.loanEmi => 'e.g. HDFC Home Loan, Car EMI',
-      _ => 'e.g. Swiggy, Amazon, Groceries',
-    };
-
-    final prefixIcon = switch (_selectedType) {
-      TransactionType.income => Icons.account_circle_outlined,
-      TransactionType.transfer => Icons.swap_horiz_rounded,
-      TransactionType.investment => Icons.trending_up_rounded,
-      TransactionType.loanEmi => Icons.receipt_long_rounded,
-      _ => Icons.storefront_outlined,
-    };
-
-    final isFocused = _merchantFocusNode.hasFocus || _showMerchantSuggestions;
-    final typedText = _merchantController.text.trim();
-    final typedTextLower = typedText.toLowerCase();
-
-    final visibleSuggestions =
-        typedText.isEmpty
-            ? suggestions
-            : suggestions
-                .where((s) => s.displayName.toLowerCase() != typedTextLower)
-                .toList();
-
-    return Column(
-      key: _merchantFieldKey,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FfTextField(
-          controller: _merchantController,
-          focusNode: _merchantFocusNode,
-          textCapitalization: TextCapitalization.words,
-          label: label,
-          hint: hint,
-          errorText: _merchantError,
-          icon: prefixIcon,
-          suffix:
-              _merchantController.text.isEmpty
-                  ? null
-                  : IconButton(
-                    tooltip: 'Clear payee',
-                    icon: const Icon(Icons.clear_rounded, size: 20),
-                    onPressed: () {
-                      _merchantController.clear();
-                      setState(() => _merchantError = null);
-                    },
-                  ),
-          onChanged: (text) {
-            if (_merchantError != null) {
-              setState(() => _merchantError = null);
-            }
-          },
-        ),
-
-        // Context-aware dynamic Payee suggestions surface
-        if (isFocused &&
-            (visibleSuggestions.isNotEmpty || typedText.isNotEmpty)) ...[
-          const SizedBox(height: FfSpace.xs),
-          Container(
-            decoration: BoxDecoration(
-              color:
-                  isDark
-                      ? StillwaterColors.darkSurfaceContainerLow
-                      : StillwaterColors.lightSurfaceContainerLow,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.borderSubtle.withValues(
-                  alpha: FfOpacity.muted,
-                ),
-                width: FfBorderWidth.regular,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: context.ff.color.shadow.withValues(
-                    alpha: isDark ? 0.35 : 0.08,
-                  ),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.sm,
-              vertical: FfSpace.xs,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _selectedCategory != null &&
-                              visibleSuggestions.any((s) => s.isCategoryMatch)
-                          ? 'Suggested for ${_selectedCategory!.name}'
-                          : (typedText.isEmpty
-                              ? 'Recent payees'
-                              : 'Matching payees'),
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.actionPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 16),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      tooltip: 'Close suggestions',
-                      onPressed: () {
-                        setState(() {
-                          _showMerchantSuggestions = false;
-                        });
-                        _merchantFocusNode.unfocus();
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: FfSpace.x2s),
-                NotificationListener<ScrollNotification>(
-                  onNotification: (ScrollNotification notification) {
-                    return true;
-                  },
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 200),
-                    child: ListView(
-                      shrinkWrap: true,
-                      physics: const ClampingScrollPhysics(),
-                      children: [
-                        // Rank best matching payees at the top of the dropdown
-                        ...visibleSuggestions.map((suggestion) {
-                          return InkWell(
-                            onTap: () {
-                              _merchantController.text = suggestion.displayName;
-                              _merchantController
-                                  .selection = TextSelection.fromPosition(
-                                TextPosition(
-                                  offset: suggestion.displayName.length,
-                                ),
-                              );
-                              if (_needsCategory) {
-                                final targetCatId =
-                                    suggestion.primaryCategoryId ??
-                                    CategorizationService.suggestCategory(
-                                      suggestion.displayName,
-                                      history: history,
-                                    )?.categoryId;
-                                if (targetCatId != null) {
-                                  final match =
-                                      categories
-                                          .where((c) => c.id == targetCatId)
-                                          .firstOrNull;
-                                  if (match != null) {
-                                    setState(() {
-                                      _selectedCategory = match;
-                                      _categoryError = null;
-                                    });
-                                  }
-                                }
-                              }
-                              if (_merchantError != null) {
-                                setState(() => _merchantError = null);
-                              }
-                              setState(() {
-                                _showMerchantSuggestions = false;
-                              });
-                              _merchantFocusNode.unfocus();
-                            },
-                            borderRadius: BorderRadius.circular(FfRadius.md),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: FfSpace.xs,
-                                vertical: FfSpace.sm,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    suggestion.isCategoryMatch
-                                        ? Icons.auto_awesome_rounded
-                                        : Icons.history_rounded,
-                                    size: 18,
-                                    color:
-                                        suggestion.isCategoryMatch
-                                            ? context.ff.color.actionPrimary
-                                            : theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                  ),
-                                  const SizedBox(width: FfSpace.sm),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          suggestion.displayName,
-                                          style: context.ff.text.body.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        if (suggestion.reasonLabel != null)
-                                          Text(
-                                            suggestion.reasonLabel!,
-                                            style: context.ff.text.bodySm
-                                                .copyWith(
-                                                  color:
-                                                      theme
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                                  fontSize: 11,
-                                                ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (suggestion.primaryCategoryName != null &&
-                                      _needsCategory &&
-                                      _selectedCategory?.id !=
-                                          suggestion.primaryCategoryId)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: FfSpace.xs,
-                                        vertical: FfSpace.x3s,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            theme
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(
-                                          FfRadius.sm,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        suggestion.primaryCategoryName!,
-                                        style: context.ff.text.labelSm.copyWith(
-                                          color:
-                                              theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
-                        if (typedText.isNotEmpty &&
-                            !visibleSuggestions.any(
-                              (s) =>
-                                  s.displayName.toLowerCase() == typedTextLower,
-                            )) ...[
-                          if (visibleSuggestions.isNotEmpty)
-                            const FfDivider.spaced(),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _showMerchantSuggestions = false;
-                              });
-                              _merchantFocusNode.unfocus();
-                            },
-                            borderRadius: BorderRadius.circular(FfRadius.md),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: FfSpace.xs,
-                                vertical: FfSpace.sm,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.edit_note_rounded,
-                                    size: 18,
-                                    color: context.ff.color.actionPrimary,
-                                  ),
-                                  const SizedBox(width: FfSpace.sm),
-                                  Expanded(
-                                    child: Text(
-                                      'Use "$typedText"',
-                                      style: context.ff.text.body.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: context.ff.color.actionPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    'Enter',
-                                    style: context.ff.text.labelSm.copyWith(
-                                      color: context.ff.color.actionPrimary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        // Offline Categorization Suggestion Banner / Pill
-        if (_suggestedCategory != null && _needsCategory) ...[
-          const SizedBox(height: FfSpace.xs),
-          InkWell(
-            onTap: () {
-              final categories = ref.read(categoriesStreamProvider).value ?? [];
-              final match =
-                  categories
-                      .where((c) => c.id == _suggestedCategory!.categoryId)
-                      .firstOrNull;
-              if (match != null) {
-                setState(() {
-                  _selectedCategory = match;
-                  _categoryError = null;
-                });
-              }
-            },
-            borderRadius: BorderRadius.circular(FfRadius.md),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: FfSpace.sm,
-                vertical: FfSpace.xs,
-              ),
-              decoration: BoxDecoration(
-                color: context.ff.color.actionPrimaryContainer.withValues(
-                  alpha: 0.45,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.md),
-                border: Border.all(
-                  color: context.ff.color.actionPrimary.withValues(
-                    alpha: FfTint.strong.alpha,
-                  ),
-                  width: FfBorderWidth.regular,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 16,
-                    color: context.ff.color.actionPrimary,
-                  ),
-                  const SizedBox(width: FfSpace.xs),
-                  Expanded(
-                    child: Text(
-                      'Suggested: ${_suggestedCategory!.categoryName} • ${_suggestedCategory!.reason}',
-                      style: context.ff.text.bodySm.copyWith(
-                        color: context.ff.color.onActionPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: FfSpace.x2s),
-                  Text(
-                    'Apply',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.actionPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildPurposeFields() {
-    if (_selectedPurpose == TransactionPurpose.subscriptionPayment) {
-      final theme = context.theme;
-      final isDark = theme.brightness == Brightness.dark;
-      final allSubs = ref.watch(allSubscriptionsStreamProvider).value ?? [];
-      final activeSubs =
-          allSubs.where((s) => s.status == SubscriptionStatus.active).toList()
-            ..sort((a, b) => a.merchant.compareTo(b.merchant));
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Subscription selector ──────────────────────────────────────────
-          if (activeSubs.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(FfSpace.md),
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.md),
-                border: Border.all(
-                  color: context.ff.color.borderSubtle.withValues(alpha: 0.5),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.subscriptions_outlined,
-                    size: 20,
-                    color: context.ff.color.textSecondary,
-                  ),
-                  const SizedBox(width: FfSpace.sm),
-                  Expanded(
-                    child: Text(
-                      'No active subscriptions yet. Add subscriptions in the Subscriptions screen.',
-                      style: context.ff.text.bodySm.copyWith(
-                        color: context.ff.color.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            FfSelect<String>(
-              value: _selectedSubscription?.id ?? 'unlinked',
-              label: 'Subscription',
-              icon: Icons.subscriptions_outlined,
-              helper:
-                  _selectedSubscription == null
-                      ? 'Choose a tracked subscription to link this payment.'
-                      : null,
-              items: [
-                const DropdownMenuItem(
-                  value: 'unlinked',
-                  child: Text('Unlinked subscription payment'),
-                ),
-                ...activeSubs.map(
-                  (sub) => DropdownMenuItem(
-                    value: sub.id,
-                    child: Text(
-                      '${sub.merchant} · ${CurrencyFormatter.formatAmount(sub.amount)}/${sub.billingFrequency.shortLabel}',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
-              onChanged: (id) {
-                final chosen = activeSubs.where((s) => s.id == id).firstOrNull;
-                setState(() {
-                  _selectedSubscription = chosen;
-                  if (chosen != null) {
-                    // Pre-fill amount and merchant from the subscription.
-                    _amountController.text = chosen.amount.toStringAsFixed(2);
-                    if (_merchantController.text.isEmpty) {
-                      _merchantController.text = chosen.merchant;
-                    }
-                  }
-                });
-              },
-            ),
-          // ── Info chip when subscription is linked ──────────────────────────
-          if (_selectedSubscription != null) ...[
-            const SizedBox(height: FfSpace.xs),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: FfSpace.sm,
-                vertical: FfSpace.x2s + 2,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    isDark
-                        ? context.ff.color.actionPrimaryContainer.withValues(
-                          alpha: 0.3,
-                        )
-                        : context.ff.color.actionPrimaryContainer.withValues(
-                          alpha: 0.45,
-                        ),
-                borderRadius: BorderRadius.circular(FfRadius.md),
-                border: Border.all(
-                  color: context.ff.color.actionPrimary.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
-                  width: FfBorderWidth.regular,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.link_rounded,
-                    size: 14,
-                    color: context.ff.color.actionPrimary,
-                  ),
-                  const SizedBox(width: FfSpace.x2s),
-                  Expanded(
-                    child: Text(
-                      'This payment will appear in ${_selectedSubscription!.merchant}\'s payment history.',
-                      style: context.ff.text.bodySm.copyWith(
-                        color: context.ff.color.onActionPrimaryContainer,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      );
-    }
-
-    if (_selectedPurpose == TransactionPurpose.loanRepayment) {
-      final loans =
-          (ref.watch(allLoansStreamProvider).valueOrNull ?? const <Loan>[])
-              .where((loan) => loan.status == LoanStatus.active)
-              .toList();
-      if (_selectedLoan == null &&
-          widget.initialTransaction?.linkedLoanId != null) {
-        _selectedLoan =
-            loans
-                .where(
-                  (loan) => loan.id == widget.initialTransaction!.linkedLoanId,
-                )
-                .firstOrNull;
-      }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FfSelect<String>(
-            value: _selectedLoan?.id ?? 'unlinked',
-            label: 'Tracked loan',
-            items: [
-              const DropdownMenuItem(
-                value: 'unlinked',
-                child: Text('Unlinked loan payment'),
-              ),
-              ...loans.map(
-                (loan) => DropdownMenuItem(
-                  value: loan.id,
-                  child: Text('${loan.name} · ${loan.lender}'),
-                ),
-              ),
-            ],
-            onChanged:
-                (id) => _selectLoan(
-                  loans.where((loan) => loan.id == id).firstOrNull,
-                ),
-          ),
-          const SizedBox(height: FfSpace.xs),
-          Text(
-            _selectedLoan == null
-                ? 'This payment will affect the account, but will not update a loan schedule.'
-                : 'Expected EMI ${CurrencyFormatter.formatAmount(_selectedLoan!.emiAmount)} · Principal left ${CurrencyFormatter.formatAmount(_selectedLoan!.outstandingPrincipal)} · Due ${DateFormat.yMMMd().format(_selectedLoan!.nextDueDate)}',
-            style: context.ff.text.bodySm,
-          ),
-          if (_selectedLoan != null) ...[
-            const SizedBox(height: FfSpace.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: _componentField(_principalController, 'Principal'),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(
-                  child: _componentField(_interestController, 'Interest'),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(child: _componentField(_feeController, 'Fees')),
-              ],
-            ),
-          ],
-        ],
-      );
-    }
-
-    if (_selectedPurpose == TransactionPurpose.investmentPurchase ||
-        _selectedPurpose == TransactionPurpose.investmentRedemption) {
-      final investments =
-          ref.watch(allInvestmentsStreamProvider).valueOrNull ??
-          const <Investment>[];
-      if (_selectedInvestment == null &&
-          widget.initialTransaction?.linkedInvestmentId != null) {
-        _selectedInvestment =
-            investments
-                .where(
-                  (investment) =>
-                      investment.id ==
-                      widget.initialTransaction!.linkedInvestmentId,
-                )
-                .firstOrNull;
-      }
-      return Column(
-        children: [
-          FfSelect<String>(
-            value: _selectedInvestment?.id ?? 'unlinked',
-            label: 'Investment asset',
-            items: [
-              const DropdownMenuItem(
-                value: 'unlinked',
-                child: Text('Unlinked investment movement'),
-              ),
-              ...investments.map(
-                (investment) => DropdownMenuItem(
-                  value: investment.id,
-                  child: Text(investment.name),
-                ),
-              ),
-            ],
-            onChanged:
-                (id) => setState(() {
-                  _selectedInvestment =
-                      investments
-                          .where((investment) => investment.id == id)
-                          .firstOrNull;
-                  if (_selectedInvestment != null) {
-                    _merchantController.text = _selectedInvestment!.name;
-                    final amount =
-                        CurrencyFormatter.parse(_amountController.text) ?? 0;
-                    _principalController.text = amount.toStringAsFixed(2);
-                    _interestController.text = '0.00';
-                    _feeController.text = '0.00';
-                  }
-                }),
-          ),
-          const SizedBox(height: FfSpace.sm),
-          Row(
-            children: [
-              Expanded(
-                child: _componentField(
-                  _principalController,
-                  _selectedPurpose == TransactionPurpose.investmentRedemption
-                      ? 'Cost basis'
-                      : 'Asset value',
-                ),
-              ),
-              const SizedBox(width: FfSpace.xs),
-              if (_selectedPurpose ==
-                  TransactionPurpose.investmentRedemption) ...[
-                Expanded(
-                  child: _componentField(_interestController, 'Realized gain'),
-                ),
-                const SizedBox(width: FfSpace.xs),
-              ],
-              Expanded(child: _componentField(_feeController, 'Fees')),
-            ],
-          ),
-        ],
-      );
-    }
-
-    final isRepayment = <TransactionPurpose>{
-      TransactionPurpose.personalDebtRepaymentMade,
-      TransactionPurpose.personalDebtRepaymentReceived,
-    }.contains(_selectedPurpose);
-    if (isRepayment) {
-      final records =
-          ref.watch(allMoneyRecordsStreamProvider).valueOrNull ??
-          const <MoneyRecord>[];
-      final expectedType =
-          _selectedPurpose == TransactionPurpose.personalDebtRepaymentReceived
-              ? MoneyRecordType.lent
-              : MoneyRecordType.borrowed;
-      final eligible =
-          records
-              .where(
-                (record) =>
-                    record.type == expectedType && record.settledAt == null,
-              )
-              .toList();
-      if (_selectedMoneyRecord == null &&
-          widget.initialTransaction?.linkedMoneyRecordId != null) {
-        _selectedMoneyRecord =
-            eligible
-                .where(
-                  (record) =>
-                      record.id ==
-                      widget.initialTransaction!.linkedMoneyRecordId,
-                )
-                .firstOrNull;
-      }
-      return FfSelect<String>(
-        value: _selectedMoneyRecord?.id,
-        label: 'Debt record',
-        hint: 'Select person and balance',
-        items:
-            eligible
-                .map(
-                  (record) => DropdownMenuItem(
-                    value: record.id,
-                    child: Text(
-                      '${record.personName} · ${CurrencyFormatter.formatAmount(record.originalAmount)}',
-                    ),
-                  ),
-                )
-                .toList(),
-        onChanged:
-            (id) => setState(() {
-              _selectedMoneyRecord =
-                  eligible.where((record) => record.id == id).firstOrNull;
-              _counterpartyController.text =
-                  _selectedMoneyRecord?.personName ?? '';
-            }),
-      );
-    }
-
-    if (_selectedPurpose == TransactionPurpose.lending ||
-        _selectedPurpose == TransactionPurpose.borrowing) {
-      final records =
-          ref.watch(allMoneyRecordsStreamProvider).valueOrNull ??
-          const <MoneyRecord>[];
-      final repayments =
-          ref.watch(allMoneyRepaymentsStreamProvider).valueOrNull ??
-          const <MoneyRepayment>[];
-      final advances =
-          ref.watch(allMoneyAdvancesStreamProvider).valueOrNull ??
-          const <MoneyAdvance>[];
-
-      final expectedType =
-          _selectedPurpose == TransactionPurpose.lending
-              ? MoneyRecordType.lent
-              : MoneyRecordType.borrowed;
-
-      final eligible =
-          records
-              .where(
-                (record) =>
-                    record.type == expectedType &&
-                    record.settledAt == null &&
-                    !record.isCustomSeparateObligation,
-              )
-              .toList();
-
-      final typedName = _counterpartyController.text.trim();
-      final normalizedTyped = MoneyRecord.normalizePersonName(typedName);
-      final matchingRecord =
-          _selectedMoneyRecord ??
-          eligible
-              .where((r) => r.normalizedPersonName == normalizedTyped)
-              .firstOrNull;
-
-      final currentAmount =
-          CurrencyFormatter.parse(_amountController.text) ?? 0.0;
-      final existingRemaining =
-          matchingRecord?.calculateRemainingAmount(
-            repayments,
-            advances: advances,
-          ) ??
-          0.0;
-      final newTotal = existingRemaining + currentAmount;
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Autocomplete<String>(
-            initialValue: TextEditingValue(text: _counterpartyController.text),
-            optionsBuilder: (TextEditingValue value) {
-              if (value.text.trim().isEmpty) {
-                return eligible.map((r) => r.personName);
-              }
-              final query = MoneyRecord.normalizePersonName(value.text);
-              return eligible
-                  .where((r) => r.normalizedPersonName.contains(query))
-                  .map((r) => r.personName);
-            },
-            onSelected: (String selection) {
-              _counterpartyController.text = selection;
-              final found =
-                  eligible
-                      .where(
-                        (r) =>
-                            r.normalizedPersonName ==
-                            MoneyRecord.normalizePersonName(selection),
-                      )
-                      .firstOrNull;
-              setState(() {
-                _selectedMoneyRecord = found;
-              });
-            },
-            fieldViewBuilder: (
-              context,
-              textEditingController,
-              focusNode,
-              onFieldSubmitted,
-            ) {
-              if (_counterpartyController.text != textEditingController.text &&
-                  textEditingController.text.isEmpty) {
-                textEditingController.text = _counterpartyController.text;
-              }
-              return FfTextField(
-                controller: textEditingController,
-                focusNode: focusNode,
-                textCapitalization: TextCapitalization.words,
-                label: 'Person / counterparty',
-                helper:
-                    'Repeated advances to the same person combine into one active balance.',
-                suffix:
-                    matchingRecord != null
-                        ? Icon(
-                          Icons.check_circle_rounded,
-                          color: context.ff.color.statusSuccess,
-                          size: 20,
-                        )
-                        : null,
-                onChanged: (val) {
-                  _counterpartyController.text = val;
-                  final found =
-                      eligible
-                          .where(
-                            (r) =>
-                                r.normalizedPersonName ==
-                                MoneyRecord.normalizePersonName(val),
-                          )
-                          .firstOrNull;
-                  if (found?.id != _selectedMoneyRecord?.id) {
-                    setState(() {
-                      _selectedMoneyRecord = found;
-                    });
-                  }
-                },
-              );
-            },
-          ),
-          if (matchingRecord != null) ...[
-            const SizedBox(height: FfSpace.sm),
-            Container(
-              padding: const EdgeInsets.all(FfSpace.sm),
-              decoration: BoxDecoration(
-                color: context.ff.color.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.md),
-                border: Border.all(
-                  color: context.ff.color.actionPrimary.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 18,
-                        color: context.ff.color.actionPrimary,
-                      ),
-                      const SizedBox(width: FfSpace.xs),
-                      Expanded(
-                        child: Text(
-                          _createAsSeparateDebt
-                              ? 'Separate debt for ${matchingRecord.personName}'
-                              : 'Adding to ${matchingRecord.personName}\'s active balance',
-                          style: context.ff.text.body.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: context.ff.color.actionPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: FfSpace.x2s),
-                  Text(
-                    _createAsSeparateDebt
-                        ? 'This advance will be tracked as its own separate obligation card.'
-                        : 'Current balance: ${CurrencyFormatter.formatAmount(existingRemaining)} → New balance: ${CurrencyFormatter.formatAmount(newTotal)}',
-                    style: context.ff.text.bodySm.copyWith(
-                      color: context.ff.color.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  Row(
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _createAsSeparateDebt,
-                          onChanged: (val) {
-                            setState(() {
-                              _createAsSeparateDebt = val ?? false;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: FfSpace.xs),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _createAsSeparateDebt = !_createAsSeparateDebt;
-                          });
-                        },
-                        child: Text(
-                          'Create as separate debt record',
-                          style: context.ff.text.bodySm.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: FfSpace.sm),
-          InkWell(
-            onTap: () async {
-              final picked = await pickFfDate(
-                context,
-                initialDate:
-                    _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
-                firstDate: _selectedDate,
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                setState(() => _debtDueDate = picked);
-              }
-            },
-            borderRadius: BorderRadius.circular(FfRadius.md),
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Expected repayment date',
-                suffixIcon: Icon(Icons.event_outlined),
-              ),
-              child: Text(
-                DateFormat.yMMMd().format(
-                  _debtDueDate ?? _selectedDate.add(const Duration(days: 30)),
-                ),
-                style: context.ff.text.body,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    if (_needsCounterparty) {
-      return FfTextField(
-        controller: _counterpartyController,
-        textCapitalization: TextCapitalization.words,
-        label: 'Person / counterparty',
-        helper: 'A person is kept separate from accounts you own.',
-      );
-    }
-
-    return const SizedBox.shrink();
-  }
-
-  Widget _componentField(TextEditingController controller, String label) {
-    return FfTextField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-      label: label,
-      prefixText: '${CurrencyFormatter.currencySymbol} ',
-    );
-  }
-
-  Widget _buildCategorySection(List<Category> categoriesForType) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Show top 3 prioritized categories.
-    // If active selection is outside top 3, display it in place of 3rd slot.
-    final top3 = categoriesForType.take(3).toList();
-    final List<Category> displayedQuickCategories;
-    if (_selectedCategory != null &&
-        !top3.any((c) => c.id == _selectedCategory!.id)) {
-      if (top3.length >= 3) {
-        displayedQuickCategories = [top3[0], top3[1], _selectedCategory!];
-      } else {
-        displayedQuickCategories = [...top3, _selectedCategory!];
-      }
-    } else {
-      displayedQuickCategories = top3;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Category', style: context.ff.text.labelLg),
-        const SizedBox(height: FfSpace.x2s),
-
-        // 4-Column Balanced Grid/Row: 3 Top Categories + 1 "All Categories" Tile
-        Row(
-          children: [
-            ...displayedQuickCategories.map((cat) {
-              final isSelected = cat.id == _selectedCategory?.id;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: FfSpace.x2s),
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedCategory = cat;
-                        _categoryError = null;
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: Container(
-                      height: 68,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.x3s,
-                        vertical: FfSpace.x2s,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? (isDark
-                                    ? context.ff.color.actionPrimaryContainer
-                                        .withValues(alpha: FfTint.strong.alpha)
-                                    : context.ff.color.actionPrimaryContainer
-                                        .withValues(alpha: FfTint.strong.alpha))
-                                : (isDark
-                                    ? StillwaterColors.darkSurfaceContainerLow
-                                    : StillwaterColors
-                                        .lightSurfaceContainerLow),
-                        borderRadius: BorderRadius.circular(FfRadius.md),
-                        border: Border.all(
-                          color:
-                              isSelected
-                                  ? context.ff.color.actionPrimary
-                                  : context.ff.color.borderSubtle.withValues(
-                                    alpha: 0.5,
-                                  ),
-                          width:
-                              isSelected
-                                  ? FfBorderWidth.focus
-                                  : FfBorderWidth.regular,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FfCategoryTile(
-                            iconIdentifier: cat.iconIdentifier,
-                            colorTokenIdentifier: cat.colorTokenIdentifier,
-                            size: 26,
-                          ),
-                          const SizedBox(height: FfSpace.x2s),
-                          Text(
-                            cat.name,
-                            style: context.ff.text.labelSm.copyWith(
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? context.ff.color.actionPrimary
-                                      : context.ff.color.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-
-            // 4th Tile: All Categories Launcher
-            Expanded(
-              child: InkWell(
-                onTap: () => _showCategoryPicker(categoriesForType),
-                borderRadius: BorderRadius.circular(FfRadius.md),
-                child: Container(
-                  height: 68,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.x3s,
-                    vertical: FfSpace.x2s,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isDark
-                            ? StillwaterColors.darkSurfaceContainerLow
-                            : StillwaterColors.lightSurfaceContainerLow,
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    border: Border.all(
-                      color: context.ff.color.borderSubtle.withValues(
-                        alpha: 0.5,
-                      ),
-                      width: FfBorderWidth.regular,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: context.ff.color.surfaceContainerHighest,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.grid_view_rounded,
-                          size: 16,
-                          color: context.ff.color.actionPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: FfSpace.x2s),
-                      Text(
-                        'All Categories',
-                        style: context.ff.text.labelSm.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.ff.color.actionPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        if (_categoryError != null) ...[
-          const SizedBox(height: FfSpace.x2s),
-          Text(
-            _categoryError!,
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.statusError,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildAccountSection(List<Account> accounts) {
-    if (_selectedType == TransactionType.transfer) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Accounts', style: context.ff.text.labelLg),
-              IconButton(
-                tooltip: 'Swap accounts',
-                icon: const Icon(Icons.swap_vert_rounded, size: 20),
-                onPressed: _swapTransferAccounts,
+              TransactionActionBar(
+                label: saveButtonText,
+                isSubmitting: _isSubmitting,
+                onSubmit: _submit,
               ),
             ],
           ),
-          const SizedBox(height: FfSpace.x2s),
-          Text('From Account', style: context.ff.text.labelSm),
-          const SizedBox(height: FfSpace.x2s),
-          AccountTileButton(
-            label: 'From Account',
-            account: _selectedAccount,
-            error: _accountError,
-            icon: Icons.upload_rounded,
-            onTap:
-                () => _showAccountPicker(
-                  accounts: accounts,
-                  isDestination: false,
-                ),
-          ),
-          const SizedBox(height: FfSpace.sm),
-          Text('To Account', style: context.ff.text.labelSm),
-          const SizedBox(height: FfSpace.x2s),
-          AccountTileButton(
-            label: 'To Account',
-            account: _selectedToAccount,
-            error: _toAccountError,
-            icon: Icons.download_rounded,
-            onTap:
-                () =>
-                    _showAccountPicker(accounts: accounts, isDestination: true),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Account', style: context.ff.text.labelLg),
-        const SizedBox(height: FfSpace.x2s),
-        AccountTileButton(
-          label: 'Account',
-          account: _selectedAccount,
-          error: _accountError,
-          icon: Icons.account_balance_wallet_outlined,
-          onTap:
-              () =>
-                  _showAccountPicker(accounts: accounts, isDestination: false),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateSection() {
-    final now = DateTime.now();
-    final isToday = _sameDay(_selectedDate, now);
-    final isYesterday = _sameDay(
-      _selectedDate,
-      now.subtract(const Duration(days: 1)),
-    );
-    final isCustom = !isToday && !isYesterday;
-    final formattedDate = DateFormat('d MMM yyyy').format(_selectedDate);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Date', style: context.ff.text.labelLg),
-        const SizedBox(height: FfSpace.x2s),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final isVeryNarrow = constraints.maxWidth < 280;
-
-            if (isVeryNarrow) {
-              return Wrap(
-                spacing: FfSpace.xs,
-                runSpacing: FfSpace.xs,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Today'),
-                    selected: isToday,
-                    onSelected: (_) => _setDate(now),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Yesterday'),
-                    selected: isYesterday,
-                    onSelected:
-                        (_) => _setDate(now.subtract(const Duration(days: 1))),
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.calendar_today_outlined, size: 16),
-                    label: Text(
-                      formattedDate,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onPressed: _pickCustomDate,
-                  ),
-                ],
-              );
-            }
-
-            return Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: ChoiceChip(
-                    label: const Center(child: Text('Today')),
-                    selected: isToday,
-                    showCheckmark: false,
-                    onSelected: (_) => _setDate(now),
-                  ),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(
-                  flex: 4,
-                  child: ChoiceChip(
-                    label: const Center(child: Text('Yesterday')),
-                    selected: isYesterday,
-                    showCheckmark: false,
-                    onSelected:
-                        (_) => _setDate(now.subtract(const Duration(days: 1))),
-                  ),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(
-                  flex: 5,
-                  child: ChoiceChip(
-                    avatar: const Icon(Icons.calendar_today_outlined, size: 14),
-                    label: Text(
-                      formattedDate,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                    selected: isCustom,
-                    showCheckmark: false,
-                    onSelected: (_) => _pickCustomDate(),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMoreDetailsSection() {
-    final theme = context.theme;
-    final hasActiveDetails =
-        _notesController.text.isNotEmpty || _tagsController.text.isNotEmpty;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.ff.color.surfaceCard,
-        borderRadius: BorderRadius.circular(FfRadius.lg),
-        border: Border.all(
-          color: context.ff.color.borderSubtle,
-          width: FfBorderWidth.hairline,
-        ),
-      ),
-      child: Theme(
-        data: theme.copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: _moreDetailsOpen,
-          onExpansionChanged: (open) => setState(() => _moreDetailsOpen = open),
-          leading: Icon(
-            Icons.tune_rounded,
-            size: 20,
-            color: context.ff.color.actionPrimary,
-          ),
-          title: Text(
-            'More details',
-            style: context.ff.text.title.copyWith(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            hasActiveDetails
-                ? 'Payment method, notes & tags (Active)'
-                : 'Payment method, note, tags',
-            style: context.ff.text.bodySm,
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            FfSpace.md,
-            0,
-            FfSpace.md,
-            FfSpace.md,
-          ),
-          children: [
-            const FfDivider(),
-            const SizedBox(height: FfSpace.md),
-
-            // Payment Method Selector
-            FfSelect<String>(
-              value: _selectedPaymentMethod,
-              label: 'Payment method',
-              icon: Icons.payment_outlined,
-              items:
-                  {..._paymentMethods, _selectedPaymentMethod}
-                      .map(
-                        (method) => DropdownMenuItem(
-                          value: method,
-                          child: Text(method),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedPaymentMethod = val);
-                }
-              },
-            ),
-            const SizedBox(height: FfSpace.md),
-
-            // Notes Input
-            FfTextField(
-              controller: _notesController,
-              maxLines: 2,
-              label: 'Notes',
-              hint: 'Invoice number, reimbursement notes, or context',
-              icon: Icons.notes_rounded,
-            ),
-            const SizedBox(height: FfSpace.md),
-
-            // Tags Input
-            FfTextField(
-              controller: _tagsController,
-              label: 'Tags',
-              hint: 'e.g. trip, office, reimbursement (comma-separated)',
-              icon: Icons.tag_rounded,
-            ),
-            const SizedBox(height: FfSpace.sm),
-
-            // Future capabilities disclosure
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 14,
-                  color: context.ff.color.textSecondary,
-                ),
-                const SizedBox(width: FfSpace.x2s),
-                Expanded(
-                  child: Text(
-                    'Recurring schedules and split transactions will be saved when fully configured.',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
   }
-
-  Widget _buildStickyActionBar(String label) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        FfSpace.lg,
-        FfSpace.sm,
-        FfSpace.lg,
-        FfSpace.md,
-      ),
-      decoration: BoxDecoration(
-        color:
-            isDark
-                ? StillwaterColors.darkSurfaceDefault
-                : StillwaterColors.lightSurfaceDefault,
-        border: Border(
-          top: BorderSide(
-            color: context.ff.color.borderSubtle.withValues(
-              alpha: FfTint.strong.alpha,
-            ),
-            width: FfBorderWidth.hairline,
-          ),
-        ),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: SizedBox(
-            width: double.infinity,
-            child: FfButton(
-              label: label,
-              isLoading: _isSubmitting,
-              variant: FfButtonVariant.primary,
-              onPressed: _isSubmitting ? null : _submit,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 }

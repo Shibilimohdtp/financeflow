@@ -59,6 +59,61 @@ class TransactionFormValues {
 
   bool get needsCategory => purpose != TransactionPurpose.internalTransfer;
 
+  static const allPaymentMethods = <String>[
+    'UPI',
+    'Debit Card',
+    'Credit Card',
+    'Cash',
+    'Net Banking',
+    'Auto Debit',
+    'IMPS / NEFT',
+    'Other',
+  ];
+
+  static String defaultPaymentFor(TransactionType type) => switch (type) {
+    TransactionType.cash => 'Cash',
+    TransactionType.loanEmi => 'Auto Debit',
+    TransactionType.transfer => 'IMPS / NEFT',
+    _ => 'UPI',
+  };
+
+  static List<String> paymentMethodsFor(TransactionType type) => switch (type) {
+    TransactionType.cash => const ['Cash', 'Other'],
+    TransactionType.loanEmi => const [
+      'Auto Debit',
+      'UPI',
+      'Net Banking',
+      'Other',
+    ],
+    TransactionType.transfer => const [
+      'IMPS / NEFT',
+      'UPI',
+      'Net Banking',
+      'Other',
+    ],
+    _ => allPaymentMethods,
+  };
+
+  static TransactionType typeForPurpose(
+    TransactionPurpose purpose,
+  ) => switch (purpose) {
+    TransactionPurpose.income ||
+    TransactionPurpose.borrowing ||
+    TransactionPurpose.loanDisbursement ||
+    TransactionPurpose.personalDebtRepaymentReceived => TransactionType.income,
+    TransactionPurpose.internalTransfer => TransactionType.transfer,
+    TransactionPurpose.investmentPurchase ||
+    TransactionPurpose.investmentRedemption => TransactionType.investment,
+    TransactionPurpose.loanRepayment => TransactionType.loanEmi,
+    TransactionPurpose.legacyCash => TransactionType.cash,
+    _ => TransactionType.expense,
+  };
+
+  static String formatInitialAmount(double amount) =>
+      amount == amount.truncateToDouble()
+          ? amount.toInt().toString()
+          : amount.toStringAsFixed(2);
+
   bool get needsCounterparty => const {
     TransactionPurpose.lending,
     TransactionPurpose.borrowing,

@@ -257,4 +257,83 @@ void main() {
       expect(built.debt?.dueDate, DateTime(2026, 12, 5));
     });
   });
+
+  group('helpers', () {
+    test('defaultPaymentFor returns sensible default by type', () {
+      expect(
+        TransactionFormValues.defaultPaymentFor(TransactionType.cash),
+        'Cash',
+      );
+      expect(
+        TransactionFormValues.defaultPaymentFor(TransactionType.loanEmi),
+        'Auto Debit',
+      );
+      expect(
+        TransactionFormValues.defaultPaymentFor(TransactionType.transfer),
+        'IMPS / NEFT',
+      );
+      expect(
+        TransactionFormValues.defaultPaymentFor(TransactionType.expense),
+        'UPI',
+      );
+    });
+
+    test('paymentMethodsFor filters allowed methods by type', () {
+      expect(TransactionFormValues.paymentMethodsFor(TransactionType.cash), [
+        'Cash',
+        'Other',
+      ]);
+      expect(TransactionFormValues.paymentMethodsFor(TransactionType.loanEmi), [
+        'Auto Debit',
+        'UPI',
+        'Net Banking',
+        'Other',
+      ]);
+      expect(
+        TransactionFormValues.paymentMethodsFor(TransactionType.expense),
+        TransactionFormValues.allPaymentMethods,
+      );
+    });
+
+    test('typeForPurpose maps purposes accurately to transaction types', () {
+      expect(
+        TransactionFormValues.typeForPurpose(TransactionPurpose.income),
+        TransactionType.income,
+      );
+      expect(
+        TransactionFormValues.typeForPurpose(TransactionPurpose.borrowing),
+        TransactionType.income,
+      );
+      expect(
+        TransactionFormValues.typeForPurpose(
+          TransactionPurpose.internalTransfer,
+        ),
+        TransactionType.transfer,
+      );
+      expect(
+        TransactionFormValues.typeForPurpose(TransactionPurpose.loanRepayment),
+        TransactionType.loanEmi,
+      );
+      expect(
+        TransactionFormValues.typeForPurpose(
+          TransactionPurpose.investmentPurchase,
+        ),
+        TransactionType.investment,
+      );
+      expect(
+        TransactionFormValues.typeForPurpose(TransactionPurpose.legacyCash),
+        TransactionType.cash,
+      );
+      expect(
+        TransactionFormValues.typeForPurpose(TransactionPurpose.expense),
+        TransactionType.expense,
+      );
+    });
+
+    test('formatInitialAmount preserves decimals only when fractional', () {
+      expect(TransactionFormValues.formatInitialAmount(250.0), '250');
+      expect(TransactionFormValues.formatInitialAmount(250.5), '250.50');
+      expect(TransactionFormValues.formatInitialAmount(0.0), '0');
+    });
+  });
 }
