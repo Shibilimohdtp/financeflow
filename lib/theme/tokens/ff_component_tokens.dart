@@ -247,6 +247,12 @@ abstract final class FfLineChartTokens {
 }
 
 /// Bar chart with rounded bars and optional spark bubble.
+/// One card in an action strip (DS-B12d).
+abstract final class FfActionTileTokens {
+  static const double minWidth = 168;
+  static const double maxWidth = 248;
+}
+
 /// Home's cash flow card (DS-B12b).
 abstract final class FfCashFlowCardTokens {
   /// Shorter than the Insights chart: Home is a summary.

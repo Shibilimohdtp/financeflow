@@ -4,7 +4,9 @@ import 'package:financeflow/features/dashboard/dashboard_controller.dart';
 import 'package:financeflow/features/dashboard/widgets/budget_overview_card.dart';
 import 'package:financeflow/features/dashboard/widgets/cash_flow_card.dart';
 import 'package:financeflow/features/dashboard/widgets/home_card_error.dart';
+import 'package:financeflow/features/dashboard/widgets/savings_goals_overview_card.dart';
 import 'package:financeflow/models/budget.dart';
+import 'package:financeflow/models/savings_goal.dart';
 import 'package:financeflow/services/balance_calculator.dart';
 import 'package:financeflow/shared/widgets/charts/ff_bar_chart.dart';
 import 'package:financeflow/shared/widgets/ff_row.dart';
@@ -115,7 +117,93 @@ BudgetOverviewCard _budgets(
   );
 }
 
+SavingsGoalSummary _goal(
+  String name,
+  double saved,
+  double target,
+  DateTime due,
+) {
+  final now = DateTime(2026, 11, 6);
+  return SavingsGoalSummary(
+    goal: SavingsGoal(
+      id: name,
+      name: name,
+      targetAmount: target,
+      targetDate: due,
+      createdAt: now,
+      updatedAt: now,
+    ),
+    currentAmount: saved,
+    remainingAmount: target - saved,
+    progressPercentage: saved / target,
+    suggestedMonthlyContribution: 0,
+    suggestedWeeklyContribution: 0,
+    estimatedCompletionDate: DateTime(2027, 3),
+    contributionCount: 2,
+    isTargetReached: saved >= target,
+  );
+}
+
 void main() {
+  group('SavingsGoalsOverviewCard', () {
+    final goals = [
+      _goal('Car', 20000, 400000, DateTime(2028)),
+      _goal('Trip', 30000, 60000, DateTime(2027, 4)),
+      _goal('Laptop', 90000, 90000, DateTime(2026, 12)),
+    ];
+    SavingsGoalsOverviewCard card({
+      bool hidden = false,
+      VoidCallback? onOpen,
+    }) => SavingsGoalsOverviewCard(
+      totalTarget: 550000,
+      totalSaved: 140000,
+      totalRemaining: 410000,
+      completedCount: 1,
+      totalGoals: 3,
+      isPrivacyBlur: hidden,
+      goals: goals,
+      onViewGoals: onOpen ?? () {},
+    );
+
+    for (final brightness in Brightness.values) {
+      for (final scale in [1.0, 2.0]) {
+        testWidgets('normal, ${brightness.name}, ${scale}x', (tester) async {
+          await pumpCard(
+            tester,
+            card(),
+            brightness: brightness,
+            textScale: scale,
+          );
+          expect(tester.takeException(), isNull);
+          expect(find.textContaining('1 of 3 reached'), findsOneWidget);
+          // The open goal due soonest, not the reached one.
+          expect(find.text('Trip'), findsOneWidget);
+          expect(find.text('50%'), findsOneWidget);
+          expect(find.text('On track for March 2027'), findsOneWidget);
+        });
+      }
+    }
+
+    testWidgets('taps open goals; hidden amounts keep only shares', (
+      tester,
+    ) async {
+      var opened = 0;
+      final handle = tester.ensureSemantics();
+      await pumpCard(tester, card(hidden: true, onOpen: () => opened++));
+      expect(find.bySemanticsLabel(RegExp('1,40,000')), findsNothing);
+      expect(find.textContaining('25% of'), findsOneWidget);
+      await tester.tap(find.text('Trip'));
+      await tester.tap(find.text('See all'));
+      expect(opened, 2);
+      handle.dispose();
+    });
+
+    testWidgets('skeleton renders', (tester) async {
+      await pumpCard(tester, const SavingsGoalsCardSkeleton());
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('BudgetOverviewCard', () {
     for (final brightness in Brightness.values) {
       for (final scale in [1.0, 2.0]) {

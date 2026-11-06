@@ -325,8 +325,9 @@ void main() {
 
       // Verify Actionable Items Header & Content
       expect(find.text('Needs attention'), findsOneWidget);
-      expect(find.text('2 imported transactions need review'), findsOneWidget);
-      expect(find.text('HDFC Home Loan (HDFC Bank)'), findsOneWidget);
+      // DS-B12d: the strip leads with the count and verb, details below.
+      expect(find.text('2 to review'), findsOneWidget);
+      expect(find.text('HDFC Home Loan'), findsWidgets);
       expect(find.text('Netflix Premium'), findsOneWidget);
 
       // Verify Loans & EMI Section
