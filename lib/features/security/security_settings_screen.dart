@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../settings/settings_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_dialog.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_row.dart';
-import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_text_field.dart';
+import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import '../settings/settings_controller.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -42,11 +47,9 @@ class _SecuritySettingsScreenState
                 ),
                 const FfDivider(),
                 Padding(
-                  padding: EdgeInsets.only(
-                    left: FfSpace.lg,
-                    right: FfSpace.lg,
-                    top: FfSpace.md,
-                    bottom: FfSpace.md,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FfSpace.pageMargin,
+                    vertical: FfSpace.md,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -144,7 +147,7 @@ class _SecuritySettingsScreenState
         title: 'Security & Privacy',
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
+            padding: EdgeInsets.only(right: FfSpace.pageMargin),
             child: Center(
               child: FfPrivacyBadge(label: 'Hardware Keystore', iconOnly: true),
             ),
@@ -153,37 +156,21 @@ class _SecuritySettingsScreenState
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
+          horizontal: FfSpace.pageMargin,
           vertical: FfSpace.md,
         ),
         children: [
           // ── 1. Hardware Keystore Banner ──────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(FfSpace.lg),
-            decoration: BoxDecoration(
-              color: context.ff.color.surfaceCard,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.borderSubtle,
-                width: FfBorderWidth.hairline,
-              ),
-            ),
+          FfCard(
+            variant: FfCardVariant.tinted,
+            tone: FfTone.success,
+            padding: const EdgeInsets.all(FfSpace.md),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.ff.color.statusSuccess.withValues(
-                      alpha: FfTint.subtle.alpha,
-                    ),
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                  ),
-                  child: Icon(
-                    Icons.security_rounded,
-                    color: context.ff.color.statusSuccess,
-                    size: 20,
-                  ),
+                Icon(
+                  Icons.security_rounded,
+                  color: context.ff.color.statusSuccess,
+                  size: 24,
                 ),
                 const SizedBox(width: FfSpace.md),
                 Expanded(
@@ -192,7 +179,7 @@ class _SecuritySettingsScreenState
                     children: [
                       Text(
                         'On-Device Storage Architecture',
-                        style: context.ff.text.body.copyWith(
+                        style: context.ff.text.titleSm.copyWith(
                           fontWeight: FontWeight.w600,
                           color: context.ff.color.statusSuccess,
                         ),
@@ -200,7 +187,7 @@ class _SecuritySettingsScreenState
                       const SizedBox(height: FfSpace.x3s),
                       Text(
                         'All database files reside in private app sandbox storage. No financial records ever leave your phone.',
-                        style: context.ff.text.labelSm.copyWith(
+                        style: context.ff.text.bodySm.copyWith(
                           color: context.ff.color.secondary,
                         ),
                       ),
@@ -211,11 +198,10 @@ class _SecuritySettingsScreenState
             ),
           ),
 
-          const SizedBox(height: FfSpace.x2l),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 2. App Authentication ────────────────────────────────────
-          _SectionLabel(label: 'App Authentication & Lock'),
-          const SizedBox(height: FfSpace.xs),
+          const FfSectionHeader(title: 'App authentication & lock'),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -262,9 +248,11 @@ class _SecuritySettingsScreenState
                         : 'Require a 4-6 digit code on launch',
                 trailing:
                     isPin
-                        ? TextButton(
+                        ? FfButton(
+                          label: 'Remove',
+                          variant: FfButtonVariant.text,
+                          size: FfButtonSize.sm,
                           onPressed: () => _removePin(context),
-                          child: const Text('Remove'),
                         )
                         : null,
                 onTap: () => _showSetPinSheet(context),
@@ -272,11 +260,10 @@ class _SecuritySettingsScreenState
             ],
           ),
 
-          const SizedBox(height: FfSpace.x2l),
+          const SizedBox(height: FfSpace.xl),
 
           // ── 3. Privacy Safeguards ────────────────────────────────────
-          _SectionLabel(label: 'Privacy & Screen Protection'),
-          const SizedBox(height: FfSpace.xs),
+          const FfSectionHeader(title: 'Privacy & screen protection'),
           FfGroupedContainer(
             dividerInset: FfRowLeading.icon,
             children: [
@@ -312,25 +299,6 @@ class _SecuritySettingsScreenState
 
           const SizedBox(height: FfSpace.x4l),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
-        ),
       ),
     );
   }

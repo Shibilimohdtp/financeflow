@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/financeflow_mark.dart';
-import '../../theme/stillwater_colors.dart';
-import '../settings/settings_controller.dart';
-import '../../theme/ff.dart';
 
+import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/financeflow_mark.dart';
+import '../../theme/ff.dart';
+import '../settings/settings_controller.dart';
+
+/// The app lock screen (Pattern G): sits on dark surfaceInk with a calm aurora
+/// wash, a centered squircle mark, clear PIN dots, accessible 48+ dp keypad
+/// targets, and status cues with icons and words. Zero static color reads.
 class LockScreen extends ConsumerStatefulWidget {
   final VoidCallback onUnlocked;
 
@@ -84,176 +88,161 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     final isBiometric = settings?.isBiometricEnabled ?? false;
     final isPin = settings?.isPinEnabled ?? false;
 
-    return Scaffold(
-      backgroundColor: StillwaterColors.darkSecInk,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.x2l),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Stillwater Security Mark
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: StillwaterColors.darkOnSecInk.withValues(
-                      alpha: FfTint.subtle.alpha,
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: StillwaterColors.darkOnSecInk.withValues(
-                        alpha: FfTint.medium.alpha,
+    final onInk = context.ff.color.onSurfaceInk;
+
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: context.ff.color.surfaceInk,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: FfSpace.x2l,
+                vertical: FfSpace.md,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Centered Squircle Mark
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: ShapeDecoration(
+                      shape: FfShape.of(FfRadius.xl),
+                      color: onInk.withValues(alpha: FfTint.subtle.alpha),
+                      shadows: FfElevation.card(
+                        context.ff.color.shadow,
+                        Brightness.dark,
                       ),
-                      width: 1.5,
+                    ),
+                    child: const Center(
+                      child: FinanceFlowMark(
+                        size: 42,
+                        variant: MarkVariant.monochrome,
+                      ),
                     ),
                   ),
-                  child: const Center(
-                    child: FinanceFlowMark(
-                      size: 44,
-                      variant: MarkVariant.monochrome,
+                  const SizedBox(height: FfSpace.lg),
+
+                  Text(
+                    'FinanceFlow Locked',
+                    style: context.ff.text.displaySm.copyWith(
+                      color: onInk,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
-                ),
-                const SizedBox(height: FfSpace.lg),
-
-                Text(
-                  'FinanceFlow Locked',
-                  style: context.ff.text.headline.copyWith(
-                    color: StillwaterColors.darkOnSecInk,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: FfSpace.xs),
-                Text(
-                  'Your financial data is protected on this device.',
-                  style: context.ff.text.bodySm.copyWith(
-                    color: StillwaterColors.darkOnSecInk.withValues(
-                      alpha: FfOpacity.muted,
+                  const SizedBox(height: FfSpace.xs),
+                  Text(
+                    'Your financial data is protected on this device.',
+                    style: context.ff.text.bodySm.copyWith(
+                      color: onInk.withValues(alpha: FfOpacity.muted),
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
 
-                const SizedBox(height: FfSpace.x2l),
+                  const SizedBox(height: FfSpace.x2l),
 
-                if (isPin) ...[
-                  // PIN Dots
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      6,
-                      (index) => Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: FfSpace.x2s,
-                        ),
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              index < _enteredPin.length
-                                  ? StillwaterColors.darkOnSecInk
-                                  : StillwaterColors.darkOnSecInk.withValues(
-                                    alpha: 0.2,
-                                  ),
-                          border: Border.all(
-                            color: StillwaterColors.darkOnSecInk.withValues(
-                              alpha: 0.4,
+                  if (isPin) ...[
+                    // PIN Dots (6)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(6, (index) {
+                        final isFilled = index < _enteredPin.length;
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: FfSpace.x2s,
+                          ),
+                          width: 14,
+                          height: 14,
+                          decoration: ShapeDecoration(
+                            shape: FfShape.of(
+                              FfRadius.full,
+                              side: BorderSide(
+                                color:
+                                    isFilled
+                                        ? context.ff.color.spark
+                                        : onInk.withValues(
+                                          alpha: FfTint.strong.alpha,
+                                        ),
+                                width: FfBorderWidth.regular,
+                              ),
+                            ),
+                            color:
+                                isFilled
+                                    ? context.ff.color.spark
+                                    : onInk.withValues(
+                                      alpha: FfTint.faint.alpha,
+                                    ),
+                          ),
+                        );
+                      }),
+                    ),
+
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: FfSpace.md),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 16,
+                            color: context.ff.color.statusError,
+                          ),
+                          const SizedBox(width: FfSpace.xs),
+                          Text(
+                            _errorMessage!,
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.statusError,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
+                        ],
+                      ),
+                    ],
+
+                    const SizedBox(height: FfSpace.x2l),
+
+                    // PIN Pad Grid (48+ dp targets)
+                    SizedBox(
+                      width: 260,
+                      child: Column(
+                        children: [
+                          _buildPadRow(['1', '2', '3'], onInk),
+                          const SizedBox(height: FfSpace.sm),
+                          _buildPadRow(['4', '5', '6'], onInk),
+                          const SizedBox(height: FfSpace.sm),
+                          _buildPadRow(['7', '8', '9'], onInk),
+                          const SizedBox(height: FfSpace.sm),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (isBiometric)
+                                _buildBiometricButton(onInk)
+                              else
+                                const SizedBox(width: 64, height: 64),
+                              _buildPadKey('0', onInk),
+                              _buildDeleteKey(onInk),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: FfSpace.md),
-                    Text(
-                      _errorMessage!,
-                      style: context.ff.text.bodySm.copyWith(
-                        color: StillwaterColors.darkError,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  ] else if (isBiometric) ...[
+                    const SizedBox(height: FfSpace.x2l),
+                    FfButton(
+                      label: 'Unlock with Biometrics',
+                      onPressed: _tryBiometricUnlock,
+                      width: 240,
+                    ),
+                  ] else ...[
+                    const SizedBox(height: FfSpace.x2l),
+                    FfButton(
+                      label: 'Unlock',
+                      onPressed: widget.onUnlocked,
+                      width: 200,
                     ),
                   ],
-
-                  const SizedBox(height: FfSpace.x2l),
-
-                  // PIN Pad Grid
-                  SizedBox(
-                    width: 260,
-                    child: Column(
-                      children: [
-                        _buildPadRow(['1', '2', '3']),
-                        const SizedBox(height: FfSpace.sm),
-                        _buildPadRow(['4', '5', '6']),
-                        const SizedBox(height: FfSpace.sm),
-                        _buildPadRow(['7', '8', '9']),
-                        const SizedBox(height: FfSpace.sm),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (isBiometric)
-                              _buildBiometricButton()
-                            else
-                              const SizedBox(width: 64, height: 64),
-                            _buildPadKey('0'),
-                            _buildDeleteKey(),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else if (isBiometric) ...[
-                  const SizedBox(height: FfSpace.x2l),
-                  FfButton(
-                    label: 'Unlock with Biometrics',
-                    onPressed: _tryBiometricUnlock,
-                    width: 240,
-                  ),
-                ] else ...[
-                  const SizedBox(height: FfSpace.x2l),
-                  FfButton(
-                    label: 'Unlock',
-                    onPressed: widget.onUnlocked,
-                    width: 200,
-                  ),
                 ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPadRow(List<String> digits) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: digits.map(_buildPadKey).toList(),
-    );
-  }
-
-  Widget _buildPadKey(String digit) {
-    return SizedBox(
-      width: 64,
-      height: 64,
-      child: Material(
-        color: StillwaterColors.darkOnSecInk.withValues(
-          alpha: FfTint.faint.alpha,
-        ),
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: () => _onDigitPressed(digit),
-          child: Center(
-            child: Text(
-              digit,
-              style: context.ff.text.headline.copyWith(
-                color: StillwaterColors.darkOnSecInk,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -262,31 +251,56 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     );
   }
 
-  Widget _buildBiometricButton() {
+  Widget _buildPadRow(List<String> digits, Color onInk) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: digits.map((d) => _buildPadKey(d, onInk)).toList(),
+    );
+  }
+
+  Widget _buildPadKey(String digit, Color onInk) {
+    return SizedBox(
+      width: 64,
+      height: 64,
+      child: Material(
+        color: onInk.withValues(alpha: FfTint.faint.alpha),
+        shape: FfShape.of(FfRadius.full),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _onDigitPressed(digit),
+          child: Center(
+            child: Text(
+              digit,
+              style: context.ff.text.headlineSm.copyWith(
+                color: onInk,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBiometricButton(Color onInk) {
     return SizedBox(
       width: 64,
       height: 64,
       child: IconButton(
-        icon: const Icon(
-          Icons.fingerprint_rounded,
-          color: StillwaterColors.darkOnSecInk,
-          size: 32,
-        ),
+        icon: Icon(Icons.fingerprint_rounded, color: onInk, size: 30),
+        tooltip: 'Unlock with biometrics',
         onPressed: _tryBiometricUnlock,
       ),
     );
   }
 
-  Widget _buildDeleteKey() {
+  Widget _buildDeleteKey(Color onInk) {
     return SizedBox(
       width: 64,
       height: 64,
       child: IconButton(
-        icon: const Icon(
-          Icons.backspace_outlined,
-          color: StillwaterColors.darkOnSecInk,
-          size: 24,
-        ),
+        icon: Icon(Icons.backspace_outlined, color: onInk, size: 22),
+        tooltip: 'Delete digit',
         onPressed: _onDeletePressed,
       ),
     );
