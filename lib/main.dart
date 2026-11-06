@@ -6,7 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'core/diagnostics/startup_trace.dart';
 import 'database/isar_service.dart';
+import 'shared/widgets/ff_button.dart';
+import 'shared/widgets/ff_card.dart';
+import 'shared/widgets/ff_surfaces.dart';
 import 'shared/widgets/financeflow_mark.dart';
+import 'theme/ff.dart';
 import 'theme/stillwater_theme.dart';
 
 /// This must stay synchronous. Android removes its launch window when Flutter
@@ -144,43 +148,71 @@ class _StartupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasError = error != null;
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const FinanceFlowLogo(
-                markSize: 64,
-                fontSize: 26,
-                showTagline: true,
-                axis: Axis.vertical,
-              ),
-              const SizedBox(height: 28),
-              if (!hasError) const CircularProgressIndicator(),
-              if (!hasError) ...[
-                const SizedBox(height: 16),
-                const Text('Preparing your local data…'),
-              ] else ...[
-                const Text(
-                  'FinanceFlow could not open its local data.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Your data has not been changed. Try again to continue.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Try again'),
-                ),
-              ],
-            ],
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+            child: hasError
+                ? FfCard(
+                    padding: const EdgeInsets.all(FfSpace.xl),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const FinanceFlowMark(size: 56),
+                        const SizedBox(height: FfSpace.lg),
+                        Text(
+                          'FinanceFlow could not open its local data.',
+                          textAlign: TextAlign.center,
+                          style: context.ff.text.titleSm.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: FfSpace.xs),
+                        Text(
+                          'Your data has not been changed. Try again to continue.',
+                          textAlign: TextAlign.center,
+                          style: context.ff.text.bodySm.copyWith(
+                            color: context.ff.color.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: FfSpace.xl),
+                        FfButton(
+                          label: 'Try again',
+                          leadingIcon: const Icon(Icons.refresh_rounded, size: 18),
+                          onPressed: onRetry,
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const FinanceFlowLogo(
+                        markSize: 64,
+                        fontSize: 26,
+                        showTagline: true,
+                        axis: Axis.vertical,
+                      ),
+                      const SizedBox(height: FfSpace.x2l),
+                      SizedBox.square(
+                        dimension: FfProgressTokens.spinnerSize,
+                        child: CircularProgressIndicator(
+                          strokeWidth: FfProgressTokens.spinnerStroke,
+                          color: context.ff.color.actionPrimary,
+                          semanticsLabel: 'Preparing your local data…',
+                        ),
+                      ),
+                      const SizedBox(height: FfSpace.md),
+                      Text(
+                        'Preparing your local data…',
+                        style: context.ff.text.bodySm.copyWith(
+                          color: context.ff.color.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

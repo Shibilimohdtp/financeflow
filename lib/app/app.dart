@@ -4,7 +4,10 @@ import '../core/diagnostics/startup_trace.dart';
 import '../core/formatting/app_currency.dart';
 import '../core/formatting/currency_formatter.dart';
 import '../services/ingestion/ingestion_coordinator.dart';
+import '../shared/widgets/ff_card.dart';
+import '../shared/widgets/ff_surfaces.dart';
 import '../shared/widgets/financeflow_mark.dart';
+import '../theme/ff.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/security/lock_screen.dart';
 import '../features/settings/settings_controller.dart';
@@ -126,13 +129,16 @@ class FinanceFlowApp extends ConsumerWidget {
             debugShowCheckedModeBanner: false,
             theme: StillwaterTheme.daylight,
             darkTheme: StillwaterTheme.deepWater,
-            home: const Scaffold(
-              body: Center(
-                child: FinanceFlowLogo(
-                  markSize: 64,
-                  fontSize: 26,
-                  showTagline: true,
-                  axis: Axis.vertical,
+            home: const FfAurora(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Center(
+                  child: FinanceFlowLogo(
+                    markSize: 64,
+                    fontSize: 26,
+                    showTagline: true,
+                    axis: Axis.vertical,
+                  ),
                 ),
               ),
             ),
@@ -142,20 +148,38 @@ class FinanceFlowApp extends ConsumerWidget {
             debugShowCheckedModeBanner: false,
             theme: StillwaterTheme.daylight,
             darkTheme: StillwaterTheme.deepWater,
-            home: Scaffold(
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const FinanceFlowMark(size: 54),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Initialization notice: $error',
-                        textAlign: TextAlign.center,
+            home: FfAurora(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FfSpace.pageMargin,
+                    ),
+                    child: FfCard(
+                      padding: const EdgeInsets.all(FfSpace.xl),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const FinanceFlowMark(size: 54),
+                          const SizedBox(height: FfSpace.md),
+                          Text(
+                            'Initialization Notice',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: FfSpace.xs),
+                          Text(
+                            '$error',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

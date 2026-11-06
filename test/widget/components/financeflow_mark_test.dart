@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/shared/widgets/financeflow_mark.dart';
-import 'package:financeflow/theme/palettes/bloom_primitives.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import '../../../test/helpers/app_fonts.dart';
 
