@@ -77,7 +77,7 @@ class FlutterLocalNotificationService implements LocalNotificationService {
       await NotificationScheduler.initializeTimezone();
 
       const androidSettings = AndroidInitializationSettings(
-        '@mipmap/ic_launcher',
+        '@drawable/ic_notification',
       );
       const darwinSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
@@ -260,6 +260,8 @@ class FlutterLocalNotificationService implements LocalNotificationService {
         // Updating an existing notification (e.g. the review count) must not
         // buzz again.
         onlyAlertOnce: true,
+        icon: '@drawable/ic_notification',
+        color: const Color(0xFF535B36),
       );
 
       final darwinDetails = DarwinNotificationDetails(
@@ -315,6 +317,8 @@ class FlutterLocalNotificationService implements LocalNotificationService {
         playSound: channel.playSound,
         enableVibration: channel.enableVibration,
         showWhen: true,
+        icon: '@drawable/ic_notification',
+        color: const Color(0xFF535B36),
       );
 
       final darwinDetails = DarwinNotificationDetails(
