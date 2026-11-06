@@ -33,8 +33,7 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final muted = context.ff.text.label.copyWith(
-      color: context.ff.color.textSecondary,
-      fontWeight: FontWeight.w600,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
     String money(double v) =>
         isPrivacyBlur
@@ -43,10 +42,7 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     final parts = <InlineSpan>[
       if (totals.spending > 0)
-        TextSpan(
-          text: '−${money(totals.spending)}',
-          style: muted.copyWith(color: context.ff.color.moneyExpense),
-        ),
+        TextSpan(text: '−${money(totals.spending)}', style: muted),
       if (totals.spending > 0 && totals.income > 0)
         TextSpan(text: '  ', style: muted),
       if (totals.income > 0)
@@ -58,7 +54,9 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     return Container(
       color: background,
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: FfSpace.pageMargin + FfSpace.x2s,
+      ),
       alignment: Alignment.centerLeft,
       child: Semantics(
         header: true,
@@ -67,7 +65,7 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
             Expanded(
               child: Text(
                 label,
-                style: muted.copyWith(color: context.ff.color.textPrimary),
+                style: context.ff.text.labelLg,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

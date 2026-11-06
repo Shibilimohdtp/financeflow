@@ -30,6 +30,10 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_corner_badge.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -360,25 +364,22 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             tooltip: 'Review queue ($pendingCount pending)',
             onPressed: _openReviewQueue,
           ),
-        IconButton(
-          icon: const Icon(Icons.search_rounded),
-          tooltip: 'Search transactions',
-          onPressed: _openSearch,
-        ),
-        IconButton(
-          icon: Badge(
-            isLabelVisible:
-                query.hasRefinements || query.sort != TransactionSort.newest,
-            smallSize: 8,
-            backgroundColor: context.ff.color.actionPrimary,
-            child: const Icon(Icons.tune_rounded),
-          ),
+        FfCircleButton(
+          icon: Icons.tune_rounded,
           tooltip: 'Filter & sort',
+          soft: true,
+          corner:
+              query.hasRefinements || query.sort != TransactionSort.newest
+                  ? FfCorner.dot
+                  : null,
           onPressed:
               () => _openFilters(categories: categories, accounts: accounts),
         ),
         const Padding(
-          padding: EdgeInsets.only(right: FfSpace.md),
+          padding: EdgeInsetsDirectional.only(
+            start: FfSpace.x2s,
+            end: FfSpace.md,
+          ),
           child: Center(
             child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
           ),
@@ -386,6 +387,118 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ],
     );
   }
+
+  /// Search pill and kind pills above the list. Tapping the pill opens the
+  /// search bar; the kind pills set a single kind (or All).
+  Widget _filterHeader(TransactionQuery query) {
+    final ff = context.ff;
+    final single = query.kinds.length == 1 ? query.kinds.first : null;
+    void pick(TransactionKind? kind) =>
+        _setQuery(query.copyWith(kinds: kind == null ? const {} : {kind}));
+    const kinds = [
+      TransactionKind.spending,
+      TransactionKind.income,
+      TransactionKind.transfer,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!_isSearchOpen)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.pageMargin,
+              FfSpace.xs,
+              FfSpace.pageMargin,
+              FfSpace.xs,
+            ),
+            child: Tooltip(
+              message: 'Search transactions',
+              excludeFromSemantics: true,
+              child: Semantics(
+                button: true,
+                label: 'Search transactions',
+                excludeSemantics: true,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    onTap: _openSearch,
+                    customBorder: FfShape.of(FfRadius.full),
+                    child: Container(
+                      height: FfTouch.minTarget,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: FfSpace.md,
+                      ),
+                      decoration: ShapeDecoration(
+                        shape: FfShape.of(
+                          FfRadius.full,
+                          side: BorderSide(
+                            color: ff.color.borderControl,
+                            width: FfBorderWidth.regular,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search_rounded,
+                            size: FfIconSize.lg,
+                            color: ff.color.textSecondary,
+                          ),
+                          const SizedBox(width: FfSpace.sm),
+                          Expanded(
+                            child: Text(
+                              'Search payee, note or amount',
+                              style: ff.text.body.copyWith(
+                                color: ff.color.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+          child: Row(
+            children: [
+              FfChip(
+                label: 'All',
+                isSelected: query.kinds.isEmpty,
+                onSelected: () => pick(null),
+              ),
+              for (final kind in kinds) ...[
+                const SizedBox(width: FfPillTokens.gap),
+                FfChip(
+                  label: kind.label,
+                  isSelected: single == kind,
+                  onSelected: () => pick(single == kind ? null : kind),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// One day's rows (or the flat list) inside a compact Bloom card.
+  Widget _card(Widget sliverList) => SliverPadding(
+    padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+    sliver: DecoratedSliver(
+      decoration: FfCard.decorationOf(context, density: FfDensity.compact),
+      sliver: SliverPadding(
+        padding: const EdgeInsets.symmetric(vertical: FfSpace.x2s),
+        sliver: sliverList,
+      ),
+    ),
+  );
 
   PreferredSizeWidget _searchAppBar() {
     return FfAppBar.search(
@@ -468,6 +581,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       controller: _scrollController,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
+        if (!selecting) SliverToBoxAdapter(child: _filterHeader(query)),
         SliverToBoxAdapter(
           child: FfPeriodBar(
             allowAllTime: true,
@@ -514,19 +628,24 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     background: context.ff.color.surfacePage,
                   ),
                 ),
-                SliverList.separated(
-                  itemCount: group.transactions.length,
-                  separatorBuilder: (_, __) => const FfDivider.inset(),
-                  itemBuilder:
-                      (_, i) => tile(group.transactions[i], showDate: false),
+                _card(
+                  SliverList.separated(
+                    itemCount: group.transactions.length,
+                    separatorBuilder: (_, __) => const FfDivider.inset(),
+                    itemBuilder:
+                        (_, i) => tile(group.transactions[i], showDate: false),
+                  ),
                 ),
+                const SliverToBoxAdapter(child: SizedBox(height: FfSpace.sm)),
               ],
             )
         else
-          SliverList.separated(
-            itemCount: visible.length,
-            separatorBuilder: (_, __) => const FfDivider.inset(),
-            itemBuilder: (_, i) => tile(visible[i], showDate: true),
+          _card(
+            SliverList.separated(
+              itemCount: visible.length,
+              separatorBuilder: (_, __) => const FfDivider.inset(),
+              itemBuilder: (_, i) => tile(visible[i], showDate: true),
+            ),
           ),
         if (items.length > visible.length)
           SliverToBoxAdapter(

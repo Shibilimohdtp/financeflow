@@ -1,3 +1,4 @@
+import 'package:financeflow/shared/widgets/ff_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -125,7 +126,8 @@ void main() {
 
     // Totals cover exactly the listed rows.
     expect(find.text('Spent'), findsOneWidget);
-    expect(find.text('− ₹550'), findsOneWidget);
+    // Summary figures are unsigned split amounts; rows keep their signs.
+    expect(find.text('₹550'), findsOneWidget);
     expect(find.text('+ ₹50,000'), findsWidgets);
     expect(find.text('3 transactions'), findsOneWidget);
 
@@ -189,8 +191,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pumpAndSettle();
     expect(find.text('Filter & sort'), findsOneWidget);
+    // The sheet has its own kind chips (the list's kind pills sit behind it).
     for (final label in ['Spending', 'Income', 'Transfers']) {
-      expect(find.widgetWithText(FfChip, label), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(FfSheet),
+          matching: find.widgetWithText(FfChip, label),
+        ),
+        findsOneWidget,
+      );
     }
     expect(find.text('Account'), findsOneWidget);
     expect(find.text('Category'), findsOneWidget);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../shared/widgets/ff_button.dart';
+import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_corner_badge.dart';
 import '../../../theme/ff.dart';
 
 /// An inline task card displayed on the Money/Transactions screen when
@@ -33,20 +35,13 @@ class PendingReviewTaskCard extends StatelessWidget {
       label: '$titleText. Verify merchant and category.',
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          FfSpace.lg,
+          FfSpace.pageMargin,
           FfSpace.xs,
-          FfSpace.lg,
+          FfSpace.pageMargin,
           FfSpace.xs,
         ),
         child: Container(
-          decoration: BoxDecoration(
-            color: context.ff.color.surfaceCard,
-            borderRadius: BorderRadius.circular(FfRadius.lg),
-            border: Border.all(
-              color: warningColor.withValues(alpha: FfTint.strong.alpha),
-              width: FfBorderWidth.regular,
-            ),
-          ),
+          decoration: FfCard.decorationOf(context, density: FfDensity.compact),
           child: Padding(
             padding: const EdgeInsets.all(FfSpace.md),
             child: Column(
@@ -56,19 +51,23 @@ class PendingReviewTaskCard extends StatelessWidget {
                 // Top row: Icon badge + Tag + Snooze/Later button
                 Row(
                   children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: warningBg.withValues(alpha: FfOpacity.muted),
-                        borderRadius: BorderRadius.circular(FfRadius.sm),
-                      ),
-                      child: Icon(
-                        Icons.pending_actions_rounded,
-                        size: 16,
-                        color: warningColor,
+                    FfCornerBadge(
+                      corner: FfCorner.warning,
+                      child: Container(
+                        width: FfRoundButtonTokens.sizeSm,
+                        height: FfRoundButtonTokens.sizeSm,
+                        decoration: ShapeDecoration(
+                          color: warningBg.withValues(alpha: FfOpacity.muted),
+                          shape: const CircleBorder(),
+                        ),
+                        child: Icon(
+                          Icons.pending_actions_rounded,
+                          size: FfIconSize.sm,
+                          color: warningColor,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: FfSpace.x2s),
                     const SizedBox(width: FfSpace.xs),
                     Text(
                       'NEEDS REVIEW · $count ${count == 1 ? 'ITEM' : 'ITEMS'}',

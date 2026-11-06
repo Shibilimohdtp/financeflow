@@ -4,6 +4,7 @@ import '../../models/category_colors.dart';
 import '../../models/category_icons.dart';
 import '../../theme/ff.dart';
 
+/// A category's icon on a tinted circle, in the category's own colour.
 class FfCategoryTile extends StatelessWidget {
   final String iconIdentifier;
   final String colorTokenIdentifier;
@@ -25,11 +26,11 @@ class FfCategoryTile extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: color.withValues(alpha: FfTint.subtle.alpha),
-        borderRadius: BorderRadius.circular(FfRadius.md),
+        shape: FfShape.of(FfRowTokens.iconTileRadius),
       ),
-      child: Center(child: Icon(iconData, size: size * 0.55, color: color)),
+      child: Center(child: Icon(iconData, size: size * 0.5, color: color)),
     );
   }
 }

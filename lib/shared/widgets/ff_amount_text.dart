@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/formatting/currency_formatter.dart';
@@ -22,6 +24,9 @@ enum FfAmountStyle {
 abstract final class FfAmountSplit {
   static const double unitScale = 0.45;
   static const double decimalScale = 0.5;
+
+  /// Small parts never go below this, so signs stay readable on md amounts.
+  static const double minPartSize = 12;
 
   /// Splits a formatted amount ("− ₹52,06,777.18") into the prefix (sign and
   /// symbol), the whole number and the decimals. Anything that doesn't look
@@ -141,7 +146,10 @@ class FfAmountText extends StatelessWidget {
       final p = FfAmountSplit.parts(formatted);
       final fontSize = textStyle.fontSize!;
       final small = textStyle.copyWith(
-        fontSize: fontSize * FfAmountSplit.unitScale,
+        fontSize: math.max(
+          fontSize * FfAmountSplit.unitScale,
+          FfAmountSplit.minPartSize,
+        ),
         fontWeight: FontWeight.w400,
         letterSpacing: 0,
         color: color.withValues(alpha: FfOpacity.high),
@@ -158,7 +166,10 @@ class FfAmountText extends StatelessWidget {
                 TextSpan(
                   text: p.decimals,
                   style: small.copyWith(
-                    fontSize: fontSize * FfAmountSplit.decimalScale,
+                    fontSize: math.max(
+                      fontSize * FfAmountSplit.decimalScale,
+                      FfAmountSplit.minPartSize,
+                    ),
                     fontWeight: textStyle.fontWeight,
                   ),
                 ),

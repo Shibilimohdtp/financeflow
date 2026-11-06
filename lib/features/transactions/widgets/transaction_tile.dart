@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/extensions/context_extensions.dart';
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../models/account.dart';
@@ -117,8 +116,6 @@ class TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDarkMode;
-
     final fromAccount =
         accounts.where((item) => item.id == transaction.accountId).firstOrNull;
     final toAccount =
@@ -186,7 +183,7 @@ class TransactionTile extends StatelessWidget {
           onLongPress: onToggleSelected ?? () => _showActionSheet(context),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.lg,
+              horizontal: FfRowTokens.paddingH,
               vertical: FfSpace.sm,
             ),
             child: Row(
@@ -195,8 +192,8 @@ class TransactionTile extends StatelessWidget {
                 // Category icon, or a check mark while selecting
                 if (selectionMode)
                   SizedBox(
-                    width: 42,
-                    height: 42,
+                    width: FfRowTokens.iconTile,
+                    height: FfRowTokens.iconTile,
                     child: Icon(
                       isSelected
                           ? Icons.check_circle_rounded
@@ -211,9 +208,8 @@ class TransactionTile extends StatelessWidget {
                   FfCategoryTile(
                     iconIdentifier: transaction.categoryIcon,
                     colorTokenIdentifier: transaction.categoryColor,
-                    size: 42,
                   ),
-                const SizedBox(width: FfSpace.md),
+                const SizedBox(width: FfSpace.sm),
 
                 // Center Information
                 Expanded(
@@ -226,10 +222,7 @@ class TransactionTile extends StatelessWidget {
                         titleText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: context.ff.text.titleSm.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                        ),
+                        style: context.ff.text.title,
                       ),
                       const SizedBox(height: FfSpace.x3s),
 
@@ -247,14 +240,7 @@ class TransactionTile extends StatelessWidget {
                             ),
                           ),
                           if (fromAccount != null && !isTransfer) ...[
-                            Text(
-                              ' · ',
-                              style: TextStyle(
-                                color: context.ff.color.secondary.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
-                            ),
+                            Text(' · ', style: context.ff.text.label),
                             Flexible(
                               child: Text(
                                 fromAccount.name,
@@ -268,38 +254,23 @@ class TransactionTile extends StatelessWidget {
                           ],
                           if (transaction.paymentMethod?.isNotEmpty ??
                               false) ...[
-                            Text(
-                              ' · ',
-                              style: TextStyle(
-                                color: context.ff.color.secondary.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
-                            ),
+                            Text(' · ', style: context.ff.text.label),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: FfSpace.x2s,
                                 vertical: FfSpace.x3s,
                               ),
-                              decoration: BoxDecoration(
-                                color:
-                                    isDark
-                                        ? Colors.white.withValues(
-                                          alpha: FfTint.faint.alpha,
-                                        )
-                                        : Colors.black.withValues(
-                                          alpha: FfTint.whisper.alpha,
-                                        ),
-                                borderRadius: BorderRadius.circular(
-                                  FfRadius.xs,
+                              decoration: ShapeDecoration(
+                                color: context.ff.color.tint(
+                                  context.ff.color.textPrimary,
+                                  FfTint.faint,
                                 ),
+                                shape: FfShape.of(FfRadius.full),
                               ),
                               child: Text(
                                 transaction.paymentMethod!,
                                 style: context.ff.text.labelSm.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: context.ff.color.textPrimary
-                                      .withValues(alpha: 0.75),
+                                  color: context.ff.color.textSecondary,
                                 ),
                               ),
                             ),
@@ -341,7 +312,7 @@ extension on TransactionTile {
       return FfAmountText(
         amount: transaction.amount,
         type: TransactionType.transfer,
-        size: FfAmountSize.md,
+        size: FfAmountSize.sm,
         isBlurred: isPrivacyBlur,
       );
     }
@@ -349,10 +320,12 @@ extension on TransactionTile {
         transaction.effectiveDirection == AccountMovementDirection.inflow;
     return FfAmountText(
       amount: inflow ? transaction.amount : -transaction.amount,
-      size: FfAmountSize.md,
+      size: FfAmountSize.sm,
       isBlurred: isPrivacyBlur,
+      // Calm lists: spending is ink with its minus sign; income stands out
+      // in green with its plus sign. Sign and colour never carry it alone.
       tone: switch (kind) {
-        TransactionKind.spending => FfTone.expense,
+        TransactionKind.spending => FfTone.neutral,
         TransactionKind.income => FfTone.income,
         _ => null,
       },

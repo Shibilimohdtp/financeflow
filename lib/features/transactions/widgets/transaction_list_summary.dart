@@ -19,19 +19,11 @@ class TransactionListSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+    // Sits straight on the canvas: big light figures, quiet labels.
+    return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: FfSpace.md,
-        vertical: FfSpace.sm,
-      ),
-      decoration: BoxDecoration(
-        color: context.ff.color.surfaceCard,
-        borderRadius: BorderRadius.circular(FfRadius.lg),
-        border: Border.all(
-          color: context.ff.color.borderSubtle,
-          width: FfBorderWidth.hairline,
-        ),
+        horizontal: FfSpace.pageMargin + FfSpace.x2s,
+        vertical: FfSpace.xs,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,27 +33,32 @@ class TransactionListSummary extends StatelessWidget {
               _Figure(
                 label: 'Spent',
                 child: FfAmountText(
-                  amount: -totals.spending,
-                  size: FfAmountSize.sm,
+                  amount: totals.spending,
+                  size: FfAmountSize.md,
                   isBlurred: isPrivacyBlur,
-                  tone: FfTone.expense,
+                  tone: FfTone.neutral,
+                  showSign: false,
+                  style: FfAmountStyle.split,
                 ),
               ),
               _Figure(
                 label: 'Income',
                 child: FfAmountText(
                   amount: totals.income,
-                  size: FfAmountSize.sm,
+                  size: FfAmountSize.md,
                   isBlurred: isPrivacyBlur,
                   tone: FfTone.income,
+                  showSign: false,
+                  style: FfAmountStyle.split,
                 ),
               ),
               _Figure(
                 label: 'Net',
                 child: FfAmountText(
                   amount: totals.net,
-                  size: FfAmountSize.sm,
+                  size: FfAmountSize.md,
                   isBlurred: isPrivacyBlur,
+                  style: FfAmountStyle.split,
                 ),
               ),
             ],
@@ -91,12 +88,7 @@ class _Figure extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: context.ff.text.labelSm.copyWith(
-              color: context.ff.color.textSecondary,
-            ),
-          ),
+          Text(label, style: context.ff.text.label),
           const SizedBox(height: FfSpace.x3s),
           FittedBox(fit: BoxFit.scaleDown, child: child),
         ],
