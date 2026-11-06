@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../core/formatting/currency_formatter.dart';
 import '../../models/app_settings.dart';
 import '../../services/notifications/local_notification_service.dart';
 import '../../services/notifications/notification_coordinator.dart';
