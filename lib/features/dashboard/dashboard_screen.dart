@@ -39,7 +39,7 @@ import 'widgets/savings_goals_overview_card.dart';
 import 'widgets/total_balance_hero.dart';
 
 /// The one gap between Home sections (balance and its carousel stay a group).
-const double _sectionGap = FfSpace.xl;
+const double _sectionGap = FfSpace.md;
 
 class DashboardScreen extends ConsumerWidget {
   final VoidCallback onAddTransaction;
@@ -133,12 +133,6 @@ class DashboardScreen extends ConsumerWidget {
     return FfAurora(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: HomeHeader(
-          unreadAlerts: unreadAlerts,
-          onOpenAlerts:
-              onOpenAlerts ?? () => _push(context, const AlertsInboxScreen()),
-          onOpenSettings: onOpenSettings,
-        ),
         // Logging a transaction is the most common action, so it gets the
         // primary button rather than a row of shortcuts.
         floatingActionButton: FloatingActionButton.extended(
@@ -148,179 +142,83 @@ class DashboardScreen extends ConsumerWidget {
           label: const Text('Add'),
         ),
         floatingActionButtonLocation: FfDock.fabLocation,
-        body: RefreshIndicator(
-          color: context.ff.color.actionPrimary,
-          onRefresh: () async {
-            ref.invalidate(dashboardTransactionsProvider);
-            ref.invalidate(dashboardPreviousTransactionsProvider);
-            ref.invalidate(monthTransactionsProvider);
-            ref.invalidate(monthlyCashFlowProvider);
-            ref.invalidate(previousPeriodCashFlowProvider);
-            ref.invalidate(dashboardCashFlowChartProvider);
-            ref.invalidate(accountsWithBalancesProvider);
-            ref.invalidate(recentTransactionsProvider);
-            ref.invalidate(overallBudgetSummaryProvider);
-            ref.invalidate(budgetSummariesProvider);
-            ref.invalidate(overallSavingsGoalSummaryProvider);
-            ref.invalidate(allLoansStreamProvider);
-            ref.invalidate(allSubscriptionsStreamProvider);
-            ref.invalidate(activeAlertsStreamProvider);
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(vertical: FfSpace.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Main Balance Hero Card (Primary Command Anchor)
-                TotalBalanceHero(
-                  totalBalance: totalBalance,
-                  activeAccountsCount: activeAccountsCount,
-                  isPrivacyBlur: isPrivacyBlur,
-                  onToggleBlur: () {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .setPrivacyBlurEnabled(!isPrivacyBlur);
-                  },
-                  onManageAccounts: onManageAccounts,
-                  onAddAccount: onAddAccount,
-                ),
-
-                // 2. Accounts as hero cards, the next one peeking in.
-                if (activeAccountsCount > 0) ...[
-                  const SizedBox(height: FfSpace.md),
-                  HomeAccountsCarousel(
-                    accounts: accounts,
+        body: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            color: context.ff.color.actionPrimary,
+            onRefresh: () async {
+              ref.invalidate(dashboardTransactionsProvider);
+              ref.invalidate(dashboardPreviousTransactionsProvider);
+              ref.invalidate(monthTransactionsProvider);
+              ref.invalidate(monthlyCashFlowProvider);
+              ref.invalidate(previousPeriodCashFlowProvider);
+              ref.invalidate(dashboardCashFlowChartProvider);
+              ref.invalidate(accountsWithBalancesProvider);
+              ref.invalidate(recentTransactionsProvider);
+              ref.invalidate(overallBudgetSummaryProvider);
+              ref.invalidate(budgetSummariesProvider);
+              ref.invalidate(overallSavingsGoalSummaryProvider);
+              ref.invalidate(allLoansStreamProvider);
+              ref.invalidate(allSubscriptionsStreamProvider);
+              ref.invalidate(activeAlertsStreamProvider);
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(
+                top: 0,
+                bottom: FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HomeHeader(
+                    unreadAlerts: unreadAlerts,
+                    onOpenAlerts:
+                        onOpenAlerts ??
+                        () => _push(context, const AlertsInboxScreen()),
                     isPrivacyBlur: isPrivacyBlur,
-                    onOpenAccounts: onManageAccounts,
+                    onToggleBlur: () {
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setPrivacyBlurEnabled(!isPrivacyBlur);
+                    },
                   ),
-                ],
+                  // 1. Main Balance Hero Card (Primary Command Anchor)
+                  TotalBalanceHero(
+                    totalBalance: totalBalance,
+                    activeAccountsCount: activeAccountsCount,
+                    isPrivacyBlur: isPrivacyBlur,
+                    onToggleBlur: () {
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setPrivacyBlurEnabled(!isPrivacyBlur);
+                    },
+                    onManageAccounts: onManageAccounts,
+                    onAddAccount: onAddAccount,
+                  ),
 
-                const SizedBox(height: _sectionGap),
+                  // 2. Accounts as hero cards, the next one peeking in.
+                  if (activeAccountsCount > 0) ...[
+                    const SizedBox(height: FfSpace.sm),
+                    HomeAccountsCarousel(
+                      accounts: accounts,
+                      isPrivacyBlur: isPrivacyBlur,
+                      onOpenAccounts: onManageAccounts,
+                    ),
+                  ],
 
-                // 3. Actionable & Upcoming Items
-                ActionableItemsSection(
-                  pendingReviewCount: pendingCount,
-                  upcomingLoans: upcomingLoans,
-                  upcomingSubscriptions: upcomingRenewals,
-                  overBudgetCount: overBudgetCount,
-                  activeAlerts: activeAlerts,
-                  isPrivacyBlur: isPrivacyBlur,
-                  onOpenNeedsReview:
-                      () => _push(context, const NeedsReviewScreen()),
-                  onOpenLoanDetail: (loan) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => LoanDetailScreen(loan: loan),
-                      ),
-                    );
-                  },
-                  onOpenLoans:
-                      onOpenLoans ?? () => _push(context, const LoansScreen()),
-                  onOpenSubscriptions:
-                      onOpenSubscriptions ??
-                      () => _push(context, const SubscriptionsScreen()),
-                  onOpenBudgets: onOpenBudgets ?? () {},
-                  onOpenAlerts:
-                      onOpenAlerts ??
-                      () => _push(context, const AlertsInboxScreen()),
-                ),
-
-                if (pendingCount > 0 ||
-                    upcomingLoans.isNotEmpty ||
-                    upcomingRenewals.isNotEmpty ||
-                    overBudgetCount > 0)
                   const SizedBox(height: _sectionGap),
 
-                // 4. Period (shared with Insights) and its cash flow
-                FfPeriodBar(
-                  period: period,
-                  onChanged: (p) {
-                    if (p != null) {
-                      ref.read(reportPeriodProvider.notifier).state = p;
-                    }
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.pageMargin,
-                  ),
-                  child: cashFlowAsync.when(
-                    data:
-                        (cashFlow) => CashFlowCard(
-                          cashFlow: cashFlow,
-                          trendMetric: trendMetric,
-                          month: period.start,
-                          periodLabel: periodLabel(period),
-                          chartItems: cashFlowChartAsync.valueOrNull,
-                          isPrivacyBlur: isPrivacyBlur,
-                          onOpenAnalytics: onOpenAnalytics,
-                        ),
-                    loading: () => const CashFlowCardSkeleton(),
-                    error:
-                        (e, _) => HomeCardError(
-                          what: 'cash flow',
-                          onRetry:
-                              () => ref.invalidate(monthlyCashFlowProvider),
-                        ),
-                  ),
-                ),
-
-                // 5. Budgets & Spending Overview
-                overallBudgetAsync.when(
-                  data: (budgetSummary) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: _sectionGap),
-                      child: BudgetOverviewCard(
-                        totalBudgeted: budgetSummary.totalBudgeted,
-                        totalSpent: budgetSummary.totalSpent,
-                        totalRemaining: budgetSummary.totalRemaining,
-                        overBudgetCount: budgetSummary.overBudgetCount,
-                        activeBudgets: activeBudgetsList,
-                        isPrivacyBlur: isPrivacyBlur,
-                        onViewBudgets: onOpenBudgets ?? () {},
-                      ),
-                    );
-                  },
-                  loading:
-                      () => const Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          FfSpace.pageMargin,
-                          _sectionGap,
-                          FfSpace.pageMargin,
-                          0,
-                        ),
-                        child: BudgetOverviewCardSkeleton(),
-                      ),
-                  error:
-                      (_, __) => Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          FfSpace.pageMargin,
-                          _sectionGap,
-                          FfSpace.pageMargin,
-                          0,
-                        ),
-                        child: HomeCardError(
-                          what: 'budgets',
-                          onRetry: () {
-                            ref.invalidate(overallBudgetSummaryProvider);
-                            ref.invalidate(budgetSummariesProvider);
-                          },
-                        ),
-                      ),
-                ),
-
-                // 6. Loans & EMIs Overview
-                if (activeLoans.isNotEmpty) ...[
-                  const SizedBox(height: _sectionGap),
-                  HomeLoansOverview(
-                    activeLoans: activeLoans,
-                    totalOutstanding: totalOutstanding,
-                    totalMonthlyEmi: totalMonthlyEmi,
+                  // 3. Actionable & Upcoming Items
+                  ActionableItemsSection(
+                    pendingReviewCount: pendingCount,
+                    upcomingLoans: upcomingLoans,
+                    upcomingSubscriptions: upcomingRenewals,
+                    overBudgetCount: overBudgetCount,
+                    activeAlerts: activeAlerts,
                     isPrivacyBlur: isPrivacyBlur,
-                    onViewLoans:
-                        onOpenLoans ??
-                        () => _push(context, const LoansScreen()),
+                    onOpenNeedsReview:
+                        () => _push(context, const NeedsReviewScreen()),
                     onOpenLoanDetail: (loan) {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -328,146 +226,263 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       );
                     },
+                    onOpenLoans:
+                        onOpenLoans ??
+                        () => _push(context, const LoansScreen()),
+                    onOpenSubscriptions:
+                        onOpenSubscriptions ??
+                        () => _push(context, const SubscriptionsScreen()),
+                    onOpenBudgets: onOpenBudgets ?? () {},
+                    onOpenAlerts:
+                        onOpenAlerts ??
+                        () => _push(context, const AlertsInboxScreen()),
                   ),
-                ],
 
-                // 7. Savings Goals Overview
-                overallGoalAsync.when(
-                  data: (goalSummary) {
-                    if (goalSummary.totalTarget <= 0) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: _sectionGap),
-                      child: SavingsGoalsOverviewCard(
-                        totalTarget: goalSummary.totalTarget,
-                        totalSaved: goalSummary.totalSaved,
-                        totalRemaining: goalSummary.totalRemaining,
-                        completedCount: goalSummary.completedCount,
-                        totalGoals: goalSummary.totalGoals,
-                        isPrivacyBlur: isPrivacyBlur,
-                        goals:
-                            ref.watch(savingsGoalSummariesProvider).valueOrNull,
-                        onViewGoals: onOpenSavingsGoals ?? () {},
-                      ),
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error:
-                      (_, __) => Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          FfSpace.pageMargin,
-                          _sectionGap,
-                          FfSpace.pageMargin,
-                          0,
+                  if (pendingCount > 0 ||
+                      upcomingLoans.isNotEmpty ||
+                      upcomingRenewals.isNotEmpty ||
+                      overBudgetCount > 0)
+                    const SizedBox(height: _sectionGap),
+
+                  // 4. Period (shared with Insights) and its cash flow
+                  FfPeriodBar(
+                    period: period,
+                    onChanged: (p) {
+                      if (p != null) {
+                        ref.read(reportPeriodProvider.notifier).state = p;
+                      }
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FfSpace.pageMargin,
+                    ),
+                    child: cashFlowAsync.when(
+                      data:
+                          (cashFlow) => CashFlowCard(
+                            cashFlow: cashFlow,
+                            trendMetric: trendMetric,
+                            month: period.start,
+                            periodLabel: periodLabel(period),
+                            chartItems: cashFlowChartAsync.valueOrNull,
+                            isPrivacyBlur: isPrivacyBlur,
+                            onOpenAnalytics: onOpenAnalytics,
+                          ),
+                      loading: () => const CashFlowCardSkeleton(),
+                      error:
+                          (e, _) => HomeCardError(
+                            what: 'cash flow',
+                            onRetry:
+                                () => ref.invalidate(monthlyCashFlowProvider),
+                          ),
+                    ),
+                  ),
+
+                  // 5. Budgets & Spending Overview
+                  overallBudgetAsync.when(
+                    data: (budgetSummary) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: _sectionGap),
+                        child: BudgetOverviewCard(
+                          totalBudgeted: budgetSummary.totalBudgeted,
+                          totalSpent: budgetSummary.totalSpent,
+                          totalRemaining: budgetSummary.totalRemaining,
+                          overBudgetCount: budgetSummary.overBudgetCount,
+                          activeBudgets: activeBudgetsList,
+                          isPrivacyBlur: isPrivacyBlur,
+                          onViewBudgets: onOpenBudgets ?? () {},
                         ),
-                        child: HomeCardError(
-                          what: 'savings goals',
-                          onRetry:
-                              () => ref.invalidate(
-                                overallSavingsGoalSummaryProvider,
+                      );
+                    },
+                    loading:
+                        () => const Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            FfSpace.pageMargin,
+                            _sectionGap,
+                            FfSpace.pageMargin,
+                            0,
+                          ),
+                          child: BudgetOverviewCardSkeleton(),
+                        ),
+                    error:
+                        (_, __) => Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            FfSpace.pageMargin,
+                            _sectionGap,
+                            FfSpace.pageMargin,
+                            0,
+                          ),
+                          child: HomeCardError(
+                            what: 'budgets',
+                            onRetry: () {
+                              ref.invalidate(overallBudgetSummaryProvider);
+                              ref.invalidate(budgetSummariesProvider);
+                            },
+                          ),
+                        ),
+                  ),
+
+                  // 6. Loans & EMIs Overview
+                  if (activeLoans.isNotEmpty) ...[
+                    const SizedBox(height: _sectionGap),
+                    HomeLoansOverview(
+                      activeLoans: activeLoans,
+                      totalOutstanding: totalOutstanding,
+                      totalMonthlyEmi: totalMonthlyEmi,
+                      isPrivacyBlur: isPrivacyBlur,
+                      onViewLoans:
+                          onOpenLoans ??
+                          () => _push(context, const LoansScreen()),
+                      onOpenLoanDetail: (loan) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => LoanDetailScreen(loan: loan),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  // 7. Savings Goals Overview
+                  overallGoalAsync.when(
+                    data: (goalSummary) {
+                      if (goalSummary.totalTarget <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: _sectionGap),
+                        child: SavingsGoalsOverviewCard(
+                          totalTarget: goalSummary.totalTarget,
+                          totalSaved: goalSummary.totalSaved,
+                          totalRemaining: goalSummary.totalRemaining,
+                          completedCount: goalSummary.completedCount,
+                          totalGoals: goalSummary.totalGoals,
+                          isPrivacyBlur: isPrivacyBlur,
+                          goals:
+                              ref
+                                  .watch(savingsGoalSummariesProvider)
+                                  .valueOrNull,
+                          onViewGoals: onOpenSavingsGoals ?? () {},
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error:
+                        (_, __) => Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            FfSpace.pageMargin,
+                            _sectionGap,
+                            FfSpace.pageMargin,
+                            0,
+                          ),
+                          child: HomeCardError(
+                            what: 'savings goals',
+                            onRetry:
+                                () => ref.invalidate(
+                                  overallSavingsGoalSummaryProvider,
+                                ),
+                          ),
+                        ),
+                  ),
+
+                  const SizedBox(height: _sectionGap),
+
+                  // 8. Recent Transactions List
+                  recentTxAsync.when(
+                    data:
+                        (transactions) => HomeRecentTransactions(
+                          transactions: transactions,
+                          isPrivacyBlur: isPrivacyBlur,
+                          onViewAll: onViewAllTransactions,
+                          onAddTransaction: onAddTransaction,
+                          onOpenDetail: onOpenTransactionDetail,
+                        ),
+                    loading:
+                        () => Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: FfSpace.pageMargin,
+                          ),
+                          child: FfSkeletonLoader(
+                            child: FfCard(
+                              density: FfDensity.compact,
+                              padding: const EdgeInsets.all(FfSpace.md),
+                              child: Column(
+                                children: const [
+                                  FfTransactionSkeletonRow(),
+                                  FfDivider(),
+                                  FfTransactionSkeletonRow(),
+                                  FfDivider(),
+                                  FfTransactionSkeletonRow(),
+                                ],
                               ),
+                            ),
+                          ),
                         ),
-                      ),
-                ),
-
-                const SizedBox(height: _sectionGap),
-
-                // 8. Recent Transactions List
-                recentTxAsync.when(
-                  data:
-                      (transactions) => HomeRecentTransactions(
-                        transactions: transactions,
-                        isPrivacyBlur: isPrivacyBlur,
-                        onViewAll: onViewAllTransactions,
-                        onAddTransaction: onAddTransaction,
-                        onOpenDetail: onOpenTransactionDetail,
-                      ),
-                  loading:
-                      () => Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: FfSpace.pageMargin,
-                        ),
-                        child: FfSkeletonLoader(
+                    error:
+                        (e, _) => Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: FfSpace.pageMargin,
+                          ),
                           child: FfCard(
                             density: FfDensity.compact,
                             padding: const EdgeInsets.all(FfSpace.md),
-                            child: Column(
-                              children: const [
-                                FfTransactionSkeletonRow(),
-                                FfDivider(),
-                                FfTransactionSkeletonRow(),
-                                FfDivider(),
-                                FfTransactionSkeletonRow(),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 18,
+                                  color: context.ff.color.textSecondary,
+                                ),
+                                const SizedBox(width: FfSpace.sm),
+                                Expanded(
+                                  child: Text(
+                                    'Could not load transactions',
+                                    style: context.ff.text.bodySm.copyWith(
+                                      color: context.ff.color.textSecondary,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      ),
-                  error:
-                      (e, _) => Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: FfSpace.pageMargin,
-                        ),
-                        child: FfCard(
-                          density: FfDensity.compact,
-                          padding: const EdgeInsets.all(FfSpace.md),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                size: 18,
+                  ),
+
+                  const SizedBox(height: FfSpace.x2l),
+
+                  // 9. Reassuring Offline Status Badge Footer
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FfSpace.pageMargin,
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shield_outlined,
+                            size: 14,
+                            color: context.ff.color.textSecondary,
+                          ),
+                          const SizedBox(width: FfSpace.xs),
+                          Flexible(
+                            child: Text(
+                              'On-device & private — offline first.',
+                              style: context.ff.text.bodySm.copyWith(
                                 color: context.ff.color.textSecondary,
                               ),
-                              const SizedBox(width: FfSpace.sm),
-                              Expanded(
-                                child: Text(
-                                  'Could not load transactions',
-                                  style: context.ff.text.bodySm.copyWith(
-                                    color: context.ff.color.textSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                ),
-
-                const SizedBox(height: FfSpace.x2l),
-
-                // 9. Reassuring Offline Status Badge Footer
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.pageMargin,
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shield_outlined,
-                          size: 14,
-                          color: context.ff.color.textSecondary,
-                        ),
-                        const SizedBox(width: FfSpace.xs),
-                        Flexible(
-                          child: Text(
-                            'On-device & private — offline first.',
-                            style: context.ff.text.bodySm.copyWith(
-                              color: context.ff.color.textSecondary,
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                SizedBox(height: FfDock.insetOf(context)),
-              ],
+                  SizedBox(height: FfDock.insetOf(context)),
+                ],
+              ),
             ),
           ),
         ),

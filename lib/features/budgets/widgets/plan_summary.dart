@@ -7,7 +7,7 @@ import '../../../services/budgets/budget_engine.dart';
 import '../../../shared/widgets/ff_amount_text.dart';
 import '../../../shared/widgets/ff_badge.dart';
 import '../../../shared/widgets/ff_data_viz.dart';
-import '../../../shared/widgets/ff_privacy_badge.dart';
+import '../../../shared/widgets/ff_page_header.dart';
 import '../../../shared/widgets/ff_progress.dart';
 import '../../../shared/widgets/ff_round_buttons.dart';
 import '../../../shared/widgets/ff_stat_tile.dart';
@@ -16,10 +16,8 @@ import '../../../theme/ff.dart';
 import '../../../theme/ff_tone.dart';
 import '../budget_format.dart';
 
-/// The Plan tab's header, drawn on the aurora like Home's: an optional back
-/// button (when Plan is opened as a page), a quiet label, the title and the
-/// on-device cue. It sits at the top of the scroll view, so it grows with
-/// large text instead of overflowing a fixed app-bar height.
+/// The Plan tab's header: title, subtitle, and optional back button (when
+/// Plan is opened as a page). Uses the canonical [FfPageHeader].
 class PlanHeader extends StatelessWidget {
   const PlanHeader({super.key, this.onBack});
 
@@ -27,49 +25,10 @@ class PlanHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: FfSpace.pageMargin,
-        end: FfSpace.pageMargin,
-        top: FfSpace.xs,
-      ),
-      child: Row(
-        children: [
-          if (onBack != null) ...[
-            FfCircleButton(
-              icon: Icons.arrow_back_rounded,
-              tooltip: 'Back',
-              onPressed: onBack!,
-            ),
-            const SizedBox(width: FfSpace.sm),
-          ],
-          Expanded(
-            child: Semantics(
-              header: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Budgets and bills',
-                    style: ff.text.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    'Plan',
-                    style: ff.text.titleLg,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const FfPrivacyBadge(label: 'On-device'),
-        ],
-      ),
+    return FfPageHeader(
+      title: 'Plan',
+      subtitle: 'Budgets and bills',
+      onBack: onBack,
     );
   }
 }

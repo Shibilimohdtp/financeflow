@@ -11,8 +11,7 @@ Golden: Home (`dashboard_screen.dart`, `screenshots/ds-b4/home.png`).
 ```
 FfAurora
 └ Scaffold(backgroundColor: transparent)
-  ├ header drawn on the aurora (no bar fill): label line + title, FfPrivacyBadge, FfCircleButton(s)
-  │   (see HomeHeader: PreferredSizeWidget + SafeArea + AnnotatedRegion for status-bar icons)
+  ├ non-sticky header inside scroll view: FfPageHeader(title: headline, subtitle: label, actions: FfCircleButton(s))
   ├ the ONE key figure: label (text.label) + FfAmountText(size: hero, style: split) + one FfCircleButton
   ├ hero: FfHeroCard (or FfCarousel of FfHeroCards), with an FfProgressRing as leading and FfInkButton.open
   ├ "needs attention" rows: compact FfCard / FfGroupedContainer, FfIconTile with FfCorner.warning
@@ -28,15 +27,14 @@ Rules: one key figure; at most one hero card (a carousel counts as one); everyth
 Golden: Money (`transactions_screen.dart`, `screenshots/ds-b5/money.png`).
 
 ```
-Scaffold (plain surfacePage, NO aurora)
-├ FfAppBar(title) with actions: FfCircleButton(s) (filter with FfCorner.dot when active), FfPrivacyBadge(iconOnly)
-├ search pill (outlined stadium, 48 dp, opens FfAppBar.search) — only if the list is searchable
-├ FfPillBar / FfChip row for the most-used filter
-├ FfPeriodBar (if period-based)
-├ summary on the canvas: 2–3 figures (text.label + FfAmountText md, split), no card
-├ groups: pinned header (label + right-aligned totals, tabular) then rows in ONE compact card
-│   (SliverPadding → DecoratedSliver(FfCard.decorationOf(context, density: compact)) → SliverList with FfDivider.inset)
-└ bottom spacer so the FAB never covers the last row
+Scaffold (plain surfacePage / FfAurora)
+├ CustomScrollView
+│ ├ FfPageHeader(title, subtitle, actions: FfCircleButton(s)) (pinned when searching / selecting)
+│ ├ FfPeriodBar (if period-based)
+│ ├ summary on the canvas: 2–3 figures (text.label + FfAmountText md, split), no card
+│ ├ groups: pinned header (label + right-aligned totals, tabular) then rows in ONE compact card
+│ │   (SliverPadding → DecoratedSliver(FfCard.decorationOf(context, density: compact)) → SliverList with FfDivider.inset)
+│ └ bottom spacer so the FAB never covers the last row
 ```
 
 Rows: leading `FfCategoryTile`/`FfIconTile` circle (40), `text.title`, metadata in `text.label` joined with " · ",

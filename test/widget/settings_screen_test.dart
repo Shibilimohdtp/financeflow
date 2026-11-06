@@ -58,7 +58,6 @@ void main() {
       // Header
       expect(find.text('More'), findsOneWidget);
       expect(find.text('Modules & preferences'), findsOneWidget);
-      expect(find.text('On-device'), findsOneWidget);
 
       // Vault card
       expect(find.text('Device Vault'), findsOneWidget);
@@ -106,10 +105,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Backed up today'), findsOneWidget);
-      expect(
-        find.text('App lock active (PIN & Biometrics)'),
-        findsOneWidget,
-      );
+      expect(find.text('App lock active (PIN & Biometrics)'), findsOneWidget);
       // No "Back up now" warning button when up-to-date
       expect(find.text('Back up now'), findsNothing);
     });
@@ -137,24 +133,22 @@ void main() {
       expect(find.text('Wipe All App Data'), findsOneWidget);
     });
 
-    testWidgets('renders cleanly in dark mode and 2x text scale without overflow', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'renders cleanly in dark mode and 2x text scale without overflow',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        createMoreScreen(
-          theme: StillwaterTheme.deepWater,
-          textScale: 2.0,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createMoreScreen(theme: StillwaterTheme.deepWater, textScale: 2.0),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('More'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        expect(find.text('More'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

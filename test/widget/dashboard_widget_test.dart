@@ -6,6 +6,7 @@ import 'package:financeflow/core/period/report_period_provider.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_controller.dart';
 import 'package:financeflow/features/dashboard/dashboard_screen.dart';
+import 'package:financeflow/features/dashboard/widgets/home_header.dart';
 import 'package:financeflow/features/dashboard/widgets/total_balance_hero.dart';
 import 'package:financeflow/features/dashboard/widgets/cash_flow_card.dart';
 import 'package:financeflow/features/ingestion/needs_review_controller.dart';
@@ -181,9 +182,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify Title & Header Action
-      expect(find.text('FinanceFlow'), findsOneWidget);
+      // Verify Header: Greeting, Actions, and Absence of Shield Pill
+      final greeting = HomeHeader.greetingFor(DateTime.now());
+      expect(find.text(greeting), findsOneWidget);
       expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+      expect(find.text('On-device'), findsNothing);
 
       // Verify Total Balance Hero
       expect(find.text('Total Balance'), findsOneWidget);
@@ -503,7 +506,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Ensure zero overflow errors and correct rendering
-      expect(find.text('FinanceFlow'), findsOneWidget);
+      final greeting = HomeHeader.greetingFor(DateTime.now());
+      expect(find.text(greeting), findsOneWidget);
       expect(find.text('Total Balance'), findsOneWidget);
       expect(find.text('Net this period'), findsOneWidget);
       expect(tester.takeException(), isNull);

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
@@ -13,8 +12,9 @@ import '../../shared/widgets/ff_category_tile.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_navigation.dart';
 import '../../shared/widgets/ff_period_bar.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_page_header.dart';
 import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
@@ -67,86 +67,109 @@ class AnalyticsScreen extends ConsumerWidget {
     return FfAurora(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: _InsightsHeader(
-          isPrivacyBlur: isPrivacyBlur,
-          onToggleBlur: () {
-            ref
-                .read(settingsControllerProvider.notifier)
-                .setPrivacyBlurEnabled(!isPrivacyBlur);
-          },
-          onOpenHealth: () => _openFinancialHealth(context),
-        ),
-        body: RefreshIndicator(
-          color: context.ff.color.actionPrimary,
-          onRefresh:
-              () async => ref.invalidate(analyticsRawTransactionsProvider),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.pageMargin,
-              FfSpace.xs,
-              FfSpace.pageMargin,
-              FfSpace.x4l,
-            ),
-            children: [
-              FfPeriodBar(
-                period: period,
-                onChanged: (p) {
-                  if (p != null) {
-                    ref.read(reportPeriodProvider.notifier).state = p;
-                  }
-                },
+        body: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            color: context.ff.color.actionPrimary,
+            onRefresh:
+                () async => ref.invalidate(analyticsRawTransactionsProvider),
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                FfSpace.pageMargin,
+                FfSpace.xs,
+                FfSpace.pageMargin,
+                FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
               ),
-              const SizedBox(height: FfSpace.md),
-              reportAsync.when(
-                data:
-                    (report) =>
-                        report.totalExpense == 0 && report.totalIncome == 0
-                            ? const FfCard(
-                              child: FfEmptyState(
-                                icon: Icons.insights_rounded,
-                                title: 'No spending or income in this period',
-                                description:
-                                    'Pick another period, or add transactions to see where your money goes.',
+              children: [
+                FfPageHeader(
+                  title: 'Insights',
+                  subtitle: 'Trends & cash flow',
+                  padding: const EdgeInsetsDirectional.only(
+                    bottom: FfSpace.x2s,
+                  ),
+                  actions: [
+                    FfCircleButton(
+                      icon:
+                          isPrivacyBlur
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                      tooltip: isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
+                      soft: true,
+                      onPressed: () {
+                        ref
+                            .read(settingsControllerProvider.notifier)
+                            .setPrivacyBlurEnabled(!isPrivacyBlur);
+                      },
+                    ),
+                    FfCircleButton(
+                      icon: Icons.health_and_safety_outlined,
+                      tooltip: 'Financial health',
+                      soft: true,
+                      onPressed: () => _openFinancialHealth(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: FfSpace.xs),
+                FfPeriodBar(
+                  period: period,
+                  onChanged: (p) {
+                    if (p != null) {
+                      ref.read(reportPeriodProvider.notifier).state = p;
+                    }
+                  },
+                ),
+                const SizedBox(height: FfSpace.md),
+                reportAsync.when(
+                  data:
+                      (report) =>
+                          report.totalExpense == 0 && report.totalIncome == 0
+                              ? const FfCard(
+                                child: FfEmptyState(
+                                  icon: Icons.insights_rounded,
+                                  title: 'No spending or income in this period',
+                                  description:
+                                      'Pick another period, or add transactions to see where your money goes.',
+                                ),
+                              )
+                              : _report(
+                                context,
+                                report,
+                                period,
+                                show,
+                                isPrivacyBlur,
                               ),
-                            )
-                            : _report(
-                              context,
-                              report,
-                              period,
-                              show,
-                              isPrivacyBlur,
+                  loading:
+                      () => const FfSkeletonLoader(
+                        child: Column(
+                          children: [
+                            FfSkeletonBlock(
+                              height: 190,
+                              borderRadius: FfRadius.x2l,
                             ),
-                loading:
-                    () => const FfSkeletonLoader(
-                      child: Column(
-                        children: [
-                          FfSkeletonBlock(
-                            height: 190,
-                            borderRadius: FfRadius.x2l,
-                          ),
-                          SizedBox(height: FfSpace.md),
-                          FfSkeletonBlock(
-                            height: 68,
-                            borderRadius: FfRadius.lg,
-                          ),
-                          SizedBox(height: FfSpace.md),
-                          FfSkeletonBlock(
-                            height: 260,
-                            borderRadius: FfRadius.xl,
-                          ),
-                        ],
+                            SizedBox(height: FfSpace.md),
+                            FfSkeletonBlock(
+                              height: 68,
+                              borderRadius: FfRadius.lg,
+                            ),
+                            SizedBox(height: FfSpace.md),
+                            FfSkeletonBlock(
+                              height: 260,
+                              borderRadius: FfRadius.xl,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                error:
-                    (e, _) => const FfCard(
-                      child: FfEmptyState(
-                        icon: Icons.error_outline_rounded,
-                        title: 'Could not calculate insights',
-                        description: 'Pull down to refresh and try again.',
+                  error:
+                      (e, _) => const FfCard(
+                        child: FfEmptyState(
+                          icon: Icons.error_outline_rounded,
+                          title: 'Could not calculate insights',
+                          description: 'Pull down to refresh and try again.',
+                        ),
                       ),
-                    ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -439,75 +462,6 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// Header for Insights drawn directly on the aurora canvas.
-class _InsightsHeader extends StatelessWidget implements PreferredSizeWidget {
-  final bool isPrivacyBlur;
-  final VoidCallback onToggleBlur;
-  final VoidCallback onOpenHealth;
-
-  const _InsightsHeader({
-    required this.isPrivacyBlur,
-    required this.onToggleBlur,
-    required this.onOpenHealth,
-  });
-
-  @override
-  Size get preferredSize =>
-      const Size.fromHeight(FfTouch.minTarget + FfSpace.md);
-
-  @override
-  Widget build(BuildContext context) {
-    final ff = context.ff;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: FfSpace.pageMargin,
-            end:
-                FfSpace.pageMargin -
-                (FfTouch.minTarget - FfRoundButtonTokens.size) / 2,
-            top: FfSpace.xs,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Insights',
-                  style: ff.text.headlineSm.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const FfPrivacyBadge(label: 'On-device', iconOnly: true),
-              const SizedBox(width: FfSpace.xs),
-              FfCircleButton(
-                icon:
-                    isPrivacyBlur
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                tooltip: isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
-                soft: true,
-                onPressed: onToggleBlur,
-              ),
-              const SizedBox(width: FfSpace.x2s),
-              FfCircleButton(
-                icon: Icons.health_and_safety_outlined,
-                tooltip: 'Financial health',
-                soft: true,
-                onPressed: onOpenHealth,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

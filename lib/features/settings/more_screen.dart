@@ -5,7 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../models/app_settings.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_page_header.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_surfaces.dart';
@@ -59,26 +59,10 @@ class MoreScreen extends ConsumerWidget {
             ),
             children: [
               // ── Header on Aurora ───────────────────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('More', style: context.ff.text.displaySm),
-                        const SizedBox(height: FfSpace.x3s),
-                        Text(
-                          'Modules & preferences',
-                          style: context.ff.text.bodySm.copyWith(
-                            color: context.ff.color.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const FfPrivacyBadge(label: 'On-device'),
-                ],
+              const FfPageHeader(
+                title: 'More',
+                subtitle: 'Modules & preferences',
+                padding: EdgeInsetsDirectional.only(bottom: FfSpace.x2s),
               ),
 
               const SizedBox(height: FfSpace.lg),

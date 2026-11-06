@@ -5,7 +5,6 @@ import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/budgets/budget_detail_screen.dart';
 import 'package:financeflow/features/budgets/plan_providers.dart';
 import 'package:financeflow/models/budget.dart';
-import 'package:financeflow/models/category.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
