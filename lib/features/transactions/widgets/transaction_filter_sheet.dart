@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/account.dart';
 import '../../../models/category.dart';
 import '../../../shared/widgets/ff_card.dart';
+import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_chip.dart';
 import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_privacy_badge.dart';
-import '../../../shared/widgets/ff_select.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_footer.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
@@ -17,7 +18,8 @@ import '../../../theme/ff_tone.dart';
 import '../transaction_list_utils.dart';
 
 /// Edits every filter except the period (period bar) and search (app bar).
-/// Redesigned in Stillwater Bloom: Pattern E sheet with tactile cards and chips.
+/// Redesigned in Stillwater Bloom: Pattern E sheet with visual entity cards,
+/// tactile account/category selectors, amount presets, and high-contrast sort pills.
 Future<TransactionQuery?> showTransactionFilterSheet(
   BuildContext context, {
   required TransactionQuery query,
@@ -82,10 +84,46 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
     super.dispose();
   }
 
+  int get _activeCount {
+    int count = 0;
+    if (_query.kinds.isNotEmpty) count += _query.kinds.length;
+    if (_query.accountId != null) count++;
+    if (_query.categoryId != null) count++;
+    if (_minController.text.isNotEmpty || _maxController.text.isNotEmpty) {
+      count++;
+    }
+    if (_query.paymentMethod != null) count++;
+    if (_query.tag != null) count++;
+    if (_query.sort != TransactionSort.newest) count++;
+    return count;
+  }
+
   void _toggleKind(TransactionKind kind) {
+    HapticFeedback.selectionClick();
     final kinds = {..._query.kinds};
     kinds.contains(kind) ? kinds.remove(kind) : kinds.add(kind);
     setState(() => _query = _query.copyWith(kinds: kinds));
+  }
+
+  void _applyAmountPreset(double? min, double? max) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _minController.text = min != null ? _formatBound(min) : '';
+      _maxController.text = max != null ? _formatBound(max) : '';
+    });
+  }
+
+  void _resetAll() {
+    HapticFeedback.selectionClick();
+    _minController.clear();
+    _maxController.clear();
+    setState(() {
+      _query = TransactionQuery(
+        period: _query.period,
+        search: _query.search,
+        sort: TransactionSort.newest,
+      );
+    });
   }
 
   TransactionQuery _withAmounts() {
@@ -101,22 +139,42 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
     return q;
   }
 
+  IconData _getAccountIcon(AccountType type) {
+    switch (type) {
+      case AccountType.bank:
+        return Icons.account_balance_outlined;
+      case AccountType.cash:
+        return Icons.payments_outlined;
+      case AccountType.creditCard:
+        return Icons.credit_card_outlined;
+      case AccountType.upi:
+        return Icons.qr_code_rounded;
+      case AccountType.investment:
+        return Icons.trending_up_rounded;
+      case AccountType.business:
+        return Icons.business_center_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ff = context.ff;
     final activeCategories =
         widget.categories.where((c) => !c.isArchived).toList();
     final activeAccounts = widget.accounts.where((a) => !a.isArchived).toList();
+    final activeFiltersCount = _activeCount;
 
     return FfSheet(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ── 1. Sheet Header ──────────────────────────────────────────────
         const FfSheetHeader(
           title: 'Filter & sort',
           subtitle: 'Refine transactions by kind, account, category, or amount',
           trailing: FfPrivacyBadge(label: '100% Local', iconOnly: true),
         ),
         const FfDivider(),
+
         Flexible(
           child: ListView(
             shrinkWrap: true,
@@ -125,8 +183,60 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
               vertical: FfSpace.sm,
             ),
             children: [
-              // 1. Transaction Type Section
-              const _SectionLabel(icon: Icons.swap_vert_rounded, title: 'Show'),
+              // ── 2. Active Filters Scope Status Bar ──────────────────────
+              if (activeFiltersCount > 0) ...[
+                FfCard(
+                  variant: FfCardVariant.tinted,
+                  tone: FfTone.accent,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FfSpace.md,
+                    vertical: FfSpace.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: ff.color.spark,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: FfSpace.sm),
+                      Expanded(
+                        child: Text(
+                          '$activeFiltersCount ${activeFiltersCount == 1 ? 'filter active' : 'filters active'}',
+                          style: ff.text.labelSm.copyWith(
+                            color: ff.color.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _resetAll,
+                        child: Text(
+                          'Clear all',
+                          style: ff.text.labelSm.copyWith(
+                            color: ff.color.actionPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: FfSpace.md),
+              ],
+
+              // ── 3. Transaction Type (Kind) ──────────────────────────────
+              _SectionHeader(
+                icon: Icons.swap_vert_rounded,
+                title: 'Show',
+                subtitle:
+                    _query.kinds.isEmpty
+                        ? 'All types'
+                        : _query.kinds.map((k) => k.label).join(', '),
+              ),
               Wrap(
                 spacing: FfSpace.xs,
                 runSpacing: FfSpace.xs,
@@ -140,54 +250,145 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                     ),
                 ],
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSpace.lg),
 
-              // 2. Account & Category Section
-              const _SectionLabel(
+              // ── 4. Account Selection (Horizontal Visual Selector) ───────
+              _SectionHeader(
                 icon: Icons.account_balance_outlined,
                 title: 'Account',
+                subtitle:
+                    _query.accountId == null
+                        ? 'All accounts'
+                        : activeAccounts
+                                .where((a) => a.id == _query.accountId)
+                                .firstOrNull
+                                ?.name ??
+                            'Selected',
               ),
-              _Dropdown<String>(
-                keyName: 'filter-account',
-                value: _query.accountId,
-                allLabel: 'All accounts',
-                items: {for (final a in activeAccounts) a.id: a.name},
-                onChanged:
-                    (v) => setState(
-                      () =>
-                          _query = _query.copyWith(
-                            accountId: v,
-                            clearAccount: v == null,
-                          ),
+              SingleChildScrollView(
+                key: const ValueKey('filter-account'),
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _AccountCard(
+                      label: 'All accounts',
+                      icon: Icons.all_inclusive_rounded,
+                      isSelected: _query.accountId == null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(
+                          () => _query = _query.copyWith(clearAccount: true),
+                        );
+                      },
                     ),
+                    for (final a in activeAccounts) ...[
+                      const SizedBox(width: FfSpace.xs),
+                      _AccountCard(
+                        label: a.name,
+                        icon: _getAccountIcon(a.type),
+                        isSelected: _query.accountId == a.id,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(
+                            () =>
+                                _query = _query.copyWith(
+                                  accountId:
+                                      _query.accountId == a.id ? null : a.id,
+                                  clearAccount: _query.accountId == a.id,
+                                ),
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: FfSpace.sm),
+              const SizedBox(height: FfSpace.lg),
 
-              const _SectionLabel(
+              // ── 5. Category Selection (Horizontal Visual Selector) ───────
+              _SectionHeader(
                 icon: Icons.category_outlined,
                 title: 'Category',
+                subtitle:
+                    _query.categoryId == null
+                        ? 'All categories'
+                        : activeCategories
+                                .where((c) => c.id == _query.categoryId)
+                                .firstOrNull
+                                ?.name ??
+                            'Selected',
               ),
-              _Dropdown<String>(
-                keyName: 'filter-category',
-                value: _query.categoryId,
-                allLabel: 'All categories',
-                items: {for (final c in activeCategories) c.id: c.name},
-                onChanged:
-                    (v) => setState(
-                      () =>
-                          _query = _query.copyWith(
-                            categoryId: v,
-                            clearCategory: v == null,
-                          ),
+              SingleChildScrollView(
+                key: const ValueKey('filter-category'),
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _CategoryCard(
+                      label: 'All categories',
+                      isSelected: _query.categoryId == null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(
+                          () => _query = _query.copyWith(clearCategory: true),
+                        );
+                      },
                     ),
+                    for (final c in activeCategories) ...[
+                      const SizedBox(width: FfSpace.xs),
+                      _CategoryCard(
+                        label: c.name,
+                        iconIdentifier: c.iconIdentifier,
+                        colorTokenIdentifier: c.colorTokenIdentifier,
+                        isSelected: _query.categoryId == c.id,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(
+                            () =>
+                                _query = _query.copyWith(
+                                  categoryId:
+                                      _query.categoryId == c.id ? null : c.id,
+                                  clearCategory: _query.categoryId == c.id,
+                                ),
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSpace.lg),
 
-              // 3. Amount Range Section
-              const _SectionLabel(
+              // ── 6. Amount Range & Quick Presets ──────────────────────────
+              const _SectionHeader(
                 icon: Icons.payments_outlined,
                 title: 'Amount',
+                subtitle: 'Filter by transaction size',
               ),
+              // Preset chips for quick tapping
+              Wrap(
+                spacing: FfSpace.xs,
+                runSpacing: FfSpace.xs,
+                children: [
+                  _PresetChip(
+                    label: '< ₹500',
+                    onTap: () => _applyAmountPreset(null, 500),
+                  ),
+                  _PresetChip(
+                    label: '₹500 – ₹2,000',
+                    onTap: () => _applyAmountPreset(500, 2000),
+                  ),
+                  _PresetChip(
+                    label: '₹2,000 – ₹10,000',
+                    onTap: () => _applyAmountPreset(2000, 10000),
+                  ),
+                  _PresetChip(
+                    label: '> ₹10,000',
+                    onTap: () => _applyAmountPreset(10000, null),
+                  ),
+                ],
+              ),
+              const SizedBox(height: FfSpace.sm),
+              // Custom Dual Input Fields inside a comfortable row
               Row(
                 children: [
                   Expanded(
@@ -197,7 +398,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      label: 'Min',
+                      label: 'Min amount',
                       prefixText: '${CurrencyFormatter.currencySymbol} ',
                     ),
                   ),
@@ -209,58 +410,107 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      label: 'Max',
+                      label: 'Max amount',
                       prefixText: '${CurrencyFormatter.currencySymbol} ',
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSpace.lg),
 
-              // 4. Payment Method & Tag Filters (if available)
+              // ── 7. Payment Methods & Tags (if present) ───────────────────
               if (widget.paymentMethods.isNotEmpty) ...[
-                const _SectionLabel(
+                _SectionHeader(
                   icon: Icons.credit_card_outlined,
                   title: 'Payment method',
+                  subtitle: _query.paymentMethod ?? 'Any method',
                 ),
-                _Dropdown<String>(
-                  keyName: 'filter-method',
-                  value: _query.paymentMethod,
-                  allLabel: 'Any method',
-                  items: {for (final m in widget.paymentMethods) m: m},
-                  onChanged:
-                      (v) => setState(
-                        () =>
-                            _query = _query.copyWith(
-                              paymentMethod: v,
-                              clearPaymentMethod: v == null,
-                            ),
+                Wrap(
+                  key: const ValueKey('filter-method'),
+                  spacing: FfSpace.xs,
+                  runSpacing: FfSpace.xs,
+                  children: [
+                    FfChip(
+                      label: 'Any method',
+                      isSelected: _query.paymentMethod == null,
+                      onSelected: () {
+                        HapticFeedback.selectionClick();
+                        setState(
+                          () =>
+                              _query = _query.copyWith(
+                                clearPaymentMethod: true,
+                              ),
+                        );
+                      },
+                    ),
+                    for (final m in widget.paymentMethods)
+                      FfChip(
+                        label: m,
+                        isSelected: _query.paymentMethod == m,
+                        onSelected: () {
+                          HapticFeedback.selectionClick();
+                          setState(
+                            () =>
+                                _query = _query.copyWith(
+                                  paymentMethod:
+                                      _query.paymentMethod == m ? null : m,
+                                  clearPaymentMethod: _query.paymentMethod == m,
+                                ),
+                          );
+                        },
                       ),
+                  ],
                 ),
-                const SizedBox(height: FfSpace.md),
+                const SizedBox(height: FfSpace.lg),
               ],
 
               if (widget.tags.isNotEmpty) ...[
-                const _SectionLabel(icon: Icons.tag_rounded, title: 'Tag'),
-                _Dropdown<String>(
-                  keyName: 'filter-tag',
-                  value: _query.tag,
-                  allLabel: 'Any tag',
-                  items: {for (final t in widget.tags) t: '#$t'},
-                  onChanged:
-                      (v) => setState(
-                        () =>
-                            _query = _query.copyWith(
-                              tag: v,
-                              clearTag: v == null,
-                            ),
-                      ),
+                _SectionHeader(
+                  icon: Icons.tag_rounded,
+                  title: 'Tag',
+                  subtitle: _query.tag != null ? '#${_query.tag}' : 'Any tag',
                 ),
-                const SizedBox(height: FfSpace.md),
+                Wrap(
+                  key: const ValueKey('filter-tag'),
+                  spacing: FfSpace.xs,
+                  runSpacing: FfSpace.xs,
+                  children: [
+                    FfChip(
+                      label: 'Any tag',
+                      isSelected: _query.tag == null,
+                      onSelected: () {
+                        HapticFeedback.selectionClick();
+                        setState(
+                          () => _query = _query.copyWith(clearTag: true),
+                        );
+                      },
+                    ),
+                    for (final t in widget.tags)
+                      FfChip(
+                        label: '#$t',
+                        isSelected: _query.tag == t,
+                        onSelected: () {
+                          HapticFeedback.selectionClick();
+                          setState(
+                            () =>
+                                _query = _query.copyWith(
+                                  tag: _query.tag == t ? null : t,
+                                  clearTag: _query.tag == t,
+                                ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: FfSpace.lg),
               ],
 
-              // 5. Sort Order Section
-              const _SectionLabel(icon: Icons.sort_rounded, title: 'Sort'),
+              // ── 8. Sort Order ────────────────────────────────────────────
+              _SectionHeader(
+                icon: Icons.sort_rounded,
+                title: 'Sort',
+                subtitle: _query.sort.label,
+              ),
               Wrap(
                 spacing: FfSpace.xs,
                 runSpacing: FfSpace.xs,
@@ -269,16 +519,16 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                     FfChip(
                       label: sort.label,
                       isSelected: _query.sort == sort,
-                      onSelected:
-                          () => setState(
-                            () => _query = _query.copyWith(sort: sort),
-                          ),
+                      onSelected: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _query = _query.copyWith(sort: sort));
+                      },
                     ),
                 ],
               ),
               const SizedBox(height: FfSpace.lg),
 
-              // Date change tip card
+              // ── 9. Date Guidance Card ────────────────────────────────────
               FfCard(
                 variant: FfCardVariant.tinted,
                 tone: FfTone.primary,
@@ -289,14 +539,14 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.info_outline_rounded,
+                      Icons.calendar_month_outlined,
                       size: 16,
                       color: ff.color.textSecondary,
                     ),
                     const SizedBox(width: FfSpace.xs),
                     Expanded(
                       child: Text(
-                        'Use the period bar to change dates.',
+                        'Dates are controlled via the period bar on the main screen.',
                         style: ff.text.bodySm.copyWith(
                           color: ff.color.textSecondary,
                         ),
@@ -309,86 +559,261 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
             ],
           ),
         ),
+
+        // ── 10. Sheet Footer with Actions ────────────────────────────────
         FfSheetFooter(
           secondaryLabel: 'Reset',
-          onSecondaryPressed: () {
-            _minController.clear();
-            _maxController.clear();
-            setState(
-              () =>
-                  _query = TransactionQuery(
-                    period: _query.period,
-                    search: _query.search,
-                  ),
-            );
-          },
+          onSecondaryPressed: _resetAll,
           primaryLabel: 'Show results',
-          onPrimaryPressed: () => Navigator.of(context).pop(_withAmounts()),
+          onPrimaryPressed: () {
+            HapticFeedback.mediumImpact();
+            Navigator.of(context).pop(_withAmounts());
+          },
         ),
       ],
     );
   }
 }
 
-class _SectionLabel extends StatelessWidget {
+// ---------------------------------------------------------------------------
+// Supporting Bloom Components for Filter Sheet
+// ---------------------------------------------------------------------------
+
+class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
 
-  const _SectionLabel({required this.icon, required this.title});
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     final ff = context.ff;
     return Padding(
-      padding: const EdgeInsets.only(top: FfSpace.xs, bottom: FfSpace.xs),
+      padding: const EdgeInsets.only(bottom: FfSpace.xs),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, size: 14, color: ff.color.textSecondary),
-          const SizedBox(width: FfSpace.x3s),
-          Text(
-            title,
-            style: ff.text.labelSm.copyWith(
-              fontWeight: FontWeight.w600,
-              color: ff.color.textPrimary,
-            ),
+          Row(
+            children: [
+              Icon(icon, size: 14, color: ff.color.textSecondary),
+              const SizedBox(width: FfSpace.x3s),
+              Text(
+                title,
+                style: ff.text.titleSm.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: ff.color.textPrimary,
+                ),
+              ),
+            ],
           ),
+          if (subtitle != null)
+            Text(
+              subtitle!,
+              style: ff.text.labelSm.copyWith(
+                color: ff.color.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-class _Dropdown<T> extends StatelessWidget {
-  final String keyName;
-  final T? value;
-  final String allLabel;
-  final Map<T, String> items;
-  final ValueChanged<T?> onChanged;
+class _AccountCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _Dropdown({
-    required this.keyName,
-    required this.value,
-    required this.allLabel,
-    required this.items,
-    required this.onChanged,
+  const _AccountCard({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // A filter that points at an archived/deleted entry still shows a value.
-    final effective = items.containsKey(value) ? value : null;
-    return FfSelect<T?>(
-      key: ValueKey(keyName),
-      value: effective,
-      items: [
-        DropdownMenuItem<T?>(value: null, child: Text(allLabel)),
-        for (final entry in items.entries)
-          DropdownMenuItem<T?>(
-            value: entry.key,
-            child: Text(entry.value, overflow: TextOverflow.ellipsis),
+    final ff = context.ff;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FfRadius.md),
+        child: AnimatedContainer(
+          duration: FfMotion.fast,
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.md,
+            vertical: FfSpace.sm,
           ),
-      ],
-      onChanged: onChanged,
+          decoration: ShapeDecoration(
+            color:
+                isSelected
+                    ? ff.color.actionPrimary
+                    : ff.color.tint(ff.color.textPrimary, FfTint.faint),
+            shape: FfShape.of(
+              FfRadius.md,
+              side: BorderSide(
+                color:
+                    isSelected
+                        ? ff.color.actionPrimary
+                        : ff.color.borderControl,
+                width:
+                    isSelected ? FfBorderWidth.strong : FfBorderWidth.regular,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color:
+                    isSelected
+                        ? ff.color.onActionPrimary
+                        : ff.color.textSecondary,
+              ),
+              const SizedBox(width: FfSpace.xs),
+              Text(
+                label,
+                style: ff.text.labelSm.copyWith(
+                  color:
+                      isSelected
+                          ? ff.color.onActionPrimary
+                          : ff.color.textPrimary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final String label;
+  final String? iconIdentifier;
+  final String? colorTokenIdentifier;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryCard({
+    required this.label,
+    this.iconIdentifier,
+    this.colorTokenIdentifier,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FfRadius.md),
+        child: AnimatedContainer(
+          duration: FfMotion.fast,
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.sm,
+            vertical: FfSpace.xs,
+          ),
+          decoration: ShapeDecoration(
+            color:
+                isSelected
+                    ? ff.color.actionPrimary
+                    : ff.color.tint(ff.color.textPrimary, FfTint.faint),
+            shape: FfShape.of(
+              FfRadius.md,
+              side: BorderSide(
+                color:
+                    isSelected
+                        ? ff.color.actionPrimary
+                        : ff.color.borderControl,
+                width:
+                    isSelected ? FfBorderWidth.strong : FfBorderWidth.regular,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (iconIdentifier != null && colorTokenIdentifier != null)
+                FfCategoryTile(
+                  iconIdentifier: iconIdentifier!,
+                  colorTokenIdentifier: colorTokenIdentifier!,
+                  size: 20,
+                )
+              else
+                Icon(
+                  Icons.category_outlined,
+                  size: 16,
+                  color:
+                      isSelected
+                          ? ff.color.onActionPrimary
+                          : ff.color.textSecondary,
+                ),
+              const SizedBox(width: FfSpace.xs),
+              Text(
+                label,
+                style: ff.text.labelSm.copyWith(
+                  color:
+                      isSelected
+                          ? ff.color.onActionPrimary
+                          : ff.color.textPrimary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _PresetChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.sm,
+            vertical: FfSpace.x2s,
+          ),
+          decoration: ShapeDecoration(
+            color: ff.color.tint(ff.color.textPrimary, FfTint.faint),
+            shape: const StadiumBorder(),
+          ),
+          child: Text(
+            label,
+            style: ff.text.labelSm.copyWith(
+              color: ff.color.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
