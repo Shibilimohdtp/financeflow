@@ -14,6 +14,7 @@ import 'package:financeflow/models/money_record.dart';
 import 'package:financeflow/models/money_repayment.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/shared/widgets/ff_button.dart';
+import 'package:financeflow/shared/widgets/ff_chip.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 
 void main() {
@@ -149,12 +150,11 @@ void main() {
     await tester.pumpWidget(createTestWidget());
     await tester.pumpAndSettle();
 
-    // Verify Title & Type Selector
+    // Verify Title & Type Selector (Stillwater Bloom segmented pill)
     expect(find.text('Add Transaction'), findsOneWidget);
-    expect(find.text('Money Out'), findsOneWidget);
-    expect(find.text('Money In'), findsOneWidget);
-    expect(find.text('Move Money'), findsOneWidget);
-    expect(find.text('Expense'), findsOneWidget);
+    expect(find.text('Expense'), findsWidgets);
+    expect(find.text('Income'), findsOneWidget);
+    expect(find.text('Transfer'), findsOneWidget);
 
     // Verify default save button
     final saveButton = find.widgetWithText(FfButton, 'Save Expense');
@@ -180,15 +180,15 @@ void main() {
     await tester.pumpWidget(createTestWidget());
     await tester.pumpAndSettle();
 
-    // Switch to Money In (defaults to earned income)
-    await tester.tap(find.text('Money In'));
+    // Switch to Income (defaults to earned income)
+    await tester.tap(find.text('Income'));
     await tester.pumpAndSettle();
 
     expect(find.text('Payer / Source (optional)'), findsOneWidget);
     expect(find.widgetWithText(FfButton, 'Save Income'), findsOneWidget);
 
-    // Switch to moving between owned accounts
-    await tester.tap(find.text('Move Money'));
+    // Switch to moving between owned accounts (Transfer)
+    await tester.tap(find.text('Transfer'));
     await tester.pumpAndSettle();
 
     expect(find.text('Note (optional)'), findsOneWidget);
@@ -200,7 +200,7 @@ void main() {
     );
 
     // Switch to Investment
-    await tester.tap(find.text('Money Out'));
+    await tester.tap(find.text('Expense').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Expense').last);
     await tester.pumpAndSettle();
@@ -427,23 +427,23 @@ void main() {
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('Yesterday'), findsOneWidget);
 
-      // Switch to Yesterday
+      // Switch to Yesterday (Stillwater Bloom FfChip)
       await tester.tap(find.text('Yesterday'));
       await tester.pumpAndSettle();
 
-      final yesterdayChoiceChip = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, 'Yesterday'),
+      final yesterdayChip = tester.widget<FfChip>(
+        find.widgetWithText(FfChip, 'Yesterday'),
       );
-      expect(yesterdayChoiceChip.selected, isTrue);
+      expect(yesterdayChip.isSelected, isTrue);
 
       // Switch back to Today
       await tester.tap(find.text('Today'));
       await tester.pumpAndSettle();
 
-      final todayChoiceChip = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, 'Today'),
+      final todayChip = tester.widget<FfChip>(
+        find.widgetWithText(FfChip, 'Today'),
       );
-      expect(todayChoiceChip.selected, isTrue);
+      expect(todayChip.isSelected, isTrue);
     },
   );
 
@@ -504,8 +504,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Switch to Move Money
-      await tester.tap(find.text('Move Money'));
+      // Switch to Transfer
+      await tester.tap(find.text('Transfer'));
       await tester.pumpAndSettle();
 
       // Enter Amount
@@ -516,9 +516,7 @@ void main() {
 
       // Enter Transfer reference
       final merchantField = find.byWidgetPredicate(
-        (w) =>
-            w is TextField &&
-            w.decoration?.labelText == 'Note (optional)',
+        (w) => w is TextField && w.decoration?.labelText == 'Note (optional)',
       );
       await tester.enterText(merchantField, 'Transfer to Cash');
 

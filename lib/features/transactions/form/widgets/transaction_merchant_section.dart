@@ -114,7 +114,7 @@ class TransactionMerchantSection extends ConsumerWidget {
           onChanged: onChanged,
         ),
 
-        // Context-aware dynamic Payee suggestions surface
+        // Context-aware dynamic Payee suggestions surface (shown when focused)
         if (isFocused &&
             (visibleSuggestions.isNotEmpty || typedText.isNotEmpty)) ...[
           const SizedBox(height: FfSpace.xs),
@@ -184,7 +184,6 @@ class TransactionMerchantSection extends ConsumerWidget {
                       shrinkWrap: true,
                       physics: const ClampingScrollPhysics(),
                       children: [
-                        // Rank best matching payees at the top of the dropdown
                         ...visibleSuggestions.map((suggestion) {
                           return InkWell(
                             onTap: () => onSelectSuggestion(suggestion),

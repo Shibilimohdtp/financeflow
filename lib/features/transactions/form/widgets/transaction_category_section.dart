@@ -4,7 +4,6 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../models/category.dart';
 import '../../../../shared/widgets/ff_category_tile.dart';
 import '../../../../theme/ff.dart';
-import '../../../../theme/stillwater_colors.dart';
 
 class TransactionCategorySection extends StatelessWidget {
   final List<Category> categoriesForType;
@@ -27,8 +26,6 @@ class TransactionCategorySection extends StatelessWidget {
     final theme = context.theme;
     final isDark = theme.brightness == Brightness.dark;
 
-    // Show top 3 prioritized categories.
-    // If active selection is outside top 3, display it in place of 3rd slot.
     final top3 = categoriesForType.take(3).toList();
     final List<Category> displayedQuickCategories;
     if (selectedCategory != null &&
@@ -45,78 +42,96 @@ class TransactionCategorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Category', style: context.ff.text.labelLg),
-        const SizedBox(height: FfSpace.x2s),
+        Text(
+          'Category',
+          style: context.ff.text.label.copyWith(
+            color: context.ff.color.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: FfSpace.xs),
 
-        // 4-Column Balanced Grid/Row: 3 Top Categories + 1 "All Categories" Tile
         Row(
           children: [
             ...displayedQuickCategories.map((cat) {
               final isSelected = cat.id == selectedCategory?.id;
+              final tileBg =
+                  isSelected
+                      ? (isDark
+                          ? context.ff.color.actionPrimaryContainer.withValues(
+                            alpha: FfTint.strong.alpha,
+                          )
+                          : context.ff.color.actionPrimaryContainer.withValues(
+                            alpha: FfTint.strong.alpha,
+                          ))
+                      : context.ff.color.surfaceCard;
+
+              final borderColor =
+                  isSelected
+                      ? context.ff.color.actionPrimary
+                      : context.ff.color.borderSubtle.withValues(alpha: 0.5);
+
               return Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: FfSpace.x2s),
-                  child: InkWell(
-                    onTap: () => onSelectCategory(cat),
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: Container(
-                      height: 68,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.x3s,
-                        vertical: FfSpace.x2s,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? (isDark
-                                    ? context.ff.color.actionPrimaryContainer
-                                        .withValues(alpha: FfTint.strong.alpha)
-                                    : context.ff.color.actionPrimaryContainer
-                                        .withValues(alpha: FfTint.strong.alpha))
-                                : (isDark
-                                    ? StillwaterColors.darkSurfaceContainerLow
-                                    : StillwaterColors
-                                        .lightSurfaceContainerLow),
-                        borderRadius: BorderRadius.circular(FfRadius.md),
-                        border: Border.all(
-                          color:
-                              isSelected
-                                  ? context.ff.color.actionPrimary
-                                  : context.ff.color.borderSubtle.withValues(
-                                    alpha: 0.5,
-                                  ),
-                          width:
-                              isSelected
-                                  ? FfBorderWidth.focus
-                                  : FfBorderWidth.regular,
+                  padding: const EdgeInsets.only(right: FfSpace.xs),
+                  child: Semantics(
+                    button: true,
+                    selected: isSelected,
+                    label: cat.name,
+                    child: InkWell(
+                      onTap: () => onSelectCategory(cat),
+                      borderRadius: BorderRadius.circular(FfRadius.md),
+                      child: Container(
+                        height: 72,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: FfSpace.x2s,
+                          vertical: FfSpace.xs,
                         ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FfCategoryTile(
-                            iconIdentifier: cat.iconIdentifier,
-                            colorTokenIdentifier: cat.colorTokenIdentifier,
-                            size: 26,
+                        decoration: BoxDecoration(
+                          color: tileBg,
+                          borderRadius: BorderRadius.circular(FfRadius.md),
+                          border: Border.all(
+                            color: borderColor,
+                            width:
+                                isSelected
+                                    ? FfBorderWidth.focus
+                                    : FfBorderWidth.hairline,
                           ),
-                          const SizedBox(height: FfSpace.x2s),
-                          Text(
-                            cat.name,
-                            style: context.ff.text.labelSm.copyWith(
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? context.ff.color.actionPrimary
-                                      : context.ff.color.textPrimary,
+                          boxShadow:
+                              isDark
+                                  ? const []
+                                  : FfElevation.card(
+                                    context.ff.color.shadow,
+                                    Brightness.light,
+                                  ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FfCategoryTile(
+                              iconIdentifier: cat.iconIdentifier,
+                              colorTokenIdentifier: cat.colorTokenIdentifier,
+                              size: 28,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                            const SizedBox(height: FfSpace.x2s),
+                            Text(
+                              cat.name,
+                              style: context.ff.text.labelSm.copyWith(
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                color:
+                                    isSelected
+                                        ? context.ff.color.actionPrimary
+                                        : context.ff.color.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -126,56 +141,64 @@ class TransactionCategorySection extends StatelessWidget {
 
             // 4th Tile: All Categories Launcher
             Expanded(
-              child: InkWell(
-                onTap: onOpenCategoryPicker,
-                borderRadius: BorderRadius.circular(FfRadius.md),
-                child: Container(
-                  height: 68,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.x3s,
-                    vertical: FfSpace.x2s,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isDark
-                            ? StillwaterColors.darkSurfaceContainerLow
-                            : StillwaterColors.lightSurfaceContainerLow,
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    border: Border.all(
-                      color: context.ff.color.borderSubtle.withValues(
-                        alpha: 0.5,
-                      ),
-                      width: FfBorderWidth.regular,
+              child: Semantics(
+                button: true,
+                label: 'All categories',
+                child: InkWell(
+                  onTap: onOpenCategoryPicker,
+                  borderRadius: BorderRadius.circular(FfRadius.md),
+                  child: Container(
+                    height: 72,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FfSpace.x2s,
+                      vertical: FfSpace.xs,
                     ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: context.ff.color.surfaceContainerHighest,
-                          shape: BoxShape.circle,
+                    decoration: BoxDecoration(
+                      color: context.ff.color.surfaceCard,
+                      borderRadius: BorderRadius.circular(FfRadius.md),
+                      border: Border.all(
+                        color: context.ff.color.borderSubtle.withValues(
+                          alpha: 0.5,
                         ),
-                        child: Icon(
-                          Icons.grid_view_rounded,
-                          size: 16,
-                          color: context.ff.color.actionPrimary,
-                        ),
+                        width: FfBorderWidth.hairline,
                       ),
-                      const SizedBox(height: FfSpace.x2s),
-                      Text(
-                        'All Categories',
-                        style: context.ff.text.labelSm.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.ff.color.actionPrimary,
+                      boxShadow:
+                          isDark
+                              ? const []
+                              : FfElevation.card(
+                                context.ff.color.shadow,
+                                Brightness.light,
+                              ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: context.ff.color.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.grid_view_rounded,
+                            size: 16,
+                            color: context.ff.color.actionPrimary,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                        const SizedBox(height: FfSpace.x2s),
+                        Text(
+                          'All Categories',
+                          style: context.ff.text.labelSm.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: context.ff.color.actionPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -185,12 +208,22 @@ class TransactionCategorySection extends StatelessWidget {
 
         if (categoryError != null) ...[
           const SizedBox(height: FfSpace.x2s),
-          Text(
-            categoryError!,
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.statusError,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 14,
+                color: context.ff.color.statusError,
+              ),
+              const SizedBox(width: FfSpace.x2s),
+              Text(
+                categoryError!,
+                style: context.ff.text.bodySm.copyWith(
+                  color: context.ff.color.statusError,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ],
       ],

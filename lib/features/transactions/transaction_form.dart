@@ -114,6 +114,73 @@ class TransactionFormValues {
           ? amount.toInt().toString()
           : amount.toStringAsFixed(2);
 
+  /// Computes a helpful, human-readable one-line consequence of saving the
+  /// transaction with the given [account], [toAccount], and [amount].
+  static ({String text, bool isWarning})? calculateConsequenceLine({
+    required TransactionType type,
+    required TransactionPurpose purpose,
+    required Account? account,
+    required Account? toAccount,
+    required double amount,
+    Loan? loan,
+    MoneyRecord? moneyRecord,
+  }) {
+    if (account == null) return null;
+
+    if (amount <= 0) {
+      return (
+        text:
+            '${account.name} current balance: ${CurrencyFormatter.formatAmount(account.currentBalance)}',
+        isWarning: false,
+      );
+    }
+
+    if (purpose == TransactionPurpose.internalTransfer ||
+        type == TransactionType.transfer) {
+      final fromAfter = account.currentBalance - amount;
+      if (toAccount != null) {
+        final toAfter = toAccount.currentBalance + amount;
+        return (
+          text:
+              '${account.name}: ${CurrencyFormatter.formatAmount(fromAfter)} → ${toAccount.name}: ${CurrencyFormatter.formatAmount(toAfter)}',
+          isWarning: fromAfter < 0 && account.type != AccountType.creditCard,
+        );
+      }
+      return (
+        text:
+            '${account.name} balance after: ${CurrencyFormatter.formatAmount(fromAfter)}',
+        isWarning: fromAfter < 0 && account.type != AccountType.creditCard,
+      );
+    }
+
+    if (type == TransactionType.income) {
+      final after = account.currentBalance + amount;
+      return (
+        text:
+            '${account.name} balance after: ${CurrencyFormatter.formatAmount(after)}',
+        isWarning: false,
+      );
+    }
+
+    if (purpose == TransactionPurpose.loanRepayment && loan != null) {
+      final principalLeft = loan.outstandingPrincipal - amount;
+      final formattedLeft = CurrencyFormatter.formatAmount(
+        principalLeft > 0 ? principalLeft : 0,
+      );
+      return (
+        text: 'Expected EMI payment · Principal left: $formattedLeft',
+        isWarning: false,
+      );
+    }
+
+    final after = account.currentBalance - amount;
+    return (
+      text:
+          '${account.name} balance after: ${CurrencyFormatter.formatAmount(after)}',
+      isWarning: after < 0 && account.type != AccountType.creditCard,
+    );
+  }
+
   bool get needsCounterparty => const {
     TransactionPurpose.lending,
     TransactionPurpose.borrowing,

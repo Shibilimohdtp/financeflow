@@ -335,5 +335,68 @@ void main() {
       expect(TransactionFormValues.formatInitialAmount(250.5), '250.50');
       expect(TransactionFormValues.formatInitialAmount(0.0), '0');
     });
+
+    test(
+      'calculateConsequenceLine calculates projected balance accurately',
+      () {
+        final acc = Account(
+          id: 'a1',
+          name: 'HDFC Bank',
+          type: AccountType.bank,
+          currentBalance: 10000,
+          createdAt: now,
+          updatedAt: now,
+        );
+        final cash = Account(
+          id: 'a2',
+          name: 'Cash Wallet',
+          type: AccountType.cash,
+          currentBalance: 500,
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        // Expense
+        final expLine = TransactionFormValues.calculateConsequenceLine(
+          type: TransactionType.expense,
+          purpose: TransactionPurpose.expense,
+          account: acc,
+          toAccount: null,
+          amount: 2500,
+        );
+        expect(expLine?.text, 'HDFC Bank balance after: ₹7,500');
+        expect(expLine?.isWarning, isFalse);
+
+        // Income
+        final incLine = TransactionFormValues.calculateConsequenceLine(
+          type: TransactionType.income,
+          purpose: TransactionPurpose.income,
+          account: acc,
+          toAccount: null,
+          amount: 5000,
+        );
+        expect(incLine?.text, 'HDFC Bank balance after: ₹15,000');
+
+        // Transfer
+        final trfLine = TransactionFormValues.calculateConsequenceLine(
+          type: TransactionType.transfer,
+          purpose: TransactionPurpose.internalTransfer,
+          account: acc,
+          toAccount: cash,
+          amount: 1000,
+        );
+        expect(trfLine?.text, 'HDFC Bank: ₹9,000 → Cash Wallet: ₹1,500');
+
+        // Zero amount
+        final zeroLine = TransactionFormValues.calculateConsequenceLine(
+          type: TransactionType.expense,
+          purpose: TransactionPurpose.expense,
+          account: acc,
+          toAccount: null,
+          amount: 0,
+        );
+        expect(zeroLine?.text, 'HDFC Bank current balance: ₹10,000');
+      },
+    );
   });
 }

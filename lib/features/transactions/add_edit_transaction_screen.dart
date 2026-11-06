@@ -22,7 +22,6 @@ import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
-import '../../theme/stillwater_colors.dart';
 import '../accounts/accounts_controller.dart';
 import '../categories/categories_controller.dart';
 import '../personal_debts/money_records_controller.dart';
@@ -637,23 +636,8 @@ class _AddEditTransactionScreenState
     }
   }
 
-  Color _typeColor(BuildContext context, TransactionType type) {
-    final finColors = context.ff.color;
-    return switch (type) {
-      TransactionType.expense => finColors.moneyExpense,
-      TransactionType.income => finColors.moneyIncome,
-      TransactionType.transfer => finColors.moneyTransfer,
-      TransactionType.investment => finColors.moneyInvestment,
-      TransactionType.loanEmi => finColors.moneyDebt,
-      TransactionType.cash => finColors.moneySavings,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
     final categories = ref.watch(categoriesStreamProvider).value ?? [];
     final accounts =
         ref
@@ -707,7 +691,6 @@ class _AddEditTransactionScreenState
       limit: 6,
     );
 
-    final activeTypeColor = _typeColor(context, _selectedType);
     final saveButtonText =
         widget.saveLabel ??
         (widget.initialTransaction == null
@@ -730,10 +713,7 @@ class _AddEditTransactionScreenState
         }
       },
       child: Scaffold(
-        backgroundColor:
-            isDark
-                ? StillwaterColors.darkSurfaceDefault
-                : StillwaterColors.lightSurfaceDefault,
+        backgroundColor: context.ff.color.surfacePage,
         appBar: FfAppBar(
           title: titleText,
           leading: IconButton(
@@ -768,23 +748,28 @@ class _AddEditTransactionScreenState
                           widget.sourceContext!,
                           const SizedBox(height: FfSpace.md),
                         ],
-                        // 1. Transaction Type Selector Bar
+                        // 1. Transaction Type Selector Pill
                         TransactionTypeSelector(
+                          selectedType: _selectedType,
                           selectedPurpose: _selectedPurpose,
                           categories: categories,
                           accounts: accounts,
                           history: history,
                           onPurposeChanged: _changePurpose,
                         ),
-                        const SizedBox(height: FfSpace.sm),
+                        const SizedBox(height: FfSpace.md),
 
-                        // 2. Purpose & Amount in a Single Unified Row
+                        // 2. Amount Hero with live consequence line
                         TransactionPurposeAmountRow(
+                          selectedType: _selectedType,
                           selectedPurpose: _selectedPurpose,
-                          activeTypeColor: activeTypeColor,
                           amountController: _amountController,
                           amountError: _amountError,
                           autofocus: widget.initialTransaction == null,
+                          selectedAccount: _selectedAccount,
+                          selectedToAccount: _selectedToAccount,
+                          selectedLoan: _selectedLoan,
+                          selectedMoneyRecord: _selectedMoneyRecord,
                           categories: categories,
                           accounts: accounts,
                           history: history,
@@ -792,6 +777,8 @@ class _AddEditTransactionScreenState
                           onAmountChanged: (val) {
                             if (_amountError != null) {
                               setState(() => _amountError = null);
+                            } else {
+                              setState(() {});
                             }
                           },
                           onClearAmount:
@@ -799,7 +786,7 @@ class _AddEditTransactionScreenState
                         ),
                         const SizedBox(height: FfSpace.md),
 
-                        // 3. Payee / Merchant Field with dynamic focused suggestions
+                        // 3. Payee / Merchant Field with dynamic focused suggestions & quick chips
                         TransactionMerchantSection(
                           merchantFieldKey: _merchantFieldKey,
                           merchantController: _merchantController,

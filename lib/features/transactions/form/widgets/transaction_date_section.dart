@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/widgets/ff_chip.dart';
 import '../../../../theme/ff.dart';
 
 class TransactionDateSection extends StatelessWidget {
@@ -32,84 +33,45 @@ class TransactionDateSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Date', style: context.ff.text.labelLg),
-        const SizedBox(height: FfSpace.x2s),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final isVeryNarrow = constraints.maxWidth < 280;
-
-            if (isVeryNarrow) {
-              return Wrap(
-                spacing: FfSpace.xs,
-                runSpacing: FfSpace.xs,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Today'),
-                    selected: isToday,
-                    onSelected: (_) => onSelectDate(now),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Yesterday'),
-                    selected: isYesterday,
-                    onSelected:
-                        (_) =>
-                            onSelectDate(now.subtract(const Duration(days: 1))),
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.calendar_today_outlined, size: 16),
-                    label: Text(
-                      formattedDate,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onPressed: onPickCustomDate,
-                  ),
-                ],
-              );
-            }
-
-            return Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: ChoiceChip(
-                    label: const Center(child: Text('Today')),
-                    selected: isToday,
-                    showCheckmark: false,
-                    onSelected: (_) => onSelectDate(now),
-                  ),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(
-                  flex: 4,
-                  child: ChoiceChip(
-                    label: const Center(child: Text('Yesterday')),
-                    selected: isYesterday,
-                    showCheckmark: false,
-                    onSelected:
-                        (_) =>
-                            onSelectDate(now.subtract(const Duration(days: 1))),
-                  ),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(
-                  flex: 5,
-                  child: ChoiceChip(
-                    avatar: const Icon(Icons.calendar_today_outlined, size: 14),
-                    label: Text(
-                      formattedDate,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                    selected: isCustom,
-                    showCheckmark: false,
-                    onSelected: (_) => onPickCustomDate(),
-                  ),
-                ),
-              ],
-            );
-          },
+        Text(
+          'Date',
+          style: context.ff.text.label.copyWith(
+            color: context.ff.color.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: FfSpace.xs),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: FfChip(
+                label: 'Today',
+                isSelected: isToday,
+                onSelected: () => onSelectDate(now),
+              ),
+            ),
+            const SizedBox(width: FfSpace.xs),
+            Expanded(
+              flex: 4,
+              child: FfChip(
+                label: 'Yesterday',
+                isSelected: isYesterday,
+                onSelected:
+                    () => onSelectDate(now.subtract(const Duration(days: 1))),
+              ),
+            ),
+            const SizedBox(width: FfSpace.xs),
+            Expanded(
+              flex: 5,
+              child: FfChip(
+                label: formattedDate,
+                isSelected: isCustom,
+                leading: const Icon(Icons.calendar_today_outlined, size: 14),
+                onSelected: onPickCustomDate,
+              ),
+            ),
+          ],
         ),
       ],
     );
