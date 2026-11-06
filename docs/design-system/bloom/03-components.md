@@ -28,6 +28,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfInkButton` | Solid ink action circle; `.open` is the ↗ "open detail" | `FfInkButton.open(onPressed:, tooltip:, onHero:, small:)` |
 | `FfChip` | One choice pill (ink when selected, outlined otherwise) | `FfChip(label:, isSelected:, onSelected:, leading: Icon)` |
 | `FfAccountTypeTiles` (`ff_account_type_tiles.dart`) | Compact 6-tile grid selector for `AccountType` with 48 dp targets | `FfAccountTypeTiles(selectedType:, onChanged:)` |
+| `FfAssetTypeTiles` (`ff_asset_type_tiles.dart`) | Compact visual selector for `AssetType` with 48 dp targets and checkmarks | `FfAssetTypeTiles(selectedType:, onChanged:)` |
 | `FfPillBar<T>` | Scrolling row of filter pills | `FfPillBar(values:, selected:, label:, onSelected:)` |
 | `FfSegmentedPill<T>` | 2–4 mutually exclusive modes in a sunken track | `FfSegmentedPill(options: [FfSegmentOption(value:, label:)], selectedValue:, onSelected:)` |
 | `FfDock` (`ff_navigation.dart`) | The app's tab bar (already in the shell; don't add another) | `FfDockItem(icon:, label:, badgeCount:, showDot:)` |
@@ -49,6 +50,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfSectionHeader` | Section title + optional quiet count + trailing action. On summary screens (Home) every section uses `padding: FfSectionHeader.sectionPadding` and an `FfSectionLink` | `FfSectionHeader(title:, count:, trailing: FfSectionLink(…), padding:)` |
 | `FfSectionLink` (`ff_section_header.dart`) | The quiet "See all ↗" at the end of a section header: secondary text, outward arrow, 48 dp, end-aligned on the page margin | `FfSectionLink(label: 'See all', semanticLabel: 'See all loans', onPressed:)` |
 | `FfActionTile` / `FfActionStrip` (`ff_action_tile.dart`) | Things to act on as a horizontal strip (Home "Needs attention"): tinted icon + corner, a count-and-verb line, a quiet detail; equal heights, ≥48 dp, bleeds to the screen edge from the page margin | `FfActionStrip(tiles: [FfActionTile(icon:, tone:, corner:, title: '2 to review', subtitle:, onTap:)])` |
+| `FfConsequenceLine` (`ff_consequence_line.dart`) | One-sentence dynamic consequence line with icon and tone | `FfConsequenceLine(text:, icon:, tone:)` |
 | `FfBadge` | Small status pill with icon | `FfBadge(label:, tone:, icon:)` |
 | `FfBanner` | Inline info/success/warning/error message | |
 | `FfToast` | Snackbars (lime Undo) | `FfToast.show(context, message:, tone: FfToastTone.x, actionLabel:, onAction:)` |
@@ -69,6 +71,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfDotMatrix` | Count progress (EMIs, days, steps); next step in spark | `FfDotMatrix(total:, done:, semanticsLabel:)` + the number in text |
 | `FfProgressBar` | Linear progress with optional pace marker (budgets!) | `FfProgressBar(value:, pace:, tone:, size:, onHero:, semanticLabel:, semanticValue:)`. `tone` sets meaning (`FfTone.expense` when over; `color` still wins). `onHero: true` inside `FfHeroCard`: hero text colour on a `FfTint.medium` track, tone ignored. `semanticValue` replaces "62%" with "62% used, ₹2,400 left, ahead of pace by ₹300". Pair over/at-risk with a badge or words |
 | `FfRangeBand` | Value against good/watch/high bands (utilisation, pace) | `FfRangeBand(bands: [FfBand(start:, end:, tone:, label:)], value:, valueLabel:)` |
+| `FfAllocationBand` (`ff_allocation_band.dart`) | Proportional segmented bar with accessible legend | `FfAllocationBand(slices: [FfAllocationSlice(label:, value:, percentage:)])` |
 | `FfLineChart` | Trend with the spark value bubble; tap/drag to select | `FfLineChart(points: [FfChartPoint(label, value)], valueLabel:, initialIndex:, reference:, domainLength:, referenceLabel:, hint:)`. `reference` draws a dashed ideal-pace/target line (longer dashes than the grid, no dots); with `domainLength` the actual series stops at today while the reference spans the period; `referenceLabel(i)` is read after the value ("Day 6: ₹6,800, pace ₹1,200") |
 | `FfMonthGrid` | Month tiles: paid ✓, missed ✕, due, upcoming; budget history: `under` (spark ✓, "within plan") and `over` (amber "!", "over plan") with the amount `note` under the marker | `FfMonthGrid(months: [FfMonthCell(label:, status:, note:)])`; announced as "July, over plan, ₹6.8k" |
 | `FfBarChart` (`charts/ff_bar_chart.dart`) | Rounded comparison bars with spark value bubble, tabular Geist numerals, accessible steppers | `FfBarChart(items: [BarChartItem(label, value, secondaryValue:)], selectedIndex:, onSelected:, showYAxis:)` |
