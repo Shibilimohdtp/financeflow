@@ -85,3 +85,96 @@ class FfStatTile extends StatelessWidget {
     );
   }
 }
+
+/// One small figure in an [FfHeroFigures] row.
+class FfHeroFigure {
+  const FfHeroFigure(this.label, this.value, {this.semanticsValue});
+
+  /// Quiet label above, "Paid".
+  final String label;
+
+  /// Already formatted, "₹6,51,200" or "18.3%".
+  final String value;
+
+  /// What screen readers hear instead of [value] (for example when amounts
+  /// are hidden).
+  final String? semanticsValue;
+}
+
+/// The row of two or three small figures at the bottom of a hero card
+/// ("Paid · Complete · Total payable", "Per day · Forecast · Days left").
+/// The first figure starts the row, the last ends it, any middle ones are
+/// centred; values use tabular `labelLg` and shrink rather than overflow at
+/// large text. Each figure is read as one phrase, "Paid, ₹6,51,200".
+class FfHeroFigures extends StatelessWidget {
+  const FfHeroFigures(this.figures, {super.key});
+
+  final List<FfHeroFigure> figures;
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final n = figures.length;
+    if (n == 0) return const SizedBox.shrink();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < n; i++) ...[
+          if (i > 0) const SizedBox(width: FfSpace.xs),
+          Expanded(
+            child: () {
+              final f = figures[i];
+              final (cross, align, text) =
+                  n == 1 || i == 0
+                      ? (
+                        CrossAxisAlignment.start,
+                        AlignmentDirectional.centerStart,
+                        TextAlign.start,
+                      )
+                      : i == n - 1
+                      ? (
+                        CrossAxisAlignment.end,
+                        AlignmentDirectional.centerEnd,
+                        TextAlign.end,
+                      )
+                      : (
+                        CrossAxisAlignment.center,
+                        AlignmentDirectional.center,
+                        TextAlign.center,
+                      );
+              return Semantics(
+                container: true,
+                label: '${f.label}, ${f.semanticsValue ?? f.value}',
+                excludeSemantics: true,
+                child: Column(
+                  crossAxisAlignment: cross,
+                  children: [
+                    Text(
+                      f.label,
+                      style: ff.text.label,
+                      textAlign: text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: FfSpace.x3s),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: align,
+                      child: Text(
+                        f.value,
+                        maxLines: 1,
+                        style: ff.text.labelLg.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }(),
+          ),
+        ],
+      ],
+    );
+  }
+}

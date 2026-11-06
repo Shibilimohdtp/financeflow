@@ -363,6 +363,12 @@ class FfChartPoint {
 /// a dashed guide to the axis and a small triangle; drag or tap to move it
 /// (with a haptic tick). Screen readers hear the selected point and can
 /// step through points with increase/decrease.
+///
+/// An optional [reference] series (a budget's ideal pace, a target) is drawn
+/// as a quiet dashed line without dots. With [domainLength] the x axis has
+/// that many slots, so [points] can stop at today while the reference spans
+/// the whole period. [referenceLabel] adds the reference value at the
+/// selected slot to what screen readers hear ("Day 6: ₹6,800, pace ₹1,200").
 class FfLineChart extends StatefulWidget {
   const FfLineChart({
     super.key,
@@ -371,7 +377,12 @@ class FfLineChart extends StatefulWidget {
     this.initialIndex,
     this.onSelected,
     this.height = FfLineChartTokens.height,
-  }) : assert(points.length > 0);
+    this.reference,
+    this.domainLength,
+    this.referenceLabel,
+    this.hint = 'Swipe up or down to change the month',
+  }) : assert(points.length > 0),
+       assert(domainLength == null || domainLength >= points.length);
 
   final List<FfChartPoint> points;
 
@@ -382,6 +393,23 @@ class FfLineChart extends StatefulWidget {
   final int? initialIndex;
   final ValueChanged<int>? onSelected;
   final double height;
+
+  /// Values of a dashed reference line, one per x slot from the left.
+  final List<double>? reference;
+
+  /// Number of x slots; defaults to the longer of [points] and [reference].
+  final int? domainLength;
+
+  /// The reference value at slot `index`, for screen readers.
+  final String Function(int index)? referenceLabel;
+
+  /// Screen-reader hint for stepping through the points.
+  final String hint;
+
+  int get slotCount => math.max(
+    domainLength ?? points.length,
+    math.max(points.length, reference?.length ?? 0),
+  );
 
   @override
   State<FfLineChart> createState() => _FfLineChartState();
@@ -402,9 +430,10 @@ class _FfLineChartState extends State<FfLineChart> {
   }
 
   int _indexAt(double dx, double width) {
-    final n = widget.points.length;
-    if (n == 1) return 0;
-    return ((dx / width) * (n - 1)).round();
+    final slots = widget.slotCount;
+    if (slots == 1) return 0;
+    final i = ((dx / width) * (slots - 1)).round();
+    return i.clamp(0, widget.points.length - 1);
   }
 
   @override
@@ -413,9 +442,10 @@ class _FfLineChartState extends State<FfLineChart> {
     final c = ff.color;
     final p = widget.points[_index];
     final label = widget.valueLabel(p);
+    final refText = widget.referenceLabel?.call(_index);
     return Semantics(
-      label: '${p.label}: $label',
-      hint: 'Swipe up or down to change the month',
+      label: '${p.label}: $label${refText == null ? '' : ', $refText'}',
+      hint: widget.hint,
       onIncrease: () => _select(_index + 1),
       onDecrease: () => _select(_index - 1),
       excludeSemantics: true,
@@ -431,6 +461,9 @@ class _FfLineChartState extends State<FfLineChart> {
                 size: Size(box.maxWidth, widget.height),
                 painter: _LinePainter(
                   points: widget.points,
+                  reference: widget.reference,
+                  slots: widget.slotCount,
+                  referenceColor: c.textSecondary,
                   selected: _index,
                   bubbleText: label,
                   line: c.textPrimary,
@@ -454,6 +487,9 @@ class _FfLineChartState extends State<FfLineChart> {
 class _LinePainter extends CustomPainter {
   _LinePainter({
     required this.points,
+    required this.reference,
+    required this.slots,
+    required this.referenceColor,
     required this.selected,
     required this.bubbleText,
     required this.line,
@@ -465,6 +501,9 @@ class _LinePainter extends CustomPainter {
   });
 
   final List<FfChartPoint> points;
+  final List<double>? reference;
+  final int slots;
+  final Color referenceColor;
   final int selected;
   final String bubbleText;
   final Color line, grid, spark, onSpark;
@@ -476,14 +515,15 @@ class _LinePainter extends CustomPainter {
     const axisH = 22.0;
     final top = bubble * 0.4 + 4;
     final plotH = size.height - top - axisH;
-    final values = points.map((p) => p.value);
+    final ref = reference ?? const <double>[];
+    final values = [...points.map((p) => p.value), ...ref];
     final lo = values.reduce(math.min), hi = values.reduce(math.max);
     final span = hi - lo == 0 ? 1 : hi - lo;
     final n = points.length;
-    Offset at(int i) => Offset(
-      n == 1 ? size.width / 2 : size.width * i / (n - 1),
-      top + plotH * (1 - (points[i].value - lo) / span),
-    );
+    double xOf(int i) =>
+        slots == 1 ? size.width / 2 : size.width * i / (slots - 1);
+    double yOf(double v) => top + plotH * (1 - (v - lo) / span);
+    Offset at(int i) => Offset(xOf(i), yOf(points[i].value));
 
     // Dashed grid.
     final gridPaint =
@@ -493,6 +533,23 @@ class _LinePainter extends CustomPainter {
     for (var g = 0; g <= FfLineChartTokens.gridLines; g++) {
       final y = top + plotH * g / FfLineChartTokens.gridLines;
       _dash(canvas, Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // Reference: a quiet dashed line, no dots.
+    if (ref.length > 1) {
+      final refPaint =
+          Paint()
+            ..color = referenceColor
+            ..strokeWidth = FfLineChartTokens.referenceStroke;
+      for (var i = 1; i < ref.length; i++) {
+        _dash(
+          canvas,
+          Offset(xOf(i - 1), yOf(ref[i - 1])),
+          Offset(xOf(i), yOf(ref[i])),
+          refPaint,
+          pattern: FfLineChartTokens.referenceDash,
+        );
+      }
     }
 
     // Line and dots.
@@ -561,11 +618,17 @@ class _LinePainter extends CustomPainter {
     lp.paint(canvas, Offset(lx, axisY + m + 2));
   }
 
-  void _dash(Canvas canvas, Offset a, Offset b, Paint paint) {
+  void _dash(
+    Canvas canvas,
+    Offset a,
+    Offset b,
+    Paint paint, {
+    List<double> pattern = FfLineChartTokens.dash,
+  }) {
     final total = (b - a).distance;
     if (total == 0) return;
     final dir = (b - a) / total;
-    final on = FfLineChartTokens.dash[0], off = FfLineChartTokens.dash[1];
+    final on = pattern[0], off = pattern[1];
     for (var d = 0.0; d < total; d += on + off) {
       canvas.drawLine(a + dir * d, a + dir * math.min(d + on, total), paint);
     }
@@ -574,6 +637,8 @@ class _LinePainter extends CustomPainter {
   @override
   bool shouldRepaint(_LinePainter old) =>
       old.points != points ||
+      old.reference != reference ||
+      old.slots != slots ||
       old.selected != selected ||
       old.bubbleText != bubbleText ||
       old.line != line ||
@@ -585,7 +650,11 @@ class _LinePainter extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 /// The state of one month in an [FfMonthGrid].
-enum FfMonthStatus { paid, missed, due, upcoming, none }
+///
+/// Payments use [paid], [missed], [due] and [upcoming]. Budget history uses
+/// [under] ("within plan", spark check) and [over] ("over plan", amber "!").
+/// [none] is a month with nothing to show. Each status is announced in words.
+enum FfMonthStatus { paid, missed, due, upcoming, none, under, over }
 
 /// One month tile.
 class FfMonthCell {
@@ -595,13 +664,17 @@ class FfMonthCell {
   final String label;
   final FfMonthStatus status;
 
-  /// Small text instead of a marker for [FfMonthStatus.due], e.g. "6th".
+  /// Small text instead of a marker for [FfMonthStatus.due], e.g. "6th";
+  /// for [FfMonthStatus.under] and [FfMonthStatus.over] it is shown under
+  /// the marker, e.g. "₹6.8k". Always read out after the status.
   final String? note;
 }
 
-/// A grid of rounded month tiles for EMIs and subscription payments: paid
+/// A grid of rounded month tiles for EMIs and subscription payments (paid
 /// months carry a spark check, missed months an outlined cross, upcoming
-/// months are faded. Each tile is announced as "September, missed".
+/// months are faded) and for budget history (within plan: spark check; over
+/// plan: amber "!"; the amount underneath). Each tile is announced as
+/// "September, missed" or "September, over plan, ₹6,800".
 class FfMonthGrid extends StatelessWidget {
   const FfMonthGrid({
     super.key,
@@ -618,6 +691,8 @@ class FfMonthGrid extends StatelessWidget {
     FfMonthStatus.due => 'due',
     FfMonthStatus.upcoming => 'upcoming',
     FfMonthStatus.none => 'no payment',
+    FfMonthStatus.under => 'within plan',
+    FfMonthStatus.over => 'over plan',
   };
 
   @override
@@ -625,6 +700,9 @@ class FfMonthGrid extends StatelessWidget {
     final ff = context.ff;
     final c = ff.color;
     final fg = IconTheme.of(context).color ?? c.textPrimary;
+    // When any tile shows an amount under its marker, every tile keeps that
+    // line so the row stays even.
+    final noteLine = months.any(_showsNote);
     return LayoutBuilder(
       builder: (context, box) {
         const gap = FfMonthGridTokens.gap;
@@ -667,6 +745,20 @@ class FfMonthGrid extends StatelessWidget {
                         ),
                         const SizedBox(height: FfSpace.x2s),
                         _marker(context, m, fg),
+                        if (noteLine) ...[
+                          const SizedBox(height: FfSpace.x2s),
+                          Text(
+                            _showsNote(m) ? m.note! : ' ',
+                            style: ff.text.labelSm.copyWith(
+                              color: fg,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -678,10 +770,29 @@ class FfMonthGrid extends StatelessWidget {
     );
   }
 
+  static bool _showsNote(FfMonthCell m) =>
+      m.note != null &&
+      (m.status == FfMonthStatus.under || m.status == FfMonthStatus.over);
+
   Widget _marker(BuildContext context, FfMonthCell m, Color fg) {
     final c = context.ff.color;
     const size = FfMonthGridTokens.marker;
     switch (m.status) {
+      case FfMonthStatus.over:
+        return Container(
+          width: size,
+          height: size,
+          decoration: ShapeDecoration(
+            shape: const CircleBorder(),
+            color: c.statusWarningFill,
+          ),
+          child: Icon(
+            Icons.priority_high_rounded,
+            size: FfIconSize.xs,
+            color: c.onStatusWarningFill,
+          ),
+        );
+      case FfMonthStatus.under:
       case FfMonthStatus.paid:
         return Container(
           width: size,

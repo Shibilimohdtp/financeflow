@@ -239,6 +239,11 @@ abstract final class FfLineChartTokens {
   static const double axisMarker = 8;
   static const int gridLines = 3;
   static const List<double> dash = [3, 4];
+
+  /// The optional reference series (ideal pace, a target): longer dashes than
+  /// the grid so the two never read as the same thing.
+  static const double referenceStroke = 1.5;
+  static const List<double> referenceDash = [6, 4];
 }
 
 /// Range bands (budget pace, utilisation).
@@ -311,6 +316,9 @@ abstract final class FfProgressTokens {
   static const double heightMd = 6;
   static const double heightLg = 8;
   static const double paceMarkerWidth = 2;
+
+  /// Track tint of the hero text colour for `FfProgressBar(onHero: true)`.
+  static const FfTint heroTrack = FfTint.medium;
   static const double spinnerSize = 28;
   static const double spinnerStroke = 3;
 }

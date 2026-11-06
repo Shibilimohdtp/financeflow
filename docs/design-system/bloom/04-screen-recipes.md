@@ -69,7 +69,7 @@ Golden: Loan detail (`loan_detail_screen.dart`, `screenshots/ds-b6/b6_loan_detai
 Scaffold (plain canvas)
 ├ FfAppBar(title: item name, subtitle: provider, actions: icon buttons for schedule/edit/delete)
 ├ FfHeroCard(tone, leading: FfProgressRing, title: the key question ('Left to pay'), subtitle: status)
-│   └ FfAmountText(hero) · one quiet breakdown line · 3 small figures (label above, labelLg value, tabular)
+│   └ FfAmountText(hero) · one quiet breakdown line · 3 small figures (FfHeroFigures)
 ├ attention: FfCard(variant: warning) / FfBanner with the corrective action (Pay, Mark paid)
 ├ progress card: FfCard → FfStatTile(big count + unit) + FfDotMatrix + counts line + FfMonthGrid (6 months)
 ├ trend card: FfCard → titleLg + FfLineChart (today's point selected)

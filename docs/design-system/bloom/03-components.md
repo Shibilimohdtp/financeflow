@@ -30,7 +30,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfSegmentedPill<T>` | 2–4 mutually exclusive modes in a sunken track | `FfSegmentedPill(options: [FfSegmentOption(value:, label:)], selectedValue:, onSelected:)` |
 | `FfDock` (`ff_navigation.dart`) | The app's tab bar (already in the shell; don't add another) | `FfDockItem(icon:, label:, badgeCount:, showDot:)` |
 | `FfCarousel` | Peeking row of cards (hero carousel) | `FfCarousel(height:, children:, viewportFraction:)` |
-| `FfPeriodBar` | Shared period selector (prev/next, picker, all time) | `FfPeriodBar(period:, onChanged:, allowAllTime:)` |
+| `FfPeriodBar` | Shared period selector (prev/next, picker, all time) | `FfPeriodBar(period:, onChanged:, allowAllTime:, units: {week, month, year}, chooserTitle:)`; `units` limits the chooser (Plan offers week/month/year only; `day` = Today, `custom` = Custom range) |
 | `FfAppBar` | Every app bar (`.search`, `.selection`) | `FfAppBar(title:, subtitle:, actions:)` |
 | `FfMenuButton` / `FfSelect` | Overflow menus / field dropdowns | |
 
@@ -57,12 +57,13 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfAmountText` | **Every amount** | `FfAmountText(amount:, size: hero/lg/md/sm, style: split/inline, tone:, type:, showSign:, isBlurred:)` |
 | `FfAmountField` | Every money input (`.bare` on heroes) | |
 | `FfStatTile` | Label + figure (+ unit, caption) | `FfStatTile(label:, value: FfAmountText(…), unit: '/120', caption:)` |
+| `FfHeroFigures` (`ff_stat_tile.dart`) | The 2–3 small figures at the foot of a hero ("Paid · Complete · Total payable", "Per day · Forecast · Days left") | `FfHeroFigures([FfHeroFigure(label, value, semanticsValue:)])`; first starts, last ends, middle centred; tabular `labelLg`; values shrink at large text; each read as "Paid, ₹6,51,200" |
 | `FfProgressRing` (`ff_data_viz.dart`) | Ring around an icon = progress (loan paid, goal saved, share) | `FfProgressRing(value:, icon:, semanticsLabel:)` |
 | `FfDotMatrix` | Count progress (EMIs, days, steps); next step in spark | `FfDotMatrix(total:, done:, semanticsLabel:)` + the number in text |
-| `FfProgressBar` | Linear progress with optional pace marker (budgets!) | `FfProgressBar(value:, pace:, color:, size:, semanticLabel:)` |
+| `FfProgressBar` | Linear progress with optional pace marker (budgets!) | `FfProgressBar(value:, pace:, tone:, size:, onHero:, semanticLabel:, semanticValue:)`. `tone` sets meaning (`FfTone.expense` when over; `color` still wins). `onHero: true` inside `FfHeroCard`: hero text colour on a `FfTint.medium` track, tone ignored. `semanticValue` replaces "62%" with "62% used, ₹2,400 left, ahead of pace by ₹300". Pair over/at-risk with a badge or words |
 | `FfRangeBand` | Value against good/watch/high bands (utilisation, pace) | `FfRangeBand(bands: [FfBand(start:, end:, tone:, label:)], value:, valueLabel:)` |
-| `FfLineChart` | Trend with the spark value bubble; tap/drag to select | `FfLineChart(points: [FfChartPoint(label, value)], valueLabel:, initialIndex:)` |
-| `FfMonthGrid` | Month tiles: paid ✓, missed ✕, due, upcoming | `FfMonthGrid(months: [FfMonthCell(label:, status:, note:)])` |
+| `FfLineChart` | Trend with the spark value bubble; tap/drag to select | `FfLineChart(points: [FfChartPoint(label, value)], valueLabel:, initialIndex:, reference:, domainLength:, referenceLabel:, hint:)`. `reference` draws a dashed ideal-pace/target line (longer dashes than the grid, no dots); with `domainLength` the actual series stops at today while the reference spans the period; `referenceLabel(i)` is read after the value ("Day 6: ₹6,800, pace ₹1,200") |
+| `FfMonthGrid` | Month tiles: paid ✓, missed ✕, due, upcoming; budget history: `under` (spark ✓, "within plan") and `over` (amber "!", "over plan") with the amount `note` under the marker | `FfMonthGrid(months: [FfMonthCell(label:, status:, note:)])`; announced as "July, over plan, ₹6.8k" |
 | `FfBarChart`, `FfDonutChart` (`charts/`) | Bars and donut (Insights) | Not yet restyled for Bloom (see status) |
 
 ## Adding or changing a component

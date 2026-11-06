@@ -4,6 +4,7 @@ import 'package:flutter/painting.dart';
 
 import 'ff_colors.dart';
 import 'ff_hero.dart';
+import 'tokens/ff_component_tokens.dart';
 
 /// Accessibility measurements for palettes: WCAG contrast and colour-vision
 /// simulation. Used by the guardrail test (every palette, every mode) and by
@@ -452,6 +453,19 @@ abstract final class FfHeroContrastRules {
               minimum: FfContrast.text,
             ),
           ],
+          // FfProgressBar(onHero: true): the fill against its own track
+          // over the text zone (the lightest point a bar may cross).
+          (
+            id: 'hero ${tone.name}: progress fill on its track',
+            ratio: FfContrast.ratio(
+              h.onHero,
+              Color.alphaBlend(
+                h.onHero.withValues(alpha: FfProgressTokens.heroTrack.alpha),
+                h.zone,
+              ),
+            ),
+            minimum: FfContrast.ui,
+          ),
           // FfInkButton(onHero: true) and its icon.
           (
             id: 'hero ${tone.name}: ink button icon',

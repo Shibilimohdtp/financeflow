@@ -9,18 +9,27 @@ import 'ff_row.dart';
 import '../../theme/ff.dart';
 
 /// "‹ November 2026 ›" with a tap target that opens the period chooser.
-/// Used by Home, Insights and the transaction list. A null period means all
-/// time, offered only when [allowAllTime] is true.
+/// Used by Home, Insights, the transaction list and the Plan tab. A null
+/// period means all time, offered only when [allowAllTime] is true.
+///
+/// [units] limits the chooser to those kinds of period (the Plan tab offers
+/// week, month and year only; `PeriodUnit.day` is "Today" and
+/// `PeriodUnit.custom` is "Custom range…"). Null offers every kind.
+/// [chooserTitle] heads the chooser sheet.
 class FfPeriodBar extends StatelessWidget {
   final Period? period;
   final ValueChanged<Period?> onChanged;
   final bool allowAllTime;
+  final Set<PeriodUnit>? units;
+  final String chooserTitle;
 
   const FfPeriodBar({
     super.key,
     required this.period,
     required this.onChanged,
     this.allowAllTime = false,
+    this.units,
+    this.chooserTitle = 'Show transactions for',
   });
 
   @override
@@ -99,9 +108,11 @@ class FfPeriodBar extends StatelessWidget {
       builder:
           (ctx) => FfSheet(
             children: [
-              const FfSheetHeader(title: 'Show transactions for'),
+              FfSheetHeader(title: chooserTitle),
               for (final choice in _PeriodChoice.values)
-                if (allowAllTime || choice != _PeriodChoice.all)
+                if (choice == _PeriodChoice.all
+                    ? allowAllTime
+                    : (units == null || units!.contains(choice.unit)))
                   FfRow(
                     title: choice.label,
                     onTap: () => Navigator.of(ctx).pop(choice),
@@ -138,13 +149,14 @@ class FfPeriodBar extends StatelessWidget {
 }
 
 enum _PeriodChoice {
-  today('Today'),
-  week('This week'),
-  month('This month'),
-  year('This year'),
-  all('All time'),
-  custom('Custom range…');
+  today('Today', PeriodUnit.day),
+  week('This week', PeriodUnit.week),
+  month('This month', PeriodUnit.month),
+  year('This year', PeriodUnit.year),
+  all('All time', null),
+  custom('Custom range…', PeriodUnit.custom);
 
   final String label;
-  const _PeriodChoice(this.label);
+  final PeriodUnit? unit;
+  const _PeriodChoice(this.label, this.unit);
 }

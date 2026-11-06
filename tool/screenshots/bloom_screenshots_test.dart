@@ -1,6 +1,8 @@
 // Screenshot capture of the Stillwater Bloom components (DS-B3), not part of
 // the test suite. Renders every new component on the aurora canvas with the
-// real bundled fonts, in light and dark.
+// real bundled fonts, in light and dark. The second sheet shows the DS-B7a
+// additions for the Plan tab (hero pace bar, hero figures, the line chart's
+// pace reference, within/over-plan months, the over-plan bar).
 //
 //   flutter test tool/screenshots/bloom_screenshots_test.dart --update-goldens
 import 'package:financeflow/shared/widgets/ff_amount_text.dart';
@@ -9,6 +11,7 @@ import 'package:financeflow/shared/widgets/ff_corner_badge.dart';
 import 'package:financeflow/shared/widgets/ff_data_viz.dart';
 import 'package:financeflow/shared/widgets/ff_icon_tile.dart';
 import 'package:financeflow/shared/widgets/ff_navigation.dart';
+import 'package:financeflow/shared/widgets/ff_progress.dart';
 import 'package:financeflow/shared/widgets/ff_round_buttons.dart';
 import 'package:financeflow/shared/widgets/ff_segmented_pill.dart';
 import 'package:financeflow/shared/widgets/ff_stat_tile.dart';
@@ -312,6 +315,125 @@ Widget _sheet(BuildContext context) {
   );
 }
 
+const _budgetMonths = [
+  FfMonthCell(label: 'Jun', status: FfMonthStatus.under, note: '₹5.2k'),
+  FfMonthCell(label: 'Jul', status: FfMonthStatus.over, note: '₹6.8k'),
+  FfMonthCell(label: 'Aug', status: FfMonthStatus.under, note: '₹5.9k'),
+  FfMonthCell(label: 'Sep', status: FfMonthStatus.over, note: '₹7.1k'),
+  FfMonthCell(label: 'Oct', status: FfMonthStatus.over, note: '₹6.9k'),
+  FfMonthCell(label: 'Nov', status: FfMonthStatus.none),
+];
+
+/// DS-B7a: the shared parts the Plan tab and budget detail are built from.
+Widget _planSheet(BuildContext context) {
+  final ff = context.ff;
+  const spent = <double>[1450, 3830, 3830, 3830, 5750, 6800];
+  return Stack(
+    children: [
+      const Positioned.fill(child: FfAurora()),
+      ListView(
+        padding: const EdgeInsets.fromLTRB(
+          FfSpace.pageMargin,
+          24,
+          FfSpace.pageMargin,
+          40,
+        ),
+        children: [
+          FfHeroCard(
+            tone: FfHeroTone.rose,
+            leading: const FfProgressRing(
+              value: 0.52,
+              icon: Icons.pie_chart_outline_rounded,
+              semanticsLabel: '52% of the plan spent',
+            ),
+            title: 'November',
+            subtitle: 'Needs attention',
+            child: Builder(
+              builder:
+                  (context) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const FfAmountText(
+                        amount: 15730,
+                        size: FfAmountSize.hero,
+                        tone: FfTone.neutral,
+                        showSign: false,
+                      ),
+                      const SizedBox(height: FfSpace.xs),
+                      const FfProgressBar(value: 0.52, pace: 0.2, onHero: true),
+                      const SizedBox(height: FfSpace.xs),
+                      Text(
+                        'Spent ₹17,270 of ₹33,000 · ₹10,670 ahead of pace',
+                        style: context.ff.text.label,
+                      ),
+                      const SizedBox(height: FfSpace.lg),
+                      const FfHeroFigures([
+                        FfHeroFigure('Per day', '₹629'),
+                        FfHeroFigure('Forecast', '₹31,400'),
+                        FfHeroFigure('Days left', '25'),
+                      ]),
+                    ],
+                  ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Dining', style: ff.text.title),
+                const SizedBox(height: FfSpace.xs),
+                const FfProgressBar(
+                  value: 1.13,
+                  pace: 0.2,
+                  tone: FfTone.expense,
+                ),
+                const SizedBox(height: FfSpace.lg),
+                const FfProgressBar(value: 0.7, pace: 0.2),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          FfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('This month', style: ff.text.titleLg),
+                const SizedBox(height: 12),
+                FfLineChart(
+                  points: [
+                    for (final (i, v) in spent.indexed)
+                      FfChartPoint('${i + 1} Nov', v),
+                  ],
+                  reference: [for (var d = 0; d < 30; d++) 200.0 * (d + 1)],
+                  domainLength: 30,
+                  valueLabel: (p) => '₹${p.value.round()}',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          FfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Last 6 months', style: ff.text.titleLg),
+                const SizedBox(height: 12),
+                const FfMonthGrid(months: _budgetMonths),
+                const SizedBox(height: 8),
+                Text(
+                  'Within plan in 2 of the last 5 months',
+                  style: ff.text.label,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 void main() {
   setUpAll(loadAppFonts);
 
@@ -335,6 +457,25 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/bloom_components_$mode.png'),
+      );
+    });
+
+    testWidgets('plan components, $mode', (tester) async {
+      tester.view.physicalSize = const Size(390, 1150);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.runAsync(FfGrainTile.load);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: theme,
+          home: Scaffold(body: Builder(builder: _planSheet)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/bloom_plan_components_$mode.png'),
       );
     });
   }

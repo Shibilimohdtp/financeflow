@@ -386,20 +386,6 @@ class _BalanceHeroSection extends ConsumerWidget {
       child: Builder(
         builder: (context) {
           final ff = context.ff;
-          Widget figure(String label, String value, CrossAxisAlignment align) =>
-              Column(
-                crossAxisAlignment: align,
-                children: [
-                  Text(label, style: ff.text.label),
-                  const SizedBox(height: FfSpace.x3s),
-                  Text(
-                    value,
-                    style: ff.text.labelLg.copyWith(
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
-              );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -416,26 +402,17 @@ class _BalanceHeroSection extends ConsumerWidget {
                 style: ff.text.label,
               ),
               const SizedBox(height: FfSpace.lg),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: figure(
-                      'Paid',
-                      CurrencyFormatter.formatAmount(remaining.paid),
-                      CrossAxisAlignment.start,
-                    ),
-                  ),
-                  figure('Complete', '$percent%', CrossAxisAlignment.center),
-                  Expanded(
-                    child: figure(
-                      'Total payable',
-                      CurrencyFormatter.formatAmount(remaining.totalPayable),
-                      CrossAxisAlignment.end,
-                    ),
-                  ),
-                ],
-              ),
+              FfHeroFigures([
+                FfHeroFigure(
+                  'Paid',
+                  CurrencyFormatter.formatAmount(remaining.paid),
+                ),
+                FfHeroFigure('Complete', '$percent%'),
+                FfHeroFigure(
+                  'Total payable',
+                  CurrencyFormatter.formatAmount(remaining.totalPayable),
+                ),
+              ]),
             ],
           );
         },
