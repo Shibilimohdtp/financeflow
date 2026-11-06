@@ -1,4 +1,5 @@
 import os
+import re
 from PIL import Image
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +26,7 @@ def verify():
         except Exception as e:
             errors.append(f"{rel_path}: failed to open ({e})")
 
-    # Android Launcher Icons
+    # 1. Android Launcher Icons (Legacy & Round)
     densities = [
         ("mipmap-mdpi", 48),
         ("mipmap-hdpi", 72),
@@ -37,7 +38,7 @@ def verify():
         check_img(f"android/app/src/main/res/{d}/ic_launcher.png", sz)
         check_img(f"android/app/src/main/res/{d}/ic_launcher_round.png", sz)
 
-    # Android Adaptive Foregrounds
+    # 2. Android Adaptive Foregrounds
     fg_densities = [
         ("drawable-mdpi", 108),
         ("drawable-hdpi", 162),
@@ -48,7 +49,7 @@ def verify():
     for d, sz in fg_densities:
         check_img(f"android/app/src/main/res/{d}/ic_launcher_foreground.png", sz)
 
-    # Android Notification Icons
+    # 3. Android Notification Icons
     notif_densities = [
         ("drawable-mdpi", 24),
         ("drawable-hdpi", 36),
@@ -59,7 +60,12 @@ def verify():
     for d, sz in notif_densities:
         check_img(f"android/app/src/main/res/{d}/ic_notification.png", sz)
 
-    # iOS AppIcons
+    # 4. Native Splash Logo & Master Branding Bitmaps
+    check_img("android/app/src/main/res/drawable/splash_logo.png", 192)
+    check_img("assets/branding/financeflow_mark.png", 512)
+    check_img("assets/branding/financeflow_app_icon.png", 1024)
+
+    # 5. iOS AppIcons
     ios_icons = [
         ("Icon-App-20x20@1x.png", 20),
         ("Icon-App-20x20@2x.png", 40),
@@ -80,14 +86,14 @@ def verify():
     for fn, sz in ios_icons:
         check_img(f"ios/Runner/Assets.xcassets/AppIcon.appiconset/{fn}", sz)
 
-    # Web & macOS
+    # 6. Web & macOS
     check_img("web/favicon.png", 32)
     check_img("web/icons/Icon-192.png", 192)
     check_img("web/icons/Icon-512.png", 512)
     check_img("web/icons/Icon-maskable-192.png", 192)
     check_img("web/icons/Icon-maskable-512.png", 512)
 
-    # Branding SVGs check
+    # 7. Master Branding SVGs
     svgs = [
         "assets/branding/financeflow_mark.svg",
         "assets/branding/financeflow_wordmark.svg",
@@ -108,15 +114,67 @@ def verify():
         else:
             checked += 1
 
-    print(f"Verified {checked} brand assets.")
+    # 8. Stricter Android Vector Drawables & XML Checks
+    xml_resources = [
+        "android/app/src/main/res/drawable/ic_launcher_background.xml",
+        "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+        "android/app/src/main/res/drawable/ic_launcher_monochrome.xml",
+        "android/app/src/main/res/drawable/ic_notification.xml",
+        "android/app/src/main/res/drawable/launch_background.xml",
+        "android/app/src/main/res/drawable-v21/launch_background.xml",
+        "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+        "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+        "android/app/src/main/res/values/colors.xml",
+        "android/app/src/main/res/values-night/colors.xml",
+        "android/app/src/main/res/values-v31/styles.xml",
+        "android/app/src/main/res/values-night-v31/styles.xml",
+    ]
+    for x in xml_resources:
+        xp = os.path.join(ROOT_DIR, x)
+        if not os.path.exists(xp) or os.path.getsize(xp) == 0:
+            errors.append(f"Missing or empty XML resource: {x}")
+        else:
+            checked += 1
+
+    # 9. Alpha-Only Check for ic_notification.xml and ic_launcher_monochrome.xml
+    for fn in ["ic_notification.xml", "ic_launcher_monochrome.xml"]:
+        p = os.path.join(ROOT_DIR, f"android/app/src/main/res/drawable/{fn}")
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                content = f.read()
+                # Check for colored hex codes (anything other than pure white #FFF, #FFFFFF, or #FFFFFFFF)
+                non_white_colors = re.findall(r'#(?!FFF\b|FFFFFF\b|FFFFFFFF\b)[0-9A-Fa-f]{3,8}', content, re.IGNORECASE)
+                if non_white_colors:
+                    errors.append(f"{fn} contains non-white/alpha colors: {non_white_colors}. Alpha mask requires pure white.")
+                checked += 1
+
+    # 10. Safe Zone Check for ic_launcher_foreground.xml
+    fg_xml = os.path.join(ROOT_DIR, "android/app/src/main/res/drawable/ic_launcher_foreground.xml")
+    if os.path.exists(fg_xml):
+        with open(fg_xml, "r", encoding="utf-8") as f:
+            content = f.read()
+            # Must declare scale <= 0.90 to keep inside 66dp safe zone (out of 108dp canvas)
+            scale_match = re.search(r'android:scaleX="([0-9.]+)"', content)
+            if scale_match:
+                scale_val = float(scale_match.group(1))
+                if scale_val > 0.90:
+                    errors.append(f"ic_launcher_foreground.xml scaleX={scale_val} exceeds 0.90 safe zone limit.")
+                else:
+                    checked += 1
+            else:
+                errors.append("ic_launcher_foreground.xml missing scaleX attribute.")
+
+    print(f"Verified {checked} brand assets and XML vector resources.")
     if errors:
         print("ERRORS FOUND:")
         for err in errors:
             print(f"  - {err}")
         return False
     else:
-        print("ALL BRAND ASSETS ARE PRESENT, VALID, AND MATCH EXACT TARGET SPECIFICATIONS!")
+        print("ALL BRAND ASSETS & ANDROID VECTORS ARE VALID, CRISP, AND STRICTLY BOUNDED!")
         return True
 
 if __name__ == "__main__":
-    verify()
+    import sys
+    if not verify():
+        sys.exit(1)

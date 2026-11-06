@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- FinanceFlow Stillwater Ripple Adaptive Foreground (Safe Zone 66dp) -->
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.88"
+        android:scaleY="0.88">
+        <!-- Outer Squircle Current -->
+        <path
+            android:strokeColor="#1B1D17"
+            android:strokeWidth="34"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M 196,120 C 144,142 116,192 116,256 C 116,352 168,404 256,404 C 344,404 396,352 396,256 C 396,160 344,108 256,108" />
+        <!-- Inner Squircle Current -->
+        <path
+            android:strokeColor="#1B1D17"
+            android:strokeWidth="28"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M 292,180 C 316,196 328,220 328,256 C 328,316 300,344 256,344 C 212,344 184,316 184,256 C 184,196 212,168 256,168" />
+        <!-- Radiant Lime Spark -->
+        <path
+            android:fillColor="#CBE94C"
+            android:pathData="M 256,232 A 24,24 0 1,0 256,280 A 24,24 0 1,0 256,232" />
+    </group>
+</vector>

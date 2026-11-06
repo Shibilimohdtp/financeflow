@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Stillwater Deep Water Palette -->
-    <color name="ic_launcher_background">#535B36</color>
-    <color name="splash_background">#151812</color>
-    <color name="stillwater_primary">#C4CC9B</color>
+    <!-- Stillwater Bloom Deep Water Palette -->
+    <color name="ic_launcher_background">#10120E</color>
+    <color name="splash_background">#10120E</color>
+    <color name="stillwater_primary">#E4E4DC</color>
+    <color name="stillwater_spark">#D5F057</color>
 </resources>

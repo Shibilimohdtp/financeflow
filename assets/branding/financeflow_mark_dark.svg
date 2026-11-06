@@ -1,22 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <defs>
-    <linearGradient id="ffTealGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D7DEB5" />
-      <stop offset="100%" stop-color="#C4CC9B" />
-    </linearGradient>
-    <linearGradient id="ffGoldGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F7DEEC" />
-      <stop offset="100%" stop-color="#DFB6CD" />
-    </linearGradient>
-  </defs>
-  <!-- Background: Deep Water surface -->
-  <rect width="512" height="512" rx="112" fill="#151812" />
-  <!-- Outer Enclosing Arc: Still Water Boundary -->
-  <path d="M 256 78 C 354.3 78 434 157.7 434 256 C 434 354.3 354.3 434 256 434 C 176.75 434 109.17 382.46 85.5 311.5" fill="none" stroke="url(#ffTealGradDark)" stroke-width="38" stroke-linecap="round" />
-  <!-- Inner Ascending Current: Cashflow & F-Geometry -->
-  <path d="M 142 256 C 142 193.04 193.04 142 256 142 C 318.96 142 370 193.04 370 256 C 370 296.54 348.88 332.13 316.8 352.9" fill="none" stroke="url(#ffTealGradDark)" stroke-width="32" stroke-linecap="round" />
-  <!-- Horizon Flow Wave -->
-  <path d="M 199 286 C 215 274.1 234.6 267 256 267 C 282 267 305.4 278.6 320.6 297.4" fill="none" stroke="url(#ffTealGradDark)" stroke-width="25" stroke-linecap="round" />
-  <!-- Protected Core Spark (Marigold) -->
-  <circle cx="256" cy="205" r="26" fill="url(#ffGoldGradDark)" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- FinanceFlow Stillwater Mark (Deep Water / Dark) -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M 196,120 C 144,142 116,192 116,256 C 116,352 168,404 256,404 C 344,404 396,352 396,256 C 396,160 344,108 256,108"
+      stroke="#E4E4DC"
+      stroke-width="34" />
+    <path
+      d="M 292,180 C 316,196 328,220 328,256 C 328,316 300,344 256,344 C 212,344 184,316 184,256 C 184,196 212,168 256,168"
+      stroke="#E4E4DC"
+      stroke-width="28" />
+  </g>
+  <circle cx="256" cy="256" r="24" fill="#D5F057" />
 </svg>

@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-  <!-- Android Status Bar Notification Silhouette (Monochrome White on Transparent) -->
-  <path d="M 12 3 C 16.97 3 21 7.03 21 12 C 21 16.97 16.97 21 12 21 C 8.08 21 4.73 18.5 3.5 15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" />
-  <path d="M 6.4 12 C 6.4 8.91 8.91 6.4 12 6.4 C 15.09 6.4 17.6 8.91 17.6 12 C 17.6 14.1 16.44 15.93 14.7 16.9" fill="none" stroke="#FFFFFF" stroke-width="2.0" stroke-linecap="round" />
-  <path d="M 9.2 13.5 C 10 12.8 11 12.4 12 12.4 C 13.3 12.4 14.4 13 15.1 14" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" />
-  <circle cx="12" cy="9.5" r="1.4" fill="#FFFFFF" />
+  <!-- FinanceFlow Status Bar Notification Icon (Monochrome Alpha Mask) -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M 9.18,5.62 C 6.75,6.65 5.44,9.0 5.44,12.0 C 5.44,16.5 7.87,18.94 12.0,18.94 C 16.12,18.94 18.56,16.5 18.56,12.0 C 18.56,7.5 16.12,5.06 12.0,5.06"
+      stroke-width="1.8" />
+    <path
+      d="M 13.68,8.44 C 14.81,9.19 15.38,10.31 15.38,12.0 C 15.38,14.81 14.06,16.12 12.0,16.12 C 9.94,16.12 8.62,14.81 8.62,12.0 C 8.62,9.19 9.94,7.88 12.0,7.88"
+      stroke-width="1.4" />
+  </g>
+  <circle cx="12" cy="12" r="1.5" fill="#FFFFFF" />
 </svg>

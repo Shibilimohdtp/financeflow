@@ -1,32 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
-    <radialGradient id="appBgGrad" cx="50%" cy="40%" r="65%">
-      <stop offset="0%" stop-color="#697343" />
-      <stop offset="60%" stop-color="#535B36" />
-      <stop offset="100%" stop-color="#073B35" />
-    </radialGradient>
-    <linearGradient id="markGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FCFCF5" />
-      <stop offset="100%" stop-color="#E3E8CB" />
-    </linearGradient>
-    <linearGradient id="goldGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F1DFEA" />
-      <stop offset="100%" stop-color="#A77D92" />
-    </linearGradient>
-  </defs>
-
-  <!-- Background Base: Deepwater -->
-  <rect width="1024" height="1024" rx="224" fill="url(#appBgGrad)" />
-
-  <!-- Center Mark (Scaled to ~600x600 centered at 512, 512) -->
-  <g transform="translate(212, 212) scale(1.171875)">
-    <!-- Outer Ripple Arc (Still Water Boundary) -->
-    <path d="M 256 68 C 359.83 68 444 152.17 444 256 C 444 359.83 359.83 444 256 444 C 172.58 444 101.44 389.75 76.5 315" fill="none" stroke="url(#markGlow)" stroke-width="44" stroke-linecap="round" />
-    <!-- Inner Current (Cashflow Movement) -->
-    <path d="M 136 256 C 136 189.73 189.73 136 256 136 C 322.27 136 376 189.73 376 256 C 376 298.67 353.76 336.14 320 358" fill="none" stroke="url(#markGlow)" stroke-width="38" stroke-linecap="round" />
-    <!-- Horizon Flow Arc -->
-    <path d="M 196 288 C 212.8 275.5 233.5 268 256 268 C 283.4 268 308 280.2 324 300" fill="none" stroke="url(#markGlow)" stroke-width="30" stroke-linecap="round" />
-    <!-- Protected Spark -->
-    <circle cx="256" cy="202" r="32" fill="url(#goldGlow)" />
+  <!-- FinanceFlow 1024 Master App Icon -->
+  <rect width="1024" height="1024" fill="#F3F2EC" rx="224" />
+  <g transform="translate(512, 512) scale(1.4) translate(-256, -256)">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path
+        d="M 196,120 C 144,142 116,192 116,256 C 116,352 168,404 256,404 C 344,404 396,352 396,256 C 396,160 344,108 256,108"
+        stroke="#1B1D17"
+        stroke-width="34" />
+      <path
+        d="M 292,180 C 316,196 328,220 328,256 C 328,316 300,344 256,344 C 212,344 184,316 184,256 C 184,196 212,168 256,168"
+        stroke="#1B1D17"
+        stroke-width="28" />
+    </g>
+    <circle cx="256" cy="256" r="24" fill="#CBE94C" />
   </g>
 </svg>

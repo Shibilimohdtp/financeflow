@@ -1,21 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <defs>
-    <linearGradient id="ffTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#697343" />
-      <stop offset="100%" stop-color="#535B36" />
-    </linearGradient>
-    <linearGradient id="ffGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#A77D92" />
-      <stop offset="100%" stop-color="#76546A" />
-    </linearGradient>
-  </defs>
-  <!-- Stillwater Canonical Mark -->
-  <!-- Outer Enclosing Arc: Still Water Boundary -->
-  <path d="M 256 68 C 359.83 68 444 152.17 444 256 C 444 359.83 359.83 444 256 444 C 172.58 444 101.44 389.75 76.5 315" fill="none" stroke="url(#ffTealGrad)" stroke-width="40" stroke-linecap="round" />
-  <!-- Inner Ascending Current: Cashflow & F-Geometry -->
-  <path d="M 136 256 C 136 189.73 189.73 136 256 136 C 322.27 136 376 189.73 376 256 C 376 298.67 353.76 336.14 320 358" fill="none" stroke="url(#ffTealGrad)" stroke-width="34" stroke-linecap="round" />
-  <!-- Horizon Flow Wave -->
-  <path d="M 196 288 C 212.8 275.5 233.5 268 256 268 C 283.4 268 308 280.2 324 300" fill="none" stroke="url(#ffTealGrad)" stroke-width="26" stroke-linecap="round" />
-  <!-- Protected Core Spark (Marigold) -->
-  <circle cx="256" cy="202" r="28" fill="url(#ffGoldGrad)" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- FinanceFlow Canonical Stillwater Mark (Daylight) -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Outer Squircle Current -->
+    <path
+      d="M 196,120 C 144,142 116,192 116,256 C 116,352 168,404 256,404 C 344,404 396,352 396,256 C 396,160 344,108 256,108"
+      stroke="#1B1D17"
+      stroke-width="34" />
+    <!-- Inner Squircle Current -->
+    <path
+      d="M 292,180 C 316,196 328,220 328,256 C 328,316 300,344 256,344 C 212,344 184,316 184,256 C 184,196 212,168 256,168"
+      stroke="#1B1D17"
+      stroke-width="28" />
+  </g>
+  <!-- Radiant Lime Spark -->
+  <circle cx="256" cy="256" r="24" fill="#CBE94C" />
 </svg>
