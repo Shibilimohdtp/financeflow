@@ -1,32 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../models/financial_health.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_badge.dart';
+import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_data_viz.dart';
+import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_typography.dart';
-import 'financial_health_controller.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
+import '../../shared/widgets/ff_surfaces.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import 'financial_health_controller.dart';
 
+/// Financial Health detail screen (Pattern D) in Stillwater Bloom.
+/// Displays an [FfHeroCard] with circular progress wellness score,
+/// followed by 4 key indicators on [FfRangeBand] with plain-language advice
+/// and links into relevant tabs.
 class FinancialHealthScreen extends ConsumerWidget {
   const FinancialHealthScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
-    final finColors = context.ff.color;
+    final ff = context.ff;
+    final c = ff.color;
     final reportAsync = ref.watch(financialHealthReportProvider);
 
     return Scaffold(
-      appBar: FfAppBar(
+      backgroundColor: c.surfacePage,
+      appBar: const FfAppBar(
         title: 'Financial Health',
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
+            padding: EdgeInsets.only(right: FfSpace.pageMargin),
             child: Center(
               child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
             ),
@@ -34,258 +42,7 @@ class FinancialHealthScreen extends ConsumerWidget {
         ],
       ),
       body: reportAsync.when(
-        data: (report) {
-          final Color scoreColor;
-          switch (report.grade) {
-            case HealthScoreGrade.excellent:
-            case HealthScoreGrade.strong:
-              scoreColor = finColors.moneyIncome;
-              break;
-            case HealthScoreGrade.balanced:
-              scoreColor = context.ff.color.actionPrimary;
-              break;
-            case HealthScoreGrade.needsAttention:
-              scoreColor = finColors.moneyExpense;
-              break;
-            case HealthScoreGrade.insufficientData:
-              scoreColor = context.ff.color.secondary;
-              break;
-          }
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.lg,
-              FfSpace.md,
-              FfSpace.lg,
-              FfSpace.x4l,
-            ),
-            children: [
-              // ── 1. Overall Health Score Hero ────────────────────────────
-              FfCard(
-                variant: FfCardVariant.elevated,
-                child: Column(
-                  children: [
-                    const SizedBox(height: FfSpace.sm),
-                    // Circular Score Ring
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 120,
-                          height: 120,
-                          child: CircularProgressIndicator(
-                            value:
-                                report.hasOverallSufficientData
-                                    ? (report.totalScore / 100.0)
-                                    : 0.0,
-                            strokeWidth: 8,
-                            backgroundColor:
-                                context.ff.color.surfaceContainerHighest,
-                            color: scoreColor,
-                          ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              report.hasOverallSufficientData
-                                  ? report.totalScore.toStringAsFixed(0)
-                                  : '—',
-                              style: StillwaterTypography.numHero(
-                                color: scoreColor,
-                              ),
-                            ),
-                            Text(
-                              'out of 100',
-                              style: context.ff.text.labelSm.copyWith(
-                                color: context.ff.color.secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: FfSpace.lg),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.md,
-                        vertical: FfSpace.x2s,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scoreColor.withValues(
-                          alpha: FfTint.subtle.alpha,
-                        ),
-                        borderRadius: BorderRadius.circular(FfRadius.full),
-                      ),
-                      child: Text(
-                        report.grade.label,
-                        style: context.ff.text.titleSm.copyWith(
-                          color: scoreColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: FfSpace.sm),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.sm,
-                      ),
-                      child: Text(
-                        report.grade.description,
-                        style: context.ff.text.body.copyWith(
-                          color: context.ff.color.secondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-
-                    const SizedBox(height: FfSpace.sm),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: FfSpace.x2l),
-
-              // ── 2. Component Explanations Header ────────────────────────
-              const FfSectionHeader(
-                title: 'Score Breakdown · 4 Key Indicators',
-              ),
-
-              // ── 3. Components List ──────────────────────────────────────
-              FfGroupedContainer(
-                children:
-                    report.components.map((comp) {
-                      final double scorePct =
-                          comp.hasSufficientData
-                              ? (comp.score / comp.maxScore)
-                              : 0.0;
-                      final Color barColor =
-                          comp.hasSufficientData
-                              ? (scorePct >= 0.75
-                                  ? finColors.moneyIncome
-                                  : scorePct >= 0.5
-                                  ? context.ff.color.actionPrimary
-                                  : finColors.moneyExpense)
-                              : context.ff.color.secondary;
-
-                      return Padding(
-                        padding: const EdgeInsets.all(FfSpace.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    comp.title,
-                                    style: context.ff.text.titleSm.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: FfSpace.sm),
-                                if (!comp.hasSufficientData)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: FfSpace.sm,
-                                      vertical: FfSpace.x3s,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          theme
-                                              .colorScheme
-                                              .surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(
-                                        FfRadius.full,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Not enough data',
-                                      style: context.ff.text.labelSm.copyWith(
-                                        color: context.ff.color.secondary,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    '${comp.score.toStringAsFixed(0)} / ${comp.maxScore.toStringAsFixed(0)} pts',
-                                    style: StillwaterTypography.numSm(
-                                      color: barColor,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: FfSpace.sm),
-                            FfProgressBar(
-                              value: scorePct,
-                              color: barColor,
-                              size: FfProgressSize.md,
-                            ),
-                            const SizedBox(height: FfSpace.sm),
-                            Text(
-                              comp.summary,
-                              style: context.ff.text.bodySm.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: FfSpace.x3s),
-                            Text(
-                              comp.detail,
-                              style: context.ff.text.bodySm.copyWith(
-                                color: context.ff.color.secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-              ),
-
-              const SizedBox(height: FfSpace.x2l),
-
-              // ── 4. Privacy Guarantee Footer ─────────────────────────────
-              FfCard(
-                variant: FfCardVariant.tinted,
-                padding: const EdgeInsets.all(FfSpace.md),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.shield_outlined,
-                      size: 24,
-                      color: context.ff.color.statusSuccess,
-                    ),
-                    const SizedBox(width: FfSpace.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'On-Device Analysis',
-                            style: context.ff.text.titleSm.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: FfSpace.x3s),
-                          Text(
-                            'Your wellness score is computed strictly on your device using local transactions, budgets, and savings goals.',
-                            style: context.ff.text.bodySm.copyWith(
-                              color: context.ff.color.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+        data: (report) => _buildContent(context, report),
         loading:
             () => const Center(
               child: Padding(
@@ -293,7 +50,291 @@ class FinancialHealthScreen extends ConsumerWidget {
                 child: FfLoading(),
               ),
             ),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error:
+            (e, _) => Center(
+              child: Text(
+                'Unable to calculate health score: $e',
+                style: ff.text.body.copyWith(color: c.statusError),
+              ),
+            ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, FinancialHealthReport report) {
+    final ff = context.ff;
+    final c = ff.color;
+
+    final heroTone = switch (report.grade) {
+      HealthScoreGrade.excellent || HealthScoreGrade.strong => FfHeroTone.moss,
+      HealthScoreGrade.balanced => FfHeroTone.dusk,
+      HealthScoreGrade.needsAttention => FfHeroTone.rose,
+      HealthScoreGrade.insufficientData => FfHeroTone.sand,
+    };
+
+    final scoreNormalized =
+        report.hasOverallSufficientData
+            ? (report.totalScore / 100.0).clamp(0.0, 1.0)
+            : 0.0;
+    final scoreStr =
+        report.hasOverallSufficientData
+            ? report.totalScore.toStringAsFixed(0)
+            : '—';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        FfSpace.pageMargin,
+        FfSpace.xs,
+        FfSpace.pageMargin,
+        FfSpace.x4l,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── 1. Overall Health Score Hero (Pattern D) ──────────────────────
+          FfHeroCard(
+            tone: heroTone,
+            leading: FfProgressRing(
+              value: scoreNormalized,
+              icon: Icons.health_and_safety_outlined,
+              semanticsLabel: '$scoreStr out of 100',
+            ),
+            title: report.grade.label,
+            subtitle: 'Financial Wellness Score',
+            child: Builder(
+              builder: (context) {
+                final heroFf = context.ff;
+                final heroC = heroFf.color;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    MediaQuery.withClampedTextScaling(
+                      maxScaleFactor: 1.3,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              scoreStr,
+                              style: heroFf.text.displayLg.copyWith(
+                                fontWeight: FontWeight.w300,
+                                height: 1.0,
+                                color: heroC.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: FfSpace.xs),
+                            Text(
+                              'out of 100',
+                              style: heroFf.text.labelLg.copyWith(
+                                color: heroC.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: FfSpace.sm),
+                    Text(
+                      report.grade.description,
+                      style: heroFf.text.bodySm.copyWith(
+                        color: heroC.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: FfSpace.md),
+                    FfHeroFigures([
+                      FfHeroFigure('Scale', '100 pts'),
+                      FfHeroFigure(
+                        'Factors',
+                        '${report.components.length} indicators',
+                      ),
+                      FfHeroFigure(
+                        'Analysis',
+                        report.hasOverallSufficientData ? 'Active' : 'Building',
+                      ),
+                    ]),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: FfSpace.xl),
+
+          // ── 2. Component Explanations Header ──────────────────────────────
+          const FfSectionHeader(title: 'Score Breakdown · 4 Key Indicators'),
+          const SizedBox(height: FfSpace.xs),
+
+          // ── 3. Components List ────────────────────────────────────────────
+          for (final comp in report.components) ...[
+            _IndicatorCard(component: comp),
+            const SizedBox(height: FfSpace.sm),
+          ],
+
+          const SizedBox(height: FfSpace.md),
+
+          // ── 4. Privacy Guarantee Footer ───────────────────────────────────
+          FfCard(
+            variant: FfCardVariant.tinted,
+            padding: const EdgeInsets.all(FfSpace.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.shield_outlined,
+                  size: FfIconSize.md,
+                  color: c.statusSuccess,
+                ),
+                const SizedBox(width: FfSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'On-Device Analysis',
+                        style: ff.text.titleSm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: FfSpace.x2s),
+                      Text(
+                        'Your wellness score is computed strictly on your device using local transactions, budgets, and savings goals. Never sent to any server.',
+                        style: ff.text.bodySm.copyWith(color: c.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IndicatorCard extends StatelessWidget {
+  final HealthScoreComponent component;
+
+  const _IndicatorCard({required this.component});
+
+  IconData _iconFor(String key) => switch (key) {
+    'savings_rate' => Icons.savings_outlined,
+    'budget_discipline' => Icons.pie_chart_outline_rounded,
+    'goal_progress' => Icons.flag_outlined,
+    'cash_flow' => Icons.swap_vert_rounded,
+    _ => Icons.insights_rounded,
+  };
+
+  String _ctaFor(String key) => switch (key) {
+    'savings_rate' => 'Review spending',
+    'budget_discipline' => 'Manage budgets',
+    'goal_progress' => 'View savings goals',
+    'cash_flow' => 'Inspect cash flow',
+    _ => 'View details',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final c = ff.color;
+    final comp = component;
+    final scorePct = comp.percentage;
+
+    final FfTone statusTone =
+        !comp.hasSufficientData
+            ? FfTone.neutral
+            : scorePct >= 0.75
+            ? FfTone.income
+            : scorePct >= 0.5
+            ? FfTone.neutral
+            : FfTone.expense;
+
+    return FfCard(
+      density: FfDensity.comfortable,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _iconFor(comp.key),
+                size: FfIconSize.sm,
+                color: c.textPrimary,
+              ),
+              const SizedBox(width: FfSpace.xs),
+              Expanded(
+                child: Text(
+                  comp.title,
+                  style: ff.text.titleSm.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (!comp.hasSufficientData)
+                const FfBadge(label: 'Not enough data', tone: FfTone.neutral)
+              else
+                FfBadge(
+                  label:
+                      '${comp.score.toStringAsFixed(0)} / ${comp.maxScore.toStringAsFixed(0)} pts',
+                  tone: statusTone,
+                ),
+            ],
+          ),
+          const SizedBox(height: FfSpace.md),
+          if (comp.hasSufficientData)
+            FfRangeBand(
+              bands: const [
+                FfBand(
+                  start: 0.0,
+                  end: 0.49,
+                  tone: FfTone.expense,
+                  label: 'Needs attention',
+                ),
+                FfBand(
+                  start: 0.50,
+                  end: 0.74,
+                  tone: FfTone.neutral,
+                  label: 'Steady',
+                ),
+                FfBand(
+                  start: 0.75,
+                  end: 1.0,
+                  tone: FfTone.income,
+                  label: 'Strong',
+                ),
+              ],
+              value: scorePct,
+              valueLabel: '${comp.score.toStringAsFixed(0)} pts',
+            )
+          else ...[
+            Text(
+              'Collecting more transactions to evaluate this factor.',
+              style: ff.text.bodySm.copyWith(color: c.textSecondary),
+            ),
+          ],
+          const SizedBox(height: FfSpace.sm),
+          Text(
+            comp.summary,
+            style: ff.text.bodySm.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: FfSpace.x2s),
+          Text(
+            comp.detail,
+            style: ff.text.bodySm.copyWith(color: c.textSecondary),
+          ),
+          const SizedBox(height: FfSpace.sm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: FfButton(
+              label: _ctaFor(comp.key),
+              variant: FfButtonVariant.secondary,
+              size: FfButtonSize.sm,
+              leadingIcon: const Icon(Icons.arrow_forward_rounded, size: 14),
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        ],
       ),
     );
   }

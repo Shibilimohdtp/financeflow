@@ -7,7 +7,10 @@ import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/analytics/analytics_controller.dart';
 import 'package:financeflow/features/analytics/analytics_screen.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
+import 'package:financeflow/features/financial_health/financial_health_controller.dart';
+import 'package:financeflow/features/financial_health/financial_health_screen.dart';
 import 'package:financeflow/models/account.dart';
+import 'package:financeflow/models/financial_health.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/transaction.dart';
 import 'package:financeflow/services/analytics_calculator.dart';
@@ -237,6 +240,74 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/insights_$mode.png'),
+      );
+    });
+
+    testWidgets('financial_health, $mode', (tester) async {
+      tester.view.physicalSize = const Size(390, 1150);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      final healthReport = FinancialHealthReport(
+        totalScore: 84.0,
+        grade: HealthScoreGrade.strong,
+        components: [
+          HealthScoreComponent(
+            key: 'savings_rate',
+            title: 'Savings Rate',
+            score: 22.0,
+            hasSufficientData: true,
+            summary: '45% savings rate',
+            detail: 'You are saving more than 20% of your income this month.',
+          ),
+          HealthScoreComponent(
+            key: 'budget_discipline',
+            title: 'Budget Discipline',
+            score: 21.0,
+            hasSufficientData: true,
+            summary: 'All budgets on track',
+            detail: 'All active budgets are currently within limits.',
+          ),
+          HealthScoreComponent(
+            key: 'goal_progress',
+            title: 'Goal Progress',
+            score: 19.0,
+            hasSufficientData: true,
+            summary: '78% goal pace',
+            detail:
+                'Monthly contributions keep emergency fund targets on track.',
+          ),
+          HealthScoreComponent(
+            key: 'cash_flow',
+            title: 'Cash Flow Stability',
+            score: 22.0,
+            hasSufficientData: true,
+            summary: 'Positive buffer maintained',
+            detail: 'Expenses remained well below income across all weeks.',
+          ),
+        ],
+        hasOverallSufficientData: true,
+        calculatedAt: sampleDate,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            financialHealthReportProvider.overrideWithValue(
+              AsyncValue.data(healthReport),
+            ),
+          ],
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: theme,
+            home: const FinancialHealthScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/financial_health_$mode.png'),
       );
     });
   }

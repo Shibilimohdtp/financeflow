@@ -38,7 +38,7 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | Plan | Budget card, insights card, visual summary | `budgets/widgets/*.dart` | A/C | Legacy | DS-B7 chat | Three overlapping summaries → merge |
 | Plan | Placeholder | `budgets/budgets_placeholder_screen.dart` | — | Legacy | DS-B7 chat | Not referenced anywhere in `lib/`; delete |
 | Insights | Analytics | `analytics/analytics_screen.dart`, `widgets/analytics_metrics_hero.dart`, `analytics_cash_flow_card.dart`, `expense_category_breakdown.dart` | A | Bloom (7f05c84) | DS-B8b | Pattern A on FfAurora, dusk hero card, single insight card, restyled charts |
-| Insights | Financial health | `financial_health/financial_health_screen.dart` | D | Tokens | — | Good fit for `FfRangeBand` |
+| Insights | Financial health | `financial_health/financial_health_screen.dart` | D | Bloom (431c504) | DS-B8c | Pattern D with wellness score hero, 4 indicator cards on FfRangeBand with CTAs |
 | More | Settings hub | `settings/more_screen.dart`, `settings_screen.dart`, `settings_detail_screen.dart` | F | Bloom (this commit) | DS-B9 chat | Redesigned on FfAurora with sand vault hero and split files |
 | More | Security, lock | `security/security_settings_screen.dart`, `lock_screen.dart` | F / G | Bloom (this commit) | DS-B9 chat | Security in Pattern F; Lock in Pattern G with calm aurora, squircle mark, and zero static colours |
 | More | Backup, restore preview, export | `backup/backup_screen.dart`, `restore_preview_screen.dart`, `export/export_screen.dart` | F | Bloom (this commit) | DS-B9 chat | Backup in Pattern F status hero, restore preview 2-step breakdown, export with pills & privacy badge |
