@@ -3,6 +3,9 @@ import os
 from PIL import Image, ImageDraw
 
 def compose_pair(light_img_path, dark_img_path, out_path, title_prefix=""):
+    if not os.path.exists(light_img_path) or not os.path.exists(dark_img_path):
+        print(f"Skipping {out_path}: files not found")
+        return
     light_img = Image.open(light_img_path).convert("RGB")
     dark_img = Image.open(dark_img_path).convert("RGB")
     w, h = light_img.size
@@ -40,7 +43,7 @@ def main():
         os.path.join(goldens, "b16_settings_detail_light.png"),
         os.path.join(goldens, "b16_settings_detail_dark.png"),
         os.path.join(out_dir, "b16_settings_detail.png"),
-        "Settings Page (Search Bar, Intent-Based Groupings)",
+        "Settings Page (Search Bar, Intent-Based Groupings, Hold-to-Confirm)",
     )
 
     compose_pair(
@@ -48,6 +51,34 @@ def main():
         os.path.join(goldens, "b16_settings_search_dark.png"),
         os.path.join(out_dir, "b16_settings_search.png"),
         "Settings Search (Zero-Latency Keyword Filter)",
+    )
+
+    compose_pair(
+        os.path.join(goldens, "b16_security_settings_light.png"),
+        os.path.join(goldens, "b16_security_settings_dark.png"),
+        os.path.join(out_dir, "b16_security_settings.png"),
+        "Security & App Lock (Protection Ring Hero, Auto-Lock Timeout)",
+    )
+
+    compose_pair(
+        os.path.join(goldens, "b16_csv_import_light.png"),
+        os.path.join(goldens, "b16_csv_import_dark.png"),
+        os.path.join(out_dir, "b16_csv_import.png"),
+        "Import CSV Statement (Offline Banner, Bank Presets, FfSelect Mapping)",
+    )
+
+    compose_pair(
+        os.path.join(goldens, "b16_export_screen_light.png"),
+        os.path.join(goldens, "b16_export_screen_dark.png"),
+        os.path.join(out_dir, "b16_export_screen.png"),
+        "Export Reports (On-Device Generator, Format & Scope Selector)",
+    )
+
+    compose_pair(
+        os.path.join(goldens, "b16_backup_screen_light.png"),
+        os.path.join(goldens, "b16_backup_screen_dark.png"),
+        os.path.join(out_dir, "b16_backup_screen.png"),
+        "Encrypted Backup (Freshness Hero, AES-256 CTR, Backup History)",
     )
 
 if __name__ == "__main__":

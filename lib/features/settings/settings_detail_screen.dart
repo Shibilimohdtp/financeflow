@@ -5,17 +5,17 @@ import '../../core/formatting/app_currency.dart';
 import '../../models/app_settings.dart';
 import '../../services/ingestion/ingestion_coordinator.dart';
 import '../../services/ingestion/ingestion_platform.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_hold_to_confirm_button.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_settings_index.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../theme/ff.dart';
 import '../alerts/alert_settings_sheet.dart';
 import '../alerts/alerts_inbox_screen.dart';
@@ -29,7 +29,6 @@ import '../security/security_settings_screen.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
 import 'widgets/density_visualizer_card.dart';
-import 'widgets/developer_tools_card.dart';
 import 'widgets/ingestion_diagnostics_card.dart';
 import 'widgets/settings_picker_sheets.dart';
 import 'widgets/settings_search_results.dart';
@@ -151,8 +150,8 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
     final searchMatches =
         isSearching ? searchSettings(_searchQuery) : const <SettingsEntry>[];
 
-    return Scaffold(
-      appBar: const FfAppBar(title: 'Settings'),
+    return FfPageScaffold(
+      title: 'Settings',
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: FfSpace.pageMargin,
@@ -425,12 +424,7 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
 
             const SizedBox(height: FfSpace.xl),
 
-            // ── 4. Developer Tools (collapsed) ───────────────────────────────
-            const DeveloperToolsCard(),
-
-            const SizedBox(height: FfSpace.xl),
-
-            // ── 5. Data Reset (Danger zone) ──────────────────────────────────
+            // ── 4. Data Reset (Danger zone) ──────────────────────────────────
             const FfSectionHeader(title: 'Data Reset'),
             FfCard(
               variant: FfCardVariant.warning,
@@ -459,17 +453,27 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
                   Text(
                     'Permanently deletes all stored transactions, accounts, loans, and security keys from this device. Cannot be undone.',
                     style: context.ff.text.bodySm.copyWith(
-                      color: context.ff.color.secondary,
+                      color: context.ff.color.textSecondary,
                     ),
                   ),
                   const SizedBox(height: FfSpace.md),
                   Semantics(
-                    label: 'Delete all data on device — destructive action',
-                    child: FfButton(
-                      label: 'Delete All Data on Device',
-                      variant: FfButtonVariant.destructive,
-                      size: FfButtonSize.sm,
-                      onPressed: () => _showWipeConfirm(context),
+                    label:
+                        'Hold 2.5s to wipe all local data — destructive action',
+                    child: FfHoldToConfirmButton(
+                      label: 'Hold 2.5s to Wipe All Local Data',
+                      holdingLabel: 'Wiping all local data in 2.5s...',
+                      onConfirmed: () async {
+                        await ref
+                            .read(settingsControllerProvider.notifier)
+                            .resetAllData();
+                        if (context.mounted) {
+                          FfToast.show(
+                            context,
+                            message: 'All local data was wiped.',
+                          );
+                        }
+                      },
                     ),
                   ),
                 ],
