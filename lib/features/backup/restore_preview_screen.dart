@@ -17,6 +17,7 @@ import '../../shared/widgets/ff_key_value_row.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
@@ -166,207 +167,211 @@ class _RestorePreviewScreenState extends ConsumerState<RestorePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
     final filename = widget.backupFile.path.split(Platform.pathSeparator).last;
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Restore Encrypted Backup',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.pageMargin),
-            child: Center(
-              child: FfPrivacyBadge(label: 'AES Decryption'),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.pageMargin,
-          vertical: FfSpace.md,
-        ),
-        children: [
-          // File Name Card
-          FfCard(
-            padding: const EdgeInsets.all(FfSpace.md),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.description_outlined,
-                  size: 20,
-                  color: context.ff.color.actionPrimary,
-                ),
-                const SizedBox(width: FfSpace.md),
-                Expanded(
-                  child: Text(
-                    filename,
-                    style: context.ff.text.body.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: FfSpace.lg),
-
-          // Passphrase Input Card
-          if (_decryptedPayload == null) ...[
-            const FfSectionHeader(title: 'Enter passphrase to unlock'),
-            FfCard(
-              padding: const EdgeInsets.all(FfSpace.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FfTextField(
-                    controller: _passphraseController,
-                    obscureText: true,
-                    autofocus: true,
-                    label: 'Passphrase',
-                    icon: Icons.key_outlined,
-                    errorText: _errorMessage,
-                    onSubmitted: (_) => _decrypt(),
-                  ),
-                  const SizedBox(height: FfSpace.lg),
-                  FfButton(
-                    label: 'Decrypt & Inspect Contents',
-                    isLoading: _isDecrypting,
-                    leadingIcon: const Icon(Icons.lock_open_rounded, size: 18),
-                    onPressed: _isDecrypting ? null : _decrypt,
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            // Decrypted Contents Overview
-            const FfSectionHeader(title: 'Decrypted backup contents'),
-            FfCard(
-              padding: const EdgeInsets.all(FfSpace.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('PAYLOAD METRICS', style: context.ff.text.labelSm),
-                      const FfBadge(
-                        label: 'Verified AES',
-                        tone: FfTone.success,
-                        icon: Icons.verified_rounded,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: FfSpace.md),
-                  _MetricRow(
-                    label: 'Transactions',
-                    count: _decryptedPayload!.transactions.length,
-                  ),
-                  _MetricRow(
-                    label: 'Accounts',
-                    count: _decryptedPayload!.accounts.length,
-                  ),
-                  _MetricRow(
-                    label: 'Categories',
-                    count: _decryptedPayload!.categories.length,
-                  ),
-                  _MetricRow(
-                    label: 'Budgets',
-                    count: _decryptedPayload!.budgets.length,
-                  ),
-                  _MetricRow(
-                    label: 'Savings Goals & Contributions',
-                    count:
-                        _decryptedPayload!.savingsGoals.length +
-                        _decryptedPayload!.goalContributions.length,
-                  ),
-                  _MetricRow(
-                    label: 'Subscriptions',
-                    count: _decryptedPayload!.subscriptions.length,
-                  ),
-                  _MetricRow(
-                    label: 'Loans & EMI History',
-                    count:
-                        _decryptedPayload!.loans.length +
-                        _decryptedPayload!.emiPayments.length,
-                  ),
-                  _MetricRow(
-                    label: 'Lending & Borrowing Records',
-                    count:
-                        _decryptedPayload!.moneyRecords.length +
-                        _decryptedPayload!.moneyRepayments.length,
-                  ),
-                  _MetricRow(
-                    label: 'Investments',
-                    count: _decryptedPayload!.investments.length,
-                  ),
-                  if (_decryptedPayload!.pendingTransactions.isNotEmpty)
-                    _MetricRow(
-                      label: 'Inbox / Pending Queue',
-                      count: _decryptedPayload!.pendingTransactions.length,
-                    ),
-                  _MetricRow(
-                    label: 'Application Settings',
-                    count: _decryptedPayload!.appSettings != null ? 1 : 0,
-                  ),
-                  const SizedBox(height: FfSpace.sm),
-                  Text(
-                    'Exported on ${DateFormatter.formatTransactionDate(_decryptedPayload!.metadata.createdAt)} · App v${_decryptedPayload!.metadata.appVersion}',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.secondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: FfSpace.xl),
-
-            // Restore Method Selector
-            const FfSectionHeader(title: 'Choose restore method'),
-            FfGroupedContainer(
-              children: [
-                FfRow.radio(
-                  title: 'Merge with Existing Data',
-                  subtitle:
-                      'Safely skip duplicate records and add missing entries.',
-                  selected: _selectedMode == RestoreMode.merge,
-                  onTap:
-                      () => setState(() => _selectedMode = RestoreMode.merge),
-                ),
-                FfRow.radio(
-                  title: 'Clean Replace (Overwrite)',
-                  subtitle:
-                      'Clear current database and restore state from this backup.',
-                  selected: _selectedMode == RestoreMode.replace,
-                  onTap:
-                      () => setState(() => _selectedMode = RestoreMode.replace),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: FfSpace.xl),
-
-            FfButton(
-              label:
-                  _selectedMode == RestoreMode.merge
-                      ? 'Merge Backup Into Device'
-                      : 'Replace Everything & Restore',
-              isLoading: _isRestoring,
-              variant:
-                  _selectedMode == RestoreMode.replace
-                      ? FfButtonVariant.destructive
-                      : FfButtonVariant.filled,
-              leadingIcon: const Icon(
-                Icons.settings_backup_restore_rounded,
-                size: 18,
-              ),
-              onPressed: _isRestoring ? null : _confirmAndRestore,
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: const FfAppBar(
+          title: 'Restore Encrypted Backup',
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: FfSpace.pageMargin),
+              child: Center(child: FfPrivacyBadge(label: 'AES Decryption')),
             ),
           ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.pageMargin,
+            vertical: FfSpace.md,
+          ),
+          children: [
+            // File Name Card
+            FfCard(
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.description_outlined,
+                    size: 20,
+                    color: ff.color.actionPrimary,
+                  ),
+                  const SizedBox(width: FfSpace.md),
+                  Expanded(
+                    child: Text(
+                      filename,
+                      style: ff.text.body.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-          const SizedBox(height: FfSpace.x4l),
-        ],
+            const SizedBox(height: FfSpace.lg),
+
+            // Passphrase Input Card
+            if (_decryptedPayload == null) ...[
+              const FfSectionHeader(title: 'Enter passphrase to unlock'),
+              FfCard(
+                padding: const EdgeInsets.all(FfSpace.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FfTextField(
+                      controller: _passphraseController,
+                      obscureText: true,
+                      autofocus: true,
+                      label: 'Passphrase',
+                      icon: Icons.key_outlined,
+                      errorText: _errorMessage,
+                      onSubmitted: (_) => _decrypt(),
+                    ),
+                    const SizedBox(height: FfSpace.lg),
+                    FfButton(
+                      label: 'Decrypt & Inspect Contents',
+                      isLoading: _isDecrypting,
+                      leadingIcon: const Icon(
+                        Icons.lock_open_rounded,
+                        size: 18,
+                      ),
+                      onPressed: _isDecrypting ? null : _decrypt,
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              // Decrypted Contents Overview
+              const FfSectionHeader(title: 'Decrypted backup contents'),
+              FfCard(
+                padding: const EdgeInsets.all(FfSpace.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('PAYLOAD METRICS', style: ff.text.labelSm),
+                        const FfBadge(
+                          label: 'Verified AES',
+                          tone: FfTone.success,
+                          icon: Icons.verified_rounded,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: FfSpace.md),
+                    _MetricRow(
+                      label: 'Transactions',
+                      count: _decryptedPayload!.transactions.length,
+                    ),
+                    _MetricRow(
+                      label: 'Accounts',
+                      count: _decryptedPayload!.accounts.length,
+                    ),
+                    _MetricRow(
+                      label: 'Categories',
+                      count: _decryptedPayload!.categories.length,
+                    ),
+                    _MetricRow(
+                      label: 'Budgets',
+                      count: _decryptedPayload!.budgets.length,
+                    ),
+                    _MetricRow(
+                      label: 'Savings Goals & Contributions',
+                      count:
+                          _decryptedPayload!.savingsGoals.length +
+                          _decryptedPayload!.goalContributions.length,
+                    ),
+                    _MetricRow(
+                      label: 'Subscriptions',
+                      count: _decryptedPayload!.subscriptions.length,
+                    ),
+                    _MetricRow(
+                      label: 'Loans & EMI History',
+                      count:
+                          _decryptedPayload!.loans.length +
+                          _decryptedPayload!.emiPayments.length,
+                    ),
+                    _MetricRow(
+                      label: 'Lending & Borrowing Records',
+                      count:
+                          _decryptedPayload!.moneyRecords.length +
+                          _decryptedPayload!.moneyRepayments.length,
+                    ),
+                    _MetricRow(
+                      label: 'Investments',
+                      count: _decryptedPayload!.investments.length,
+                    ),
+                    if (_decryptedPayload!.pendingTransactions.isNotEmpty)
+                      _MetricRow(
+                        label: 'Inbox / Pending Queue',
+                        count: _decryptedPayload!.pendingTransactions.length,
+                      ),
+                    _MetricRow(
+                      label: 'Application Settings',
+                      count: _decryptedPayload!.appSettings != null ? 1 : 0,
+                    ),
+                    const SizedBox(height: FfSpace.sm),
+                    Text(
+                      'Exported on ${DateFormatter.formatTransactionDate(_decryptedPayload!.metadata.createdAt)} · App v${_decryptedPayload!.metadata.appVersion}',
+                      style: ff.text.labelSm.copyWith(
+                        color: ff.color.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: FfSpace.xl),
+
+              // Restore Method Selector
+              const FfSectionHeader(title: 'Choose restore method'),
+              FfGroupedContainer(
+                children: [
+                  FfRow.radio(
+                    title: 'Merge with Existing Data',
+                    subtitle:
+                        'Safely skip duplicate records and add missing entries.',
+                    selected: _selectedMode == RestoreMode.merge,
+                    onTap:
+                        () => setState(() => _selectedMode = RestoreMode.merge),
+                  ),
+                  FfRow.radio(
+                    title: 'Clean Replace (Overwrite)',
+                    subtitle:
+                        'Clear current database and restore state from this backup.',
+                    selected: _selectedMode == RestoreMode.replace,
+                    onTap:
+                        () =>
+                            setState(() => _selectedMode = RestoreMode.replace),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: FfSpace.xl),
+
+              FfButton(
+                label:
+                    _selectedMode == RestoreMode.merge
+                        ? 'Merge Backup Into Device'
+                        : 'Replace Everything & Restore',
+                isLoading: _isRestoring,
+                variant:
+                    _selectedMode == RestoreMode.replace
+                        ? FfButtonVariant.destructive
+                        : FfButtonVariant.filled,
+                leadingIcon: const Icon(
+                  Icons.settings_backup_restore_rounded,
+                  size: 18,
+                ),
+                onPressed: _isRestoring ? null : _confirmAndRestore,
+              ),
+            ],
+
+            const SizedBox(height: FfSpace.x4l),
+          ],
+        ),
       ),
     );
   }

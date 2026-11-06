@@ -186,6 +186,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
     final settings = ref.watch(settingsStreamProvider).value;
     final lastBackup = settings?.lastBackupDate;
 
@@ -211,231 +212,235 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       }
     }
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Full Backup & Migration',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.pageMargin),
-            child: Center(
-              child: FfPrivacyBadge(label: 'AES-256 CTR'),
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: const FfAppBar(
+          title: 'Full Backup & Migration',
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: FfSpace.pageMargin),
+              child: Center(child: FfPrivacyBadge(label: 'AES-256 CTR')),
             ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.pageMargin,
-          vertical: FfSpace.md,
+          ],
         ),
-        children: [
-          // ── 1. Status Hero Card ───────────────────────────────────────
-          FfHeroCard(
-            tone: FfHeroTone.sand,
-            leading: const FfIconTile(
-              icon: Icons.lock_clock_outlined,
-              tone: FfTone.primary,
-            ),
-            title: 'Encrypted Backup Archive',
-            subtitle: 'Local disaster-recovery export',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(freshnessIcon, size: 16),
-                    const SizedBox(width: FfSpace.xs),
-                    Expanded(
-                      child: Text(
-                        freshnessText,
-                        style: context.ff.text.bodySm.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: FfSpace.xs),
-                Text(
-                  'Zero-knowledge AES-256 CTR + PBKDF2 encryption. Archive contains 100% of accounts, loans, settings, and histories.',
-                  style: context.ff.text.bodySm,
-                ),
-                const SizedBox(height: FfSpace.md),
-                FfButton(
-                  label: 'Create Backup Now',
-                  variant: FfButtonVariant.primary,
-                  size: FfButtonSize.sm,
-                  onPressed: () => _passphraseFocusNode.requestFocus(),
-                ),
-              ],
-            ),
+        body: ListView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.pageMargin,
+            vertical: FfSpace.md,
           ),
-
-          const SizedBox(height: FfSpace.lg),
-
-          // ── 2. Prominent Passphrase Warning ───────────────────────────
-          FfCard(
-            variant: FfCardVariant.tinted,
-            tone: FfTone.warning,
-            padding: const EdgeInsets.all(FfSpace.md),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: context.ff.color.statusWarning,
-                  size: 22,
-                ),
-                const SizedBox(width: FfSpace.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── 1. Status Hero Card ───────────────────────────────────────
+            FfHeroCard(
+              tone: FfHeroTone.sand,
+              leading: const FfIconTile(
+                icon: Icons.lock_clock_outlined,
+                tone: FfTone.primary,
+              ),
+              title: 'Encrypted Backup Archive',
+              subtitle: 'Local disaster-recovery export',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        'Keep your passphrase safe',
-                        style: context.ff.text.titleSm.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.ff.color.statusWarning,
+                      Icon(freshnessIcon, size: 16),
+                      const SizedBox(width: FfSpace.xs),
+                      Expanded(
+                        child: Text(
+                          freshnessText,
+                          style: ff.text.bodySm.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: FfSpace.x3s),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.xs),
+                  Text(
+                    'Zero-knowledge AES-256 CTR + PBKDF2 encryption. Archive contains 100% of accounts, loans, settings, and histories.',
+                    style: ff.text.bodySm,
+                  ),
+                  const SizedBox(height: FfSpace.md),
+                  FfButton(
+                    label: 'Create Backup Now',
+                    variant: FfButtonVariant.primary,
+                    size: FfButtonSize.sm,
+                    onPressed: () => _passphraseFocusNode.requestFocus(),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.lg),
+
+            // ── 2. Prominent Passphrase Warning ───────────────────────────
+            FfCard(
+              variant: FfCardVariant.tinted,
+              tone: FfTone.warning,
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: ff.color.statusWarning,
+                    size: 22,
+                  ),
+                  const SizedBox(width: FfSpace.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Keep your passphrase safe',
+                          style: ff.text.titleSm.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: ff.color.statusWarning,
+                          ),
+                        ),
+                        const SizedBox(height: FfSpace.x3s),
+                        Text(
+                          'Zero-knowledge encryption means nobody can recover your data without your passphrase. Write it down and keep it in a safe place.',
+                          style: ff.text.bodySm.copyWith(
+                            color: ff.color.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.xl),
+
+            // ── 3. Create Encrypted Backup Form ──────────────────────────
+            const FfSectionHeader(title: 'Create new backup'),
+            FfCard(
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FfTextField(
+                    controller: _passphraseController,
+                    focusNode: _passphraseFocusNode,
+                    obscureText: true,
+                    label: 'Encryption Passphrase',
+                    hint: 'Enter at least 6 characters',
+                    icon: Icons.key_outlined,
+                  ),
+                  const SizedBox(height: FfSpace.md),
+                  FfTextField(
+                    controller: _confirmPassphraseController,
+                    obscureText: true,
+                    label: 'Confirm Passphrase',
+                    hint: 'Re-enter passphrase',
+                    icon: Icons.key_outlined,
+                  ),
+                  const SizedBox(height: FfSpace.lg),
+                  FfButton(
+                    label: 'Generate Encrypted Backup',
+                    isLoading: _isCreatingBackup,
+                    leadingIcon: const Icon(Icons.download_rounded, size: 18),
+                    onPressed: _isCreatingBackup ? null : _createBackup,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.xl),
+
+            // ── 4. Restore from File on Device ────────────────────────────
+            const FfSectionHeader(title: 'Restore from file'),
+            FfCard(
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.file_open_rounded,
+                        color: ff.color.actionPrimary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: FfSpace.sm),
                       Text(
-                        'Zero-knowledge encryption means nobody can recover your data without your passphrase. Write it down and keep it in a safe place.',
-                        style: context.ff.text.bodySm.copyWith(
-                          color: context.ff.color.secondary,
+                        'Restore from File on Device',
+                        style: ff.text.titleSm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.xs),
+                  Text(
+                    'Restore a .ffbackup file from your phone’s Downloads folder, Google Drive, WhatsApp, or SD Card.',
+                    style: ff.text.bodySm.copyWith(
+                      color: ff.color.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: FfSpace.md),
+                  FfButton(
+                    label: 'Browse & Select Backup File',
+                    variant: FfButtonVariant.secondary,
+                    leadingIcon: const Icon(
+                      Icons.folder_open_rounded,
+                      size: 18,
+                    ),
+                    onPressed: _pickBackupFromDevice,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.xl),
+
+            // ── 5. Existing Local Backups ─────────────────────────────────
+            FfSectionHeader(
+              title: 'On-device backup history (${_existingBackups.length})',
+            ),
+
+            if (_isLoadingBackups)
+              const FfLoading()
+            else if (_existingBackups.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: FfSpace.sm),
+                child: FfCard(
+                  padding: const EdgeInsets.all(FfSpace.md),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: ff.color.textSecondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: FfSpace.sm),
+                      Expanded(
+                        child: Text(
+                          'No backups in local app storage. Use "Browse & Select" above to pick a backup from Downloads or Drive.',
+                          style: ff.text.bodySm.copyWith(
+                            color: ff.color.textSecondary,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: FfSpace.xl),
-
-          // ── 3. Create Encrypted Backup Form ──────────────────────────
-          const FfSectionHeader(title: 'Create new backup'),
-          FfCard(
-            padding: const EdgeInsets.all(FfSpace.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FfTextField(
-                  controller: _passphraseController,
-                  focusNode: _passphraseFocusNode,
-                  obscureText: true,
-                  label: 'Encryption Passphrase',
-                  hint: 'Enter at least 6 characters',
-                  icon: Icons.key_outlined,
-                ),
-                const SizedBox(height: FfSpace.md),
-                FfTextField(
-                  controller: _confirmPassphraseController,
-                  obscureText: true,
-                  label: 'Confirm Passphrase',
-                  hint: 'Re-enter passphrase',
-                  icon: Icons.key_outlined,
-                ),
-                const SizedBox(height: FfSpace.lg),
-                FfButton(
-                  label: 'Generate Encrypted Backup',
-                  isLoading: _isCreatingBackup,
-                  leadingIcon: const Icon(Icons.download_rounded, size: 18),
-                  onPressed: _isCreatingBackup ? null : _createBackup,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: FfSpace.xl),
-
-          // ── 4. Restore from File on Device ────────────────────────────
-          const FfSectionHeader(title: 'Restore from file'),
-          FfCard(
-            padding: const EdgeInsets.all(FfSpace.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.file_open_rounded,
-                      color: context.ff.color.actionPrimary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: FfSpace.sm),
-                    Text(
-                      'Restore from File on Device',
-                      style: context.ff.text.titleSm.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: FfSpace.xs),
-                Text(
-                  'Restore a .ffbackup file from your phone’s Downloads folder, Google Drive, WhatsApp, or SD Card.',
-                  style: context.ff.text.bodySm.copyWith(
-                    color: context.ff.color.secondary,
-                  ),
-                ),
-                const SizedBox(height: FfSpace.md),
-                FfButton(
-                  label: 'Browse & Select Backup File',
-                  variant: FfButtonVariant.secondary,
-                  leadingIcon: const Icon(Icons.folder_open_rounded, size: 18),
-                  onPressed: _pickBackupFromDevice,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: FfSpace.xl),
-
-          // ── 5. Existing Local Backups ─────────────────────────────────
-          FfSectionHeader(
-            title: 'On-device backup history (${_existingBackups.length})',
-          ),
-
-          if (_isLoadingBackups)
-            const FfLoading()
-          else if (_existingBackups.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: FfSpace.sm),
-              child: FfCard(
-                padding: const EdgeInsets.all(FfSpace.md),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      color: context.ff.color.secondary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: FfSpace.sm),
-                    Expanded(
-                      child: Text(
-                        'No backups in local app storage. Use "Browse & Select" above to pick a backup from Downloads or Drive.',
-                        style: context.ff.text.bodySm.copyWith(
-                          color: context.ff.color.secondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              )
+            else
+              FfGroupedContainer(
+                dividerInset: FfRowLeading.tile,
+                children: [
+                  for (final file in _existingBackups)
+                    _buildBackupRow(context, file),
+                ],
               ),
-            )
-          else
-            FfGroupedContainer(
-              dividerInset: FfRowLeading.tile,
-              children: [
-                for (final file in _existingBackups)
-                  _buildBackupRow(context, file),
-              ],
-            ),
 
-          const SizedBox(height: FfSpace.x4l),
-        ],
+            const SizedBox(height: FfSpace.x4l),
+          ],
+        ),
       ),
     );
   }
