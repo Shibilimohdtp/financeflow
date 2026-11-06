@@ -42,6 +42,13 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
     final status = ref.watch(ingestionPlatformStatusProvider).value;
     final permission =
         status?.smsPermission ?? IngestionPermissionState.unavailable;
+    // Detection is on only when the app setting is on AND Android grants
+    // SMS access. Android keeps the permission across reinstalls, so the
+    // OS state alone can be "granted" while the app setting is off.
+    final appSettings = ref.watch(settingsStreamProvider).value;
+    final detectionOn =
+        (appSettings?.isSmsDetectionEnabled ?? false) &&
+        permission == IngestionPermissionState.granted;
 
     return FfPageScaffold(
       onAurora: true,
@@ -170,7 +177,7 @@ class _SmsPermissionScreenState extends ConsumerState<SmsPermissionScreen> {
           const SizedBox(height: FfSpace.x2l),
 
           // ── 5. Action Buttons ────────────────────────────────────────
-          if (permission == IngestionPermissionState.granted) ...[
+          if (detectionOn) ...[
             FfButton(
               label: 'Disable On-Device SMS Detection',
               variant: FfButtonVariant.destructive,
