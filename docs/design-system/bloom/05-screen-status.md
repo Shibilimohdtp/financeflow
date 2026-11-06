@@ -50,7 +50,8 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | Subscriptions | List, detail, add/edit, recurring suggestions | `subscriptions/*.dart` | C / D / E | Tokens | — | Sand hero; `FfMonthGrid` for payments |
 | Investments | List, detail, add/edit | `investments/*.dart` | C / D / E | Tokens | — | Dusk hero |
 | Lending | Lending & borrowing, record detail, sheets | `personal_debts/*.dart` | C / D / E | Tokens | — | Record detail has many leftover alpha tints |
-| Ingestion | Needs review, CSV import, SMS/notification permission | `ingestion/*.dart` | B / E / G | Tokens | — | |
+| Ingestion | Needs review | `ingestion/needs_review_screen.dart`, `widgets/*` | B | Bloom (this commit) | — | Redesigned triage queue with Focus mode (1-by-1 card triage, swipe accelerators, source evidence, trust indicators) and List mode, filter chips with counts, bulk actions, and calm zero-state |
+| Ingestion | CSV import, SMS/notification permission | `ingestion/csv_import_screen.dart`, `permissions/*` | E / G | Tokens | — | |
 | Onboarding | Onboarding | `onboarding/onboarding_screen.dart` | G | Tokens | — | |
 
 ## Suggested order after Budgets

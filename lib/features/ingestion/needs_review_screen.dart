@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../accounts/accounts_controller.dart';
@@ -11,11 +12,13 @@ import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_source_badge.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
 import '../transactions/add_edit_transaction_screen.dart';
 import 'needs_review_controller.dart';
+import 'widgets/needs_review_focus_card.dart';
 import 'widgets/pending_transaction_card.dart';
 import 'widgets/review_empty_states.dart';
 import 'widgets/review_filter_chips.dart';
@@ -29,6 +32,8 @@ class NeedsReviewScreen extends ConsumerStatefulWidget {
 
 class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
   String _selectedFilter = 'all'; // all, duplicates, uncertain, errors
+  String _viewMode = 'focus'; // 'focus' or 'list'
+  int _focusIndex = 0;
 
   void _openEditItemSheet(BuildContext context, ParsedTransaction item) {
     final accounts = ref.read(rawAccountsStreamProvider).value ?? const [];
@@ -251,14 +256,17 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
               )
               : ListView(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: FfSpace.lg,
+                  horizontal: FfSpace.pageMargin,
                   vertical: FfSpace.md,
                 ),
                 children: [
-                  // 1. Privacy Banner
+                  // 1. Privacy Banner & Promise
                   Container(
                     margin: const EdgeInsets.only(bottom: FfSpace.md),
-                    padding: const EdgeInsets.all(FfSpace.sm),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FfSpace.md,
+                      vertical: FfSpace.sm,
+                    ),
                     decoration: BoxDecoration(
                       color: context.ff.color.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(FfRadius.md),
@@ -277,10 +285,9 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                         const SizedBox(width: FfSpace.sm),
                         Expanded(
                           child: Text(
-                            'Private on-device review. Unapproved items are kept separate from your ledger reports and balances.',
-                            style: context.ff.text.label.copyWith(
+                            'Review in under a minute · private on-device queue',
+                            style: context.ff.text.labelSm.copyWith(
                               color: context.ff.color.textSecondary,
-                              height: 1.3,
                             ),
                           ),
                         ),
@@ -288,19 +295,40 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                     ),
                   ),
 
-                  // 2. Filter Chips
+                  // 2. Mode Switcher (Focus vs List)
+                  Center(
+                    child: FfSegmentedPill<String>(
+                      options: const [
+                        FfSegmentOption(value: 'focus', label: 'Focus'),
+                        FfSegmentOption(value: 'list', label: 'List'),
+                      ],
+                      selectedValue: _viewMode,
+                      onSelected: (val) {
+                        HapticFeedback.selectionClick();
+                        setState(() => _viewMode = val);
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: FfSpace.md),
+
+                  // 3. Filter Chips
                   ReviewFilterChips(
                     selectedFilter: _selectedFilter,
                     totalCount: items.length,
                     duplicatesCount: duplicatesCount,
                     uncertainCount: uncertainCount,
                     errorsCount: errorsCount,
-                    onFilterSelected:
-                        (f) => setState(() => _selectedFilter = f),
+                    onFilterSelected: (f) {
+                      setState(() {
+                        _selectedFilter = f;
+                        _focusIndex = 0;
+                      });
+                    },
                   ),
                   const SizedBox(height: FfSpace.lg),
 
-                  // 3. Pending items or filter empty state
+                  // 4. Content Area
                   if (filtered.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -308,135 +336,213 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                       ),
                       child: ReviewFilterEmptyState(
                         filter: _selectedFilter,
-                        onResetFilter:
-                            () => setState(() => _selectedFilter = 'all'),
+                        onResetFilter: () {
+                          setState(() {
+                            _selectedFilter = 'all';
+                            _focusIndex = 0;
+                          });
+                        },
                       ),
                     )
-                  else
+                  else if (_viewMode == 'focus') ...[
+                    // ── Focus Mode ──────────────────────────────────────────
+                    Builder(
+                      builder: (ctx) {
+                        final safeIndex = _focusIndex.clamp(
+                          0,
+                          filtered.length - 1,
+                        );
+                        final item = filtered[safeIndex];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Item ${safeIndex + 1} of ${filtered.length}',
+                                  style: context.ff.text.labelSm.copyWith(
+                                    color: context.ff.color.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (filtered.length > 1)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.arrow_back_ios_new_rounded,
+                                          size: 14,
+                                        ),
+                                        tooltip: 'Previous item',
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed:
+                                            safeIndex > 0
+                                                ? () => setState(
+                                                  () =>
+                                                      _focusIndex =
+                                                          safeIndex - 1,
+                                                )
+                                                : null,
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 14,
+                                        ),
+                                        tooltip: 'Next item',
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed:
+                                            safeIndex < filtered.length - 1
+                                                ? () => setState(
+                                                  () =>
+                                                      _focusIndex =
+                                                          safeIndex + 1,
+                                                )
+                                                : null,
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: FfSpace.xs),
+                            NeedsReviewFocusCard(
+                              item: item,
+                              accounts: accounts,
+                              busy: busy,
+                              onApprove: () => _runApprove(item),
+                              onDismiss: () => _runDismiss(item),
+                              onEdit: () => _openEditItemSheet(context, item),
+                              onMerge: () => _runMerge(item),
+                              onKeepBoth: () => _runKeepBoth(item),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    // ── List Mode ───────────────────────────────────────────
                     for (final item in filtered)
                       PendingTransactionCard(
                         item: item,
                         accounts: accounts,
                         busy: busy,
-                        onApprove:
-                            () => _runAction(() async {
-                              final merchant =
-                                  item.merchantDisplayName ??
-                                  (item.normalizedMerchant.isNotEmpty
-                                      ? item.normalizedMerchant
-                                      : item.rawMerchant);
-                              await ref
-                                  .read(needsReviewControllerProvider.notifier)
-                                  .approveItem(item);
-                              if (context.mounted) {
-                                FfToast.show(
-                                  context,
-                                  message: '$merchant approved.',
-                                  actionLabel: 'Undo',
-                                  onAction:
-                                      () =>
-                                          ref
-                                              .read(
-                                                needsReviewControllerProvider
-                                                    .notifier,
-                                              )
-                                              .undoLastApprove(),
-                                );
-                              }
-                            }),
-                        onDismiss:
-                            () => _runAction(() async {
-                              final merchant =
-                                  item.merchantDisplayName ??
-                                  (item.normalizedMerchant.isNotEmpty
-                                      ? item.normalizedMerchant
-                                      : item.rawMerchant);
-                              await ref
-                                  .read(needsReviewControllerProvider.notifier)
-                                  .dismissItem(item.tempId, item: item);
-                              if (context.mounted) {
-                                FfToast.show(
-                                  context,
-                                  message: '$merchant dismissed.',
-                                  actionLabel: 'Undo',
-                                  onAction:
-                                      () =>
-                                          ref
-                                              .read(
-                                                needsReviewControllerProvider
-                                                    .notifier,
-                                              )
-                                              .undoLastDismiss(),
-                                );
-                              }
-                            }),
+                        onApprove: () => _runApprove(item),
+                        onDismiss: () => _runDismiss(item),
                         onEdit: () => _openEditItemSheet(context, item),
-                        onMerge:
-                            () => _runAction(() async {
-                              final merchant =
-                                  item.merchantDisplayName ??
-                                  (item.normalizedMerchant.isNotEmpty
-                                      ? item.normalizedMerchant
-                                      : item.rawMerchant);
-                              final mergeItem = item.copyWith(
-                                duplicateResolution: DuplicateResolution.merge,
-                              );
-                              await ref
-                                  .read(needsReviewControllerProvider.notifier)
-                                  .approveItem(mergeItem);
-                              if (context.mounted) {
-                                FfToast.show(
-                                  context,
-                                  message: '$merchant merged with existing.',
-                                  actionLabel: 'Undo',
-                                  onAction:
-                                      () =>
-                                          ref
-                                              .read(
-                                                needsReviewControllerProvider
-                                                    .notifier,
-                                              )
-                                              .undoLastApprove(),
-                                );
-                              }
-                            }),
-                        onKeepBoth:
-                            () => _runAction(() async {
-                              final merchant =
-                                  item.merchantDisplayName ??
-                                  (item.normalizedMerchant.isNotEmpty
-                                      ? item.normalizedMerchant
-                                      : item.rawMerchant);
-                              await ref
-                                  .read(needsReviewControllerProvider.notifier)
-                                  .approveItem(
-                                    item.copyWith(
-                                      duplicateResolution:
-                                          DuplicateResolution.keepBoth,
-                                    ),
-                                  );
-                              if (context.mounted) {
-                                FfToast.show(
-                                  context,
-                                  message:
-                                      '$merchant approved (kept separate).',
-                                  actionLabel: 'Undo',
-                                  onAction:
-                                      () =>
-                                          ref
-                                              .read(
-                                                needsReviewControllerProvider
-                                                    .notifier,
-                                              )
-                                              .undoLastApprove(),
-                                );
-                              }
-                            }),
+                        onMerge: () => _runMerge(item),
+                        onKeepBoth: () => _runKeepBoth(item),
                       ),
+                  ],
 
                   const SizedBox(height: FfSpace.x4l),
                 ],
               ),
     );
+  }
+
+  void _runApprove(ParsedTransaction item) {
+    _runAction(() async {
+      final merchant =
+          item.merchantDisplayName ??
+          (item.normalizedMerchant.isNotEmpty
+              ? item.normalizedMerchant
+              : item.rawMerchant);
+      await ref.read(needsReviewControllerProvider.notifier).approveItem(item);
+      if (mounted) {
+        FfToast.show(
+          context,
+          message: '$merchant approved.',
+          actionLabel: 'Undo',
+          onAction:
+              () =>
+                  ref
+                      .read(needsReviewControllerProvider.notifier)
+                      .undoLastApprove(),
+        );
+      }
+    });
+  }
+
+  void _runDismiss(ParsedTransaction item) {
+    _runAction(() async {
+      final merchant =
+          item.merchantDisplayName ??
+          (item.normalizedMerchant.isNotEmpty
+              ? item.normalizedMerchant
+              : item.rawMerchant);
+      await ref
+          .read(needsReviewControllerProvider.notifier)
+          .dismissItem(item.tempId, item: item);
+      if (mounted) {
+        FfToast.show(
+          context,
+          message: '$merchant dismissed.',
+          actionLabel: 'Undo',
+          onAction:
+              () =>
+                  ref
+                      .read(needsReviewControllerProvider.notifier)
+                      .undoLastDismiss(),
+        );
+      }
+    });
+  }
+
+  void _runMerge(ParsedTransaction item) {
+    _runAction(() async {
+      final merchant =
+          item.merchantDisplayName ??
+          (item.normalizedMerchant.isNotEmpty
+              ? item.normalizedMerchant
+              : item.rawMerchant);
+      final mergeItem = item.copyWith(
+        duplicateResolution: DuplicateResolution.merge,
+      );
+      await ref
+          .read(needsReviewControllerProvider.notifier)
+          .approveItem(mergeItem);
+      if (mounted) {
+        FfToast.show(
+          context,
+          message: '$merchant merged with existing.',
+          actionLabel: 'Undo',
+          onAction:
+              () =>
+                  ref
+                      .read(needsReviewControllerProvider.notifier)
+                      .undoLastApprove(),
+        );
+      }
+    });
+  }
+
+  void _runKeepBoth(ParsedTransaction item) {
+    _runAction(() async {
+      final merchant =
+          item.merchantDisplayName ??
+          (item.normalizedMerchant.isNotEmpty
+              ? item.normalizedMerchant
+              : item.rawMerchant);
+      await ref
+          .read(needsReviewControllerProvider.notifier)
+          .approveItem(
+            item.copyWith(duplicateResolution: DuplicateResolution.keepBoth),
+          );
+      if (mounted) {
+        FfToast.show(
+          context,
+          message: '$merchant approved (kept separate).',
+          actionLabel: 'Undo',
+          onAction:
+              () =>
+                  ref
+                      .read(needsReviewControllerProvider.notifier)
+                      .undoLastApprove(),
+        );
+      }
+    });
   }
 }

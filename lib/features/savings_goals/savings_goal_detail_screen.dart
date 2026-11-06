@@ -25,7 +25,6 @@ import '../../shared/widgets/ff_stat_tile.dart';
 import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
-import '../../theme/ff_hero.dart';
 import '../../theme/ff_tone.dart';
 import 'add_edit_savings_goal_sheet.dart';
 import 'add_goal_contribution_sheet.dart';

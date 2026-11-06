@@ -196,14 +196,10 @@ class PendingTransactionCard extends StatelessWidget {
               margin: const EdgeInsets.only(top: FfSpace.sm),
               padding: const EdgeInsets.all(FfSpace.sm),
               decoration: BoxDecoration(
-                color: context.ff.color.statusError.withValues(
-                  alpha: FfTint.faint.alpha,
-                ),
+                color: context.ff.color.statusErrorContainer,
                 borderRadius: BorderRadius.circular(FfRadius.sm),
                 border: Border.all(
-                  color: context.ff.color.statusError.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
+                  color: context.ff.color.statusError,
                   width: FfBorderWidth.hairline,
                 ),
               ),
@@ -254,14 +250,10 @@ class PendingTransactionCard extends StatelessWidget {
               margin: const EdgeInsets.only(top: FfSpace.sm),
               padding: const EdgeInsets.all(FfSpace.sm),
               decoration: BoxDecoration(
-                color: context.ff.color.statusError.withValues(
-                  alpha: FfTint.faint.alpha,
-                ),
+                color: context.ff.color.statusErrorContainer,
                 borderRadius: BorderRadius.circular(FfRadius.sm),
                 border: Border.all(
-                  color: context.ff.color.statusError.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
+                  color: context.ff.color.statusError,
                   width: FfBorderWidth.hairline,
                 ),
               ),
@@ -293,14 +285,10 @@ class PendingTransactionCard extends StatelessWidget {
               margin: const EdgeInsets.only(top: FfSpace.sm),
               padding: const EdgeInsets.all(FfSpace.sm),
               decoration: BoxDecoration(
-                color: context.ff.color.statusWarningContainer.withValues(
-                  alpha: 0.25,
-                ),
+                color: context.ff.color.statusWarningContainer,
                 borderRadius: BorderRadius.circular(FfRadius.sm),
                 border: Border.all(
-                  color: context.ff.color.statusWarning.withValues(
-                    alpha: FfTint.strong.alpha,
-                  ),
+                  color: context.ff.color.statusWarning,
                   width: FfBorderWidth.hairline,
                 ),
               ),
@@ -332,14 +320,10 @@ class PendingTransactionCard extends StatelessWidget {
               margin: const EdgeInsets.only(top: FfSpace.sm),
               padding: const EdgeInsets.all(FfSpace.sm),
               decoration: BoxDecoration(
-                color: context.ff.color.statusWarningContainer.withValues(
-                  alpha: 0.25,
-                ),
+                color: context.ff.color.statusWarningContainer,
                 borderRadius: BorderRadius.circular(FfRadius.sm),
                 border: Border.all(
-                  color: context.ff.color.statusWarning.withValues(
-                    alpha: FfTint.strong.alpha,
-                  ),
+                  color: context.ff.color.statusWarning,
                   width: FfBorderWidth.hairline,
                 ),
               ),
