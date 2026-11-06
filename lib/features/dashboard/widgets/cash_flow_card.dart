@@ -28,17 +28,12 @@ class CashFlowCard extends StatelessWidget {
   final List<BarChartItem>? chartItems;
   final PeriodComparisonMetric? trendMetric;
 
-  /// Unused: amounts are shown and hidden from the balance hero. Kept until
-  /// the dashboard stops passing it (DS-B12 wiring step).
-  final VoidCallback? onToggleBlur;
-
   const CashFlowCard({
     super.key,
     required this.cashFlow,
     required this.month,
     this.periodLabel,
     required this.isPrivacyBlur,
-    this.onToggleBlur,
     this.onOpenAnalytics,
     this.chartItems,
     this.trendMetric,

@@ -31,6 +31,7 @@ import 'widgets/actionable_items_section.dart';
 import 'widgets/budget_overview_card.dart';
 import 'widgets/cash_flow_card.dart';
 import 'widgets/home_accounts_carousel.dart';
+import 'widgets/home_card_error.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_loans_overview.dart';
 import 'widgets/home_recent_transactions.dart';
@@ -253,65 +254,14 @@ class DashboardScreen extends ConsumerWidget {
                           periodLabel: periodLabel(period),
                           chartItems: cashFlowChartAsync.valueOrNull,
                           isPrivacyBlur: isPrivacyBlur,
-                          onToggleBlur: () {
-                            ref
-                                .read(settingsControllerProvider.notifier)
-                                .setPrivacyBlurEnabled(!isPrivacyBlur);
-                          },
                           onOpenAnalytics: onOpenAnalytics,
                         ),
-                    loading:
-                        () => const FfCard(
-                          density: FfDensity.comfortable,
-                          padding: EdgeInsets.all(FfSpace.lg),
-                          child: FfSkeletonLoader(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                FfSkeletonBlock(width: 100, height: 12),
-                                SizedBox(height: FfSpace.sm),
-                                FfSkeletonBlock(width: 140, height: 28),
-                                SizedBox(height: FfSpace.md),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: FfSkeletonBlock(height: 40),
-                                    ),
-                                    SizedBox(width: FfSpace.sm),
-                                    Expanded(
-                                      child: FfSkeletonBlock(height: 40),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                    loading: () => const CashFlowCardSkeleton(),
                     error:
-                        (e, _) => FfCard(
-                          density: FfDensity.comfortable,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: FfSpace.md,
-                            vertical: FfSpace.sm,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.wifi_off_rounded,
-                                size: 16,
-                                color: context.ff.color.textSecondary,
-                              ),
-                              const SizedBox(width: FfSpace.sm),
-                              Expanded(
-                                child: Text(
-                                  'Could not load cash flow data',
-                                  style: context.ff.text.bodySm.copyWith(
-                                    color: context.ff.color.textSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        (e, _) => HomeCardError(
+                          what: 'cash flow',
+                          onRetry:
+                              () => ref.invalidate(monthlyCashFlowProvider),
                         ),
                   ),
                 ),
@@ -319,9 +269,6 @@ class DashboardScreen extends ConsumerWidget {
                 // 5. Budgets & Spending Overview
                 overallBudgetAsync.when(
                   data: (budgetSummary) {
-                    if (budgetSummary.totalBudgeted <= 0) {
-                      return const SizedBox.shrink();
-                    }
                     return Padding(
                       padding: const EdgeInsets.only(top: _sectionGap),
                       child: BudgetOverviewCard(
@@ -335,8 +282,32 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  loading:
+                      () => const Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          FfSpace.pageMargin,
+                          _sectionGap,
+                          FfSpace.pageMargin,
+                          0,
+                        ),
+                        child: BudgetOverviewCardSkeleton(),
+                      ),
+                  error:
+                      (_, __) => Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          FfSpace.pageMargin,
+                          _sectionGap,
+                          FfSpace.pageMargin,
+                          0,
+                        ),
+                        child: HomeCardError(
+                          what: 'budgets',
+                          onRetry: () {
+                            ref.invalidate(overallBudgetSummaryProvider);
+                            ref.invalidate(budgetSummariesProvider);
+                          },
+                        ),
+                      ),
                 ),
 
                 // 6. Loans & EMIs Overview
@@ -375,12 +346,29 @@ class DashboardScreen extends ConsumerWidget {
                         completedCount: goalSummary.completedCount,
                         totalGoals: goalSummary.totalGoals,
                         isPrivacyBlur: isPrivacyBlur,
+                        goals:
+                            ref.watch(savingsGoalSummariesProvider).valueOrNull,
                         onViewGoals: onOpenSavingsGoals ?? () {},
                       ),
                     );
                   },
                   loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error:
+                      (_, __) => Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          FfSpace.pageMargin,
+                          _sectionGap,
+                          FfSpace.pageMargin,
+                          0,
+                        ),
+                        child: HomeCardError(
+                          what: 'savings goals',
+                          onRetry:
+                              () => ref.invalidate(
+                                overallSavingsGoalSummaryProvider,
+                              ),
+                        ),
+                      ),
                 ),
 
                 const SizedBox(height: _sectionGap),
