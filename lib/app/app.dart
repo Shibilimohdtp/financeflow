@@ -18,6 +18,7 @@ import '../features/ingestion/needs_review_screen.dart';
 import '../features/loans/loans_screen.dart';
 import '../features/subscriptions/subscriptions_screen.dart';
 import '../services/notifications/notification_coordinator.dart';
+import '../theme/ff_system_ui.dart';
 import '../theme/stillwater_theme.dart';
 import 'router.dart';
 
@@ -121,6 +122,7 @@ class FinanceFlowApp extends ConsumerWidget {
           theme: StillwaterTheme.daylight,
           darkTheme: StillwaterTheme.deepWater,
           themeMode: themeMode,
+          builder: ffSystemUiBuilder,
           home: StartupReady(child: home),
         );
       },
@@ -129,6 +131,7 @@ class FinanceFlowApp extends ConsumerWidget {
             debugShowCheckedModeBanner: false,
             theme: StillwaterTheme.daylight,
             darkTheme: StillwaterTheme.deepWater,
+            builder: ffSystemUiBuilder,
             home: const FfAurora(
               child: Scaffold(
                 backgroundColor: Colors.transparent,
@@ -148,6 +151,7 @@ class FinanceFlowApp extends ConsumerWidget {
             debugShowCheckedModeBanner: false,
             theme: StillwaterTheme.daylight,
             darkTheme: StillwaterTheme.deepWater,
+            builder: ffSystemUiBuilder,
             home: FfAurora(
               child: Scaffold(
                 backgroundColor: Colors.transparent,
