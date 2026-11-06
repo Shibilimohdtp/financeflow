@@ -64,7 +64,8 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfRangeBand` | Value against good/watch/high bands (utilisation, pace) | `FfRangeBand(bands: [FfBand(start:, end:, tone:, label:)], value:, valueLabel:)` |
 | `FfLineChart` | Trend with the spark value bubble; tap/drag to select | `FfLineChart(points: [FfChartPoint(label, value)], valueLabel:, initialIndex:, reference:, domainLength:, referenceLabel:, hint:)`. `reference` draws a dashed ideal-pace/target line (longer dashes than the grid, no dots); with `domainLength` the actual series stops at today while the reference spans the period; `referenceLabel(i)` is read after the value ("Day 6: ₹6,800, pace ₹1,200") |
 | `FfMonthGrid` | Month tiles: paid ✓, missed ✕, due, upcoming; budget history: `under` (spark ✓, "within plan") and `over` (amber "!", "over plan") with the amount `note` under the marker | `FfMonthGrid(months: [FfMonthCell(label:, status:, note:)])`; announced as "July, over plan, ₹6.8k" |
-| `FfBarChart`, `FfDonutChart` (`charts/`) | Bars and donut (Insights) | Not yet restyled for Bloom (see status) |
+| `FfBarChart` (`charts/ff_bar_chart.dart`) | Rounded comparison bars with spark value bubble, tabular Geist numerals, accessible steppers | `FfBarChart(items: [BarChartItem(label, value, secondaryValue:)], selectedIndex:, onSelected:, showYAxis:)` |
+| `FfDonutChart` (`charts/ff_donut_chart.dart`) | Proportional category ring with high-contrast segment numbers, light center amount, accessible semantics | `FfDonutChart(slices: [DonutSlice(label, value, colorToken:)], selectedSliceIndex:, onSliceSelected:, showSegmentNumbers:)` |
 
 ## Adding or changing a component
 

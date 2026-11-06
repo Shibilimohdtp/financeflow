@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/formatting/currency_formatter.dart';
-import '../../../theme/ff.dart';
-import '../../../theme/palettes/ff_palette.dart';
 import '../../../models/category_colors.dart';
+import '../../../theme/ff.dart';
 
 class DonutSlice {
   final String label;
@@ -19,7 +19,7 @@ class DonutSlice {
   });
 }
 
-/// Proportional ring with optional numbered segments and linked selection.
+/// Proportional ring with optional numbered segments and linked selection in Stillwater Bloom.
 class FfDonutChart extends StatefulWidget {
   final List<DonutSlice> slices;
   final double size;
@@ -33,8 +33,8 @@ class FfDonutChart extends StatefulWidget {
   const FfDonutChart({
     super.key,
     required this.slices,
-    this.size = 220,
-    this.strokeWidth = 30,
+    this.size = FfDonutChartTokens.defaultSize,
+    this.strokeWidth = FfDonutChartTokens.defaultStrokeWidth,
     this.centerLabel,
     this.semanticsSummary,
     this.selectedSliceIndex,
@@ -55,15 +55,30 @@ class _FfDonutChartState extends State<FfDonutChart> {
     if (oldWidget.slices != widget.slices) _localSelection = null;
   }
 
+  void _select(int index) {
+    final current = widget.selectedSliceIndex ?? _localSelection;
+    if (index != current) {
+      HapticFeedback.selectionClick();
+    }
+    if (widget.onSliceSelected != null) {
+      widget.onSliceSelected!(index);
+    } else {
+      setState(() => _localSelection = index);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ff = context.ff;
     final total = widget.slices.fold<double>(0, (sum, s) => sum + _value(s));
     if (total <= 0) {
       return SizedBox(
         height: widget.size,
-        child: const Center(
-          child: Text('No expenses recorded for this period.'),
+        child: Center(
+          child: Text(
+            'No expenses recorded for this period.',
+            style: ff.text.bodySm.copyWith(color: ff.color.textSecondary),
+          ),
         ),
       );
     }
@@ -72,6 +87,7 @@ class _FfDonutChartState extends State<FfDonutChart> {
         index != null && index >= 0 && index < widget.slices.length
             ? widget.slices[index]
             : null;
+
     return Semantics(
       container: true,
       label: widget.semanticsSummary ?? 'Expense category breakdown',
@@ -88,6 +104,8 @@ class _FfDonutChartState extends State<FfDonutChart> {
           final stroke = min(widget.strokeWidth, size / 4);
           final radius = (size - stroke) / 2 - 4;
           final arcs = _arcs(widget.slices, total, radius);
+          final centerBoxSize = max(0.0, size - stroke * 2 - 24);
+
           return Center(
             child: GestureDetector(
               key: const ValueKey('donut-ring'),
@@ -99,11 +117,7 @@ class _FfDonutChartState extends State<FfDonutChart> {
                 final angle = (atan2(offset.dy, offset.dx) + pi / 2) % (2 * pi);
                 for (final arc in arcs) {
                   if (angle >= arc.start && angle <= arc.start + arc.sweep) {
-                    if (widget.onSliceSelected != null) {
-                      widget.onSliceSelected!(arc.index);
-                    } else {
-                      setState(() => _localSelection = arc.index);
-                    }
+                    _select(arc.index);
                     break;
                   }
                 }
@@ -121,19 +135,20 @@ class _FfDonutChartState extends State<FfDonutChart> {
                         radius: radius,
                         strokeWidth: stroke,
                         selectedSliceIndex: index,
-                        theme: theme,
+                        ff: ff,
+                        brightness: Theme.of(context).brightness,
                         showNumbers: widget.showSegmentNumbers,
                       ),
                     ),
                     ExcludeSemantics(
                       child: SizedBox(
-                        width: max(0, size - stroke * 2 - 28),
-                        height: max(0, size - stroke * 2 - 28),
+                        width: centerBoxSize,
+                        height: centerBoxSize,
                         child: Center(
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: SizedBox(
-                              width: max(0, size - stroke * 2 - 28),
+                              width: centerBoxSize,
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -144,8 +159,8 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                     textAlign: TextAlign.center,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: context.ff.text.bodySm.copyWith(
-                                      color: context.ff.color.textSecondary,
+                                    style: ff.text.bodySm.copyWith(
+                                      color: ff.color.textSecondary,
                                     ),
                                   ),
                                   const SizedBox(height: FfSpace.x2s),
@@ -155,8 +170,11 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                       CurrencyFormatter.format(
                                         selected?.value ?? total,
                                       ),
-                                      style: context.ff.text.titleLg.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                      style: ff.text.headlineSm.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -165,7 +183,12 @@ class _FfDonutChartState extends State<FfDonutChart> {
                                     Text(
                                       '${_share(selected.value / total)} of total',
                                       textAlign: TextAlign.center,
-                                      style: context.ff.text.label,
+                                      style: ff.text.label.copyWith(
+                                        color: ff.color.textSecondary,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ],
@@ -218,11 +241,8 @@ class _DonutChartPainter extends CustomPainter {
   final double radius;
   final double strokeWidth;
   final int? selectedSliceIndex;
-  final ThemeData theme;
-
-  FfColors get _colors =>
-      theme.extension<FfColors>() ??
-      FfPalettes.lichen.colorsFor(theme.brightness);
+  final FfThemeData ff;
+  final Brightness brightness;
   final bool showNumbers;
 
   _DonutChartPainter({
@@ -231,21 +251,23 @@ class _DonutChartPainter extends CustomPainter {
     required this.radius,
     required this.strokeWidth,
     required this.selectedSliceIndex,
-    required this.theme,
+    required this.ff,
+    required this.brightness,
     required this.showNumbers,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
+    final isDark = brightness == Brightness.dark;
+
     for (final arc in arcs) {
       final slice = slices[arc.index];
       final color =
           slice.color ??
-          CategoryColors.getColor(
-            slice.colorToken,
-            isDark: theme.brightness == Brightness.dark,
-          );
+          CategoryColors.getColor(slice.colorToken, isDark: isDark);
+
+      // Segment arc
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         arc.start - pi / 2,
@@ -257,18 +279,28 @@ class _DonutChartPainter extends CustomPainter {
           ..strokeWidth = strokeWidth
           ..strokeCap = StrokeCap.butt,
       );
+
+      // Selected slice outline ring
       if (selectedSliceIndex == arc.index) {
         canvas.drawArc(
-          Rect.fromCircle(center: center, radius: radius + strokeWidth / 2 + 3),
+          Rect.fromCircle(
+            center: center,
+            radius:
+                radius +
+                strokeWidth / 2 +
+                FfDonutChartTokens.selectionRingGap +
+                FfDonutChartTokens.selectionRingWidth / 2,
+          ),
           arc.start - pi / 2,
           arc.sweep,
           false,
           Paint()
-            ..color = _colors.textPrimary
+            ..color = ff.color.textPrimary
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2,
+            ..strokeWidth = FfDonutChartTokens.selectionRingWidth,
         );
       }
+
       // Small segments keep their actual size, with details in the legend.
       if (showNumbers && arc.sweep * radius >= 26 && strokeWidth >= 24) {
         final angle = arc.start + arc.sweep / 2 - pi / 2;
@@ -276,15 +308,14 @@ class _DonutChartPainter extends CustomPainter {
         final text = TextPainter(
           text: TextSpan(
             text: '${arc.index + 1}',
-            // Ink on light segments, paper on dark ones (WCAG midpoint).
-            style: (theme.extension<FfText>()?.label ?? const TextStyle())
-                .copyWith(
-                  fontWeight: FontWeight.w700,
-                  color:
-                      color.computeLuminance() > .179
-                          ? _colors.surfaceInk
-                          : _colors.onSurfaceInk,
-                ),
+            style: ff.text.label.copyWith(
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+              color:
+                  color.computeLuminance() > 0.179
+                      ? ff.color.surfaceInk
+                      : ff.color.onSurfaceInk,
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
@@ -299,7 +330,8 @@ class _DonutChartPainter extends CustomPainter {
       oldDelegate.slices != slices ||
       oldDelegate.radius != radius ||
       oldDelegate.strokeWidth != strokeWidth ||
-      oldDelegate.theme != theme ||
+      oldDelegate.ff != ff ||
+      oldDelegate.brightness != brightness ||
       oldDelegate.showNumbers != showNumbers ||
       oldDelegate.selectedSliceIndex != selectedSliceIndex;
 }

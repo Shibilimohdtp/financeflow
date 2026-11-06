@@ -5,6 +5,8 @@
 // pace reference, within/over-plan months, the over-plan bar).
 //
 //   flutter test tool/screenshots/bloom_screenshots_test.dart --update-goldens
+import 'package:financeflow/shared/widgets/charts/ff_bar_chart.dart';
+import 'package:financeflow/shared/widgets/charts/ff_donut_chart.dart';
 import 'package:financeflow/shared/widgets/ff_amount_text.dart';
 import 'package:financeflow/shared/widgets/ff_card.dart';
 import 'package:financeflow/shared/widgets/ff_corner_badge.dart';
@@ -434,6 +436,105 @@ Widget _planSheet(BuildContext context) {
   );
 }
 
+Widget _chartsSheet(BuildContext context) {
+  final ff = context.ff;
+  return Stack(
+    children: [
+      const Positioned.fill(child: FfAurora()),
+      ListView(
+        padding: const EdgeInsets.fromLTRB(
+          FfSpace.pageMargin,
+          24,
+          FfSpace.pageMargin,
+          40,
+        ),
+        children: [
+          FfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Cash flow', style: ff.text.titleLg),
+                const SizedBox(height: 12),
+                const FfBarChart(
+                  items: [
+                    BarChartItem(
+                      label: '1–7 Aug',
+                      value: 8500,
+                      secondaryValue: 12000,
+                    ),
+                    BarChartItem(
+                      label: '8–14 Aug',
+                      value: 14200,
+                      secondaryValue: 9500,
+                    ),
+                    BarChartItem(
+                      label: '15–21 Aug',
+                      value: 6800,
+                      secondaryValue: 15400,
+                    ),
+                    BarChartItem(
+                      label: '22–28 Aug',
+                      value: 19500,
+                      secondaryValue: 8000,
+                    ),
+                    BarChartItem(
+                      label: '29–31 Aug',
+                      value: 4300,
+                      secondaryValue: 6100,
+                    ),
+                  ],
+                  selectedIndex: 2,
+                  showYAxis: true,
+                  semanticsSummary: 'Monthly cash flow chart',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          FfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Where your money went', style: ff.text.titleLg),
+                const SizedBox(height: 16),
+                const Center(
+                  child: FfDonutChart(
+                    slices: [
+                      DonutSlice(
+                        label: 'Dining',
+                        value: 4500,
+                        colorToken: 'clay',
+                      ),
+                      DonutSlice(
+                        label: 'Groceries',
+                        value: 8200,
+                        colorToken: 'moss',
+                      ),
+                      DonutSlice(
+                        label: 'Shopping',
+                        value: 3100,
+                        colorToken: 'rose',
+                      ),
+                      DonutSlice(
+                        label: 'Bills',
+                        value: 6400,
+                        colorToken: 'dusk',
+                      ),
+                    ],
+                    selectedSliceIndex: 0,
+                    showSegmentNumbers: true,
+                    semanticsSummary: 'Expense category breakdown',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 void main() {
   setUpAll(loadAppFonts);
 
@@ -476,6 +577,25 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/bloom_plan_components_$mode.png'),
+      );
+    });
+
+    testWidgets('charts components, $mode', (tester) async {
+      tester.view.physicalSize = const Size(390, 850);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.runAsync(FfGrainTile.load);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: theme,
+          home: Scaffold(body: Builder(builder: _chartsSheet)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/bloom_charts_$mode.png'),
       );
     });
   }

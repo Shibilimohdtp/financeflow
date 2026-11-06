@@ -246,6 +246,25 @@ abstract final class FfLineChartTokens {
   static const List<double> referenceDash = [6, 4];
 }
 
+/// Bar chart with rounded bars and optional spark bubble.
+abstract final class FfBarChartTokens {
+  static const double defaultHeight = 180;
+  static const double barRadius = 4;
+  static const double bubbleHeight = 24;
+  static const double bubbleMinWidth = 42;
+  static const double bubblePaddingH = 8;
+  static const double gridLineWidth = 1;
+  static const double secondaryGap = 2;
+}
+
+/// Donut chart with proportional segments.
+abstract final class FfDonutChartTokens {
+  static const double defaultSize = 220;
+  static const double defaultStrokeWidth = 30;
+  static const double selectionRingGap = 3;
+  static const double selectionRingWidth = 2;
+}
+
 /// Range bands (budget pace, utilisation).
 abstract final class FfRangeBandTokens {
   static const double height = 36;
