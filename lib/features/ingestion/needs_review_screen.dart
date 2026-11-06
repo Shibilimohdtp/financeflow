@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../core/formatting/currency_formatter.dart';
-import '../../core/formatting/date_formatter.dart';
+
 import '../accounts/accounts_controller.dart';
-import '../../models/account.dart';
 import '../../models/ingestion/parsed_transaction.dart';
 import '../../models/transaction.dart';
+import '../../repositories/pending_transaction_repository.dart';
 import '../../services/categorization_service.dart';
 import '../../services/default_account_service.dart';
-import '../../repositories/pending_transaction_repository.dart';
-import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_category_tile.dart';
-import '../../shared/widgets/ff_chip.dart';
-import '../../shared/widgets/ff_empty_state.dart';
-import '../../shared/widgets/ff_source_badge.dart';
-import 'needs_review_controller.dart';
-import '../transactions/add_edit_transaction_screen.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_source_badge.dart';
+import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../transactions/add_edit_transaction_screen.dart';
+import 'needs_review_controller.dart';
+import 'widgets/pending_transaction_card.dart';
+import 'widgets/review_empty_states.dart';
+import 'widgets/review_filter_chips.dart';
 
 class NeedsReviewScreen extends ConsumerStatefulWidget {
   const NeedsReviewScreen({super.key});
@@ -46,9 +43,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
     final wasAlreadyReviewed =
         item.categorizationConfidence >= 1 &&
         item.categorizationReason == 'User reviewed category';
-    // Older queued SMS/notification items may still carry the historical
-    // Cash Wallet fallback. Repair that default when the user opens review;
-    // explicitly chosen accounts remain untouched.
+
     var initialTransaction =
         isImportedFinancialEvent &&
                 item.accountId == 'acc_primary_cash' &&
@@ -260,7 +255,7 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                   vertical: FfSpace.md,
                 ),
                 children: [
-                  // 1. Privacy & Context Banner
+                  // 1. Privacy Banner
                   Container(
                     margin: const EdgeInsets.only(bottom: FfSpace.md),
                     padding: const EdgeInsets.all(FfSpace.sm),
@@ -293,625 +288,155 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
                     ),
                   ),
 
-                  // 2. Horizontal Scrollable Filter Chips Row
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        FfChip(
-                          label: 'All (${items.length})',
-                          isSelected: _selectedFilter == 'all',
-                          onSelected:
-                              () => setState(() => _selectedFilter = 'all'),
-                        ),
-                        const SizedBox(width: FfSpace.xs),
-                        FfChip(
-                          label: 'Duplicates ($duplicatesCount)',
-                          isSelected: _selectedFilter == 'duplicates',
-                          onSelected:
-                              () => setState(
-                                () => _selectedFilter = 'duplicates',
-                              ),
-                        ),
-                        const SizedBox(width: FfSpace.xs),
-                        FfChip(
-                          label: 'Uncertain ($uncertainCount)',
-                          isSelected: _selectedFilter == 'uncertain',
-                          onSelected:
-                              () =>
-                                  setState(() => _selectedFilter = 'uncertain'),
-                        ),
-                        const SizedBox(width: FfSpace.xs),
-                        FfChip(
-                          label: 'Invalid ($errorsCount)',
-                          isSelected: _selectedFilter == 'errors',
-                          onSelected:
-                              () => setState(() => _selectedFilter = 'errors'),
-                        ),
-                      ],
-                    ),
+                  // 2. Filter Chips
+                  ReviewFilterChips(
+                    selectedFilter: _selectedFilter,
+                    totalCount: items.length,
+                    duplicatesCount: duplicatesCount,
+                    uncertainCount: uncertainCount,
+                    errorsCount: errorsCount,
+                    onFilterSelected:
+                        (f) => setState(() => _selectedFilter = f),
                   ),
                   const SizedBox(height: FfSpace.lg),
 
-                  // 3. Pending items or filter-specific empty state
+                  // 3. Pending items or filter empty state
                   if (filtered.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: FfSpace.x3l,
                       ),
-                      child: _buildFilterEmptyState(context),
+                      child: ReviewFilterEmptyState(
+                        filter: _selectedFilter,
+                        onResetFilter:
+                            () => setState(() => _selectedFilter = 'all'),
+                      ),
                     )
                   else
                     for (final item in filtered)
-                      _buildPendingItemCard(context, item, busy, accounts),
-
-                  const SizedBox(height: FfSpace.x4l),
-                ],
-              ),
-    );
-  }
-
-  Widget _buildFilterEmptyState(BuildContext context) {
-    switch (_selectedFilter) {
-      case 'duplicates':
-        return FfEmptyState(
-          icon: Icons.copy_rounded,
-          title: 'No duplicate transactions',
-          description:
-              'None of your pending imports match existing ledger entries.',
-          actionLabel: 'View all items',
-          onAction: () => setState(() => _selectedFilter = 'all'),
-        );
-      case 'uncertain':
-        return FfEmptyState(
-          icon: Icons.category_outlined,
-          title: 'All categories confirmed',
-          description:
-              'All pending transactions have confident categories assigned.',
-          actionLabel: 'View all items',
-          onAction: () => setState(() => _selectedFilter = 'all'),
-        );
-      case 'errors':
-        return FfEmptyState(
-          icon: Icons.check_circle_outline_rounded,
-          title: 'No invalid transactions',
-          description:
-              'All pending transactions have valid amounts, dates, and accounts.',
-          actionLabel: 'View all items',
-          onAction: () => setState(() => _selectedFilter = 'all'),
-        );
-      default:
-        return const FfEmptyState(
-          icon: Icons.check_circle_outline_rounded,
-          title: 'All Clear',
-          description: 'No transactions are currently pending review.',
-        );
-    }
-  }
-
-  Widget _buildPendingItemCard(
-    BuildContext context,
-    ParsedTransaction item,
-    bool busy,
-    List<Account> accounts,
-  ) {
-    final theme = context.theme;
-    final isExpense = item.type == TransactionType.expense;
-
-    final account = accounts.where((a) => a.id == item.accountId).firstOrNull;
-    final accountName = account?.name ?? (item.sourceName ?? 'Account');
-
-    final merchantName =
-        item.merchantDisplayName ??
-        (item.normalizedMerchant.isNotEmpty
-            ? item.normalizedMerchant
-            : item.rawMerchant);
-
-    Widget? statusBadge;
-    if (item.isDuplicate) {
-      statusBadge = Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.x2s,
-          vertical: FfSpace.x3s,
-        ),
-        decoration: BoxDecoration(
-          color: context.ff.color.statusWarningContainer,
-          borderRadius: BorderRadius.circular(FfRadius.xs),
-        ),
-        child: Text(
-          item.duplicateStatus.displayName,
-          style: context.ff.text.labelSm.copyWith(
-            color: context.ff.color.statusWarning,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    } else if (!item.isValid) {
-      statusBadge = Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.x2s,
-          vertical: FfSpace.x3s,
-        ),
-        decoration: BoxDecoration(
-          color: context.ff.color.statusErrorContainer,
-          borderRadius: BorderRadius.circular(FfRadius.xs),
-        ),
-        child: Text(
-          'Needs details',
-          style: context.ff.text.labelSm.copyWith(
-            color: context.ff.color.statusError,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    } else if (item.categorizationConfidence < 0.7) {
-      statusBadge = Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.x2s,
-          vertical: FfSpace.x3s,
-        ),
-        decoration: BoxDecoration(
-          color: context.ff.color.statusWarningContainer,
-          borderRadius: BorderRadius.circular(FfRadius.xs),
-        ),
-        child: Text(
-          'Confirm category',
-          style: context.ff.text.labelSm.copyWith(
-            color: context.ff.color.statusWarning,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: FfSpace.md),
-      padding: const EdgeInsets.all(FfSpace.md),
-      decoration: BoxDecoration(
-        color: context.ff.color.surfaceCard,
-        borderRadius: BorderRadius.circular(FfRadius.lg),
-        border: Border.all(
-          color: context.ff.color.borderSubtle,
-          width: FfBorderWidth.hairline,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Source badge, date, and status tag
-          Wrap(
-            spacing: FfSpace.sm,
-            runSpacing: FfSpace.xs,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              FfSourceBadge(source: item.source, sourceName: item.sourceName),
-              Text(
-                DateFormatter.formatTransactionDate(item.date),
-                style: context.ff.text.labelSm.copyWith(
-                  color: context.ff.color.secondary,
-                ),
-              ),
-              if (statusBadge != null) statusBadge,
-            ],
-          ),
-          const SizedBox(height: FfSpace.sm),
-
-          // Row 2: Category Icon Tile + Merchant Name/Category & Account Subtitle + Amount
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              FfCategoryTile(
-                iconIdentifier: item.categoryIcon,
-                colorTokenIdentifier: item.categoryColor,
-                size: 40,
-              ),
-              const SizedBox(width: FfSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      merchantName,
-                      style: context.ff.text.title.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: FfSpace.x3s),
-                    Text(
-                      '${item.categoryName.isNotEmpty ? item.categoryName : 'Uncategorized'} • $accountName',
-                      style: context.ff.text.label.copyWith(
-                        color: context.ff.color.secondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: FfSpace.sm),
-              Text(
-                CurrencyFormatter.format(
-                  item.amount,
-                  showSign: true,
-                  isExpense: isExpense,
-                  isIncome: !isExpense,
-                ),
-                style: context.ff.text.title.copyWith(
-                  color:
-                      isExpense
-                          ? context.ff.color.moneyExpense
-                          : context.ff.color.moneyIncome,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-
-          // Row 3: Review Reason Callout Boxes
-          if (item.isDuplicate) ...[
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: FfSpace.sm),
-              padding: const EdgeInsets.all(FfSpace.sm),
-              decoration: BoxDecoration(
-                color: context.ff.color.statusError.withValues(
-                  alpha: FfTint.faint.alpha,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.sm),
-                border: Border.all(
-                  color: context.ff.color.statusError.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
-                  width: FfBorderWidth.hairline,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.copy_all_outlined,
-                        size: 14,
-                        color: context.ff.color.statusError,
-                      ),
-                      const SizedBox(width: FfSpace.xs),
-                      Text(
-                        '${item.duplicateStatus.displayName} with existing transaction',
-                        style: context.ff.text.labelSm.copyWith(
-                          color: context.ff.color.statusError,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (item.duplicateReasons.isNotEmpty) ...[
-                    const SizedBox(height: FfSpace.x3s),
-                    Text(
-                      item.duplicateReasons.join(' · '),
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.secondary,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: FfSpace.x3s),
-                  Text(
-                    'Merge to update the existing ledger entry, or Keep Both to record as separate.',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          if (item.warnings.isNotEmpty || item.validationErrors.isNotEmpty) ...[
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: FfSpace.sm),
-              padding: const EdgeInsets.all(FfSpace.sm),
-              decoration: BoxDecoration(
-                color: context.ff.color.statusError.withValues(
-                  alpha: FfTint.faint.alpha,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.sm),
-                border: Border.all(
-                  color: context.ff.color.statusError.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
-                  width: FfBorderWidth.hairline,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.error_outline_rounded,
-                    size: 14,
-                    color: context.ff.color.statusError,
-                  ),
-                  const SizedBox(width: FfSpace.xs),
-                  Expanded(
-                    child: Text(
-                      [...item.validationErrors, ...item.warnings].join('\n'),
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.statusError,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          if (item.categorizationConfidence < 0.7 && !item.isDuplicate) ...[
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: FfSpace.sm),
-              padding: const EdgeInsets.all(FfSpace.sm),
-              decoration: BoxDecoration(
-                color: context.ff.color.statusWarningContainer.withValues(
-                  alpha: 0.25,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.sm),
-                border: Border.all(
-                  color: context.ff.color.statusWarning.withValues(
-                    alpha: FfTint.strong.alpha,
-                  ),
-                  width: FfBorderWidth.hairline,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline_rounded,
-                    size: 14,
-                    color: context.ff.color.statusWarning,
-                  ),
-                  const SizedBox(width: FfSpace.xs),
-                  Expanded(
-                    child: Text(
-                      'Suggested category: ${item.categoryName.isNotEmpty ? item.categoryName : 'Uncategorized'}. Confirm or tap Edit to change.',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.statusWarning,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          if (item.normalizedMerchant == 'Bank Transaction') ...[
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: FfSpace.sm),
-              padding: const EdgeInsets.all(FfSpace.sm),
-              decoration: BoxDecoration(
-                color: context.ff.color.statusWarningContainer.withValues(
-                  alpha: 0.25,
-                ),
-                borderRadius: BorderRadius.circular(FfRadius.sm),
-                border: Border.all(
-                  color: context.ff.color.statusWarning.withValues(
-                    alpha: FfTint.strong.alpha,
-                  ),
-                  width: FfBorderWidth.hairline,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.help_outline_rounded,
-                    size: 14,
-                    color: context.ff.color.statusWarning,
-                  ),
-                  const SizedBox(width: FfSpace.xs),
-                  Expanded(
-                    child: Text(
-                      'Payee not identified — please edit before approving.',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.statusWarning,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // Collapsible original SMS snippet
-          if (item.rawSource != null) ...[
-            Theme(
-              data: theme.copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(
-                  'Original imported text',
-                  style: context.ff.text.labelSm.copyWith(
-                    color: context.ff.color.secondary,
-                  ),
-                ),
-                children: [
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: FfSpace.xs),
-                    padding: const EdgeInsets.all(FfSpace.sm),
-                    decoration: BoxDecoration(
-                      color: context.ff.color.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(FfRadius.sm),
-                    ),
-                    child: SelectableText(
-                      item.rawSource!,
-                      style: context.ff.text.labelSm.copyWith(
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          const SizedBox(height: FfSpace.sm),
-
-          // Action Buttons: Dismiss, Edit, Approve / Merge / Keep Both / Fix
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: FfSpace.xs,
-            runSpacing: FfSpace.xs,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              TextButton(
-                onPressed:
-                    busy
-                        ? null
-                        : () async {
-                          await _runAction(
-                            () => ref
-                                .read(needsReviewControllerProvider.notifier)
-                                .dismissItem(item.tempId, item: item),
-                          );
-                          if (context.mounted) {
-                            FfToast.show(
-                              context,
-                              message: '$merchantName dismissed.',
-                              actionLabel: 'Undo',
-                              onAction:
-                                  () =>
-                                      ref
-                                          .read(
-                                            needsReviewControllerProvider
-                                                .notifier,
-                                          )
-                                          .undoLastDismiss(),
-                            );
-                          }
-                        },
-                child: const Text('Dismiss'),
-              ),
-              TextButton(
-                onPressed:
-                    busy ? null : () => _openEditItemSheet(context, item),
-                child: const Text('Edit'),
-              ),
-              if (item.isDuplicate &&
-                  (item.matchedTransaction != null ||
-                      item.matchedTransactionId != null)) ...[
-                TextButton(
-                  onPressed:
-                      busy || !item.isValid
-                          ? null
-                          : () async {
-                            await _runAction(
-                              () => ref
+                      PendingTransactionCard(
+                        item: item,
+                        accounts: accounts,
+                        busy: busy,
+                        onApprove:
+                            () => _runAction(() async {
+                              final merchant =
+                                  item.merchantDisplayName ??
+                                  (item.normalizedMerchant.isNotEmpty
+                                      ? item.normalizedMerchant
+                                      : item.rawMerchant);
+                              await ref
+                                  .read(needsReviewControllerProvider.notifier)
+                                  .approveItem(item);
+                              if (context.mounted) {
+                                FfToast.show(
+                                  context,
+                                  message: '$merchant approved.',
+                                  actionLabel: 'Undo',
+                                  onAction:
+                                      () =>
+                                          ref
+                                              .read(
+                                                needsReviewControllerProvider
+                                                    .notifier,
+                                              )
+                                              .undoLastApprove(),
+                                );
+                              }
+                            }),
+                        onDismiss:
+                            () => _runAction(() async {
+                              final merchant =
+                                  item.merchantDisplayName ??
+                                  (item.normalizedMerchant.isNotEmpty
+                                      ? item.normalizedMerchant
+                                      : item.rawMerchant);
+                              await ref
+                                  .read(needsReviewControllerProvider.notifier)
+                                  .dismissItem(item.tempId, item: item);
+                              if (context.mounted) {
+                                FfToast.show(
+                                  context,
+                                  message: '$merchant dismissed.',
+                                  actionLabel: 'Undo',
+                                  onAction:
+                                      () =>
+                                          ref
+                                              .read(
+                                                needsReviewControllerProvider
+                                                    .notifier,
+                                              )
+                                              .undoLastDismiss(),
+                                );
+                              }
+                            }),
+                        onEdit: () => _openEditItemSheet(context, item),
+                        onMerge:
+                            () => _runAction(() async {
+                              final merchant =
+                                  item.merchantDisplayName ??
+                                  (item.normalizedMerchant.isNotEmpty
+                                      ? item.normalizedMerchant
+                                      : item.rawMerchant);
+                              final mergeItem = item.copyWith(
+                                duplicateResolution: DuplicateResolution.merge,
+                              );
+                              await ref
+                                  .read(needsReviewControllerProvider.notifier)
+                                  .approveItem(mergeItem);
+                              if (context.mounted) {
+                                FfToast.show(
+                                  context,
+                                  message: '$merchant merged with existing.',
+                                  actionLabel: 'Undo',
+                                  onAction:
+                                      () =>
+                                          ref
+                                              .read(
+                                                needsReviewControllerProvider
+                                                    .notifier,
+                                              )
+                                              .undoLastApprove(),
+                                );
+                              }
+                            }),
+                        onKeepBoth:
+                            () => _runAction(() async {
+                              final merchant =
+                                  item.merchantDisplayName ??
+                                  (item.normalizedMerchant.isNotEmpty
+                                      ? item.normalizedMerchant
+                                      : item.rawMerchant);
+                              await ref
                                   .read(needsReviewControllerProvider.notifier)
                                   .approveItem(
                                     item.copyWith(
                                       duplicateResolution:
                                           DuplicateResolution.keepBoth,
                                     ),
-                                  ),
-                            );
-                            if (context.mounted) {
-                              FfToast.show(
-                                context,
-                                message:
-                                    '$merchantName approved (kept separate).',
-                                actionLabel: 'Undo',
-                                onAction:
-                                    () =>
-                                        ref
-                                            .read(
-                                              needsReviewControllerProvider
-                                                  .notifier,
-                                            )
-                                            .undoLastApprove(),
-                              );
-                            }
-                          },
-                  child: const Text('Keep Both'),
-                ),
-                FfButton(
-                  label: 'Merge',
-                  variant: FfButtonVariant.secondary,
-                  size: FfButtonSize.sm,
-                  onPressed:
-                      busy || !item.isValid
-                          ? null
-                          : () async {
-                            final mergeItem = item.copyWith(
-                              duplicateResolution: DuplicateResolution.merge,
-                            );
-                            await _runAction(
-                              () => ref
-                                  .read(needsReviewControllerProvider.notifier)
-                                  .approveItem(mergeItem),
-                            );
-                            if (context.mounted) {
-                              FfToast.show(
-                                context,
-                                message: '$merchantName merged with existing.',
-                                actionLabel: 'Undo',
-                                onAction:
-                                    () =>
-                                        ref
-                                            .read(
-                                              needsReviewControllerProvider
-                                                  .notifier,
-                                            )
-                                            .undoLastApprove(),
-                              );
-                            }
-                          },
-                ),
-              ] else if (!item.isValid)
-                FfButton(
-                  label: 'Fix Details',
-                  size: FfButtonSize.sm,
-                  onPressed:
-                      busy ? null : () => _openEditItemSheet(context, item),
-                )
-              else
-                FfButton(
-                  label: 'Approve',
-                  size: FfButtonSize.sm,
-                  onPressed:
-                      busy
-                          ? null
-                          : () async {
-                            await _runAction(
-                              () => ref
-                                  .read(needsReviewControllerProvider.notifier)
-                                  .approveItem(item),
-                            );
-                            if (context.mounted) {
-                              FfToast.show(
-                                context,
-                                message: '$merchantName approved.',
-                                actionLabel: 'Undo',
-                                onAction:
-                                    () =>
-                                        ref
-                                            .read(
-                                              needsReviewControllerProvider
-                                                  .notifier,
-                                            )
-                                            .undoLastApprove(),
-                              );
-                            }
-                          },
-                ),
-            ],
-          ),
-        ],
-      ),
+                                  );
+                              if (context.mounted) {
+                                FfToast.show(
+                                  context,
+                                  message:
+                                      '$merchant approved (kept separate).',
+                                  actionLabel: 'Undo',
+                                  onAction:
+                                      () =>
+                                          ref
+                                              .read(
+                                                needsReviewControllerProvider
+                                                    .notifier,
+                                              )
+                                              .undoLastApprove(),
+                                );
+                              }
+                            }),
+                      ),
+
+                  const SizedBox(height: FfSpace.x4l),
+                ],
+              ),
     );
   }
 }
