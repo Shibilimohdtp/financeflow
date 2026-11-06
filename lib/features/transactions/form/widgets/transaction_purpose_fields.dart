@@ -264,21 +264,60 @@ class _TransactionPurposeFieldsState
           ),
           if (currentLoan != null) ...[
             const SizedBox(height: FfSpace.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: _componentField(
-                    widget.principalController,
-                    'Principal',
+            Container(
+              padding: const EdgeInsets.all(FfSpace.md),
+              decoration: BoxDecoration(
+                color: context.ff.color.surfaceCard,
+                borderRadius: BorderRadius.circular(FfRadius.md),
+                border: Border.all(
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.pie_chart_outline_rounded,
+                        size: 16,
+                        color: context.ff.color.actionPrimary,
+                      ),
+                      const SizedBox(width: FfSpace.xs),
+                      Text(
+                        'EMI Split Components',
+                        style: context.ff.text.labelSm.copyWith(
+                          color: context.ff.color.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(
-                  child: _componentField(widget.interestController, 'Interest'),
-                ),
-                const SizedBox(width: FfSpace.xs),
-                Expanded(child: _componentField(widget.feeController, 'Fees')),
-              ],
+                  const SizedBox(height: FfSpace.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _componentField(
+                          widget.principalController,
+                          'Principal',
+                        ),
+                      ),
+                      const SizedBox(width: FfSpace.xs),
+                      Expanded(
+                        child: _componentField(
+                          widget.interestController,
+                          'Interest',
+                        ),
+                      ),
+                      const SizedBox(width: FfSpace.xs),
+                      Expanded(
+                        child: _componentField(widget.feeController, 'Fees'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ],
@@ -543,16 +582,13 @@ class _TransactionPurposeFieldsState
           if (matchingRecord != null) ...[
             const SizedBox(height: FfSpace.sm),
             Container(
-              padding: const EdgeInsets.all(FfSpace.sm),
+              padding: const EdgeInsets.all(FfSpace.md),
               decoration: BoxDecoration(
-                color: context.ff.color.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
+                color: context.ff.color.surfaceCard,
                 borderRadius: BorderRadius.circular(FfRadius.md),
                 border: Border.all(
-                  color: context.ff.color.actionPrimary.withValues(
-                    alpha: FfTint.medium.alpha,
-                  ),
+                  color: context.ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
                 ),
               ),
               child: Column(
@@ -596,6 +632,10 @@ class _TransactionPurposeFieldsState
                         width: 24,
                         child: Checkbox(
                           value: widget.createAsSeparateDebt,
+                          activeColor: context.ff.color.actionPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(FfRadius.xs),
+                          ),
                           onChanged: (val) {
                             widget.onToggleCreateAsSeparateDebt(val ?? false);
                           },

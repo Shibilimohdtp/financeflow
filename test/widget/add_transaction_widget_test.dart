@@ -677,4 +677,83 @@ void main() {
       expect(find.text('Open Form'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    '11. Edit mode populates fields, shows provenance, update action and destructive delete dialog',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final existingTx = Transaction(
+        id: 'tx_edit_1',
+        amount: 450.0,
+        merchant: 'Blue Tokai Coffee',
+        date: DateTime(2026, 11, 4),
+        type: TransactionType.expense,
+        categoryId: 'cat_food',
+        categoryName: 'Food & Dining',
+        categoryIcon: 'restaurant',
+        categoryColor: 'amber',
+        accountId: 'acc_1',
+        notes: 'Cold brew and croissant',
+        tags: ['coffee', 'work'],
+        createdAt: DateTime(2026, 11, 4, 10, 30),
+        updatedAt: DateTime(2026, 11, 4, 10, 30),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsStreamProvider.overrideWith(
+              (ref) => Stream.value(const AppSettings()),
+            ),
+            categoriesStreamProvider.overrideWith(
+              (ref) => Stream.value([testFoodCategory]),
+            ),
+            rawAccountsStreamProvider.overrideWith(
+              (ref) => Stream.value([testAccount1]),
+            ),
+            allTransactionsStreamProvider.overrideWith(
+              (ref) => Stream.value([existingTx]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: StillwaterTheme.daylight,
+            home: AddEditTransactionScreen(initialTransaction: existingTx),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditTransactionScreen), findsOneWidget);
+      expect(find.text('Edit Transaction'), findsOneWidget);
+      expect(find.text('Recorded transaction · Edited'), findsOneWidget);
+      expect(find.text('Blue Tokai Coffee'), findsOneWidget);
+      expect(find.text('Update Expense'), findsOneWidget);
+
+      // Verify destructive delete button is visible
+      final deleteBtn = find.text('Delete transaction');
+      expect(deleteBtn, findsOneWidget);
+
+      // Tap delete button -> triggers confirmation dialog
+      await tester.tap(deleteBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Transaction?'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Are you sure you want to delete this transaction for "Blue Tokai Coffee"?',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Delete'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+
+      // Tap Cancel -> dialog closes, screen remains
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AddEditTransactionScreen), findsOneWidget);
+    },
+  );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/extensions/context_extensions.dart';
@@ -17,6 +18,7 @@ import '../../services/default_account_service.dart';
 import '../../services/loan_calculator.dart';
 import '../../services/payee_suggestion_service.dart';
 import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
@@ -636,6 +638,38 @@ class _AddEditTransactionScreenState
     }
   }
 
+  Future<void> _deleteTransaction() async {
+    final tx = widget.initialTransaction;
+    if (tx == null) return;
+    final confirmed = await FfDialog.confirm(
+      context,
+      title: 'Delete Transaction?',
+      message:
+          tx.linkedSubscriptionId != null
+              ? 'Delete this subscription payment? The payment will no longer appear in the subscription\'s history. This can be undone briefly.'
+              : 'Are you sure you want to delete this transaction for "${tx.merchant}"? This action can be undone briefly.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+
+    if (confirmed == true && mounted) {
+      await ref
+          .read(transactionsControllerProvider.notifier)
+          .deleteTransaction(tx);
+      if (mounted) {
+        Navigator.of(context).pop();
+        FfToast.show(
+          context,
+          message: 'Transaction deleted.',
+          actionLabel: 'Undo',
+          onAction: () {
+            ref.read(transactionsControllerProvider.notifier).undoDelete();
+          },
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesStreamProvider).value ?? [];
@@ -746,6 +780,56 @@ class _AddEditTransactionScreenState
                       children: [
                         if (widget.sourceContext != null) ...[
                           widget.sourceContext!,
+                          const SizedBox(height: FfSpace.md),
+                        ] else if (widget.initialTransaction != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: FfSpace.md,
+                              vertical: FfSpace.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.ff.color.surfaceCard,
+                              borderRadius: BorderRadius.circular(FfRadius.md),
+                              border: Border.all(
+                                color: context.ff.color.borderSubtle,
+                                width: FfBorderWidth.hairline,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  widget.initialTransaction!.source ==
+                                          TransactionSource.sms
+                                      ? Icons.sms_outlined
+                                      : Icons.history_rounded,
+                                  size: 16,
+                                  color: context.ff.color.textSecondary,
+                                ),
+                                const SizedBox(width: FfSpace.xs),
+                                Expanded(
+                                  child: Text(
+                                    widget.initialTransaction!.source ==
+                                            TransactionSource.sms
+                                        ? 'Imported transaction · On-device'
+                                        : 'Recorded transaction · Edited',
+                                    style: context.ff.text.labelSm.copyWith(
+                                      color: context.ff.color.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                if (widget.initialTransaction!.createdAt !=
+                                    null)
+                                  Text(
+                                    DateFormat.yMMMd().format(
+                                      widget.initialTransaction!.date,
+                                    ),
+                                    style: context.ff.text.labelSm.copyWith(
+                                      color: context.ff.color.textTertiary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                           const SizedBox(height: FfSpace.md),
                         ],
                         // 1. Transaction Type Selector Pill
@@ -972,6 +1056,22 @@ class _AddEditTransactionScreenState
                           notesController: _notesController,
                           tagsController: _tagsController,
                         ),
+
+                        // Destructive Delete in Edit Mode
+                        if (widget.initialTransaction != null &&
+                            widget.onSave == null) ...[
+                          const SizedBox(height: FfSpace.lg),
+                          FfButton(
+                            label: 'Delete transaction',
+                            leadingIcon: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                            ),
+                            variant: FfButtonVariant.destructive,
+                            width: double.infinity,
+                            onPressed: _deleteTransaction,
+                          ),
+                        ],
 
                         const SizedBox(height: FfSpace.xl),
                       ],
