@@ -15,6 +15,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfCard` (`ff_card.dart`) | Every other card | `FfCard(child:, density: FfDensity.comfortable/compact, variant: standard/tinted/elevated/warning, tone:, onTap:)` | Add borders; nest cards |
 | `FfCard.decorationOf(context, density:)` / `FfCard.shapeOf(density)` | When you need your own `Material`/`InkWell`/`DecoratedSliver` | Use `Ink(decoration: …)` so ripples show | |
 | `FfGroupedContainer` | Rows grouped in one compact card; draws dividers and clips ink | `FfGroupedContainer(children: [FfRow…], dividerInset: FfRowLeading.tile)` | |
+| `FfAccountPreviewCard` (`ff_account_preview_card.dart`) | Miniature live card preview matching Home squircle hero | `FfAccountPreviewCard(accountType:, name:, institutionName:, maskedIdentifier:, balance:)` | Put in long scrollable lists |
 | `FfSheet` + `showFfSheet` | Every bottom sheet | `showFfSheet(context, builder: …)`, `FfSheetHeader`, `FfSheetFooter` | Raw `showModalBottomSheet` (a test fails) |
 | `FfDialog` | `confirm`, `confirmTyped`, `info`, `withProgress` | | Raw `showDialog` |
 
@@ -26,6 +27,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfCircleButton` (`ff_round_buttons.dart`) | Round header/utility action (back, more, hide amounts, filter, alerts) | `FfCircleButton(icon:, tooltip:, onPressed:, corner: FfCorner.dot/warning, soft:)` 48 dp target |
 | `FfInkButton` | Solid ink action circle; `.open` is the ↗ "open detail" | `FfInkButton.open(onPressed:, tooltip:, onHero:, small:)` |
 | `FfChip` | One choice pill (ink when selected, outlined otherwise) | `FfChip(label:, isSelected:, onSelected:, leading: Icon)` |
+| `FfAccountTypeTiles` (`ff_account_type_tiles.dart`) | Compact 6-tile grid selector for `AccountType` with 48 dp targets | `FfAccountTypeTiles(selectedType:, onChanged:)` |
 | `FfPillBar<T>` | Scrolling row of filter pills | `FfPillBar(values:, selected:, label:, onSelected:)` |
 | `FfSegmentedPill<T>` | 2–4 mutually exclusive modes in a sunken track | `FfSegmentedPill(options: [FfSegmentOption(value:, label:)], selectedValue:, onSelected:)` |
 | `FfDock` (`ff_navigation.dart`) | The app's tab bar (already in the shell; don't add another) | `FfDockItem(icon:, label:, badgeCount:, showDot:)` |
@@ -56,6 +58,8 @@ file) rather than writing a one-off. Components take tones and variants, never r
 |---|---|---|
 | `FfAmountText` | **Every amount** | `FfAmountText(amount:, size: hero/lg/md/sm, style: split/inline, tone:, type:, showSign:, isBlurred:)` |
 | `FfAmountField` | Every money input (`.bare` on heroes) | |
+| `FfAmountHero` (`ff_amount_hero.dart`) | Amount hero card with type-reactive squircle tint, Geist 300 money numerals, consequence line, inline error | `FfAmountHero(controller:, tone:, label:, consequence:, consequenceIcon:, errorText:, onClear:)` |
+| `FfSuggestionChips` (`ff_suggestion_chips.dart`) | Horizontal row of choice chips for quick presets/payees | `FfSuggestionChips<T>(items: [FfSuggestionChipItem(value:, label:, icon:)], selectedValue:, onSelected:)` |
 | `FfStatTile` | Label + figure (+ unit, caption) | `FfStatTile(label:, value: FfAmountText(…), unit: '/120', caption:)` |
 | `FfHeroFigures` (`ff_stat_tile.dart`) | The 2–3 small figures at the foot of a hero ("Paid · Complete · Total payable", "Per day · Forecast · Days left") | `FfHeroFigures([FfHeroFigure(label, value, semanticsValue:)])`; first starts, last ends, middle centred; tabular `labelLg`; values shrink at large text; each read as "Paid, ₹6,51,200" |
 | `FfProgressRing` (`ff_data_viz.dart`) | Ring around an icon = progress (loan paid, goal saved, share) | `FfProgressRing(value:, icon:, semanticsLabel:)` |

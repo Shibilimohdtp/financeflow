@@ -5,8 +5,12 @@
 // pace reference, within/over-plan months, the over-plan bar).
 //
 //   flutter test tool/screenshots/bloom_screenshots_test.dart --update-goldens
+import 'package:financeflow/models/account.dart';
 import 'package:financeflow/shared/widgets/charts/ff_bar_chart.dart';
 import 'package:financeflow/shared/widgets/charts/ff_donut_chart.dart';
+import 'package:financeflow/shared/widgets/ff_account_preview_card.dart';
+import 'package:financeflow/shared/widgets/ff_account_type_tiles.dart';
+import 'package:financeflow/shared/widgets/ff_amount_hero.dart';
 import 'package:financeflow/shared/widgets/ff_amount_text.dart';
 import 'package:financeflow/shared/widgets/ff_card.dart';
 import 'package:financeflow/shared/widgets/ff_corner_badge.dart';
@@ -17,6 +21,7 @@ import 'package:financeflow/shared/widgets/ff_progress.dart';
 import 'package:financeflow/shared/widgets/ff_round_buttons.dart';
 import 'package:financeflow/shared/widgets/ff_segmented_pill.dart';
 import 'package:financeflow/shared/widgets/ff_stat_tile.dart';
+import 'package:financeflow/shared/widgets/ff_suggestion_chips.dart';
 import 'package:financeflow/shared/widgets/ff_surfaces.dart';
 import 'package:financeflow/theme/ff.dart';
 import 'package:financeflow/theme/ff_theme.dart';
@@ -271,6 +276,40 @@ Widget _sheet(BuildContext context) {
                   onSelected: (_) {},
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+            child: FfAmountHero(
+              controller: TextEditingController(text: '450'),
+              tone: FfTone.expense,
+              label: 'Amount spent',
+              consequence: 'Cash balance after: ₹2,450',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+            child: FfSuggestionChips<String>(
+              items: const [
+                FfSuggestionChipItem(
+                  value: '1',
+                  label: 'Swiggy',
+                  icon: Icons.restaurant,
+                ),
+                FfSuggestionChipItem(
+                  value: '2',
+                  label: 'Groceries',
+                  icon: Icons.shopping_cart,
+                ),
+                FfSuggestionChipItem(
+                  value: '3',
+                  label: 'Fuel',
+                  icon: Icons.local_gas_station,
+                ),
+              ],
+              onSelected: (_) {},
             ),
           ),
           const SizedBox(height: 8),
@@ -535,6 +574,45 @@ Widget _chartsSheet(BuildContext context) {
   );
 }
 
+Widget _accountSheet(BuildContext context) {
+  final ff = context.ff;
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      Text('Account Preview Cards', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      const FfAccountPreviewCard(
+        accountType: AccountType.bank,
+        name: 'Salary Account',
+        institutionName: 'HDFC Bank',
+        maskedIdentifier: '4521',
+        balance: 124500,
+      ),
+      const SizedBox(height: 12),
+      const FfAccountPreviewCard(
+        accountType: AccountType.creditCard,
+        name: 'ICICI Amazon Card',
+        institutionName: 'ICICI Bank',
+        maskedIdentifier: '9012',
+        balance: -18450,
+      ),
+      const SizedBox(height: 12),
+      const FfAccountPreviewCard(
+        accountType: AccountType.cash,
+        name: 'Pocket Wallet',
+        balance: 3200,
+      ),
+      const SizedBox(height: 24),
+      Text('Account Type Tiles', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      FfAccountTypeTiles(
+        selectedType: AccountType.bank,
+        onChanged: (_) {},
+      ),
+    ],
+  );
+}
+
 void main() {
   setUpAll(loadAppFonts);
 
@@ -596,6 +674,24 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/bloom_charts_$mode.png'),
+      );
+    });
+    testWidgets('account components, $mode', (tester) async {
+      tester.view.physicalSize = const Size(390, 850);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.runAsync(FfGrainTile.load);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: theme,
+          home: Scaffold(body: Builder(builder: _accountSheet)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/bloom_account_components_$mode.png'),
       );
     });
   }
