@@ -8,7 +8,9 @@ import '../../shared/widgets/ff_account_preview_card.dart';
 import '../../shared/widgets/ff_account_type_tiles.dart';
 import '../../shared/widgets/ff_amount_field.dart';
 import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
@@ -195,7 +197,7 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
         .saveAccount(updatedAccount);
 
     if (mounted) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(updatedAccount.id);
       FfToast.show(
         context,
         message:
@@ -203,6 +205,45 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                 ? 'Account updated on this device.'
                 : 'Account created on this device.',
       );
+    }
+  }
+
+  Future<void> _archiveOrRestore() async {
+    final acc = widget.account;
+    if (acc == null) return;
+    final newArchived = !acc.isArchived;
+    await ref
+        .read(accountsControllerProvider.notifier)
+        .archiveAccount(acc.id, newArchived);
+    if (mounted) {
+      Navigator.of(context).pop();
+      FfToast.show(
+        context,
+        message:
+            newArchived
+                ? 'Account archived.'
+                : 'Account restored to active.',
+      );
+    }
+  }
+
+  Future<void> _delete() async {
+    final acc = widget.account;
+    if (acc == null) return;
+    final confirmed = await FfDialog.confirm(
+      context,
+      title: 'Delete Account?',
+      message:
+          'Are you sure you want to permanently delete "${acc.name}" from this device?',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (confirmed == true && mounted) {
+      await ref.read(accountsControllerProvider.notifier).deleteAccount(acc.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+        FfToast.show(context, message: 'Account deleted.');
+      }
     }
   }
 
@@ -217,8 +258,16 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
 
     final rawBalance =
         CurrencyFormatter.parse(_openingBalanceController.text) ?? 0.0;
-    final previewBalance =
-        _selectedType == AccountType.creditCard ? -rawBalance : rawBalance;
+    final double previewBalance;
+    final String? balanceLabel;
+    if (isEditing) {
+      previewBalance = widget.account!.currentBalance;
+      balanceLabel = 'Current balance';
+    } else {
+      previewBalance =
+          _selectedType == AccountType.creditCard ? -rawBalance : rawBalance;
+      balanceLabel = null;
+    }
 
     final trimmedName = _nameController.text.trim();
     final hasDuplicateName =
@@ -273,6 +322,7 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                     institutionName: _institutionController.text,
                     maskedIdentifier: _maskedController.text,
                     balance: previewBalance,
+                    balanceLabel: balanceLabel,
                     isPrivacyBlur: isPrivacyBlur,
                   ),
 
@@ -383,11 +433,13 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                             color: c.textSecondary,
                           ),
                           const SizedBox(width: FfSpace.sm),
-                          Text(
-                            'Bank and identifier details (optional)',
-                            style: ff.text.titleSm.copyWith(
-                              color: c.textPrimary,
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              'Bank and identifier details (optional)',
+                              style: ff.text.titleSm.copyWith(
+                                color: c.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -472,6 +524,73 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                         ],
                       ),
                     ],
+                  ],
+
+                  // ── 6. Edit-Mode Actions & Baseline History Note ─────────────
+                  if (isEditing) ...[
+                    const SizedBox(height: FfSpace.lg),
+                    Container(
+                      padding: const EdgeInsets.all(FfSpace.md),
+                      decoration: ShapeDecoration(
+                        color: c.surfaceCard,
+                        shape: FfShape.of(
+                          FfRadius.md,
+                          side: BorderSide(color: c.borderSubtle, width: 1),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 16,
+                            color: c.textSecondary,
+                          ),
+                          const SizedBox(width: FfSpace.sm),
+                          Expanded(
+                            child: Text(
+                              'Editing the opening balance shifts your baseline balance without changing past transaction records.',
+                              style: ff.text.bodySm.copyWith(
+                                color: c.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: FfSpace.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FfButton(
+                            label:
+                                widget.account!.isArchived
+                                    ? 'Restore account'
+                                    : 'Archive account',
+                            leadingIcon: Icon(
+                              widget.account!.isArchived
+                                  ? Icons.unarchive_outlined
+                                  : Icons.archive_outlined,
+                              size: 18,
+                            ),
+                            variant: FfButtonVariant.secondary,
+                            onPressed: _archiveOrRestore,
+                          ),
+                        ),
+                        const SizedBox(width: FfSpace.md),
+                        Expanded(
+                          child: FfButton(
+                            label: 'Delete account',
+                            leadingIcon: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                            ),
+                            variant: FfButtonVariant.destructive,
+                            onPressed: _delete,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
 
                   const SizedBox(height: FfSpace.md),

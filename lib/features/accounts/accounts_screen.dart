@@ -31,9 +31,24 @@ class AccountsScreen extends ConsumerStatefulWidget {
 
 class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   bool _showArchived = false;
+  String? _highlightedAccountId;
 
-  void _showAddEditAccountSheet(BuildContext context, [Account? account]) {
-    showAddEditAccountSheet(context, account: account);
+  Future<void> _showAddEditAccountSheet(
+    BuildContext context, [
+    Account? account,
+  ]) async {
+    final savedId = await showAddEditAccountSheet<String>(
+      context,
+      account: account,
+    );
+    if (savedId != null && mounted) {
+      setState(() => _highlightedAccountId = savedId);
+      Future.delayed(const Duration(milliseconds: 1800), () {
+        if (mounted && _highlightedAccountId == savedId) {
+          setState(() => _highlightedAccountId = null);
+        }
+      });
+    }
   }
 
   @override
@@ -194,6 +209,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                         }
 
                         return FfRow(
+                          selected: acc.id == _highlightedAccountId,
                           leading: FfIconTile(
                             icon: _getAccountTypeIcon(acc.type),
                           ),

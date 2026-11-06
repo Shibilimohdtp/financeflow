@@ -19,8 +19,18 @@ from PIL import Image, ImageDraw
 
 
 def run(cmd, cwd):
-    result = subprocess.run(cmd, cwd=cwd, shell=True, capture_output=True, text=True)
-    tail = (result.stdout + result.stderr).strip().splitlines()[-1:] or [""]
+    result = subprocess.run(
+        cmd,
+        cwd=cwd,
+        shell=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    stdout = result.stdout or ""
+    stderr = result.stderr or ""
+    tail = (stdout + stderr).strip().splitlines()[-1:] or [""]
     print(f"[{os.path.basename(cwd)}] {cmd.split()[0]} ... {tail[0]}")
     return result.returncode
 

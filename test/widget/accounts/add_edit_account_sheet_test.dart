@@ -21,7 +21,11 @@ void main() {
       fakeTxRepo = FakeTransactionRepository();
     });
 
-    Widget createSheetWidget({Account? account}) {
+    Widget createSheetWidget({
+      Account? account,
+      TextScaler? textScaler,
+      EdgeInsets? viewInsets,
+    }) {
       return ProviderScope(
         overrides: [
           settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
@@ -30,6 +34,16 @@ void main() {
         ],
         child: MaterialApp(
           theme: StillwaterTheme.daylight,
+          builder: (context, child) {
+            var media = MediaQuery.of(context);
+            if (textScaler != null) {
+              media = media.copyWith(textScaler: textScaler);
+            }
+            if (viewInsets != null) {
+              media = media.copyWith(viewInsets: viewInsets);
+            }
+            return MediaQuery(data: media, child: child!);
+          },
           home: Scaffold(
             body: Builder(
               builder:
@@ -253,6 +267,124 @@ void main() {
       expect(accounts.first.type, AccountType.creditCard);
       expect(accounts.first.openingBalance, -8500.0);
       expect(accounts.first.currentBalance, -8500.0);
+    });
+
+    testWidgets('edit mode shows current balance in preview and baseline note', (
+      tester,
+    ) async {
+      final existing = Account(
+        id: 'acc_preview_edit',
+        name: 'Salary Account',
+        type: AccountType.bank,
+        openingBalance: 20000.0,
+        currentBalance: 42500.0,
+        currency: 'INR',
+        isArchived: false,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+      fakeAccountRepo = FakeAccountRepository([existing]);
+
+      await tester.pumpWidget(createSheetWidget(account: existing));
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      // Preview displays 'Current balance'
+      expect(find.text('Current balance'), findsOneWidget);
+
+      // Baseline history note
+      final noteFinder = find.text(
+        'Editing the opening balance shifts your baseline balance without changing past transaction records.',
+      );
+      await tester.ensureVisible(noteFinder);
+      expect(noteFinder, findsOneWidget);
+
+      // Archive and delete buttons visible
+      expect(find.text('Archive account'), findsOneWidget);
+      expect(find.text('Delete account'), findsOneWidget);
+    });
+
+    testWidgets('archive button archives account from inside sheet', (
+      tester,
+    ) async {
+      final existing = Account(
+        id: 'acc_archive_test',
+        name: 'Savings',
+        type: AccountType.bank,
+        currency: 'INR',
+        isArchived: false,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+      fakeAccountRepo = FakeAccountRepository([existing]);
+
+      await tester.pumpWidget(createSheetWidget(account: existing));
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      final archiveBtn = find.text('Archive account');
+      await tester.ensureVisible(archiveBtn);
+      await tester.tap(archiveBtn);
+      await tester.pumpAndSettle();
+
+      final updated = await fakeAccountRepo.getAccountById('acc_archive_test');
+      expect(updated!.isArchived, isTrue);
+    });
+
+    testWidgets('delete button inside sheet opens dialog and deletes account', (
+      tester,
+    ) async {
+      final existing = Account(
+        id: 'acc_delete_test',
+        name: 'Obsolete Acc',
+        type: AccountType.cash,
+        currency: 'INR',
+        isArchived: false,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+      fakeAccountRepo = FakeAccountRepository([existing]);
+
+      await tester.pumpWidget(createSheetWidget(account: existing));
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      final deleteBtn = find.text('Delete account');
+      await tester.ensureVisible(deleteBtn);
+      await tester.tap(deleteBtn);
+      await tester.pumpAndSettle();
+
+      // Dialog opens
+      expect(find.text('Delete Account?'), findsOneWidget);
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      final updated = await fakeAccountRepo.getAccountById('acc_delete_test');
+      expect(updated, isNull);
+    });
+
+    testWidgets('renders comfortably under 2x text scale without overflow', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createSheetWidget(textScaler: const TextScaler.linear(2.0)),
+      );
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add Financial Account'), findsOneWidget);
+    });
+
+    testWidgets('handles viewInsets keyboard height without crash or overflow', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createSheetWidget(viewInsets: const EdgeInsets.only(bottom: 300)),
+      );
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add Financial Account'), findsOneWidget);
     });
   });
 }
