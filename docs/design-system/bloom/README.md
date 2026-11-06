@@ -21,7 +21,7 @@ on 2026-11-06 (decision record: [../01-bloom-proposal.md](../01-bloom-proposal.m
 | [06-workflow.md](06-workflow.md) | The step-by-step process for one screen, the repo gates, screenshots, tests, commit rules, definition of done | While working |
 
 Prompts for new chats live in [prompts/](prompts/): `screen-redesign-template.md` (any screen) and
-`07-budgets-redesign.md` (DS-B7), `08-insights-redesign.md` (DS-B8) and `09-more-redesign.md` (DS-B9).
+`07-budgets-redesign.md` (DS-B7), `08-insights-redesign.md` (DS-B8) and `09-more-redesign.md` (DS-B9) and `10-add-transaction-redesign.md` (DS-B10).
 
 Also binding: `AGENTS.md` (backup gate, standalone-startup gate), [../CHANGELOG.md](../CHANGELOG.md) (slice log,
 In flight table, decisions), and the memory rules in 06-workflow.md (format only touched files, commit only your
