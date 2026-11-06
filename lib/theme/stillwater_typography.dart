@@ -18,7 +18,7 @@ class StillwaterTypography {
     double? letterSpacing,
     Color? color,
     List<FontFeature>? fontFeatures,
-  }) => FfFonts.manrope(
+  }) => FfFonts.ui(
     fontSize: fontSize,
     fontWeight: fontWeight,
     height: height,
@@ -33,7 +33,7 @@ class StillwaterTypography {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) => FfFonts.fraunces(
+  }) => FfFonts.ui(
     fontSize: fontSize,
     fontWeight: fontWeight,
     height: height,

@@ -5,6 +5,7 @@ import 'ff_colors.dart';
 /// Every text role in the Stillwater type scale. UI code reads styles through
 /// these roles (`context.ff.text.title`), never with raw font sizes.
 enum FfTextRole {
+  // Display: light Geist for onboarding titles and hero moments.
   displayLg,
   display,
   displaySm,
@@ -31,14 +32,16 @@ enum FfTextRole {
 /// `pubspec.yaml`, so text never needs the network and release builds match
 /// debug builds. Font families are named here and nowhere else.
 abstract final class FfFonts {
-  /// UI and amounts. Bundled weights: 400, 500, 600, 700, 800.
-  static const String manropeFamily = 'Manrope';
+  /// UI, amounts and display (Stillwater Bloom, DS-B2). Bundled weights:
+  /// 300, 400, 500, 600.
+  static const String geistFamily = 'Geist';
 
-  /// Display roles only. Bundled weights: 600, 700.
-  static const String frauncesFamily = 'Fraunces';
+  /// Fallback for glyphs Geist lacks. Bundled weights: 400–800.
+  static const String manropeFamily = 'Manrope';
 
   /// Used for scripts the bundled fonts don't cover (for example Devanagari).
   static const List<String> fallbackFamilies = [
+    manropeFamily,
     'NotoSansDevanagari',
     'Roboto',
     'sans-serif',
@@ -48,8 +51,8 @@ abstract final class FfFonts {
     FontFeature.tabularFigures(),
   ];
 
-  /// Body and UI face.
-  static TextStyle manrope({
+  /// The one UI face.
+  static TextStyle ui({
     double? fontSize,
     FontWeight? fontWeight,
     double? height,
@@ -57,7 +60,7 @@ abstract final class FfFonts {
     Color? color,
     List<FontFeature>? fontFeatures,
   }) => TextStyle(
-    fontFamily: manropeFamily,
+    fontFamily: geistFamily,
     fontFamilyFallback: fallbackFamilies,
     fontSize: fontSize,
     fontWeight: fontWeight,
@@ -66,59 +69,46 @@ abstract final class FfFonts {
     color: color,
     fontFeatures: fontFeatures,
   );
-
-  /// Display face, used only by the display roles.
-  static TextStyle fraunces({
-    double? fontSize,
-    FontWeight? fontWeight,
-    double? height,
-    double? letterSpacing,
-    Color? color,
-  }) => TextStyle(
-    fontFamily: frauncesFamily,
-    fontFamilyFallback: fallbackFamilies,
-    fontSize: fontSize,
-    fontWeight: fontWeight,
-    height: height,
-    letterSpacing: letterSpacing,
-    color: color,
-  );
 }
 
 /// The type scale. Sizes, line heights, weights and tracking are defined
 /// once here; [FfText] and Material's `TextTheme` are both built from it.
+///
+/// Stillwater Bloom: hierarchy comes from size, not weight. Large text and
+/// amounts are light (300); weight 300 is only used at 28 dp and above.
 abstract final class FfTypography {
-  static TextStyle moneyHero({Color? color}) => FfFonts.manrope(
-    fontSize: 40,
-    height: 48 / 40,
-    fontWeight: FontWeight.w800,
+  static TextStyle moneyHero({Color? color}) => FfFonts.ui(
+    fontSize: 44,
+    height: 48 / 44,
+    fontWeight: FontWeight.w300,
+    letterSpacing: -1.5,
+    color: color,
+    fontFeatures: FfFonts.tabularFigures,
+  );
+
+  static TextStyle moneyLg({Color? color}) => FfFonts.ui(
+    fontSize: 32,
+    height: 38 / 32,
+    fontWeight: FontWeight.w300,
     letterSpacing: -1.0,
     color: color,
     fontFeatures: FfFonts.tabularFigures,
   );
 
-  static TextStyle moneyLg({Color? color}) => FfFonts.manrope(
-    fontSize: 28,
-    height: 34 / 28,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
-    color: color,
-    fontFeatures: FfFonts.tabularFigures,
-  );
-
-  static TextStyle moneyMd({Color? color}) => FfFonts.manrope(
+  static TextStyle moneyMd({Color? color}) => FfFonts.ui(
     fontSize: 20,
     height: 26 / 20,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.25,
+    fontWeight: FontWeight.w400,
+    letterSpacing: -0.4,
     color: color,
     fontFeatures: FfFonts.tabularFigures,
   );
 
-  static TextStyle moneySm({Color? color}) => FfFonts.manrope(
+  static TextStyle moneySm({Color? color}) => FfFonts.ui(
     fontSize: 15,
     height: 20 / 15,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w400,
+    letterSpacing: -0.1,
     color: color,
     fontFeatures: FfFonts.tabularFigures,
   );
@@ -127,99 +117,104 @@ abstract final class FfTypography {
   /// label, labelSm) use the secondary colour.
   static FfText build({required Color primary, required Color secondary}) {
     return FfText({
-      FfTextRole.displayLg: FfFonts.fraunces(
-        fontSize: 36,
-        height: 44 / 36,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.75,
+      FfTextRole.displayLg: FfFonts.ui(
+        fontSize: 40,
+        height: 44 / 40,
+        fontWeight: FontWeight.w300,
+        letterSpacing: -1.4,
         color: primary,
       ),
-      FfTextRole.display: FfFonts.fraunces(
-        fontSize: 30,
-        height: 36 / 30,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.50,
+      FfTextRole.display: FfFonts.ui(
+        fontSize: 32,
+        height: 38 / 32,
+        fontWeight: FontWeight.w300,
+        letterSpacing: -1.0,
         color: primary,
       ),
-      FfTextRole.displaySm: FfFonts.fraunces(
-        fontSize: 24,
-        height: 30 / 24,
-        fontWeight: FontWeight.w600,
+      FfTextRole.displaySm: FfFonts.ui(
+        fontSize: 28,
+        height: 34 / 28,
+        fontWeight: FontWeight.w300,
+        letterSpacing: -0.7,
         color: primary,
       ),
-      FfTextRole.headlineLg: FfFonts.manrope(
+      FfTextRole.headlineLg: FfFonts.ui(
         fontSize: 26,
         height: 32 / 26,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.40,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.6,
         color: primary,
       ),
-      FfTextRole.headline: FfFonts.manrope(
+      FfTextRole.headline: FfFonts.ui(
         fontSize: 22,
         height: 28 / 22,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.30,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.4,
         color: primary,
       ),
-      FfTextRole.headlineSm: FfFonts.manrope(
+      FfTextRole.headlineSm: FfFonts.ui(
         fontSize: 19,
         height: 24 / 19,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.20,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.3,
         color: primary,
       ),
-      FfTextRole.titleLg: FfFonts.manrope(
+      FfTextRole.titleLg: FfFonts.ui(
         fontSize: 17,
         height: 24 / 17,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -0.2,
         color: primary,
       ),
-      FfTextRole.title: FfFonts.manrope(
+      FfTextRole.title: FfFonts.ui(
         fontSize: 15,
         height: 20 / 15,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -0.1,
         color: primary,
       ),
-      FfTextRole.titleSm: FfFonts.manrope(
+      FfTextRole.titleSm: FfFonts.ui(
         fontSize: 14,
         height: 18 / 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         color: primary,
       ),
-      FfTextRole.bodyLg: FfFonts.manrope(
+      FfTextRole.bodyLg: FfFonts.ui(
         fontSize: 16,
         height: 24 / 16,
         fontWeight: FontWeight.w400,
         color: primary,
       ),
-      FfTextRole.body: FfFonts.manrope(
+      FfTextRole.body: FfFonts.ui(
         fontSize: 14,
         height: 20 / 14,
         fontWeight: FontWeight.w400,
         color: primary,
       ),
-      FfTextRole.bodySm: FfFonts.manrope(
+      FfTextRole.bodySm: FfFonts.ui(
         fontSize: 13,
         height: 18 / 13,
         fontWeight: FontWeight.w400,
         color: secondary,
       ),
-      FfTextRole.labelLg: FfFonts.manrope(
+      FfTextRole.labelLg: FfFonts.ui(
         fontSize: 14,
         height: 20 / 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         color: primary,
       ),
-      FfTextRole.label: FfFonts.manrope(
+      FfTextRole.label: FfFonts.ui(
         fontSize: 12,
         height: 16 / 12,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.1,
         color: secondary,
       ),
-      FfTextRole.labelSm: FfFonts.manrope(
+      FfTextRole.labelSm: FfFonts.ui(
         fontSize: 11,
         height: 14 / 11,
         fontWeight: FontWeight.w500,
+        letterSpacing: 0.2,
         color: secondary,
       ),
       FfTextRole.moneyHero: moneyHero(color: primary),

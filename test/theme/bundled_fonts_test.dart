@@ -1,5 +1,6 @@
 // DS-3: fonts are bundled, so text never needs the network and release
-// builds render the same faces as debug builds.
+// builds render the same faces as debug builds. DS-B2: Geist is the UI face,
+// Manrope the fallback; Fraunces is gone.
 import 'dart:io';
 
 import 'package:financeflow/theme/ff_theme.dart';
@@ -21,10 +22,13 @@ void main() {
       'assets/fonts/Manrope-Bold.ttf',
       'assets/fonts/Manrope-ExtraBold.ttf',
     ]);
-    expect(manifest[FfFonts.frauncesFamily], [
-      'assets/fonts/Fraunces-SemiBold.ttf',
-      'assets/fonts/Fraunces-Bold.ttf',
+    expect(manifest[FfFonts.geistFamily], [
+      'assets/fonts/Geist-Light.ttf',
+      'assets/fonts/Geist-Regular.ttf',
+      'assets/fonts/Geist-Medium.ttf',
+      'assets/fonts/Geist-SemiBold.ttf',
     ]);
+    expect(manifest.containsKey('Fraunces'), isFalse);
 
     final text = FfTypography.build(
       primary: const Color(0xFF000000),
@@ -33,11 +37,13 @@ void main() {
     for (final role in FfTextRole.values) {
       final style = text[role];
       final family = style.fontFamily;
-      expect([FfFonts.manropeFamily, FfFonts.frauncesFamily], contains(family));
-      final bundled =
-          family == FfFonts.frauncesFamily
-              ? [600, 700]
-              : [400, 500, 600, 700, 800];
+      expect(family, FfFonts.geistFamily);
+      expect(style.fontFamilyFallback?.first, FfFonts.manropeFamily);
+      const bundled = [300, 400, 500, 600];
+      // Light is only for large text.
+      if (style.fontWeight == FontWeight.w300) {
+        expect(style.fontSize, greaterThanOrEqualTo(28), reason: '$role');
+      }
       expect(
         bundled,
         contains(style.fontWeight!.value),
@@ -72,18 +78,18 @@ void main() {
     }
 
     // Before loading, both families fall back to the test font.
-    final before = widthOf(FfFonts.manropeFamily);
+    final before = widthOf(FfFonts.geistFamily);
     await tester.runAsync(loadAppFonts);
+    final geist = widthOf(FfFonts.geistFamily);
     final manrope = widthOf(FfFonts.manropeFamily);
-    final fraunces = widthOf(FfFonts.frauncesFamily);
 
-    expect(manrope, isNot(before));
-    expect(fraunces, isNot(manrope));
+    expect(geist, isNot(before));
+    expect(manrope, isNot(geist));
 
     // And the app theme picks them up.
     expect(
       FfTheme.light().textTheme.bodyMedium?.fontFamily,
-      FfFonts.manropeFamily,
+      FfFonts.geistFamily,
     );
   });
 }

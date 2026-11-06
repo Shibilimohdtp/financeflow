@@ -11,6 +11,7 @@ import 'package:financeflow/shared/widgets/ff_stat_tile.dart';
 import 'package:financeflow/theme/ff_colors.dart';
 import 'package:financeflow/theme/ff_contrast.dart';
 import 'package:financeflow/theme/ff_theme.dart';
+import 'package:financeflow/theme/ff_typography.dart';
 import 'package:financeflow/theme/ff_tone.dart';
 import 'package:financeflow/theme/tokens/ff_component_tokens.dart';
 import 'package:flutter/material.dart';
@@ -81,6 +82,69 @@ void main() {
           closeTo(10 * FfAmountTokens.maxTextScale, 0.01),
         );
         expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('hero and lg amounts are split, rows inline', (tester) async {
+        final handle = tester.ensureSemantics();
+        await _pump(
+          tester,
+          theme,
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FfAmountText(
+                amount: 5206777.18,
+                size: FfAmountSize.hero,
+                tone: FfTone.neutral,
+                showSign: false,
+              ),
+              FfAmountText(amount: 48210, size: FfAmountSize.sm),
+            ],
+          ),
+        );
+        final hero = tester.widget<Text>(find.byType(Text).first);
+        final spans = (hero.textSpan! as TextSpan).children!.cast<TextSpan>();
+        final number = spans.firstWhere((s) => s.style == null);
+        final decimals = spans.last;
+        expect(number.text, contains('52,06,777'));
+        expect(decimals.text, '.18');
+        expect(
+          decimals.style!.fontSize,
+          lessThan(theme.extension<FfText>()!.moneyHero.fontSize!),
+        );
+        // The row amount is one plain run of text.
+        expect(tester.widget<Text>(find.byType(Text).last).data, isNotNull);
+        // Screen readers hear the whole amount once.
+        expect(find.bySemanticsLabel(RegExp('52,06,777.18')), findsOneWidget);
+        handle.dispose();
+      });
+
+      testWidgets('split amounts shrink to fit instead of overflowing', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          theme,
+          const SizedBox(
+            width: 140,
+            child: FfAmountText(amount: 99999999.99, size: FfAmountSize.hero),
+          ),
+          textScale: 2,
+        );
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getSize(find.byType(FittedBox)).width,
+          lessThanOrEqualTo(140),
+        );
+      });
+
+      test('split parts keep sign and symbol together', () {
+        final p = FfAmountSplit.parts('− ₹1,08,480.50');
+        expect(p.prefix, '− ₹');
+        expect(p.number, '1,08,480');
+        expect(p.decimals, '.50');
+        expect(FfAmountSplit.parts('₹430').decimals, '');
+        expect(FfAmountSplit.parts('n/a').number, 'n/a');
       });
 
       testWidgets('privacy blur hides the figure from everyone', (

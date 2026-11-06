@@ -19,7 +19,7 @@ Future<Map<String, List<String>>> readFontManifest() async {
 var _loaded = false;
 
 /// Loads the bundled app fonts into the test engine, so goldens and
-/// screenshots render Manrope, Fraunces and Material icons instead of the
+/// screenshots render Geist, Manrope and Material icons instead of the
 /// test font's placeholder boxes.
 /// Call from `setUpAll`; repeated calls are no-ops.
 Future<void> loadAppFonts() async {
