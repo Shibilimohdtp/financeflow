@@ -14,6 +14,11 @@ import 'ff_surfaces.dart';
 /// Pass [children] for a plain list, or [slivers] when the body needs its own
 /// sliver layout. [onAurora] puts the page on the aurora backdrop, as the
 /// hero-style screens do; the bar then stays transparent over it.
+/// Distance from the screen edge to a round button's visible circle: the page
+/// margin, less the transparent part of the 48 dp touch target around it.
+const double _sideInset =
+    FfSpace.pageMargin - (FfTouch.minTarget - FfRoundButtonTokens.size) / 2;
+
 class FfPageScaffold extends StatelessWidget {
   const FfPageScaffold({
     super.key,
@@ -78,15 +83,20 @@ class FfPageScaffold extends StatelessWidget {
       backgroundColor: barBackground,
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.transparent,
+      leadingWidth: _sideInset + FfTouch.minTarget,
       leading:
-          leading ??
-          (canPop
-              ? FfCircleButton(
-                icon: Icons.arrow_back_rounded,
-                tooltip: 'Back',
-                onPressed: () => Navigator.of(context).maybePop(),
+          leading != null || canPop
+              ? Padding(
+                padding: const EdgeInsetsDirectional.only(start: _sideInset),
+                child:
+                    leading ??
+                    FfCircleButton(
+                      icon: Icons.arrow_back_rounded,
+                      tooltip: 'Back',
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
               )
-              : null),
+              : null,
       titleSpacing:
           leading == null && !canPop ? FfSpace.pageMargin : FfSpace.xs,
       title: _buildTitle(ff),
@@ -125,7 +135,7 @@ class FfPageScaffold extends StatelessWidget {
     if (items == null || items.isEmpty) return null;
     return [
       Padding(
-        padding: const EdgeInsets.only(right: FfSpace.xs),
+        padding: const EdgeInsets.only(right: _sideInset),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -5,6 +5,7 @@ import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../services/ledger_totals.dart';
+import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_page_header.dart';
 import '../../shared/widgets/ff_period_bar.dart';
@@ -31,7 +32,6 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_corner_badge.dart';
 import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
@@ -455,7 +455,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     context,
   ).push(MaterialPageRoute(builder: (_) => const NeedsReviewScreen()));
 
-  /// One day's rows (or the flat list) inside a compact Bloom card.
+  /// One day's rows (or the flat list) inside a compact Bloom card. The page
+  /// behind the cards is one continuous background.
   Widget _card(Widget sliverList) => SliverPadding(
     padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
     sliver: DecoratedSliver(
@@ -529,12 +530,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           SliverMainAxisGroup(
             slivers: [
               SliverPersistentHeader(
-                pinned: true,
                 delegate: TransactionDayHeaderDelegate(
                   label: dayLabel(group.day),
                   totals: group.totals,
                   isPrivacyBlur: privacyBlur,
-                  background: context.ff.color.surfacePage,
                 ),
               ),
               _card(

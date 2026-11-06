@@ -4,19 +4,17 @@ import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/ledger_totals.dart';
 import '../../../theme/ff.dart';
 
-/// Pinned day header: "Today" on the left, that day's spending and income on
-/// the right. Redesigned for Stillwater Bloom with frosted translucency on Aurora.
+/// Day header: "Today" on the left, that day's spending and income on the
+/// right. Scrolls with the list and has no background of its own.
 class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String label;
   final LedgerTotals totals;
   final bool isPrivacyBlur;
-  final Color background;
 
   const TransactionDayHeaderDelegate({
     required this.label,
     required this.totals,
     required this.isPrivacyBlur,
-    required this.background,
   });
 
   static const double _height = 42;
@@ -59,25 +57,9 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
     ];
 
-    // Translucent background with subtle tint and soft blur when overlapping
-    final isPinned = shrinkOffset > 0 || overlapsContent;
-
+    // No fill and no rule: the header sits on the page like every other
+    // line of the list, so the body has one continuous background.
     return Container(
-      decoration: BoxDecoration(
-        color:
-            isPinned
-                ? background.withValues(alpha: 0.92)
-                : background.withValues(alpha: 0.75),
-        border:
-            isPinned
-                ? Border(
-                  bottom: BorderSide(
-                    color: ff.color.borderSubtle,
-                    width: FfBorderWidth.hairline,
-                  ),
-                )
-                : null,
-      ),
       padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       alignment: Alignment.centerLeft,
       child: Semantics(
@@ -124,6 +106,5 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
       oldDelegate.label != label ||
       oldDelegate.totals.spending != totals.spending ||
       oldDelegate.totals.income != totals.income ||
-      oldDelegate.isPrivacyBlur != isPrivacyBlur ||
-      oldDelegate.background != background;
+      oldDelegate.isPrivacyBlur != isPrivacyBlur;
 }
