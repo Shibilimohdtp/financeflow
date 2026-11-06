@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
@@ -16,8 +17,12 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_key_value_row.dart';
+import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_data_viz.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../theme/ff_tone.dart';
 import '../../theme/ff.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
@@ -236,7 +241,7 @@ class LoanDetailScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
+          horizontal: FfSpace.pageMargin,
           vertical: FfSpace.md,
         ),
         children: [
@@ -289,7 +294,13 @@ class LoanDetailScreen extends ConsumerWidget {
             overdueCount: overdueItems.length,
             remainingCount: unpaidItems.length,
             totalMonths: currentLoan.tenureMonths,
+            schedule: schedule,
           ),
+
+          if (schedule.length > 1) ...[
+            const SizedBox(height: FfSpace.md),
+            _PrincipalChart(schedule: schedule),
+          ],
 
           const SizedBox(height: FfSpace.lg),
 
@@ -359,157 +370,75 @@ class _BalanceHeroSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final secColors = context.ff.color;
     final remaining = ref.watch(loanRemainingBalanceProvider(loan));
     final paidPct = remaining.paidFraction;
-    final isActive = loan.status == LoanStatus.active;
+    final percent = (paidPct * 100).toStringAsFixed(1);
 
-    // Status chip colors
-    final chipColor =
-        isActive ? context.ff.color.actionPrimary : secColors.statusSuccess;
-    final chipBg =
-        isActive
-            ? context.ff.color.actionPrimary.withValues(
-              alpha: FfTint.subtle.alpha,
-            )
-            : secColors.statusSuccess.withValues(alpha: FfTint.subtle.alpha);
-
-    return Container(
-      padding: const EdgeInsets.all(FfSpace.lg),
-      decoration: BoxDecoration(
-        color: context.ff.color.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(FfRadius.xl),
+    return FfHeroCard(
+      tone: FfHeroTone.rose,
+      leading: FfProgressRing(
+        value: paidPct,
+        icon: Icons.account_balance_outlined,
+        semanticsLabel: '$percent% of the total payable is paid',
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Label + Status chip
-          Row(
-            children: [
-              Text(
-                'Left to pay',
-                style: context.ff.text.bodySm.copyWith(
-                  color: context.ff.color.secondary,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: FfSpace.xs,
-                  vertical: FfSpace.x2s,
-                ),
-                decoration: BoxDecoration(
-                  color: chipBg,
-                  borderRadius: BorderRadius.circular(FfRadius.full),
-                ),
-                child: Text(
-                  loan.status.displayName,
-                  style: context.ff.text.labelSm.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: chipColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: FfSpace.xs),
-
-          // Remaining principal + interest — primary visual anchor
-          Text(
-            CurrencyFormatter.formatAmount(remaining.total),
-            style: context.ff.text.displaySm.copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: FfSpace.x3s),
-          Text(
-            '${CurrencyFormatter.formatAmount(remaining.principal)} principal'
-            ' + ${CurrencyFormatter.formatAmount(remaining.interest)} interest',
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.secondary,
-            ),
-          ),
-
-          const SizedBox(height: FfSpace.md),
-
-          // Progress bar
-          FfProgressBar(
-            value: paidPct,
-            color: secColors.statusSuccess,
-            size: FfProgressSize.lg,
-          ),
-
-          const SizedBox(height: FfSpace.sm),
-
-          // Paid / Original / Percentage row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Paid',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: FfSpace.x3s),
-                    Text(
-                      CurrencyFormatter.formatAmount(remaining.paid),
-                      style: context.ff.text.bodySm.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: secColors.statusSuccess,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      title: 'Left to pay',
+      subtitle: loan.status.displayName,
+      child: Builder(
+        builder: (context) {
+          final ff = context.ff;
+          Widget figure(String label, String value, CrossAxisAlignment align) =>
               Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: align,
                 children: [
-                  Text(
-                    '${(paidPct * 100).toStringAsFixed(1)}%',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.secondary,
-                    ),
-                  ),
+                  Text(label, style: ff.text.label),
                   const SizedBox(height: FfSpace.x3s),
                   Text(
-                    'complete',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.secondary,
+                    value,
+                    style: ff.text.labelLg.copyWith(
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FfAmountText(
+                amount: remaining.total,
+                size: FfAmountSize.hero,
+                tone: FfTone.neutral,
+                showSign: false,
+              ),
+              const SizedBox(height: FfSpace.x3s),
+              Text(
+                '${CurrencyFormatter.formatAmount(remaining.principal)} principal'
+                ' + ${CurrencyFormatter.formatAmount(remaining.interest)} interest',
+                style: ff.text.label,
+              ),
+              const SizedBox(height: FfSpace.lg),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: figure(
+                      'Paid',
+                      CurrencyFormatter.formatAmount(remaining.paid),
+                      CrossAxisAlignment.start,
+                    ),
+                  ),
+                  figure('Complete', '$percent%', CrossAxisAlignment.center),
+                  Expanded(
+                    child: figure(
+                      'Total payable',
+                      CurrencyFormatter.formatAmount(remaining.totalPayable),
+                      CrossAxisAlignment.end,
                     ),
                   ),
                 ],
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Total payable',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: FfSpace.x3s),
-                    Text(
-                      CurrencyFormatter.formatAmount(remaining.totalPayable),
-                      style: context.ff.text.bodySm.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -749,105 +678,131 @@ class _RepaymentSummary extends StatelessWidget {
   final int overdueCount;
   final int remainingCount;
   final int totalMonths;
+  final List<AmortizationScheduleItem> schedule;
 
   const _RepaymentSummary({
     required this.paidCount,
     required this.overdueCount,
     required this.remainingCount,
     required this.totalMonths,
+    required this.schedule,
   });
+
+  /// Six months around today: the five most recent due months and the next.
+  List<FfMonthCell> _months() {
+    if (schedule.isEmpty) return const [];
+    final nextIndex = schedule.indexWhere((it) => !it.isPaid && !it.isOverdue);
+    final end = nextIndex == -1 ? schedule.length - 1 : nextIndex;
+    final start = (end - 5).clamp(0, schedule.length - 1);
+    final format = DateFormat('MMM');
+    return [
+      for (var i = start; i <= end && i < schedule.length; i++)
+        FfMonthCell(
+          label: format.format(schedule[i].dueDate),
+          status:
+              schedule[i].isPaid
+                  ? FfMonthStatus.paid
+                  : schedule[i].isOverdue
+                  ? FfMonthStatus.missed
+                  : i == nextIndex
+                  ? FfMonthStatus.due
+                  : FfMonthStatus.upcoming,
+          note:
+              i == nextIndex
+                  ? '${schedule[i].dueDate.day}${_ordinal(schedule[i].dueDate.day)}'
+                  : null,
+        ),
+    ];
+  }
+
+  static String _ordinal(int d) {
+    if (d >= 11 && d <= 13) return 'th';
+    return switch (d % 10) {
+      1 => 'st',
+      2 => 'nd',
+      3 => 'rd',
+      _ => 'th',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final secColors = context.ff.color;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: FfSpace.md,
-        horizontal: FfSpace.xs,
-      ),
-      decoration: BoxDecoration(
-        color: context.ff.color.surfaceContainerHighest.withValues(alpha: 0.40),
-        borderRadius: BorderRadius.circular(FfRadius.md),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            Expanded(
-              child: _SummaryColumn(
-                label: 'Paid EMIs',
-                value: '$paidCount / $totalMonths',
-                color: secColors.statusSuccess,
+    final ff = context.ff;
+    final months = _months();
+    return FfCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: FfStatTile(
+                  label: 'Paid EMIs',
+                  value: Text('$paidCount', style: ff.text.moneyLg),
+                  unit: '/ $totalMonths',
+                ),
               ),
-            ),
-            const VerticalDivider(
-              width: 1,
-              thickness: 0.75,
-              indent: 8,
-              endIndent: 8,
-            ),
-            Expanded(
-              child: _SummaryColumn(
-                label: 'Overdue',
-                value: '$overdueCount',
-                color:
-                    overdueCount > 0
-                        ? secColors.statusError
-                        : context.ff.color.secondary,
+              FfDotMatrix(
+                total: totalMonths,
+                done: paidCount,
+                semanticsLabel: '$paidCount of $totalMonths EMIs paid',
               ),
+            ],
+          ),
+          const SizedBox(height: FfSpace.sm),
+          Text(
+            overdueCount > 0
+                ? '$overdueCount overdue · $remainingCount remaining'
+                : '$remainingCount remaining',
+            style: ff.text.label.copyWith(
+              color: overdueCount > 0 ? ff.color.statusError : null,
             ),
-            const VerticalDivider(
-              width: 1,
-              thickness: 0.75,
-              indent: 8,
-              endIndent: 8,
-            ),
-            Expanded(
-              child: _SummaryColumn(
-                label: 'Remaining',
-                value: '$remainingCount',
-                color: context.ff.color.actionPrimary,
-              ),
-            ),
+          ),
+          if (months.isNotEmpty) ...[
+            const SizedBox(height: FfSpace.md),
+            FfMonthGrid(months: months),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-/// Single stat column used inside _RepaymentSummary.
-class _SummaryColumn extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+/// Outstanding principal over the life of the loan, with today's month
+/// selected.
+class _PrincipalChart extends StatelessWidget {
+  final List<AmortizationScheduleItem> schedule;
 
-  const _SummaryColumn({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _PrincipalChart({required this.schedule});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
+    final ff = context.ff;
+    const samples = 8;
+    final step = (schedule.length / (samples - 1)).ceil().clamp(1, 1 << 20);
+    final picked = <AmortizationScheduleItem>[
+      for (var i = 0; i < schedule.length; i += step) schedule[i],
+      if ((schedule.length - 1) % step != 0) schedule.last,
+    ];
+    final format = DateFormat("MMM ''yy");
+    final points = [
+      for (final it in picked)
+        FfChartPoint(format.format(it.dueDate), it.closingBalance),
+    ];
+    final now = DateTime.now();
+    var selected = picked.indexWhere((it) => it.dueDate.isAfter(now));
+    if (selected == -1) selected = picked.length - 1;
+    return FfCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: context.ff.text.titleLg.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: FfSpace.x3s),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: context.ff.text.labelSm.copyWith(
-              color: context.ff.color.secondary,
-            ),
+          Text('Outstanding principal', style: ff.text.titleLg),
+          const SizedBox(height: FfSpace.sm),
+          FfLineChart(
+            points: points,
+            initialIndex: selected,
+            valueLabel: (p) => CurrencyFormatter.formatCompact(p.value),
           ),
         ],
       ),

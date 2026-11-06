@@ -9,7 +9,6 @@ import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_typography.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loan_detail_screen.dart';
 import 'loans_controller.dart';
@@ -17,6 +16,15 @@ import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_badge.dart';
+import '../../shared/widgets/ff_corner_badge.dart';
+import '../../shared/widgets/ff_data_viz.dart';
+import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../theme/ff_tone.dart';
 import '../../theme/ff.dart';
 
 class LoansScreen extends ConsumerWidget {
@@ -65,80 +73,39 @@ class LoansScreen extends ConsumerWidget {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              FfSpace.lg,
+              FfSpace.pageMargin,
               FfSpace.md,
-              FfSpace.lg,
+              FfSpace.pageMargin,
               104,
             ),
             children: [
               // ── 1. Summary Hero ─────────────────────────────────────────
-              FfCard(
-                variant: FfCardVariant.elevated,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'TOTAL OUTSTANDING DEBT',
-                          style: context.ff.text.labelSm.copyWith(
-                            color: context.ff.color.secondary,
-                            letterSpacing: 1.1,
-                            fontWeight: FontWeight.w700,
+              FfHeroCard(
+                tone: FfHeroTone.rose,
+                title: 'Total outstanding',
+                subtitle:
+                    summary.activeLoansCount == 1
+                        ? '1 active loan'
+                        : '${summary.activeLoansCount} active loans',
+                child: Builder(
+                  builder:
+                      (context) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FfAmountText(
+                            amount: summary.totalOutstanding,
+                            size: FfAmountSize.hero,
+                            tone: FfTone.neutral,
+                            showSign: false,
                           ),
-                        ),
-                        if (summary.activeLoansCount > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: FfSpace.sm,
-                              vertical: FfSpace.x3s,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.ff.color.actionPrimary.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                FfRadius.full,
-                              ),
-                            ),
-                            child: Text(
-                              '${summary.activeLoansCount} active',
-                              style: context.ff.text.labelSm.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: context.ff.color.actionPrimary,
-                              ),
-                            ),
+                          const SizedBox(height: FfSpace.xs),
+                          Text(
+                            'Monthly EMI ${CurrencyFormatter.formatAmount(summary.totalMonthlyEmi)} · '
+                            '${loans.length} total ${loans.length == 1 ? 'record' : 'records'}',
+                            style: context.ff.text.label,
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                    Text(
-                      CurrencyFormatter.formatAmount(summary.totalOutstanding),
-                      style: StillwaterTypography.numHero(
-                        color: context.ff.color.textPrimary,
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: FfSpace.sm),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Monthly EMI: ${CurrencyFormatter.formatAmount(summary.totalMonthlyEmi)}',
-                          style: context.ff.text.bodySm.copyWith(
-                            color: context.ff.color.secondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '${loans.length} total ${loans.length == 1 ? 'record' : 'records'}',
-                          style: context.ff.text.bodySm.copyWith(
-                            color: context.ff.color.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
               ),
 
@@ -177,6 +144,20 @@ class LoansScreen extends ConsumerWidget {
                                   .clamp(0.0, 1.0)
                               : 0.0;
 
+                      final remaining =
+                          ref.watch(loanRemainingBalanceProvider(loan)).total;
+                      final percent = (paidProgress * 100).toStringAsFixed(0);
+                      Widget ring = FfProgressRing(
+                        value: paidProgress,
+                        icon: _getLoanTypeIcon(loan.loanType),
+                        semanticsLabel: '$percent% paid off',
+                      );
+                      if (isOverdue) {
+                        ring = FfCornerBadge(
+                          corner: FfCorner.warning,
+                          child: ring,
+                        );
+                      }
                       return FfCard(
                         onTap: () => _openDetail(context, loan),
                         child: Column(
@@ -184,26 +165,13 @@ class LoansScreen extends ConsumerWidget {
                           children: [
                             Row(
                               children: [
-                                Container(
-                                  width: FfRowTokens.iconTile,
-                                  height: FfRowTokens.iconTile,
-                                  decoration: BoxDecoration(
-                                    color: context
-                                        .ff
-                                        .color
-                                        .actionPrimaryContainer
-                                        .withValues(alpha: FfTint.strong.alpha),
-                                    borderRadius: BorderRadius.circular(
-                                      FfRadius.sm,
-                                    ),
+                                IconTheme.merge(
+                                  data: IconThemeData(
+                                    color: context.ff.color.textPrimary,
                                   ),
-                                  child: Icon(
-                                    _getLoanTypeIcon(loan.loanType),
-                                    size: 20,
-                                    color: context.ff.color.actionPrimary,
-                                  ),
+                                  child: ring,
                                 ),
-                                const SizedBox(width: FfSpace.md),
+                                const SizedBox(width: FfSpace.sm),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -211,96 +179,70 @@ class LoansScreen extends ConsumerWidget {
                                     children: [
                                       Text(
                                         loan.name,
-                                        style: context.ff.text.titleSm.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: context.ff.text.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: FfSpace.x3s),
                                       Text(
                                         '${loan.lender} · ${loan.interestRate}% ${loan.interestType.displayName.toLowerCase()}',
-                                        style: context.ff.text.bodySm.copyWith(
-                                          color: context.ff.color.secondary,
-                                        ),
+                                        style: context.ff.text.bodySm,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      CurrencyFormatter.formatAmount(
-                                        ref
-                                            .watch(
-                                              loanRemainingBalanceProvider(
-                                                loan,
-                                              ),
-                                            )
-                                            .total,
-                                      ),
-                                      style: StillwaterTypography.numMd(
-                                        color: context.ff.color.textPrimary,
-                                      ),
-                                    ),
-                                    Text(
-                                      'EMI: ${CurrencyFormatter.formatAmount(loan.emiAmount)}',
-                                      style: context.ff.text.labelSm.copyWith(
-                                        color: context.ff.color.secondary,
-                                      ),
-                                    ),
-                                  ],
+                                const SizedBox(width: FfSpace.sm),
+                                FfInkButton.open(
+                                  onPressed: () => _openDetail(context, loan),
+                                  tooltip: 'Open ${loan.name}',
+                                  small: true,
                                 ),
                               ],
                             ),
                             const SizedBox(height: FfSpace.md),
-                            FfProgressBar(
-                              value: paidProgress,
-                              color: context.ff.color.actionPrimary,
-                              size: FfProgressSize.md,
-                            ),
-                            const SizedBox(height: FfSpace.sm),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(
-                                  '${(paidProgress * 100).toStringAsFixed(0)}% paid off',
-                                  style: context.ff.text.bodySm.copyWith(
-                                    color: context.ff.color.secondary,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: FfStatTile(
+                                    label: 'Left to pay',
+                                    value: FfAmountText(
+                                      amount: remaining,
+                                      size: FfAmountSize.lg,
+                                      tone: FfTone.neutral,
+                                      showSign: false,
+                                    ),
                                   ),
                                 ),
-                                if (isOverdue)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: FfSpace.x2s,
-                                      vertical: FfSpace.x3s,
+                                const SizedBox(width: FfSpace.sm),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'EMI ${CurrencyFormatter.formatAmount(loan.emiAmount)}',
+                                      style: context.ff.text.label,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          context
-                                              .ff
-                                              .color
-                                              .moneyExpenseContainer,
-                                      borderRadius: BorderRadius.circular(
-                                        FfRadius.xs,
+                                    const SizedBox(height: FfSpace.x2s),
+                                    if (isOverdue)
+                                      const FfBadge(
+                                        label: 'Overdue',
+                                        tone: FfTone.error,
+                                        icon: Icons.error_outline_rounded,
+                                      )
+                                    else
+                                      Text(
+                                        'Due on ${loan.paymentDay}th',
+                                        style: context.ff.text.label,
                                       ),
-                                    ),
-                                    child: Text(
-                                      'Overdue',
-                                      style: context.ff.text.labelSm.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: context.ff.color.moneyExpense,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    'Due on ${loan.paymentDay}th',
-                                    style: context.ff.text.bodySm.copyWith(
-                                      color: context.ff.color.secondary,
-                                    ),
-                                  ),
+                                  ],
+                                ),
                               ],
+                            ),
+                            const SizedBox(height: FfSpace.x2s),
+                            Text(
+                              '$percent% paid off',
+                              style: context.ff.text.label,
                             ),
                           ],
                         ),
@@ -317,20 +259,9 @@ class LoansScreen extends ConsumerWidget {
                     children:
                         closedLoans.map((loan) {
                           return FfRow(
-                            leading: Container(
-                              width: FfRowTokens.iconTile,
-                              height: FfRowTokens.iconTile,
-                              decoration: BoxDecoration(
-                                color: context.ff.color.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(
-                                  FfRadius.sm,
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.check_circle_outline_rounded,
-                                size: 20,
-                                color: context.ff.color.moneyIncome,
-                              ),
+                            leading: const FfIconTile(
+                              icon: Icons.check_circle_outline_rounded,
+                              tone: FfTone.income,
                             ),
                             title: loan.name,
                             subtitle:

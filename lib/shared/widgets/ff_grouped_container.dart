@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/ff.dart';
+import 'ff_card.dart';
 import 'ff_divider.dart';
 
-/// A rounded card that groups list rows. It draws the dividers between rows
-/// and clips their ink to its corners, so rows never need to know whether
-/// they are first or last.
+/// A compact Bloom card that groups list rows (squircle, soft shadow, no
+/// border). It draws the dividers between rows and clips their ink to its
+/// corners, so rows never need to know whether they are first or last.
 class FfGroupedContainer extends StatelessWidget {
   const FfGroupedContainer({
     super.key,
@@ -28,7 +29,6 @@ class FfGroupedContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (children.isEmpty) return const SizedBox.shrink();
-    final c = context.ff.color;
 
     final divided = <Widget>[];
     for (var i = 0; i < children.length; i++) {
@@ -42,19 +42,13 @@ class FfGroupedContainer extends StatelessWidget {
       }
     }
 
+    const density = FfDensity.compact;
     return Container(
       margin: margin,
       padding: padding,
-      decoration: BoxDecoration(
-        color: c.surfaceCard,
-        borderRadius: ffRadius(FfCardTokens.radius),
-        border: Border.all(
-          color: c.borderSubtle,
-          width: FfCardTokens.borderWidth,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: ffRadius(FfCardTokens.radius),
+      decoration: FfCard.decorationOf(context, density: density),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(shape: FfCard.shapeOf(density)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

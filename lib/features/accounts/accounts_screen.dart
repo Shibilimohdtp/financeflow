@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
@@ -14,7 +12,6 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_typography.dart';
 import '../settings/settings_controller.dart';
 import 'accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
@@ -27,6 +24,10 @@ import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_menu.dart';
 import '../../shared/widgets/ff_progress.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_badge.dart';
+import '../../theme/ff_tone.dart';
 import '../../theme/ff.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
@@ -48,7 +49,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
     final accountsAsync = ref.watch(accountsWithBalancesProvider);
     final settings = ref.watch(settingsStreamProvider).value;
     final isPrivacyBlur = settings?.isPrivacyBlurEnabled ?? false;
@@ -87,70 +87,45 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              FfSpace.lg,
+              FfSpace.pageMargin,
               FfSpace.md,
-              FfSpace.lg,
+              FfSpace.pageMargin,
               104,
             ),
             children: [
               // ── 1. Total Net Balance Hero ────────────────────────────────
               if (!_showArchived) ...[
-                FfCard(
-                  variant: FfCardVariant.elevated,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                FfHeroCard(
+                  tone: FfHeroTone.moss,
+                  title: 'Net balance',
+                  subtitle:
+                      'Across ${activeAccounts.length} active on-device ${activeAccounts.length == 1 ? 'account' : 'accounts'}',
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'NET FINANCIAL BALANCE',
-                            style: context.ff.text.labelSm.copyWith(
-                              color: context.ff.color.secondary,
-                              letterSpacing: 1.1,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              isPrivacyBlur
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: context.ff.color.secondary,
-                            ),
-                            tooltip:
-                                isPrivacyBlur ? 'Show balance' : 'Hide balance',
-                            onPressed: () {
-                              ref
-                                  .read(settingsControllerProvider.notifier)
-                                  .setPrivacyBlurEnabled(!isPrivacyBlur);
-                            },
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ],
+                      Expanded(
+                        child: FfAmountText(
+                          amount: visibleBalance,
+                          size: FfAmountSize.hero,
+                          tone: FfTone.neutral,
+                          showSign: visibleBalance < 0,
+                          isBlurred: isPrivacyBlur,
+                        ),
                       ),
-                      const SizedBox(height: FfSpace.xs),
-                      if (isPrivacyBlur)
-                        Text(
-                          '${CurrencyFormatter.currencySymbol} ••••••',
-                          style: StillwaterTypography.numHero(
-                            color: context.ff.color.textPrimary,
-                          ),
-                        )
-                      else
-                        Text(
-                          CurrencyFormatter.formatAmount(visibleBalance),
-                          style: StillwaterTypography.numHero(
-                            color: context.ff.color.textPrimary,
-                          ),
+                      IconButton(
+                        icon: Icon(
+                          isPrivacyBlur
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: FfIconSize.lg,
                         ),
-                      const SizedBox(height: FfSpace.sm),
-                      Text(
-                        'Across ${activeAccounts.length} active on-device ${activeAccounts.length == 1 ? 'account' : 'accounts'}',
-                        style: context.ff.text.bodySm.copyWith(
-                          color: context.ff.color.secondary,
-                        ),
+                        tooltip:
+                            isPrivacyBlur ? 'Show balance' : 'Hide balance',
+                        onPressed: () {
+                          ref
+                              .read(settingsControllerProvider.notifier)
+                              .setPrivacyBlurEnabled(!isPrivacyBlur);
+                        },
                       ),
                     ],
                   ),
@@ -230,19 +205,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                         }
 
                         return FfRow(
-                          leading: Container(
-                            width: FfRowTokens.iconTile,
-                            height: FfRowTokens.iconTile,
-                            decoration: BoxDecoration(
-                              color: context.ff.color.actionPrimaryContainer
-                                  .withValues(alpha: FfTint.strong.alpha),
-                              borderRadius: BorderRadius.circular(FfRadius.sm),
-                            ),
-                            child: Icon(
-                              _getAccountTypeIcon(acc.type),
-                              size: 20,
-                              color: context.ff.color.actionPrimary,
-                            ),
+                          leading: FfIconTile(
+                            icon: _getAccountTypeIcon(acc.type),
                           ),
                           title: acc.name,
                           subtitle: subtitleParts.join(' · '),
@@ -250,34 +214,15 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (acc.isArchived)
-                                Container(
-                                  margin: const EdgeInsets.only(
-                                    right: FfSpace.sm,
+                                const Padding(
+                                  padding: EdgeInsetsDirectional.only(
+                                    end: FfSpace.sm,
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: FfSpace.sm,
-                                    vertical: FfSpace.x3s,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        theme
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(
-                                      FfRadius.full,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Archived',
-                                    style: context.ff.text.labelSm.copyWith(
-                                      color: context.ff.color.secondary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  child: FfBadge(label: 'Archived'),
                                 ),
                               FfAmountText(
                                 amount: acc.currentBalance,
-                                size: FfAmountSize.md,
+                                size: FfAmountSize.sm,
                                 showSign: false,
                                 isBlurred: isPrivacyBlur,
                               ),
