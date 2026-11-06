@@ -19,16 +19,19 @@ import '../helpers/fake_repositories.dart';
 void main() {
   Widget createMoreScreen({
     AppSettings settings = const AppSettings(),
+    FakeSettingsRepository? settingsRepo,
     int pendingCount = 0,
     double textScale = 1.0,
     ThemeData? theme,
   }) {
+    final repo = settingsRepo ?? FakeSettingsRepository(settings);
     return ProviderScope(
       overrides: [
-        settingsStreamProvider.overrideWith((ref) => Stream.value(settings)),
-        settingsRepositoryProvider.overrideWithValue(
-          FakeSettingsRepository(settings),
-        ),
+        settingsStreamProvider.overrideWith((ref) async* {
+          yield await repo.getSettings();
+          yield* repo.watchSettings();
+        }),
+        settingsRepositoryProvider.overrideWithValue(repo),
         filteredTransactionsProvider.overrideWith((ref) => Stream.value([])),
         pendingTransactionsStreamProvider.overrideWith(
           (ref) => Stream.value([]),
@@ -191,6 +194,45 @@ void main() {
       await tester.tap(find.text('Amounts'));
       await tester.pumpAndSettle();
     });
+
+    testWidgets(
+      'theme quick toggle switches theme directly between light and dark',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final repo = FakeSettingsRepository(
+          const AppSettings(themePreference: AppThemePreference.daylight),
+        );
+
+        await tester.pumpWidget(createMoreScreen(settingsRepo: repo));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Light'), findsOneWidget);
+
+        // Tap Theme quick toggle -> switches to dark
+        await tester.tap(find.text('Theme'));
+        await tester.pumpAndSettle();
+
+        expect(
+          (await repo.getSettings()).themePreference,
+          AppThemePreference.deepWater,
+        );
+        expect(find.text('Dark'), findsOneWidget);
+
+        // Tap again -> switches back to light
+        await tester.tap(find.text('Theme'));
+        await tester.pumpAndSettle();
+
+        expect(
+          (await repo.getSettings()).themePreference,
+          AppThemePreference.daylight,
+        );
+        expect(find.text('Light'), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'Settings search matches keywords and shows empty state on miss',

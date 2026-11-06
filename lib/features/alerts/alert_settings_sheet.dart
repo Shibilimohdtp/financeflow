@@ -10,6 +10,7 @@ import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_notification_preview_bubble.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
@@ -290,12 +291,16 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                   ],
                 ),
                 const SizedBox(height: FfSpace.sm),
+                FfNotificationPreviewBubble(
+                  hideSensitive: settings.hideSensitiveNotificationContent,
+                ),
+                const SizedBox(height: FfSpace.xs),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: FfSpace.sm),
+                  padding: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
                   child: Text(
                     settings.hideSensitiveNotificationContent
-                        ? 'Preview: "1 imported transaction is waiting for your review."'
-                        : 'Preview: "Swiggy · ${CurrencyFormatter.formatAmount(450)} is waiting for review."',
+                        ? '1 imported transaction is waiting for your review.'
+                        : 'Preview demonstrates lock screen appearance when notifications arrive.',
                     style: context.ff.text.labelSm.copyWith(
                       color: context.ff.color.secondary,
                       fontStyle: FontStyle.italic,

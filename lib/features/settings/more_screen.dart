@@ -55,6 +55,10 @@ class MoreScreen extends ConsumerWidget {
     final isLockActive = settings.isPinEnabled || settings.isBiometricEnabled;
     final isAmountsBlurred = settings.isPrivacyBlurEnabled;
     final isSmsActive = settings.isSmsDetectionEnabled;
+    final isDark =
+        settings.themePreference == AppThemePreference.deepWater ||
+        (settings.themePreference == AppThemePreference.system &&
+            Theme.of(context).brightness == Brightness.dark);
 
     return FfAurora(
       child: Scaffold(
@@ -121,24 +125,27 @@ class MoreScreen extends ConsumerWidget {
                   ),
                   FfQuickToggleTile(
                     icon:
-                        settings.themePreference == AppThemePreference.deepWater
+                        isDark
                             ? Icons.dark_mode_outlined
-                            : settings.themePreference ==
-                                AppThemePreference.daylight
-                            ? Icons.light_mode_outlined
-                            : Icons.brightness_auto_outlined,
+                            : Icons.light_mode_outlined,
                     title: 'Theme',
-                    statusText:
-                        settings.themePreference == AppThemePreference.deepWater
-                            ? 'Dark'
-                            : settings.themePreference ==
-                                AppThemePreference.daylight
-                            ? 'Light'
-                            : 'Auto',
-                    statusIcon: Icons.palette_outlined,
-                    isActive:
-                        settings.themePreference != AppThemePreference.system,
-                    onTap: () => _push(context, const SettingsDetailScreen()),
+                    statusText: isDark ? 'Dark' : 'Light',
+                    statusIcon:
+                        isDark
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
+                    isActive: isDark,
+                    onTap: () {
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setThemePreference(
+                            isDark
+                                ? AppThemePreference.daylight
+                                : AppThemePreference.deepWater,
+                          );
+                    },
+                    onLongPress:
+                        () => _push(context, const SettingsDetailScreen()),
                   ),
                   FfQuickToggleTile(
                     icon:
