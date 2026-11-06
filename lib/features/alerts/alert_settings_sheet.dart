@@ -2,22 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/formatting/currency_formatter.dart';
 import '../../models/app_settings.dart';
-import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_card.dart';
-import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_section_header.dart';
-import '../../shared/widgets/ff_sheet_header.dart';
-import '../settings/settings_controller.dart';
 import '../../services/notifications/local_notification_service.dart';
 import '../../services/notifications/notification_coordinator.dart';
-import '../../core/formatting/currency_formatter.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_sheet_header.dart';
+import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import '../settings/settings_controller.dart';
 
 final notificationPermissionStatusProvider =
     FutureProvider.autoDispose<NotificationPermissionStatus>((ref) async {
@@ -27,7 +28,7 @@ final notificationPermissionStatusProvider =
       return NotificationPermissionStatus.notRequested;
     });
 
-/// Bottom sheet for configuring local push notifications and alerts preferences.
+/// Bottom sheet for configuring local push notifications and alerts preferences: Pattern E.
 class AlertSettingsSheet extends ConsumerStatefulWidget {
   const AlertSettingsSheet({super.key});
 
@@ -67,14 +68,15 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
         Flexible(
           child: ListView(
             padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.lg,
+              horizontal: FfSpace.pageMargin,
               vertical: FfSpace.md,
             ),
             children: [
               // ── 1. System Permission Banner ──────────────────────────────
               if (!isPermissionGranted && !kIsWeb) ...[
                 FfCard(
-                  variant: FfCardVariant.elevated,
+                  variant: FfCardVariant.tinted,
+                  tone: FfTone.warning,
                   padding: const EdgeInsets.all(FfSpace.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +85,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         children: [
                           Icon(
                             Icons.notifications_off_outlined,
-                            color: context.ff.color.statusSuccess,
+                            color: context.ff.color.statusWarning,
                             size: 22,
                           ),
                           const SizedBox(width: FfSpace.sm),
@@ -92,6 +94,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                               'System Notifications Disabled',
                               style: context.ff.text.titleSm.copyWith(
                                 fontWeight: FontWeight.w600,
+                                color: context.ff.color.statusWarning,
                               ),
                             ),
                           ),
@@ -145,7 +148,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ],
                   ),
                 ),
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: FfSpace.xl),
               ],
 
               // ── 2. Master Switch ─────────────────────────────────────────
@@ -171,7 +174,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 ],
               ),
 
-              const SizedBox(height: FfSpace.lg),
+              const SizedBox(height: FfSpace.xl),
 
               // ── 3. Category Triggers ─────────────────────────────────────
               if (settings.isAlertsEnabled &&
@@ -264,7 +267,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: FfSpace.xl),
 
                 // ── 4. Privacy Settings ───────────────────────────────────
                 const FfSectionHeader(title: 'Lock Screen Privacy'),
@@ -294,17 +297,18 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                         ? 'Preview: "1 imported transaction is waiting for your review."'
                         : 'Preview: "Swiggy · ${CurrencyFormatter.formatAmount(450)} is waiting for review."',
                     style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.borderStrong,
+                      color: context.ff.color.secondary,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
                 ),
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: FfSpace.xl),
               ],
 
               // ── 5. Privacy & Battery Guarantee ───────────────────────────
               FfCard(
                 variant: FfCardVariant.tinted,
+                tone: FfTone.success,
                 padding: const EdgeInsets.all(FfSpace.md),
                 child: Row(
                   children: [
@@ -338,7 +342,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                 ),
               ),
 
-              const SizedBox(height: FfSpace.lg),
+              const SizedBox(height: FfSpace.xl),
 
               // ── 6. Developer Tools (Test Notification) ───────────────────
               if (kDebugMode) ...[
@@ -368,7 +372,7 @@ class _AlertSettingsSheetState extends ConsumerState<AlertSettingsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: FfSpace.xl),
               ],
 
               const SizedBox(height: FfSpace.x2l),
