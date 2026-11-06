@@ -14,6 +14,8 @@ def main():
         ("Add Income (Hero Moss)", "b10_add_income"),
         ("Add Transfer (Hero Tide)", "b10_add_transfer"),
         ("Edit Transaction", "b10_edit_transaction"),
+        ("Transaction Detail (Expense)", "b10_detail_expense"),
+        ("Transaction Detail (Transfer)", "b10_detail_transfer"),
     ]
 
     sample = Image.open(os.path.join(goldens, "b10_add_expense_empty_light.png"))
@@ -21,8 +23,8 @@ def main():
     pad = 16
     header_h = 32
 
-    # Master sheet: 5 columns x 2 rows (Light on top, Dark on bottom)
-    total_w = 5 * w + 6 * pad
+    # Master sheet: columns x 2 rows (Light on top, Dark on bottom)
+    total_w = len(scenes) * w + (len(scenes) + 1) * pad
     total_h = 2 * (h + header_h) + 3 * pad
 
     master = Image.new("RGB", (total_w, total_h), (24, 26, 22))

@@ -6,6 +6,7 @@ import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/personal_debts/money_records_controller.dart';
 import 'package:financeflow/features/settings/settings_controller.dart';
 import 'package:financeflow/features/transactions/add_edit_transaction_screen.dart';
+import 'package:financeflow/features/transactions/transaction_detail_screen.dart';
 import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/category.dart';
@@ -95,8 +96,30 @@ final _existingTx = Transaction(
   accountId: 'acc_salary',
   notes: 'Cold brew and croissant',
   tags: ['coffee', 'work'],
+  sourceReference: 'UPI/32910481029/BLUETOKAI',
+  originalMerchant: 'BLUE-TOKAI-BANGALORE-IN',
+  mergedSources: const ['SMS (HDFC)', 'Notification (GPay)'],
+  isReviewed: true,
   createdAt: DateTime(2026, 11, 4, 10, 30),
   updatedAt: DateTime(2026, 11, 4, 10, 30),
+);
+
+final _transferTx = Transaction(
+  id: 'tx_transfer_sample',
+  amount: 5000.0,
+  merchant: 'ATM Cash Withdrawal',
+  date: DateTime(2026, 11, 5, 16, 20),
+  type: TransactionType.transfer,
+  categoryId: 'cat_transfer',
+  categoryName: 'Transfer',
+  categoryIcon: 'swap_horiz',
+  categoryColor: 'teal',
+  accountId: 'acc_salary',
+  toAccountId: 'acc_cash',
+  sourceReference: 'ATM/WDL/8812903',
+  isReviewed: true,
+  createdAt: DateTime(2026, 11, 5, 16, 20),
+  updatedAt: DateTime(2026, 11, 5, 16, 20),
 );
 
 Future<void> _capture(
@@ -104,6 +127,7 @@ Future<void> _capture(
   String name,
   ThemeData theme, {
   Transaction? initialTransaction,
+  Widget? child,
   Future<void> Function(WidgetTester tester)? setup,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
@@ -130,7 +154,7 @@ Future<void> _capture(
           (ref) => Stream.value([_salaryAccount, _cashAccount]),
         ),
         allTransactionsStreamProvider.overrideWith(
-          (ref) => Stream.value([_existingTx]),
+          (ref) => Stream.value([_existingTx, _transferTx]),
         ),
         allLoansStreamProvider.overrideWith(
           (ref) => Stream.value(const <Loan>[]),
@@ -151,7 +175,7 @@ Future<void> _capture(
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: theme,
-        home: AddEditTransactionScreen(initialTransaction: initialTransaction),
+        home: child ?? AddEditTransactionScreen(initialTransaction: initialTransaction),
       ),
     ),
   );
@@ -243,6 +267,24 @@ void main() {
         'b10_edit_transaction_$mode',
         theme,
         initialTransaction: _existingTx,
+      );
+    });
+
+    testWidgets('b10_detail_expense_$mode', (tester) async {
+      await _capture(
+        tester,
+        'b10_detail_expense_$mode',
+        theme,
+        child: TransactionDetailScreen(transaction: _existingTx),
+      );
+    });
+
+    testWidgets('b10_detail_transfer_$mode', (tester) async {
+      await _capture(
+        tester,
+        'b10_detail_transfer_$mode',
+        theme,
+        child: TransactionDetailScreen(transaction: _transferTx),
       );
     });
   }
