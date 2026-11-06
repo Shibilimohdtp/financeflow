@@ -54,7 +54,7 @@ void main() {
 
         expect(find.byType(FinanceFlowWordmark), findsNWidgets(2));
         expect(find.byType(FinanceFlowLogo), findsOneWidget);
-        expect(find.text('PRIVATE · LOCAL-FIRST'), findsNWidgets(2));
+        expect(find.text('STILL WATER FOR YOUR FINANCIAL LIFE'), findsNWidgets(2));
       },
     );
 
@@ -69,16 +69,17 @@ void main() {
         );
 
         expect(find.text('Stillwater Branding Showcase'), findsOneWidget);
-        expect(find.text('Theme Variants'), findsOneWidget);
-        expect(find.text('Sizing & Legibility Ladder'), findsOneWidget);
+        expect(find.text('Theme variants'), findsOneWidget);
+        expect(find.text('Sizing and legibility'), findsOneWidget);
 
         await tester.scrollUntilVisible(
-          find.text('Platform Icons & Safe Zones'),
+          find.text('Platform icons and safe zones'),
           200.0,
+          scrollable: find.byType(Scrollable).first,
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Platform Icons & Safe Zones'), findsOneWidget);
+        expect(find.text('Platform icons and safe zones'), findsOneWidget);
         expect(find.byType(FinanceFlowMark), findsWidgets);
       },
     );
