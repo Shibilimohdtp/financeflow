@@ -6,18 +6,25 @@ import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
 import '../../repositories/account_repository.dart';
 import '../../services/loan_calculator.dart';
+import '../../shared/widgets/ff_amount_hero.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_consequence_line.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
 import 'loans_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon map for each loan type
@@ -346,38 +353,46 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
     return FfSheet(
       children: [
-        // ── Drag handle + header ─────────────────────────────────
         FfSheetHeader(
-          title: isEdit ? 'Edit Loan' : 'Add Loan / EMI',
+          title: isEdit ? 'Edit loan' : 'New loan',
           subtitle:
               isEdit
-                  ? 'Update loan details and repayment terms.'
-                  : 'Track repayments and outstanding balance.',
+                  ? 'Update the terms as your lender shows them.'
+                  : 'Start with the amount, then the terms.',
           onClose: () => Navigator.of(context).pop(),
         ),
-        const FfDivider(),
 
-        // ── Scrollable form body ─────────────────────────────────
         Flexible(
           child: Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+              padding: const EdgeInsets.fromLTRB(
+                FfSpace.lg,
+                FfSpace.xs,
+                FfSpace.lg,
+                FfSpace.md,
+              ),
               children: [
-                const SizedBox(height: FfSpace.xs),
-
-                // ── 1. Loan type selector ──────────────────────────
-                _LoanTypeSelector(
-                  selected: _loanType,
-                  onChanged: (t) => setState(() => _loanType = t),
+                // ── 1. Principal hero ──────────────────────────────
+                FfAmountHero(
+                  controller: _principalController,
+                  tone: FfTone.debt,
+                  label: 'Amount borrowed',
+                  errorText: _principalError,
+                  consequence:
+                      previewData == null
+                          ? 'Enter the amount, rate and tenure to see the EMI.'
+                          : 'About ${CurrencyFormatter.formatAmount(previewData.emi)} a month for $_tenureText months.',
+                  consequenceIcon: Icons.event_repeat_rounded,
+                  onChanged: (_) {
+                    setState(() => _principalError = null);
+                    _recalculateEmi();
+                  },
                 ),
 
                 const SizedBox(height: FfSpace.lg),
 
-                // ── 2. Loan details ────────────────────────────────
-                _SectionLabel(label: 'Loan Details'),
-                const SizedBox(height: FfSpace.xs),
-
+                // ── 2. Who and what ────────────────────────────────
                 _inputField(
                   controller: _nameController,
                   label: 'Loan name',
@@ -389,12 +404,10 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                               ? 'Loan name is required.'
                               : null,
                 ),
-
                 const SizedBox(height: FfSpace.md),
-
                 _inputField(
                   controller: _lenderController,
-                  label: 'Lender / Institution',
+                  label: 'Lender',
                   hint: 'e.g. HDFC Bank, Bajaj Finserv',
                   capitalization: TextCapitalization.words,
                   icon: Icons.business_outlined,
@@ -407,37 +420,41 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
                 const SizedBox(height: FfSpace.lg),
 
-                // ── 3. Amount and repayment ────────────────────────
-                _SectionLabel(label: 'Amount & Repayment'),
-                const SizedBox(height: FfSpace.xs),
-
-                // Principal
-                _NumericInputField(
-                  controller: _principalController,
-                  label: 'Principal Amount',
-                  suffix: CurrencyFormatter.currencySymbol,
-                  prefixSymbol: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  errorText: _principalError,
-                  onChanged: (_) {
-                    setState(() => _principalError = null);
-                    _recalculateEmi();
-                  },
+                // ── 3. Type as tappable chips ──────────────────────
+                const FfSectionHeader(title: 'Type'),
+                Wrap(
+                  spacing: FfSpace.xs,
+                  runSpacing: FfSpace.xs,
+                  children: [
+                    for (final t in LoanType.values)
+                      FfChip(
+                        label: t.displayName,
+                        isSelected: _loanType == t,
+                        leading: Icon(
+                          _loanTypeIcon(t),
+                          size: 15,
+                          color:
+                              _loanType == t
+                                  ? context.ff.color.onActionPrimaryContainer
+                                  : context.ff.color.secondary,
+                        ),
+                        onSelected: () => setState(() => _loanType = t),
+                      ),
+                  ],
                 ),
 
-                const SizedBox(height: FfSpace.md),
+                const SizedBox(height: FfSpace.lg),
 
-                // Rate + Tenure row
+                // ── 4. Terms ───────────────────────────────────────
+                const FfSectionHeader(title: 'Terms'),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: _NumericInputField(
                         controller: _rateController,
-                        label: 'Interest rate',
-                        suffix: '% p.a.',
+                        label: 'Interest',
+                        suffix: '% a year',
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -464,21 +481,33 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: FfSpace.md),
-
-                // ── 4. Interest type ───────────────────────────────
-                _InterestTypeSelector(
-                  selected: _interestType,
-                  onChanged: (t) {
+                FfSegmentedPill<InterestType>(
+                  options: [
+                    FfSegmentOption(
+                      value: InterestType.reducingBalance,
+                      label: InterestType.reducingBalance.displayName,
+                    ),
+                    FfSegmentOption(
+                      value: InterestType.flatRate,
+                      label: InterestType.flatRate.displayName,
+                    ),
+                  ],
+                  selectedValue: _interestType,
+                  onSelected: (t) {
                     setState(() => _interestType = t);
                     _recalculateEmi();
                   },
                 ),
-
+                const SizedBox(height: FfSpace.xs),
+                FfConsequenceLine(
+                  text:
+                      _interestType == InterestType.reducingBalance
+                          ? 'Interest falls as you repay the principal.'
+                          : 'Interest is charged on the original principal.',
+                  icon: Icons.info_outline_rounded,
+                ),
                 const SizedBox(height: FfSpace.md),
-
-                // Monthly EMI
                 _NumericInputField(
                   controller: _emiController,
                   label: 'Monthly EMI',
@@ -488,27 +517,51 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                     decimal: true,
                   ),
                   errorText: _emiError,
-                  helperText: 'Auto-calculated · edit to override',
+                  helperText:
+                      'Calculated for you · edit if your lender differs',
                   onChanged: (_) => setState(() => _emiError = null),
                 ),
 
-                const SizedBox(height: FfSpace.lg),
-
-                // ── 5. Repayment preview ───────────────────────────
+                // ── 5. What it costs ───────────────────────────────
                 if (previewData != null) ...[
-                  _RepaymentPreview(data: previewData),
                   const SizedBox(height: FfSpace.lg),
+                  _RepaymentPreview(data: previewData),
                 ],
 
                 // ── 6. Schedule ────────────────────────────────────
-                _SectionLabel(label: 'Schedule'),
-                const SizedBox(height: FfSpace.xs),
-
-                _DateAndPaymentDayRow(
-                  startDate: _startDate,
-                  paymentDayController: _paymentDayController,
-                  onSelectDate: _selectDate,
-                  onDayChanged: (_) => setState(() {}),
+                const SizedBox(height: FfSpace.lg),
+                const FfSectionHeader(title: 'Schedule'),
+                FfCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      FfRow(
+                        title: 'Start date',
+                        icon: Icons.event_outlined,
+                        detail: DateFormatter.formatShortDate(_startDate),
+                        showChevron: true,
+                        onTap: _selectDate,
+                      ),
+                      FfRow(
+                        title: 'Due day each month',
+                        subtitle: 'Between 1 and 28',
+                        icon: Icons.today_outlined,
+                        trailing: SizedBox(
+                          width: 84,
+                          child: FfTextField(
+                            controller: _paymentDayController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(2),
+                            ],
+                            hint: '5',
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
                 // ── Past loan notice ───────────────────────────────
@@ -521,81 +574,79 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                   ),
                 ],
 
-                const SizedBox(height: FfSpace.lg),
-
                 // ── 7. More options ────────────────────────────────
-                _MoreOptionsToggle(
-                  isExpanded: _showMoreOptions,
-                  onToggle:
-                      () =>
-                          setState(() => _showMoreOptions = !_showMoreOptions),
-                ),
-
-                if (_showMoreOptions) ...[
-                  const SizedBox(height: FfSpace.md),
-
-                  // Linked account
-                  _AccountSelector(
-                    accounts: accounts,
-                    selected: _selectedAccountId,
-                    onChanged: (v) => setState(() => _selectedAccountId = v),
-                  ),
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // Notes
-                  _inputField(
-                    controller: _notesController,
-                    label: 'Notes (optional)',
-                    hint: 'Any additional details about this loan',
-                    icon: Icons.notes_outlined,
-                    maxLines: 2,
-                  ),
-                ],
-
-                const SizedBox(height: FfSpace.lg),
-
-                // ── Trust notice ───────────────────────────────────
+                const SizedBox(height: FfSpace.md),
                 FfCard(
-                  variant: FfCardVariant.tinted,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.md,
-                    vertical: FfSpace.sm,
-                  ),
-                  child: Row(
+                  padding: EdgeInsets.zero,
+                  child: Column(
                     children: [
-                      Icon(
-                        Icons.lock_outline_rounded,
-                        size: 16,
-                        color: context.ff.color.statusSuccess,
+                      FfRow(
+                        title: 'Account and notes',
+                        subtitle:
+                            _showMoreOptions
+                                ? null
+                                : 'Optional: linked account, a note',
+                        icon: Icons.tune_rounded,
+                        showChevron: true,
+                        onTap:
+                            () => setState(
+                              () => _showMoreOptions = !_showMoreOptions,
+                            ),
                       ),
-                      const SizedBox(width: FfSpace.xs),
-                      Expanded(
-                        child: Text(
-                          'Entered by you · Calculated locally · FinanceFlow does not access lender servers.',
-                          style: context.ff.text.labelSm.copyWith(
-                            color: context.ff.color.secondary,
+                      if (_showMoreOptions) ...[
+                        Padding(
+                          padding: const EdgeInsets.all(FfSpace.md),
+                          child: Column(
+                            children: [
+                              _AccountSelector(
+                                accounts: accounts,
+                                selected: _selectedAccountId,
+                                onChanged:
+                                    (v) =>
+                                        setState(() => _selectedAccountId = v),
+                              ),
+                              const SizedBox(height: FfSpace.md),
+                              _inputField(
+                                controller: _notesController,
+                                label: 'Notes (optional)',
+                                hint: 'Anything else about this loan',
+                                icon: Icons.notes_outlined,
+                                maxLines: 2,
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
 
                 const SizedBox(height: FfSpace.lg),
+
+                // ── Trust notice ───────────────────────────────────
+                const FfConsequenceLine(
+                  text:
+                      'Entered by you and calculated on this device. FinanceFlow does not contact your lender.',
+                  icon: Icons.lock_outline_rounded,
+                  tone: FfTone.success,
+                ),
               ],
             ),
           ),
         ),
 
-        // ── Sticky primary action ───────────────────────────────────
         FfSheetFooter(
-          primaryLabel: isEdit ? 'Save Changes' : 'Create Loan',
+          primaryLabel: isEdit ? 'Save changes' : 'Create loan',
           isPrimaryLoading: _isSaving,
           onPrimaryPressed: _isSaving ? null : _save,
         ),
       ],
     );
+  }
+
+  String get _tenureText {
+    final n = int.tryParse(_tenureController.text.trim()) ?? 0;
+    return n > 0 ? '$n' : '—';
   }
 
   // ── Convenience field builder ──────────────────────────────────────────────
@@ -623,68 +674,10 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Private sub-widgets
+// Private sub-widgets (Bloom)
 // ──────────────────────────────────────────────────────────────────────────────
-// ── Convenience field builder ──────────────────────────────────────────────
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
-        ),
-      ),
-    );
-  }
-}
-
-/// Responsive loan-type selector: wraps chips in a Wrap layout.
-class _LoanTypeSelector extends StatelessWidget {
-  final LoanType selected;
-  final ValueChanged<LoanType> onChanged;
-
-  const _LoanTypeSelector({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionLabel(label: 'Loan Type'),
-        const SizedBox(height: FfSpace.xs),
-        Wrap(
-          spacing: FfSpace.xs,
-          runSpacing: FfSpace.xs,
-          children:
-              LoanType.values.map((t) {
-                return FfChip(
-                  label: t.displayName,
-                  isSelected: selected == t,
-                  leading: Icon(
-                    _loanTypeIcon(t),
-                    size: 15,
-                    color:
-                        selected == t
-                            ? context.ff.color.onActionPrimaryContainer
-                            : context.ff.color.secondary,
-                  ),
-                  onSelected: () => onChanged(t),
-                );
-              }).toList(),
-        ),
-      ],
-    );
-  }
-}
-
-/// Numeric input styled inline (no box unless focused) — lighter than FfAmountField.
+/// Numeric term field with a unit suffix or a currency prefix.
 class _NumericInputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -728,115 +721,7 @@ class _NumericInputField extends StatelessWidget {
   }
 }
 
-/// Two-option interest type selector with explanatory sub-text.
-class _InterestTypeSelector extends StatelessWidget {
-  final InterestType selected;
-  final ValueChanged<InterestType> onChanged;
-
-  const _InterestTypeSelector({
-    required this.selected,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: FfSpace.x2s),
-          child: Text(
-            'Interest Type',
-            style: context.ff.text.bodySm.copyWith(
-              color: context.ff.color.secondary,
-            ),
-          ),
-        ),
-        const SizedBox(height: FfSpace.xs),
-        Row(
-          children:
-              InterestType.values.map((t) {
-                final isSelected = selected == t;
-                final description =
-                    t == InterestType.reducingBalance
-                        ? 'Reduces as principal decreases'
-                        : 'Fixed on original principal';
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: t == InterestType.reducingBalance ? FfSpace.xs : 0,
-                      left: t == InterestType.flatRate ? FfSpace.xs : 0,
-                    ),
-                    child: InkWell(
-                      onTap: () => onChanged(t),
-                      borderRadius: BorderRadius.circular(FfRadius.md),
-                      child: AnimatedContainer(
-                        duration: FfMotion.fast,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: FfSpace.md,
-                          vertical: FfSpace.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected
-                                  ? context.ff.color.actionPrimaryContainer
-                                  : context.ff.color.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(FfRadius.md),
-                          border: Border.all(
-                            color:
-                                isSelected
-                                    ? context.ff.color.actionPrimary
-                                    : context.ff.color.borderSubtle,
-                            width:
-                                isSelected
-                                    ? FfBorderWidth.regular
-                                    : FfBorderWidth.hairline,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              t.displayName,
-                              style: context.ff.text.label.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    isSelected
-                                        ? context
-                                            .ff
-                                            .color
-                                            .onActionPrimaryContainer
-                                        : context.ff.color.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: FfSpace.x3s),
-                            Text(
-                              description,
-                              style: context.ff.text.labelSm.copyWith(
-                                color:
-                                    isSelected
-                                        ? context
-                                            .ff
-                                            .color
-                                            .onActionPrimaryContainer
-                                            .withValues(alpha: FfOpacity.muted)
-                                        : context.ff.color.secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-        ),
-      ],
-    );
-  }
-}
-
-/// Compact repayment preview — same language as the loan detail balance card.
+/// Repayment preview: three stat tiles and the estimated finish date.
 class _RepaymentPreview extends StatelessWidget {
   final ({double emi, double total, double interest, DateTime endDate}) data;
 
@@ -844,92 +729,50 @@ class _RepaymentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return FfCard(
       padding: const EdgeInsets.all(FfSpace.md),
-      decoration: BoxDecoration(
-        color: context.ff.color.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(FfRadius.lg),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.calculate_outlined,
-                size: 14,
-                color: context.ff.color.secondary,
+              Expanded(
+                child: FfStatTile(
+                  label: 'Monthly',
+                  value: FfAmountText(
+                    amount: data.emi,
+                    size: FfAmountSize.md,
+                    showSign: false,
+                  ),
+                  tone: FfTone.debt,
+                ),
               ),
-              const SizedBox(width: FfSpace.x2s),
-              Text(
-                'Repayment Preview',
-                style: context.ff.text.labelSm.copyWith(
-                  color: context.ff.color.secondary,
-                  letterSpacing: 0.3,
+              Expanded(
+                child: FfStatTile(
+                  label: 'Total repaid',
+                  value: FfAmountText(
+                    amount: data.total,
+                    size: FfAmountSize.md,
+                    showSign: false,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: FfStatTile(
+                  label: 'Interest',
+                  value: FfAmountText(
+                    amount: data.interest,
+                    size: FfAmountSize.md,
+                    showSign: false,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: FfSpace.sm),
-          // Three stat columns
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _PreviewStat(
-                    label: 'Monthly EMI',
-                    value: CurrencyFormatter.formatAmount(data.emi),
-                    isPrimary: true,
-                  ),
-                ),
-                VerticalDivider(
-                  width: 1,
-                  thickness: FfBorderWidth.hairline,
-                  indent: 4,
-                  endIndent: 4,
-                  color: context.ff.color.borderSubtle,
-                ),
-                Expanded(
-                  child: _PreviewStat(
-                    label: 'Total Repayment',
-                    value: CurrencyFormatter.formatAmount(data.total),
-                  ),
-                ),
-                VerticalDivider(
-                  width: 1,
-                  thickness: FfBorderWidth.hairline,
-                  indent: 4,
-                  endIndent: 4,
-                  color: context.ff.color.borderSubtle,
-                ),
-                Expanded(
-                  child: _PreviewStat(
-                    label: 'Est. Interest',
-                    value: CurrencyFormatter.formatAmount(data.interest),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: FfSpace.xs),
-          const FfDivider(),
-          const SizedBox(height: FfSpace.xs),
-          Row(
-            children: [
-              Text(
-                'Est. completion',
-                style: context.ff.text.labelSm.copyWith(
-                  color: context.ff.color.secondary,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                DateFormatter.formatMonthYear(data.endDate),
-                style: context.ff.text.labelSm.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          FfConsequenceLine(
+            text: 'Finishes ${DateFormatter.formatMonthYear(data.endDate)}',
+            icon: Icons.flag_outlined,
           ),
         ],
       ),
@@ -937,112 +780,7 @@ class _RepaymentPreview extends StatelessWidget {
   }
 }
 
-class _PreviewStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isPrimary;
-
-  const _PreviewStat({
-    required this.label,
-    required this.value,
-    this.isPrimary = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: context.ff.text.labelSm.copyWith(
-              color: context.ff.color.secondary,
-            ),
-          ),
-          const SizedBox(height: FfSpace.x3s),
-          Text(
-            value,
-            style: context.ff.text.bodySm.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isPrimary ? context.ff.color.actionPrimary : null,
-              fontSize: isPrimary ? 13 : 12,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Start date + payment day row.
-class _DateAndPaymentDayRow extends StatelessWidget {
-  final DateTime startDate;
-  final TextEditingController paymentDayController;
-  final VoidCallback onSelectDate;
-  final ValueChanged<String> onDayChanged;
-
-  const _DateAndPaymentDayRow({
-    required this.startDate,
-    required this.paymentDayController,
-    required this.onSelectDate,
-    required this.onDayChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Start date — tappable tile
-        Expanded(
-          flex: 3,
-          child: InkWell(
-            onTap: onSelectDate,
-            borderRadius: BorderRadius.circular(FfRadius.md),
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelText: 'Start date',
-                labelStyle: context.ff.text.bodySm.copyWith(
-                  color: context.ff.color.secondary,
-                ),
-                suffixIcon: const Icon(Icons.event_outlined, size: 18),
-              ),
-              child: Text(
-                DateFormatter.formatShortDate(startDate),
-                style: context.ff.text.body,
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(width: FfSpace.md),
-
-        // Due day of month
-        Expanded(
-          flex: 2,
-          child: FfTextField(
-            controller: paymentDayController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(2),
-            ],
-            label: 'Due day',
-            hint: '1–28',
-            suffixText: 'of month',
-            onChanged: onDayChanged,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Calm past-loan notice card with toggle.
+/// Past-loan notice: a toggle row that explains the choice in plain words.
 class _PastLoanNotice extends StatelessWidget {
   final List<AmortizationScheduleItem> installments;
   final bool markPaid;
@@ -1057,53 +795,41 @@ class _PastLoanNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = installments.fold<double>(0.0, (s, it) => s + it.emiAmount);
+    final count = installments.length;
 
     return FfCard(
-      padding: const EdgeInsets.all(FfSpace.md),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.history_rounded,
-                size: 16,
-                color: context.ff.color.actionPrimary,
-              ),
-              const SizedBox(width: FfSpace.xs),
-              Expanded(
-                child: Text(
-                  'Past Loan Detected',
-                  style: context.ff.text.titleSm.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+          FfRow.toggle(
+            title: 'This loan started earlier',
+            subtitle:
+                '$count past installment${count > 1 ? 's' : ''} '
+                '(${DateFormatter.formatShortDate(installments.first.dueDate)} – '
+                '${DateFormatter.formatShortDate(installments.last.dueDate)}), '
+                'about ${CurrencyFormatter.formatAmount(total)}.',
+            icon: Icons.history_rounded,
+            value: markPaid,
+            onChanged: onChanged,
           ),
-          const SizedBox(height: FfSpace.xs),
-          Text(
-            '${installments.length} past installment${installments.length > 1 ? "s" : ""} found '
-            '(${DateFormatter.formatShortDate(installments.first.dueDate)} – '
-            '${DateFormatter.formatShortDate(installments.last.dueDate)}) '
-            'totaling ${CurrencyFormatter.formatAmount(total)}.',
-            style: context.ff.text.labelSm.copyWith(
-              color: context.ff.color.secondary,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.md,
+              0,
+              FfSpace.md,
+              FfSpace.md,
             ),
-          ),
-          const SizedBox(height: FfSpace.sm),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
+            child: FfConsequenceLine(
+              text:
                   markPaid
-                      ? 'Mark past ${installments.length} EMIs as already paid — next due date will advance.'
-                      : 'Keep past installments as overdue until manually paid.',
-                  style: context.ff.text.labelSm.copyWith(),
-                ),
-              ),
-              Switch(value: markPaid, onChanged: onChanged),
-            ],
+                      ? 'Marked as paid. The next due date moves forward.'
+                      : 'Kept as overdue until you mark each one paid.',
+              icon:
+                  markPaid
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.schedule_rounded,
+            ),
           ),
         ],
       ),
@@ -1111,52 +837,7 @@ class _PastLoanNotice extends StatelessWidget {
   }
 }
 
-/// "More options" expandable toggle row.
-class _MoreOptionsToggle extends StatelessWidget {
-  final bool isExpanded;
-  final VoidCallback onToggle;
-
-  const _MoreOptionsToggle({required this.isExpanded, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(FfRadius.md),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
-        child: Row(
-          children: [
-            Icon(
-              isExpanded
-                  ? Icons.keyboard_arrow_up_rounded
-                  : Icons.keyboard_arrow_down_rounded,
-              size: 20,
-              color: context.ff.color.secondary,
-            ),
-            const SizedBox(width: FfSpace.xs),
-            Text(
-              isExpanded ? 'Fewer options' : 'More options',
-              style: context.ff.text.bodySm.copyWith(
-                color: context.ff.color.actionPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              isExpanded ? '' : 'Linked account, notes',
-              style: context.ff.text.labelSm.copyWith(
-                color: context.ff.color.secondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Linked account selector (DropdownButton inside a styled field).
+/// Linked account selector (kept on the shared select).
 class _AccountSelector extends StatelessWidget {
   final List<dynamic> accounts;
   final String? selected;
