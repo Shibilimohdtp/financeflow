@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- FinanceFlow Brand Identity: Direction 3 (The Still Horizon) - Daylight -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Grounding Water Basin Cradle -->
+    <path
+      d="M 136,256 C 136,348 184,396 256,396 C 328,396 376,348 376,256"
+      stroke="#1B1D17"
+      stroke-width="36" />
+    <!-- Calm Surface Horizon -->
+    <path
+      d="M 160,256 L 352,256"
+      stroke="#1B1D17"
+      stroke-width="32" />
+  </g>
+  <!-- Buoyant Morning Spark -->
+  <circle cx="256" cy="168" r="28" fill="#CBE94C" />
+</svg>

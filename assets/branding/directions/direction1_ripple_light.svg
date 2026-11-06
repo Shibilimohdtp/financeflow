@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- FinanceFlow Brand Identity: Direction 1 (The Stillwater Ripple) - Daylight -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Outer Squircle Current -->
+    <path
+      d="M 196,120 C 144,142 116,192 116,256 C 116,352 168,404 256,404 C 344,404 396,352 396,256 C 396,160 344,108 256,108"
+      stroke="#1B1D17"
+      stroke-width="34" />
+    <!-- Inner Squircle Current -->
+    <path
+      d="M 292,180 C 316,196 328,220 328,256 C 328,316 300,344 256,344 C 212,344 184,316 184,256 C 184,196 212,168 256,168"
+      stroke="#1B1D17"
+      stroke-width="28" />
+  </g>
+  <!-- Center Radiant Lime Spark -->
+  <circle cx="256" cy="256" r="24" fill="#CBE94C" />
+</svg>

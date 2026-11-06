@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- FinanceFlow Brand Identity: Direction 2 (The Continuous Ledger Ribbon) - Daylight -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M 172,392 L 172,156 C 172,126 198,116 236,116 L 340,116"
+      stroke="#1B1D17"
+      stroke-width="38" />
+    <path
+      d="M 172,256 L 296,256"
+      stroke="#1B1D17"
+      stroke-width="38" />
+  </g>
+  <circle cx="348" cy="256" r="22" fill="#CBE94C" />
+</svg>
