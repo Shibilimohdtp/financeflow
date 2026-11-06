@@ -6,6 +6,7 @@
 //
 //   flutter test tool/screenshots/bloom_screenshots_test.dart --update-goldens
 import 'package:financeflow/models/account.dart';
+import 'package:financeflow/models/subscription.dart';
 import 'package:financeflow/shared/widgets/charts/ff_bar_chart.dart';
 import 'package:financeflow/shared/widgets/charts/ff_donut_chart.dart';
 import 'package:financeflow/shared/widgets/ff_account_preview_card.dart';
@@ -16,11 +17,16 @@ import 'package:financeflow/shared/widgets/ff_card.dart';
 import 'package:financeflow/shared/widgets/ff_corner_badge.dart';
 import 'package:financeflow/shared/widgets/ff_data_viz.dart';
 import 'package:financeflow/shared/widgets/ff_icon_tile.dart';
+import 'package:financeflow/shared/widgets/ff_monogram_tile.dart';
 import 'package:financeflow/shared/widgets/ff_navigation.dart';
 import 'package:financeflow/shared/widgets/ff_progress.dart';
+import 'package:financeflow/shared/widgets/ff_renewal_chip.dart';
+import 'package:financeflow/shared/widgets/ff_renewal_strip.dart';
 import 'package:financeflow/shared/widgets/ff_round_buttons.dart';
 import 'package:financeflow/shared/widgets/ff_segmented_pill.dart';
 import 'package:financeflow/shared/widgets/ff_stat_tile.dart';
+import 'package:financeflow/shared/widgets/ff_subscription_preview_card.dart';
+import 'package:financeflow/shared/widgets/ff_subscription_type_tiles.dart';
 import 'package:financeflow/shared/widgets/ff_suggestion_chips.dart';
 import 'package:financeflow/shared/widgets/ff_surfaces.dart';
 import 'package:financeflow/theme/ff.dart';
@@ -610,6 +616,77 @@ Widget _accountSheet(BuildContext context) {
   );
 }
 
+Widget _subscriptionSheet(BuildContext context) {
+  final ff = context.ff;
+  final refDate = DateTime(2026, 11, 6);
+  final sampleSub = Subscription(
+    id: 's1',
+    merchant: 'Spotify Premium',
+    normalizedMerchant: 'spotify premium',
+    amount: 119,
+    nextRenewalDate: refDate.add(const Duration(days: 12)),
+    createdAt: refDate,
+    updatedAt: refDate,
+  );
+  return ListView(
+    padding: const EdgeInsets.all(20),
+    children: [
+      Text('Subscription Preview Card', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      FfSubscriptionPreviewCard(
+        merchant: 'Spotify Premium',
+        amount: 119,
+        frequency: SubscriptionFrequency.monthly,
+        category: 'Music',
+        accountName: 'HDFC Salary',
+        nextRenewalDate: refDate.add(const Duration(days: 12)),
+      ),
+      const SizedBox(height: 24),
+      Text('Renewal Chips', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      const Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          FfRenewalChip(daysUntilRenewal: -2),
+          FfRenewalChip(daysUntilRenewal: 0),
+          FfRenewalChip(daysUntilRenewal: 1),
+          FfRenewalChip(daysUntilRenewal: 3),
+          FfRenewalChip(daysUntilRenewal: 12),
+          FfRenewalChip(daysUntilRenewal: 10, status: SubscriptionStatus.paused),
+        ],
+      ),
+      const SizedBox(height: 24),
+      Text('Monogram Tiles', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          FfMonogramTile(name: 'Netflix', size: 44),
+          FfMonogramTile(name: 'Spotify', size: 44),
+          FfMonogramTile(name: 'Google One', size: 44),
+          FfMonogramTile(name: 'Airtel Broadband', size: 44),
+          FfMonogramTile(name: 'Cult Fit', size: 44),
+        ],
+      ),
+      const SizedBox(height: 24),
+      Text('Subscription Type Tiles', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      FfSubscriptionTypeTiles(
+        selectedType: SubscriptionCategoryType.streaming,
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 24),
+      Text('Renewal 30-Day Strip', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      FfRenewalStrip(
+        subscriptions: [sampleSub],
+        referenceDate: refDate,
+      ),
+    ],
+  );
+}
+
 void main() {
   setUpAll(loadAppFonts);
 
@@ -689,6 +766,24 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/bloom_account_components_$mode.png'),
+      );
+    });
+    testWidgets('subscription components, $mode', (tester) async {
+      tester.view.physicalSize = const Size(390, 850);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.runAsync(FfGrainTile.load);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: theme,
+          home: Scaffold(body: Builder(builder: _subscriptionSheet)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/bloom_subscription_components_$mode.png'),
       );
     });
   }

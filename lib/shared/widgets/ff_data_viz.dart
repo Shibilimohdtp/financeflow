@@ -17,15 +17,20 @@ class FfProgressRing extends StatelessWidget {
   const FfProgressRing({
     super.key,
     required this.value,
-    required this.icon,
+    this.icon,
+    this.child,
     required this.semanticsLabel,
     this.size = FfRingTokens.size,
     this.color,
-  });
+  }) : assert(icon != null || child != null, 'Either icon or child must be provided');
 
   /// 0–1; clamped.
   final double value;
-  final IconData icon;
+  final IconData? icon;
+
+  /// Optional custom child widget placed inside the ring (e.g. [FfMonogramTile]).
+  /// When omitted, renders [Icon(icon)].
+  final Widget? child;
 
   /// What the ring means, for example "26% of the loan paid".
   final String semanticsLabel;
@@ -48,7 +53,13 @@ class FfProgressRing extends StatelessWidget {
             track: fg.withValues(alpha: FfRingTokens.trackAlpha),
             arc: color ?? fg,
           ),
-          child: Center(child: Icon(icon, size: FfIconSize.lg, color: fg)),
+          child: Center(
+            child:
+                child ??
+                (icon != null
+                    ? Icon(icon, size: FfIconSize.lg, color: fg)
+                    : const SizedBox.shrink()),
+          ),
         ),
       ),
     );

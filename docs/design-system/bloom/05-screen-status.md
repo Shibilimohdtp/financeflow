@@ -47,9 +47,9 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 | Loans | Loan detail | `loans/loan_detail_screen.dart` | D | Bloom (65ff966) | — | Next-EMI and info sections inside are Tokens; hero figures use `FfHeroFigures` (DS-B7a) |
 | Loans | EMI schedule, add/edit loan, payment account picker | `loans/widgets/emi_schedule_view.dart`, `add_edit_loan_sheet.dart`, `payment_account_picker.dart` | B / E | Tokens | — | |
 | Goals | Savings goals list, detail, add/edit, contribution | `savings_goals/*.dart` | C / D / E | Bloom (this commit) | — | Tide hero, Pattern C list with milestone callout, Pattern D detail with progression chart & hero figures, Pattern E templates & consequence |
-| Subscriptions | List, detail, add/edit, recurring suggestions | `subscriptions/*.dart` | C / D / E | Tokens | — | Sand hero; `FfMonthGrid` for payments |
+| Subscriptions | List, detail, add/edit, recurring suggestions | `subscriptions/*.dart` | C / D / E | In progress | DS-B15 chat | Redesigning end to end in Stillwater Bloom |
 | Investments | List, detail, add/edit | `investments/*.dart` | C / D / E | Bloom (this commit) | — | Dusk hero, Pattern C list with `FfAllocationBand`, `FfPillBar` asset class filters & stale valuation alerts, Pattern D detail with `FfHeroFigures` & quick valuation update sheet, Pattern E with live squircle preview card, `FfAssetTypeTiles` & live `FfConsequenceLine` |
-| Lending | Lending & borrowing, record detail, sheets | `personal_debts/*.dart` | C / D / E | Tokens | — | Record detail has many leftover alpha tints |
+| Lending | Lending & borrowing, record detail, sheets | `personal_debts/*.dart` | C / D / E | In progress | DS-B18 chat | Redesigning end to end in Stillwater Bloom |
 | Ingestion | Needs review | `ingestion/needs_review_screen.dart`, `widgets/*` | B | Bloom (this commit) | — | Redesigned triage queue with Focus mode (1-by-1 card triage, swipe accelerators, source evidence, trust indicators) and List mode, filter chips with counts, bulk actions, and calm zero-state |
 | Ingestion | CSV import, SMS/notification permission | `ingestion/csv_import_screen.dart`, `permissions/*` | E / G | Tokens | — | |
 | Onboarding | Onboarding | `onboarding/onboarding_screen.dart` | G | Tokens | — | |
