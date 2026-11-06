@@ -247,6 +247,12 @@ abstract final class FfLineChartTokens {
 }
 
 /// Bar chart with rounded bars and optional spark bubble.
+/// Home's cash flow card (DS-B12b).
+abstract final class FfCashFlowCardTokens {
+  /// Shorter than the Insights chart: Home is a summary.
+  static const double chartHeight = 132;
+}
+
 abstract final class FfBarChartTokens {
   static const double defaultHeight = 180;
   static const double barRadius = 4;

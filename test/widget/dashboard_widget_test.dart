@@ -194,7 +194,7 @@ void main() {
       expect(find.widgetWithText(FloatingActionButton, 'Add'), findsOneWidget);
 
       // Verify Cash Flow Values
-      expect(find.text('Net Savings'), findsOneWidget);
+      expect(find.text('Net this period'), findsOneWidget);
       expect(find.text('+ ₹73,500'), findsOneWidget);
       expect(find.text('+ ₹75,000'), findsOneWidget);
       expect(find.text('− ₹1,500'), findsWidgets);
@@ -504,7 +504,7 @@ void main() {
       // Ensure zero overflow errors and correct rendering
       expect(find.text('FinanceFlow'), findsOneWidget);
       expect(find.text('Total Balance'), findsOneWidget);
-      expect(find.text('Net Savings'), findsOneWidget);
+      expect(find.text('Net this period'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
