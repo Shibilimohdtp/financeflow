@@ -29,7 +29,6 @@ import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_navigation.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_surfaces.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_card.dart';
@@ -101,7 +100,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   void _openSearch() {
     setState(() => _isSearchOpen = true);
-    _searchFocusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
   }
 
   void _closeSearch() {
@@ -281,18 +282,47 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     return FfAurora(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar:
-            selecting
-                ? _selectionAppBar(items, categories)
-                : _isSearchOpen
-                ? _searchAppBar()
-                : _mainAppBar(
-                  query: query,
-                  categories: categories,
-                  accounts: accounts,
-                  pendingCount: pendingCount,
-                  showReviewBadge: pendingCount > 0 && isReviewSnoozed,
-                ),
+        appBar: _TransactionsHeader(
+          selecting: selecting,
+          isSearchOpen: _isSearchOpen,
+          query: query,
+          categories: categories,
+          accounts: accounts,
+          items: items,
+          selected: _selected,
+          visibleCount: _visibleCount,
+          pendingCount: pendingCount,
+          showReviewBadge: pendingCount > 0 && isReviewSnoozed,
+          searchController: _searchController,
+          searchFocusNode: _searchFocusNode,
+          onOpenSearch: _openSearch,
+          onCloseSearch: _closeSearch,
+          onSearchChanged: (text) {
+            ref.read(transactionQueryProvider.notifier).state = _query.copyWith(
+              search: text,
+            );
+            setState(() => _visibleCount = _pageSize);
+          },
+          onSearchClear: () => _setQuery(_query.copyWith(search: '')),
+          onOpenFilters:
+              () => _openFilters(categories: categories, accounts: accounts),
+          onOpenReviewQueue: _openReviewQueue,
+          onCancelSelection: () => setState(_selected.clear),
+          onToggleSelectAll: () {
+            final visible = items.take(_visibleCount);
+            final allSelected = visible.every((t) => _selected.contains(t.id));
+            setState(() {
+              if (allSelected) {
+                _selected.clear();
+              } else {
+                _selected.addAll(visible.map((t) => t.id));
+              }
+            });
+          },
+          onRecategorizeSelected:
+              () => _recategorizeSelected(items, categories),
+          onDeleteSelected: () => _deleteSelected(items),
+        ),
         floatingActionButton:
             selecting
                 ? null
@@ -348,58 +378,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     context,
   ).push(MaterialPageRoute(builder: (_) => const NeedsReviewScreen()));
 
-  PreferredSizeWidget _mainAppBar({
-    required TransactionQuery query,
-    required List<Category> categories,
-    required List<Account> accounts,
-    required int pendingCount,
-    required bool showReviewBadge,
-  }) {
-    return FfAppBar(
-      title: 'Transactions',
-      actions: [
-        if (showReviewBadge)
-          IconButton(
-            icon: Badge(
-              label: Text('$pendingCount'),
-              backgroundColor: context.ff.color.statusWarning,
-              textColor: context.ff.color.surfaceCard,
-              child: const Icon(Icons.pending_actions_rounded),
-            ),
-            tooltip: 'Review queue ($pendingCount pending)',
-            onPressed: _openReviewQueue,
-          ),
-        FfCircleButton(
-          icon: Icons.search_rounded,
-          tooltip: 'Search transactions',
-          soft: true,
-          onPressed: _openSearch,
-        ),
-        const SizedBox(width: FfSpace.xs),
-        FfCircleButton(
-          icon: Icons.tune_rounded,
-          tooltip: 'Filter & sort',
-          soft: true,
-          corner:
-              query.hasRefinements || query.sort != TransactionSort.newest
-                  ? FfCorner.dot
-                  : null,
-          onPressed:
-              () => _openFilters(categories: categories, accounts: accounts),
-        ),
-        const Padding(
-          padding: EdgeInsetsDirectional.only(
-            start: FfSpace.x2s,
-            end: FfSpace.md,
-          ),
-          child: Center(
-            child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// One day's rows (or the flat list) inside a compact Bloom card.
   Widget _card(Widget sliverList) => SliverPadding(
     padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
@@ -411,60 +389,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ),
     ),
   );
-
-  PreferredSizeWidget _searchAppBar() {
-    return FfAppBar.search(
-      controller: _searchController,
-      focusNode: _searchFocusNode,
-      hint: 'Search payee, note, amount, tag…',
-      onClose: _closeSearch,
-      onChanged: (text) {
-        ref.read(transactionQueryProvider.notifier).state = _query.copyWith(
-          search: text,
-        );
-        setState(() => _visibleCount = _pageSize);
-      },
-      onClear: () => _setQuery(_query.copyWith(search: '')),
-    );
-  }
-
-  PreferredSizeWidget _selectionAppBar(
-    List<Transaction> items,
-    List<Category> categories,
-  ) {
-    final visible = items.take(_visibleCount);
-    final allSelected = visible.every((t) => _selected.contains(t.id));
-    return FfAppBar.selection(
-      count: _selected.length,
-      onCancel: () => setState(_selected.clear),
-      actions: [
-        IconButton(
-          icon: Icon(
-            allSelected ? Icons.deselect_rounded : Icons.select_all_rounded,
-          ),
-          tooltip: allSelected ? 'Clear selection' : 'Select all',
-          onPressed:
-              () => setState(() {
-                if (allSelected) {
-                  _selected.clear();
-                } else {
-                  _selected.addAll(visible.map((t) => t.id));
-                }
-              }),
-        ),
-        IconButton(
-          icon: const Icon(Icons.category_outlined),
-          tooltip: 'Change category',
-          onPressed: () => _recategorizeSelected(items, categories),
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline_rounded),
-          tooltip: 'Delete selected',
-          onPressed: () => _deleteSelected(items),
-        ),
-      ],
-    );
-  }
 
   Widget _list({
     required TransactionQuery query,
@@ -631,6 +555,277 @@ class _TransactionsLoading extends StatelessWidget {
               ],
             ),
       ),
+    );
+  }
+}
+
+/// The top bar of Transactions in Stillwater Bloom, seamlessly floating on
+/// [FfAurora] without any solid app bar background. Smoothly transitions
+/// between the default header, the dynamic search capsule, and selection mode.
+class _TransactionsHeader extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _TransactionsHeader({
+    required this.selecting,
+    required this.isSearchOpen,
+    required this.query,
+    required this.categories,
+    required this.accounts,
+    required this.items,
+    required this.selected,
+    required this.visibleCount,
+    required this.pendingCount,
+    required this.showReviewBadge,
+    required this.searchController,
+    required this.searchFocusNode,
+    required this.onOpenSearch,
+    required this.onCloseSearch,
+    required this.onSearchChanged,
+    required this.onSearchClear,
+    required this.onOpenFilters,
+    required this.onOpenReviewQueue,
+    required this.onCancelSelection,
+    required this.onToggleSelectAll,
+    required this.onRecategorizeSelected,
+    required this.onDeleteSelected,
+  });
+
+  final bool selecting;
+  final bool isSearchOpen;
+  final TransactionQuery query;
+  final List<Category> categories;
+  final List<Account> accounts;
+  final List<Transaction> items;
+  final Set<String> selected;
+  final int visibleCount;
+  final int pendingCount;
+  final bool showReviewBadge;
+  final TextEditingController searchController;
+  final FocusNode searchFocusNode;
+  final VoidCallback onOpenSearch;
+  final VoidCallback onCloseSearch;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onSearchClear;
+  final VoidCallback onOpenFilters;
+  final VoidCallback onOpenReviewQueue;
+  final VoidCallback onCancelSelection;
+  final VoidCallback onToggleSelectAll;
+  final VoidCallback onRecategorizeSelected;
+  final VoidCallback onDeleteSelected;
+
+  @override
+  Size get preferredSize =>
+      const Size.fromHeight(FfTouch.minTarget + FfSpace.md);
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: FfSpace.pageMargin,
+            end:
+                FfSpace.pageMargin -
+                (FfTouch.minTarget - FfRoundButtonTokens.size) / 2,
+            top: FfSpace.xs,
+            bottom: FfSpace.x2s,
+          ),
+          child: SizedBox(
+            height: FfTouch.minTarget,
+            child: AnimatedSwitcher(
+              duration: FfMotion.fast,
+              child:
+                  selecting
+                      ? _buildSelection(context, ff)
+                      : isSearchOpen
+                      ? _buildSearch(context, ff)
+                      : _buildNormal(context, ff),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNormal(BuildContext context, FfThemeData ff) {
+    return Row(
+      key: const ValueKey('transactions_header_normal'),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            'Transactions',
+            style: ff.text.headlineSm.copyWith(fontWeight: FontWeight.w600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const FfPrivacyBadge(label: 'On-device', iconOnly: true),
+        const SizedBox(width: FfSpace.xs),
+        if (showReviewBadge) ...[
+          IconButton(
+            icon: Badge(
+              label: Text('$pendingCount'),
+              backgroundColor: ff.color.statusWarning,
+              textColor: ff.color.surfaceCard,
+              child: const Icon(Icons.pending_actions_rounded),
+            ),
+            tooltip: 'Review queue ($pendingCount pending)',
+            onPressed: onOpenReviewQueue,
+          ),
+          const SizedBox(width: FfSpace.x2s),
+        ],
+        FfCircleButton(
+          icon: Icons.search_rounded,
+          tooltip: 'Search transactions',
+          soft: true,
+          onPressed: onOpenSearch,
+        ),
+        const SizedBox(width: FfSpace.x2s),
+        FfCircleButton(
+          icon: Icons.tune_rounded,
+          tooltip: 'Filter & sort',
+          soft: true,
+          corner:
+              query.hasRefinements || query.sort != TransactionSort.newest
+                  ? FfCorner.dot
+                  : null,
+          onPressed: onOpenFilters,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearch(BuildContext context, FfThemeData ff) {
+    return Row(
+      key: const ValueKey('transactions_header_search'),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        FfCircleButton(
+          icon: Icons.arrow_back_rounded,
+          tooltip: 'Close search',
+          soft: true,
+          onPressed: onCloseSearch,
+        ),
+        const SizedBox(width: FfSpace.xs),
+        Expanded(
+          child: Container(
+            height: FfRoundButtonTokens.size,
+            decoration: ShapeDecoration(
+              color: ff.color.surfaceCard.withValues(alpha: FfOpacity.high),
+              shape: FfShape.of(
+                FfRadius.full,
+                side: BorderSide(
+                  color: ff.color.borderSubtle,
+                  width: FfBorderWidth.hairline,
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: FfSpace.md),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: FfIconSize.md,
+                  color: ff.color.textSecondary,
+                ),
+                const SizedBox(width: FfSpace.xs),
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    focusNode: searchFocusNode,
+                    textInputAction: TextInputAction.search,
+                    style: ff.text.body,
+                    decoration: InputDecoration(
+                      hintText: 'Search payee, note, amount, tag…',
+                      hintStyle: ff.text.body.copyWith(
+                        color: ff.color.textTertiary,
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: onSearchChanged,
+                  ),
+                ),
+                ListenableBuilder(
+                  listenable: searchController,
+                  builder:
+                      (context, _) =>
+                          searchController.text.isEmpty
+                              ? const SizedBox.shrink()
+                              : IconButton(
+                                icon: const Icon(
+                                  Icons.clear_rounded,
+                                  size: FfIconSize.sm,
+                                ),
+                                tooltip: 'Clear search text',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                splashRadius: 18,
+                                onPressed: () {
+                                  searchController.clear();
+                                  onSearchChanged('');
+                                  onSearchClear();
+                                },
+                              ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelection(BuildContext context, FfThemeData ff) {
+    final visible = items.take(visibleCount);
+    final allSelected =
+        visible.isNotEmpty && visible.every((t) => selected.contains(t.id));
+
+    return Row(
+      key: const ValueKey('transactions_header_selection'),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        FfCircleButton(
+          icon: Icons.close_rounded,
+          tooltip: 'Cancel selection',
+          soft: true,
+          onPressed: onCancelSelection,
+        ),
+        const SizedBox(width: FfSpace.sm),
+        Expanded(
+          child: Text(
+            '${selected.length} selected',
+            style: ff.text.titleLg,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        IconButton(
+          icon: Icon(
+            allSelected ? Icons.deselect_rounded : Icons.select_all_rounded,
+          ),
+          tooltip: allSelected ? 'Clear selection' : 'Select all',
+          onPressed: onToggleSelectAll,
+        ),
+        IconButton(
+          icon: const Icon(Icons.category_outlined),
+          tooltip: 'Change category',
+          onPressed: onRecategorizeSelected,
+        ),
+        IconButton(
+          icon: Icon(Icons.delete_outline_rounded, color: ff.color.statusError),
+          tooltip: 'Delete selected',
+          onPressed: onDeleteSelected,
+        ),
+      ],
     );
   }
 }
