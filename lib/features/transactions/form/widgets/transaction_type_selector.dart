@@ -4,7 +4,6 @@ import '../../../../models/account.dart';
 import '../../../../models/category.dart';
 import '../../../../models/transaction.dart';
 import '../../../../shared/widgets/ff_segmented_pill.dart';
-import '../../transaction_form.dart';
 
 class TransactionTypeSelector extends StatelessWidget {
   final TransactionType selectedType;

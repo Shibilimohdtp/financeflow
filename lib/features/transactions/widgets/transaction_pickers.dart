@@ -7,13 +7,12 @@ import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/account.dart';
 import '../../../models/category.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
-import '../../../shared/widgets/ff_sheet_header.dart';
-import '../../../theme/stillwater_colors.dart';
-import '../../../shared/widgets/ff_sheet.dart';
-import '../../../shared/widgets/ff_text_field.dart';
 import '../../../shared/widgets/ff_divider.dart';
-import '../../../shared/widgets/ff_row.dart';
 import '../../../shared/widgets/ff_icon_tile.dart';
+import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_sheet.dart';
+import '../../../shared/widgets/ff_sheet_header.dart';
+import '../../../shared/widgets/ff_text_field.dart';
 import '../../../theme/ff.dart';
 
 /// A compact, rich tile button for selecting an Account.
@@ -56,29 +55,15 @@ class AccountTileButton extends StatelessWidget {
                 color:
                     error != null
                         ? context.ff.color.statusError
-                        : (isDark
-                            ? StillwaterColors.darkBorderDefault
-                            : StillwaterColors.lightBorderDefault),
+                        : context.ff.color.borderSubtle,
                 width:
                     error != null ? FfBorderWidth.focus : FfBorderWidth.regular,
               ),
             ),
             child: Row(
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: context.ff.color.actionPrimaryContainer.withValues(
-                      alpha: 0.4,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    account == null ? icon : _accountIcon(account!.type),
-                    size: 20,
-                    color: context.ff.color.actionPrimary,
-                  ),
+                FfIconTile(
+                  icon: account == null ? icon : _accountIcon(account!.type),
                 ),
                 const SizedBox(width: FfSpace.md),
                 Expanded(
@@ -281,42 +266,25 @@ class _CategoryGridTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final selectedBg =
-        isDark
-            ? context.ff.color.actionPrimaryContainer.withValues(
-              alpha: FfTint.strong.alpha,
-            )
-            : context.ff.color.actionPrimaryContainer.withValues(
-              alpha: FfTint.strong.alpha,
-            );
-    final unselectedBg =
-        isDark
-            ? StillwaterColors.darkSurfaceContainerLow.withValues(
-              alpha: FfOpacity.muted,
-            )
-            : StillwaterColors.lightSurfaceContainerLow.withValues(
-              alpha: FfOpacity.high,
-            );
+    final selectedBg = context.ff.color.actionPrimaryContainer;
+    final unselectedBg = context.ff.color.surfaceCard;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(FfRadius.lg),
+        borderRadius: BorderRadius.circular(FfRadius.md),
         child: AnimatedContainer(
           duration: FfMotion.fast,
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
             color: isSelected ? selectedBg : unselectedBg,
-            borderRadius: BorderRadius.circular(FfRadius.lg),
+            borderRadius: BorderRadius.circular(FfRadius.md),
             border: Border.all(
               color:
                   isSelected
                       ? context.ff.color.actionPrimary
-                      : context.ff.color.borderSubtle.withValues(alpha: 0.35),
+                      : context.ff.color.borderSubtle,
               width: isSelected ? FfBorderWidth.focus : FfBorderWidth.hairline,
             ),
           ),

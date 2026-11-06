@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/extensions/context_extensions.dart';
 import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../models/investment.dart';
@@ -817,16 +816,14 @@ class _AddEditTransactionScreenState
                                     ),
                                   ),
                                 ),
-                                if (widget.initialTransaction!.createdAt !=
-                                    null)
-                                  Text(
-                                    DateFormat.yMMMd().format(
-                                      widget.initialTransaction!.date,
-                                    ),
-                                    style: context.ff.text.labelSm.copyWith(
-                                      color: context.ff.color.textTertiary,
-                                    ),
+                                Text(
+                                  DateFormat.yMMMd().format(
+                                    widget.initialTransaction!.date,
                                   ),
+                                  style: context.ff.text.labelSm.copyWith(
+                                    color: context.ff.color.textTertiary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
