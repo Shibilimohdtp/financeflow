@@ -37,6 +37,9 @@ import 'widgets/home_recent_transactions.dart';
 import 'widgets/savings_goals_overview_card.dart';
 import 'widgets/total_balance_hero.dart';
 
+/// The one gap between Home sections (balance and its carousel stay a group).
+const double _sectionGap = FfSpace.xl;
+
 class DashboardScreen extends ConsumerWidget {
   final VoidCallback onAddTransaction;
   final VoidCallback onViewAllTransactions;
@@ -192,7 +195,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
 
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: _sectionGap),
 
                 // 3. Actionable & Upcoming Items
                 ActionableItemsSection(
@@ -226,7 +229,7 @@ class DashboardScreen extends ConsumerWidget {
                     upcomingLoans.isNotEmpty ||
                     upcomingRenewals.isNotEmpty ||
                     overBudgetCount > 0)
-                  const SizedBox(height: FfSpace.lg),
+                  const SizedBox(height: _sectionGap),
 
                 // 4. Period (shared with Insights) and its cash flow
                 FfPeriodBar(
@@ -320,7 +323,7 @@ class DashboardScreen extends ConsumerWidget {
                       return const SizedBox.shrink();
                     }
                     return Padding(
-                      padding: const EdgeInsets.only(top: FfSpace.lg),
+                      padding: const EdgeInsets.only(top: _sectionGap),
                       child: BudgetOverviewCard(
                         totalBudgeted: budgetSummary.totalBudgeted,
                         totalSpent: budgetSummary.totalSpent,
@@ -338,7 +341,7 @@ class DashboardScreen extends ConsumerWidget {
 
                 // 6. Loans & EMIs Overview
                 if (activeLoans.isNotEmpty) ...[
-                  const SizedBox(height: FfSpace.lg),
+                  const SizedBox(height: _sectionGap),
                   HomeLoansOverview(
                     activeLoans: activeLoans,
                     totalOutstanding: totalOutstanding,
@@ -364,7 +367,7 @@ class DashboardScreen extends ConsumerWidget {
                       return const SizedBox.shrink();
                     }
                     return Padding(
-                      padding: const EdgeInsets.only(top: FfSpace.lg),
+                      padding: const EdgeInsets.only(top: _sectionGap),
                       child: SavingsGoalsOverviewCard(
                         totalTarget: goalSummary.totalTarget,
                         totalSaved: goalSummary.totalSaved,
@@ -380,7 +383,7 @@ class DashboardScreen extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                 ),
 
-                const SizedBox(height: FfSpace.xl),
+                const SizedBox(height: _sectionGap),
 
                 // 8. Recent Transactions List
                 recentTxAsync.when(

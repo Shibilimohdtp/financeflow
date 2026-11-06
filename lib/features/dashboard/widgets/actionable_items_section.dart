@@ -172,17 +172,9 @@ class ActionableItemsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FfSectionHeader(
-            title: 'Actionable & Upcoming',
-            padding: const EdgeInsets.only(bottom: FfSpace.xs),
-            trailing:
-                items.length > 2
-                    ? Text(
-                      '${items.length} items',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.textSecondary,
-                      ),
-                    )
-                    : null,
+            title: 'Needs attention',
+            count: items.length,
+            padding: FfSectionHeader.sectionPadding,
           ),
           FfGroupedContainer(
             dividerInset: FfRowLeading.tile,

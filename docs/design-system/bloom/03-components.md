@@ -45,7 +45,8 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfCategoryTile` | Category icon in its own colour (circle) | `FfCategoryTile(iconIdentifier:, colorTokenIdentifier:)` |
 | `FfCornerBadge` | Warning triangle / error / spark dot on any icon | `FfCornerBadge(corner:, child:, semanticLabel:)` |
 | `FfKeyValueRow` | Label → value detail rows | |
-| `FfSectionHeader` | Section title + optional trailing action | `FfSectionHeader(title:, trailing: TextButton(…), padding:)` |
+| `FfSectionHeader` | Section title + optional quiet count + trailing action. On summary screens (Home) every section uses `padding: FfSectionHeader.sectionPadding` and an `FfSectionLink` | `FfSectionHeader(title:, count:, trailing: FfSectionLink(…), padding:)` |
+| `FfSectionLink` (`ff_section_header.dart`) | The quiet "See all ↗" at the end of a section header: secondary text, outward arrow, 48 dp, end-aligned on the page margin | `FfSectionLink(label: 'See all', semanticLabel: 'See all loans', onPressed:)` |
 | `FfBadge` | Small status pill with icon | `FfBadge(label:, tone:, icon:)` |
 | `FfBanner` | Inline info/success/warning/error message | |
 | `FfToast` | Snackbars (lime Undo) | `FfToast.show(context, message:, tone: FfToastTone.x, actionLabel:, onAction:)` |

@@ -49,10 +49,12 @@ class HomeLoansOverview extends StatelessWidget {
         children: [
           FfSectionHeader(
             title: 'Loans & EMI',
-            padding: EdgeInsets.zero,
-            trailing: TextButton(
+            count: activeLoans.length,
+            padding: FfSectionHeader.sectionPadding,
+            trailing: FfSectionLink(
+              label: 'See all',
+              semanticLabel: 'See all loans',
               onPressed: onViewLoans,
-              child: const Text('Manage'),
             ),
           ),
           FfHeroCard(

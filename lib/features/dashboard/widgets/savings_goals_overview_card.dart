@@ -45,11 +45,13 @@ class SavingsGoalsOverviewCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FfSectionHeader(
-            title: 'Savings Goals',
-            padding: const EdgeInsets.only(bottom: FfSpace.xs),
-            trailing: TextButton(
+            title: 'Savings goals',
+            count: totalGoals,
+            padding: FfSectionHeader.sectionPadding,
+            trailing: FfSectionLink(
+              label: 'See all',
+              semanticLabel: 'See all savings goals',
               onPressed: onViewGoals,
-              child: const Text('View all'),
             ),
           ),
           Semantics(

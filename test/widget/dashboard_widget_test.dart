@@ -181,9 +181,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify Title & Privacy Badge
+      // Verify Title & Header Action
       expect(find.text('FinanceFlow'), findsOneWidget);
-      expect(find.text('On-device'), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
 
       // Verify Total Balance Hero
       expect(find.text('Total Balance'), findsOneWidget);
@@ -200,7 +200,7 @@ void main() {
       expect(find.text('− ₹1,500'), findsWidgets);
 
       // Verify Recent Transaction
-      expect(find.text('Recent Transactions'), findsOneWidget);
+      expect(find.text('Recent transactions'), findsOneWidget);
       expect(find.text('Swiggy Food'), findsOneWidget);
       expect(find.text('Manual'), findsOneWidget);
     },
@@ -324,7 +324,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Actionable Items Header & Content
-      expect(find.text('Actionable & Upcoming'), findsOneWidget);
+      expect(find.text('Needs attention'), findsOneWidget);
       expect(find.text('2 imported transactions need review'), findsOneWidget);
       expect(find.text('HDFC Home Loan (HDFC Bank)'), findsOneWidget);
       expect(find.text('Netflix Premium'), findsOneWidget);
@@ -438,8 +438,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(manageAccountsTapped, isTrue);
 
-      // Tap View all transactions
-      final viewAllFinder = find.text('View all').first;
+      // Tap See all on Recent transactions (the last section with a link)
+      final viewAllFinder = find.text('See all').last;
       await tester.ensureVisible(viewAllFinder);
       await tester.pumpAndSettle();
       await tester.tap(viewAllFinder);

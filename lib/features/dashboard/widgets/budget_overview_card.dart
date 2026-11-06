@@ -49,11 +49,12 @@ class BudgetOverviewCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FfSectionHeader(
-            title: 'Budgets & Spending',
-            padding: const EdgeInsets.only(bottom: FfSpace.xs),
-            trailing: TextButton(
+            title: 'Budgets',
+            padding: FfSectionHeader.sectionPadding,
+            trailing: FfSectionLink(
+              label: 'See all',
+              semanticLabel: 'See all budgets',
               onPressed: onViewBudgets,
-              child: const Text('Manage'),
             ),
           ),
           Semantics(

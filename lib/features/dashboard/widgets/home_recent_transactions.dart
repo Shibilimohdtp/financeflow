@@ -39,11 +39,12 @@ class HomeRecentTransactions extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FfSectionHeader(
-            title: 'Recent Transactions',
-            padding: const EdgeInsets.only(bottom: FfSpace.xs),
-            trailing: TextButton(
+            title: 'Recent transactions',
+            padding: FfSectionHeader.sectionPadding,
+            trailing: FfSectionLink(
+              label: 'See all',
+              semanticLabel: 'See all transactions',
               onPressed: onViewAll,
-              child: const Text('View all'),
             ),
           ),
           if (transactions.isEmpty)
