@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../services/ledger_totals.dart';
 import '../../../theme/ff.dart';
 
 /// Pinned day header: "Today" on the left, that day's spending and income on
-/// the right. Transfers and lending are excluded, as in every other total.
+/// the right. Redesigned for Stillwater Bloom with frosted translucency on Aurora.
 class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String label;
   final LedgerTotals totals;
@@ -18,7 +19,7 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.background,
   });
 
-  static const double _height = 40;
+  static const double _height = 42;
 
   @override
   double get minExtent => _height;
@@ -32,9 +33,12 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final muted = context.ff.text.label.copyWith(
+    final ff = context.ff;
+    final muted = ff.text.label.copyWith(
+      color: ff.color.textSecondary,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
+
     String money(double v) =>
         isPrivacyBlur
             ? '${CurrencyFormatter.currencySymbol} ••••'
@@ -48,15 +52,33 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
       if (totals.income > 0)
         TextSpan(
           text: '+${money(totals.income)}',
-          style: muted.copyWith(color: context.ff.color.moneyIncome),
+          style: muted.copyWith(
+            color: ff.color.moneyIncome,
+            fontWeight: FontWeight.w600,
+          ),
         ),
     ];
 
+    // Translucent background with subtle tint and soft blur when overlapping
+    final isPinned = shrinkOffset > 0 || overlapsContent;
+
     return Container(
-      color: background,
-      padding: const EdgeInsets.symmetric(
-        horizontal: FfSpace.pageMargin + FfSpace.x2s,
+      decoration: BoxDecoration(
+        color:
+            isPinned
+                ? background.withValues(alpha: 0.92)
+                : background.withValues(alpha: 0.75),
+        border:
+            isPinned
+                ? Border(
+                  bottom: BorderSide(
+                    color: ff.color.borderSubtle,
+                    width: FfBorderWidth.hairline,
+                  ),
+                )
+                : null,
       ),
+      padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
       alignment: Alignment.centerLeft,
       child: Semantics(
         header: true,
@@ -65,17 +87,30 @@ class TransactionDayHeaderDelegate extends SliverPersistentHeaderDelegate {
             Expanded(
               child: Text(
                 label,
-                style: context.ff.text.labelLg,
+                style: ff.text.titleSm.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: ff.color.textPrimary,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             if (parts.isNotEmpty)
               Flexible(
-                child: Text.rich(
-                  TextSpan(children: parts),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FfSpace.xs,
+                    vertical: 2,
+                  ),
+                  decoration: ShapeDecoration(
+                    shape: FfShape.of(FfRadius.full),
+                    color: ff.color.tint(ff.color.textPrimary, FfTint.faint),
+                  ),
+                  child: Text.rich(
+                    TextSpan(children: parts),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
           ],

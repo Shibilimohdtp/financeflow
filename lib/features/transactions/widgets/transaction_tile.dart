@@ -350,19 +350,27 @@ class _SwipeActionBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor =
+        color == context.ff.color.statusError
+            ? context.ff.color.onStatusError
+            : context.ff.color.onActionPrimary;
+
     return Container(
       alignment: alignment,
-      color: color,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(FfRadius.md),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 20),
+          Icon(icon, color: textColor, size: 20),
           const SizedBox(width: FfSpace.xs),
           Text(
             label,
             style: context.ff.text.bodySm.copyWith(
-              color: Colors.white,
+              color: textColor,
               fontWeight: FontWeight.w600,
             ),
           ),

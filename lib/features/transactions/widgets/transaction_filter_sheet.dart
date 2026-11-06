@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/account.dart';
 import '../../../models/category.dart';
+import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_chip.dart';
+import '../../../shared/widgets/ff_divider.dart';
+import '../../../shared/widgets/ff_privacy_badge.dart';
+import '../../../shared/widgets/ff_select.dart';
+import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_footer.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
-import '../transaction_list_utils.dart';
-import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_text_field.dart';
-import '../../../shared/widgets/ff_select.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
+import '../transaction_list_utils.dart';
 
 /// Edits every filter except the period (period bar) and search (app bar).
-/// Returns the new query, or null when dismissed.
+/// Redesigned in Stillwater Bloom: Pattern E sheet with tactile cards and chips.
 Future<TransactionQuery?> showTransactionFilterSheet(
   BuildContext context, {
   required TransactionQuery query,
@@ -98,6 +103,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
     final activeCategories =
         widget.categories.where((c) => !c.isArchived).toList();
     final activeAccounts = widget.accounts.where((a) => !a.isArchived).toList();
@@ -105,13 +111,22 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
     return FfSheet(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const FfSheetHeader(title: 'Filter & sort'),
+        const FfSheetHeader(
+          title: 'Filter & sort',
+          subtitle: 'Refine transactions by kind, account, category, or amount',
+          trailing: FfPrivacyBadge(label: '100% Local', iconOnly: true),
+        ),
+        const FfDivider(),
         Flexible(
           child: ListView(
             shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.lg),
+            padding: const EdgeInsets.symmetric(
+              horizontal: FfSpace.pageMargin,
+              vertical: FfSpace.sm,
+            ),
             children: [
-              const _Label('Show'),
+              // 1. Transaction Type Section
+              const _SectionLabel(icon: Icons.swap_vert_rounded, title: 'Show'),
               Wrap(
                 spacing: FfSpace.xs,
                 runSpacing: FfSpace.xs,
@@ -125,7 +140,13 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                     ),
                 ],
               ),
-              const _Label('Account'),
+              const SizedBox(height: FfSpace.md),
+
+              // 2. Account & Category Section
+              const _SectionLabel(
+                icon: Icons.account_balance_outlined,
+                title: 'Account',
+              ),
               _Dropdown<String>(
                 keyName: 'filter-account',
                 value: _query.accountId,
@@ -140,7 +161,12 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                           ),
                     ),
               ),
-              const _Label('Category'),
+              const SizedBox(height: FfSpace.sm),
+
+              const _SectionLabel(
+                icon: Icons.category_outlined,
+                title: 'Category',
+              ),
               _Dropdown<String>(
                 keyName: 'filter-category',
                 value: _query.categoryId,
@@ -155,7 +181,13 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                           ),
                     ),
               ),
-              const _Label('Amount'),
+              const SizedBox(height: FfSpace.md),
+
+              // 3. Amount Range Section
+              const _SectionLabel(
+                icon: Icons.payments_outlined,
+                title: 'Amount',
+              ),
               Row(
                 children: [
                   Expanded(
@@ -183,8 +215,14 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                   ),
                 ],
               ),
+              const SizedBox(height: FfSpace.md),
+
+              // 4. Payment Method & Tag Filters (if available)
               if (widget.paymentMethods.isNotEmpty) ...[
-                const _Label('Payment method'),
+                const _SectionLabel(
+                  icon: Icons.credit_card_outlined,
+                  title: 'Payment method',
+                ),
                 _Dropdown<String>(
                   keyName: 'filter-method',
                   value: _query.paymentMethod,
@@ -199,9 +237,11 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                             ),
                       ),
                 ),
+                const SizedBox(height: FfSpace.md),
               ],
+
               if (widget.tags.isNotEmpty) ...[
-                const _Label('Tag'),
+                const _SectionLabel(icon: Icons.tag_rounded, title: 'Tag'),
                 _Dropdown<String>(
                   keyName: 'filter-tag',
                   value: _query.tag,
@@ -216,8 +256,11 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                             ),
                       ),
                 ),
+                const SizedBox(height: FfSpace.md),
               ],
-              const _Label('Sort'),
+
+              // 5. Sort Order Section
+              const _SectionLabel(icon: Icons.sort_rounded, title: 'Sort'),
               Wrap(
                 spacing: FfSpace.xs,
                 runSpacing: FfSpace.xs,
@@ -234,10 +277,32 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                 ],
               ),
               const SizedBox(height: FfSpace.lg),
-              Text(
-                'Use the period bar to change dates.',
-                style: context.ff.text.bodySm.copyWith(
-                  color: context.ff.color.textSecondary,
+
+              // Date change tip card
+              FfCard(
+                variant: FfCardVariant.tinted,
+                tone: FfTone.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: FfSpace.md,
+                  vertical: FfSpace.sm,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: ff.color.textSecondary,
+                    ),
+                    const SizedBox(width: FfSpace.xs),
+                    Expanded(
+                      child: Text(
+                        'Use the period bar to change dates.',
+                        style: ff.text.bodySm.copyWith(
+                          color: ff.color.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: FfSpace.md),
@@ -265,17 +330,29 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
   }
 }
 
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label(this.text);
+class _SectionLabel extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _SectionLabel({required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {
+    final ff = context.ff;
     return Padding(
-      padding: const EdgeInsets.only(top: FfSpace.md, bottom: FfSpace.xs),
-      child: Text(
-        text,
-        style: context.ff.text.labelLg.copyWith(fontWeight: FontWeight.w600),
+      padding: const EdgeInsets.only(top: FfSpace.xs, bottom: FfSpace.xs),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: ff.color.textSecondary),
+          const SizedBox(width: FfSpace.x3s),
+          Text(
+            title,
+            style: ff.text.labelSm.copyWith(
+              fontWeight: FontWeight.w600,
+              color: ff.color.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

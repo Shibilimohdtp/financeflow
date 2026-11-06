@@ -28,6 +28,7 @@ import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_navigation.dart';
 import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_row.dart';
@@ -278,65 +279,68 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       }
     });
 
-    return Scaffold(
-      appBar:
-          selecting
-              ? _selectionAppBar(items, categories)
-              : _isSearchOpen
-              ? _searchAppBar()
-              : _mainAppBar(
-                query: query,
-                categories: categories,
-                accounts: accounts,
-                pendingCount: pendingCount,
-                showReviewBadge: pendingCount > 0 && isReviewSnoozed,
+    return FfAurora(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar:
+            selecting
+                ? _selectionAppBar(items, categories)
+                : _isSearchOpen
+                ? _searchAppBar()
+                : _mainAppBar(
+                  query: query,
+                  categories: categories,
+                  accounts: accounts,
+                  pendingCount: pendingCount,
+                  showReviewBadge: pendingCount > 0 && isReviewSnoozed,
+                ),
+        floatingActionButton:
+            selecting
+                ? null
+                : FloatingActionButton.extended(
+                  heroTag: 'transactions_add_transaction_fab',
+                  tooltip: 'Add transaction',
+                  onPressed: widget.onAddTransaction,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add'),
+                ),
+        floatingActionButtonLocation: FfDock.fabLocation,
+        body: Column(
+          children: [
+            if (pendingCount > 0 && !isReviewSnoozed && !selecting)
+              PendingReviewTaskCard(
+                count: pendingCount,
+                onReviewNow: _openReviewQueue,
+                onLater:
+                    () =>
+                        ref.read(reviewPromptSnoozedProvider.notifier).state =
+                            true,
               ),
-      floatingActionButton:
-          selecting
-              ? null
-              : FloatingActionButton.extended(
-                heroTag: 'transactions_add_transaction_fab',
-                tooltip: 'Add transaction',
-                onPressed: widget.onAddTransaction,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Add'),
+            Expanded(
+              child: results.when(
+                loading: () => const _TransactionsLoading(),
+                error:
+                    (err, _) => FfEmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Transactions are unavailable',
+                      description:
+                          'Your data remains on this device. Try loading it again.',
+                      actionLabel: 'Try again',
+                      onAction:
+                          () => ref.invalidate(filteredTransactionsProvider),
+                    ),
+                data:
+                    (items) => _list(
+                      query: query,
+                      items: items,
+                      accounts: accounts,
+                      categories: categories,
+                      privacyBlur: privacyBlur,
+                    ),
               ),
-      floatingActionButtonLocation: FfDock.fabLocation,
-      body: Column(
-        children: [
-          if (pendingCount > 0 && !isReviewSnoozed && !selecting)
-            PendingReviewTaskCard(
-              count: pendingCount,
-              onReviewNow: _openReviewQueue,
-              onLater:
-                  () =>
-                      ref.read(reviewPromptSnoozedProvider.notifier).state =
-                          true,
             ),
-          Expanded(
-            child: results.when(
-              loading: () => const _TransactionsLoading(),
-              error:
-                  (err, _) => FfEmptyState(
-                    icon: Icons.error_outline_rounded,
-                    title: 'Transactions are unavailable',
-                    description:
-                        'Your data remains on this device. Try loading it again.',
-                    actionLabel: 'Try again',
-                    onAction:
-                        () => ref.invalidate(filteredTransactionsProvider),
-                  ),
-              data:
-                  (items) => _list(
-                    query: query,
-                    items: items,
-                    accounts: accounts,
-                    categories: categories,
-                    privacyBlur: privacyBlur,
-                  ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -662,7 +666,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
           ),
         // Room for the Add button so it never covers the last row.
-        const SliverToBoxAdapter(child: SizedBox(height: 104)),
+        SliverToBoxAdapter(child: SizedBox(height: FfDock.insetOf(context))),
       ],
     );
   }
