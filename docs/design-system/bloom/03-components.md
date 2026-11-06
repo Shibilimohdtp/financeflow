@@ -22,7 +22,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 
 | Widget | Use | Key API |
 |---|---|---|
-| `FfButton` | All text buttons (pill) | `FfButton(label:, onPressed:, variant: primary/filled/secondary/outlined/text/destructive, size:)` |
+| `FfButton` | All text buttons (pill) | `FfButton(label:, onPressed:, variant: primary/filled/secondary/outlined/text/destructive/spark, size:)` |
 | `FfCircleButton` (`ff_round_buttons.dart`) | Round header/utility action (back, more, hide amounts, filter, alerts) | `FfCircleButton(icon:, tooltip:, onPressed:, corner: FfCorner.dot/warning, soft:)` 48 dp target |
 | `FfInkButton` | Solid ink action circle; `.open` is the ↗ "open detail" | `FfInkButton.open(onPressed:, tooltip:, onHero:, small:)` |
 | `FfChip` | One choice pill (ink when selected, outlined otherwise) | `FfChip(label:, isSelected:, onSelected:, leading: Icon)` |

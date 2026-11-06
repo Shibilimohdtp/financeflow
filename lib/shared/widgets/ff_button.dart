@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../theme/ff.dart';
 
-enum FfButtonVariant { primary, filled, secondary, outlined, text, destructive }
+enum FfButtonVariant {
+  primary,
+  filled,
+  secondary,
+  outlined,
+  text,
+  destructive,
+  spark,
+}
 
 enum FfButtonSize { sm, md, lg }
 
@@ -44,6 +52,7 @@ class FfButton extends StatelessWidget {
       FfButtonVariant.filled => context.ff.color.onActionPrimary,
       FfButtonVariant.secondary => context.ff.color.onSecondaryContainer,
       FfButtonVariant.destructive => context.ff.color.onStatusError,
+      FfButtonVariant.spark => context.ff.color.onSpark,
       FfButtonVariant.outlined ||
       FfButtonVariant.text => context.ff.color.actionPrimary,
     };
@@ -144,6 +153,20 @@ class FfButton extends StatelessWidget {
             foregroundColor: context.ff.color.onStatusError,
             minimumSize: Size(width ?? 0, minHeight),
             shape: shape,
+          ),
+          child: labelWidget,
+        );
+        break;
+
+      case FfButtonVariant.spark:
+        button = ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.ff.color.spark,
+            foregroundColor: context.ff.color.onSpark,
+            minimumSize: Size(width ?? 0, minHeight),
+            shape: shape,
+            elevation: 0,
           ),
           child: labelWidget,
         );
