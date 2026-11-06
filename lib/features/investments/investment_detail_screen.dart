@@ -1,29 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/investment.dart';
 import '../../repositories/account_repository.dart';
 import '../../repositories/investment_repository.dart';
+import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_asset_type_tiles.dart';
+import '../../shared/widgets/ff_badge.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_consequence_line.dart';
+import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_section_header.dart';
+import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
 import 'add_edit_investment_sheet.dart';
 import 'investments_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_dialog.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_text_field.dart';
-import '../../shared/widgets/ff_key_value_row.dart';
-import '../../theme/ff.dart';
 
+/// The Stillwater Bloom investment holding detail screen (Pattern D).
 class InvestmentDetailScreen extends ConsumerWidget {
-  final Investment investment;
-
   const InvestmentDetailScreen({super.key, required this.investment});
+
+  final Investment investment;
 
   void _edit(BuildContext context, Investment currentInv) {
     showFfSheet(
@@ -47,38 +57,74 @@ class InvestmentDetailScreen extends ConsumerWidget {
     final confirmed = await showFfSheet<bool>(
       context,
       builder: (ctx) {
-        return FfSheet(
-          children: [
-            FfSheetHeader(
-              title: 'Update Valuation',
-              subtitle:
-                  'Enter current market valuation for "${currentInv.name}"',
-            ),
-            const FfDivider(),
-            Padding(
-              padding: EdgeInsets.only(
-                left: FfSpace.lg,
-                right: FfSpace.lg,
-                top: FfSpace.md,
-                bottom: FfSpace.md,
-              ),
-              child: FfTextField(
-                controller: controller,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final parsedNewVal =
+                CurrencyFormatter.parse(controller.text) ??
+                currentInv.currentValue;
+            final delta = parsedNewVal - currentInv.currentValue;
+            final isGain = delta >= 0;
+            final pctDelta =
+                currentInv.currentValue > 0
+                    ? (delta / currentInv.currentValue) * 100.0
+                    : 0.0;
+            final deltaSign = isGain ? '+' : '';
+
+            String consequence;
+            FfTone consequenceTone;
+            if (delta == 0) {
+              consequence =
+                  'Valuation unchanged at ${CurrencyFormatter.formatAmount(currentInv.currentValue)}';
+              consequenceTone = FfTone.neutral;
+            } else {
+              consequence =
+                  'Valuation shifts by $deltaSign${CurrencyFormatter.formatAmount(delta)} ($deltaSign${pctDelta.toStringAsFixed(1)}%)';
+              consequenceTone = isGain ? FfTone.income : FfTone.error;
+            }
+
+            return FfSheet(
+              children: [
+                FfSheetHeader(
+                  title: 'Update Valuation',
+                  subtitle:
+                      'Enter latest on-device valuation for "${currentInv.name}"',
                 ),
-                label: 'Current Value',
-                prefixText: '${CurrencyFormatter.currencySymbol} ',
-              ),
-            ),
-            FfSheetFooter(
-              secondaryLabel: 'Cancel',
-              primaryLabel: 'Update Value',
-              onSecondaryPressed: () => Navigator.of(ctx).pop(false),
-              onPrimaryPressed: () => Navigator.of(ctx).pop(true),
-            ),
-          ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FfSpace.pageMargin,
+                    vertical: FfSpace.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FfAmountField(
+                        controller: controller,
+                        autofocus: true,
+                        label: 'Current Market Value',
+                        tone: FfTone.investment,
+                        onChanged: (_) => setSheetState(() {}),
+                      ),
+                      const SizedBox(height: FfSpace.md),
+                      FfConsequenceLine(
+                        text: consequence,
+                        tone: consequenceTone,
+                        icon:
+                            isGain
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                      ),
+                    ],
+                  ),
+                ),
+                FfSheetFooter(
+                  secondaryLabel: 'Cancel',
+                  primaryLabel: 'Update Value',
+                  onSecondaryPressed: () => Navigator.of(ctx).pop(false),
+                  onPrimaryPressed: () => Navigator.of(ctx).pop(true),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -122,7 +168,6 @@ class InvestmentDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch live stream
     final allInvsAsync = ref.watch(allInvestmentsStreamProvider);
     final currentInv =
         allInvsAsync.value?.firstWhere(
@@ -132,10 +177,24 @@ class InvestmentDetailScreen extends ConsumerWidget {
         investment;
 
     final accountsAsync = ref.watch(allAccountsStreamProvider);
-    final linkedAccount = accountsAsync.value?.firstWhere(
-      (a) => a.id == currentInv.accountId,
-      orElse: () => null as dynamic,
-    );
+    final linkedAccount =
+        accountsAsync.value
+            ?.where((a) => a.id == currentInv.accountId)
+            .firstOrNull;
+
+    final isProfit = currentInv.isProfitable;
+    final returnSign = isProfit ? '+' : '';
+    final formattedReturn =
+        '$returnSign${CurrencyFormatter.formatAmount(currentInv.absoluteReturn)} ($returnSign${currentInv.percentageReturn.toStringAsFixed(1)}%)';
+
+    final unitStr =
+        currentInv.quantityOrUnits.truncateToDouble() ==
+                currentInv.quantityOrUnits
+            ? currentInv.quantityOrUnits.toInt().toString()
+            : currentInv.quantityOrUnits.toString();
+
+    final valuationDate =
+        currentInv.lastValuationDate ?? currentInv.purchaseDate;
 
     return Scaffold(
       appBar: FfAppBar(
@@ -146,242 +205,144 @@ class InvestmentDetailScreen extends ConsumerWidget {
             tooltip: 'Edit Investment',
             onPressed: () => _edit(context, currentInv),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: FfSpace.md),
-            child: Center(
-              child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
-            ),
-          ),
+          const SizedBox(width: FfSpace.sm),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
-          vertical: FfSpace.md,
-        ),
-        children: [
-          // ── 1. Valuation Hero Card ──────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(FfSpace.lg),
-            decoration: BoxDecoration(
-              color: context.ff.color.surfaceCard,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.borderSubtle,
-                width: FfBorderWidth.hairline,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'CURRENT VALUATION',
-                      style: context.ff.text.labelSm.copyWith(
-                        letterSpacing: 0.8,
-                        color: context.ff.color.secondary,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.sm,
-                        vertical: FfSpace.x3s,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            currentInv.isProfitable
-                                ? context.ff.color.statusSuccess.withValues(
-                                  alpha: 0.15,
-                                )
-                                : context.ff.color.statusError.withValues(
-                                  alpha: 0.15,
-                                ),
-                        borderRadius: BorderRadius.circular(FfRadius.full),
-                      ),
-                      child: Text(
-                        '${currentInv.isProfitable ? "+" : ""}${CurrencyFormatter.formatAmount(currentInv.absoluteReturn)} (${currentInv.percentageReturn.toStringAsFixed(1)}%)',
+      body: FfAurora(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: FfSpace.pageMargin,
+            vertical: FfSpace.sm,
+          ),
+          children: [
+            // ── 1. Valuation Dusk Hero Card ─────────────────────────────────
+            FfHeroCard(
+              tone: FfHeroTone.dusk,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'CURRENT VALUATION',
                         style: context.ff.text.labelSm.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              currentInv.isProfitable
-                                  ? context.ff.color.statusSuccess
-                                  : context.ff.color.statusError,
+                          letterSpacing: 1.1,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
+                      FfBadge(
+                        label: formattedReturn,
+                        tone: isProfit ? FfTone.income : FfTone.error,
+                        icon:
+                            isProfit
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FfSpace.xs),
+                  FfAmountText(
+                    amount: currentInv.currentValue,
+                    size: FfAmountSize.hero,
+                    style: FfAmountStyle.split,
+                  ),
+                  const SizedBox(height: FfSpace.md),
+                  FfHeroFigures([
+                    FfHeroFigure(
+                      'Invested',
+                      CurrencyFormatter.formatAmount(currentInv.investedAmount),
                     ),
-                  ],
-                ),
-                const SizedBox(height: FfSpace.xs),
-                Text(
-                  CurrencyFormatter.formatAmount(currentInv.currentValue),
-                  style: context.ff.text.headlineLg.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: context.ff.color.actionPrimary,
-                  ),
-                ),
-                const SizedBox(height: FfSpace.x3s),
-                Text(
-                  'Cost basis: ${CurrencyFormatter.formatAmount(currentInv.investedAmount)} · Manual Entry',
-                  style: context.ff.text.bodySm.copyWith(
-                    color: context.ff.color.secondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: FfSpace.lg),
-
-          // Quick Action to update value
-          FfButton(
-            label: 'Update Current Valuation',
-            leadingIcon: const Icon(Icons.refresh_rounded, size: 18),
-            onPressed: () => _updateValuation(context, ref, currentInv),
-          ),
-
-          const SizedBox(height: FfSpace.x2l),
-
-          // ── 2. Holding Details Group ────────────────────────────────────
-          _SectionLabel(label: 'Holding Details'),
-          const SizedBox(height: FfSpace.xs),
-          Container(
-            decoration: BoxDecoration(
-              color: context.ff.color.surfaceCard,
-              borderRadius: BorderRadius.circular(FfRadius.lg),
-              border: Border.all(
-                color: context.ff.color.borderSubtle,
-                width: FfBorderWidth.hairline,
-              ),
-            ),
-            child: Column(
-              children: [
-                _DetailRow(
-                  icon: Icons.category_outlined,
-                  label: 'Asset Class',
-                  value: currentInv.assetType.displayName,
-                ),
-                _DetailDivider(),
-                _DetailRow(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: 'Invested Cost',
-                  value: CurrencyFormatter.formatAmount(
-                    currentInv.investedAmount,
-                  ),
-                ),
-                _DetailDivider(),
-                _DetailRow(
-                  icon: Icons.numbers_rounded,
-                  label: 'Units / Quantity',
-                  value:
-                      currentInv.quantityOrUnits.truncateToDouble() ==
-                              currentInv.quantityOrUnits
-                          ? currentInv.quantityOrUnits.toInt().toString()
-                          : currentInv.quantityOrUnits.toString(),
-                ),
-                _DetailDivider(),
-                _DetailRow(
-                  icon: Icons.calendar_today_outlined,
-                  label: 'Purchase Date',
-                  value: DateFormatter.formatFullDate(currentInv.purchaseDate),
-                ),
-                _DetailDivider(),
-                _DetailRow(
-                  icon: Icons.account_balance_outlined,
-                  label: 'Source Account',
-                  value: linkedAccount?.name ?? 'Not specified',
-                  isLast: (currentInv.notes?.isEmpty ?? true),
-                ),
-                if (currentInv.notes?.isNotEmpty ?? false) ...[
-                  _DetailDivider(),
-                  _DetailRow(
-                    icon: Icons.notes_rounded,
-                    label: 'Notes',
-                    value: currentInv.notes!,
-                    isLast: true,
-                  ),
+                    FfHeroFigure('Units', unitStr),
+                    FfHeroFigure(
+                      'Avg Price',
+                      CurrencyFormatter.formatAmount(currentInv.purchasePrice),
+                    ),
+                  ]),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: FfSpace.md),
+
+            // Quick Action to update value
+            FfButton(
+              label: 'Update Current Valuation',
+              leadingIcon: const Icon(Icons.refresh_rounded, size: 18),
+              onPressed: () => _updateValuation(context, ref, currentInv),
+            ),
+
+            const SizedBox(height: FfSpace.xl),
+
+            // ── 2. Holding Details Group ────────────────────────────────────
+            const FfSectionHeader(title: 'Holding Details'),
+            const SizedBox(height: FfSpace.xs),
+            FfGroupedContainer(
+              children: [
+                FfRow(
+                  leading: FfIconTile(
+                    icon: FfAssetTypeTiles.iconFor(currentInv.assetType),
+                    tone: FfTone.investment,
+                  ),
+                  title: 'Asset Class',
+                  detail: currentInv.assetType.displayName,
+                ),
+                FfRow(
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: 'Purchase Date',
+                  detail: DateFormatter.formatFullDate(currentInv.purchaseDate),
+                ),
+                FfRow(
+                  leading: const Icon(Icons.history_toggle_off_rounded),
+                  title: 'Last Valued',
+                  detail: DateFormatter.formatShortDate(valuationDate),
+                ),
+                FfRow(
+                  leading: const Icon(Icons.account_balance_outlined),
+                  title: 'Source Account',
+                  detail: linkedAccount?.name ?? 'Not specified',
+                ),
+                if (currentInv.notes?.isNotEmpty ?? false)
+                  FfRow(
+                    leading: const Icon(Icons.notes_rounded),
+                    title: 'Notes',
+                    detail: currentInv.notes!,
+                  ),
               ],
             ),
-          ),
 
-          const SizedBox(height: FfSpace.x2l),
+            const SizedBox(height: FfSpace.xl),
 
-          // ── 3. Actions ──────────────────────────────────────────────────
-          _SectionLabel(label: 'Manage Holding'),
-          const SizedBox(height: FfSpace.xs),
-          Row(
-            children: [
-              Expanded(
-                child: FfButton(
-                  label: 'Edit Details',
-                  variant: FfButtonVariant.outlined,
-                  leadingIcon: const Icon(Icons.edit_outlined, size: 16),
-                  onPressed: () => _edit(context, currentInv),
-                ),
-              ),
-              const SizedBox(width: FfSpace.md),
-              Expanded(
-                child: FfButton(
-                  label: 'Delete Holding',
-                  variant: FfButtonVariant.destructive,
-                  leadingIcon: const Icon(
-                    Icons.delete_outline_rounded,
-                    size: 16,
+            // ── 3. Manage Holding Actions ───────────────────────────────────
+            const FfSectionHeader(title: 'Manage Holding'),
+            const SizedBox(height: FfSpace.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: FfButton(
+                    label: 'Edit Details',
+                    variant: FfButtonVariant.outlined,
+                    leadingIcon: const Icon(Icons.edit_outlined, size: 16),
+                    onPressed: () => _edit(context, currentInv),
                   ),
-                  onPressed: () => _delete(context, ref, currentInv),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: FfSpace.md),
+                Expanded(
+                  child: FfButton(
+                    label: 'Delete Holding',
+                    variant: FfButtonVariant.destructive,
+                    leadingIcon: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 16,
+                    ),
+                    onPressed: () => _delete(context, ref, currentInv),
+                  ),
+                ),
+              ],
+            ),
 
-          const SizedBox(height: FfSpace.x4l),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool isLast;
-
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FfKeyValueRow(icon: icon, label: label, value: value);
-  }
-}
-
-class _DetailDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const FfDivider.inset(after: FfRowLeading.icon);
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: FfSpace.x2s),
-      child: Text(
-        label.toUpperCase(),
-        style: context.ff.text.labelSm.copyWith(
-          letterSpacing: 0.8,
-          color: context.ff.color.secondary,
+            const SizedBox(height: FfSpace.x4l),
+          ],
         ),
       ),
     );
