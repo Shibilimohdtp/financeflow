@@ -2,7 +2,9 @@
 
 FinanceFlow's design system. This folder is the reference for every chat or contributor doing UI work.
 
-- [CHANGELOG.md](CHANGELOG.md): **start here.** Slice status, what is in flight and who owns it, decisions, and leakage numbers over time.
+- [bloom/README.md](bloom/README.md): **start here for any screen or widget work.** The Stillwater Bloom
+  direction, tokens, component catalog, screen recipes, screen-by-screen status and the per-screen workflow.
+- [CHANGELOG.md](CHANGELOG.md): **then here.** Slice status, what is in flight and who owns it, decisions, and leakage numbers over time.
 - [00-audit-and-proposal.md](00-audit-and-proposal.md): the audit, token architecture, palettes, component inventory and migration plan.
 - [palettes-preview.html](palettes-preview.html): open in a browser to see the proposed palettes with their contrast results. Regenerate it with
   `python palette_check.py out.json` and then `python palette_render.py out.json palettes-preview.html`, both run from this folder.

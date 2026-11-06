@@ -61,6 +61,8 @@ transaction, SMS, notification, or settings contents while diagnosing startup.
 ## UI and design-system work
 
 Before changing anything visual (theme, colours, typography, spacing, shared widgets, screen layouts), read
+`docs/design-system/bloom/README.md` and the files it lists (the Stillwater Bloom direction, tokens, components,
+screen recipes, screen status and workflow; they are the single reference every screen must match), then
 `docs/design-system/CHANGELOG.md`. It records which design-system slices are done, which files another chat
 is working on right now, and the decisions already made. Add your work to its "In flight" table when you
 start, and update it in the same commit when you finish. The full plan is in
