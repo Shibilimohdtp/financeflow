@@ -140,10 +140,13 @@ class FfRenewalStrip extends StatelessWidget {
                     color: ff.color.textTertiary,
                   ),
                   const SizedBox(width: FfSpace.xs),
-                  Text(
-                    'No renewals due in the next 30 days',
-                    style: ff.text.bodySm.copyWith(
-                      color: ff.color.textTertiary,
+                  Expanded(
+                    child: Text(
+                      'No renewals due in the next 30 days',
+                      style: ff.text.bodySm.copyWith(
+                        color: ff.color.textTertiary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

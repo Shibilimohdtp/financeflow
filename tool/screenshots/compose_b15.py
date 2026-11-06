@@ -28,9 +28,13 @@ def main():
     out_dir = baseline
 
     # B15b: Add / edit sheet
+    # B15c: Subscriptions list
     scenarios = [
         ("b15_sheet_new", "compare_sheet_new.png"),
         ("b15_sheet_edit", "compare_sheet_edit.png"),
+        ("b15_list_normal", "compare_list_normal.png"),
+        ("b15_list_empty", "compare_list_empty.png"),
+        ("b15_list_suggestions", "compare_list_suggestions.png"),
     ]
 
     for name, out_name in scenarios:
