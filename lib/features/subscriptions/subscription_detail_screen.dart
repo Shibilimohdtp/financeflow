@@ -1,31 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
+
 import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
+import '../../models/app_settings.dart';
 import '../../models/subscription.dart';
 import '../../models/transaction.dart';
-import '../../repositories/account_repository.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
+import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_data_viz.dart';
+import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_monogram_tile.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
-import '../../theme/stillwater_typography.dart';
+import '../../shared/widgets/ff_sheet.dart';
+import '../../shared/widgets/ff_stat_tile.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_toast.dart';
+import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import '../settings/settings_controller.dart';
 import '../transactions/add_edit_transaction_screen.dart';
-import '../transactions/transaction_detail_screen.dart';
 import 'add_edit_subscription_sheet.dart';
 import 'subscriptions_controller.dart';
-import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_dialog.dart';
-import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_row.dart';
-import '../../theme/ff_tone.dart';
-import '../../theme/ff.dart';
+import 'widgets/subscription_payment_history_section.dart';
 
+/// The Stillwater Bloom Subscription Detail Screen (Pattern D, Sand Hero).
+///
+/// Features:
+/// 1. Sand `FfHeroCard` with renewal progress ring wrapping generative monogram,
+///    oversized light amount, and 3 hero figures (Monthly equiv, Annual pace, Total paid).
+/// 2. Inline reminder chips (1d, 3d, 7d, Off) that immediately update notification preference.
+/// 3. Plan details `FfGroupedContainer` for account, category, and cadence.
+/// 4. 12-month visual payment history (`FfMonthGrid`) with price change banner.
+/// 5. Ink primary "Record payment" button and separated destructive delete.
 class SubscriptionDetailScreen extends ConsumerWidget {
   final Subscription subscription;
 
@@ -58,7 +72,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
       context,
       title: 'Delete Subscription?',
       message:
-          'Are you sure you want to stop tracking "${currentSub.merchant}" on this device?',
+          'Are you sure you want to stop tracking "${currentSub.merchant}" on this device? Past recorded transactions will not be deleted.',
       confirmLabel: 'Delete',
       destructive: true,
     );
@@ -98,9 +112,72 @@ class SubscriptionDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _updateReminder(
+    BuildContext context,
+    WidgetRef ref,
+    Subscription currentSub, {
+    required bool enabled,
+    required int daysBefore,
+  }) async {
+    final updated = currentSub.copyWith(
+      isReminderEnabled: enabled,
+      reminderDaysBefore: daysBefore,
+      updatedAt: DateTime.now(),
+    );
+    await ref
+        .read(subscriptionsControllerProvider.notifier)
+        .updateSubscription(updated);
+    if (context.mounted) {
+      FfToast.show(
+        context,
+        message:
+            enabled
+                ? 'Reminder set: $daysBefore ${daysBefore == 1 ? 'day' : 'days'} before renewal.'
+                : 'Reminder disabled.',
+      );
+    }
+  }
+
+  double _computeCycleProgress(Subscription sub) {
+    if (sub.status != SubscriptionStatus.active) return 0.0;
+    if (sub.lastPaymentDate != null) {
+      final totalDays =
+          sub.nextRenewalDate.difference(sub.lastPaymentDate!).inDays;
+      if (totalDays > 0) {
+        final elapsed = DateTime.now().difference(sub.lastPaymentDate!).inDays;
+        return (elapsed / totalDays).clamp(0.0, 1.0);
+      }
+    }
+    final cycleLength = switch (sub.billingFrequency) {
+      SubscriptionFrequency.weekly => 7,
+      SubscriptionFrequency.monthly => 30,
+      SubscriptionFrequency.quarterly => 90,
+      SubscriptionFrequency.yearly => 365,
+      SubscriptionFrequency.custom => 30,
+    };
+    final daysLeft = sub.daysUntilRenewal();
+    final elapsed = cycleLength - daysLeft;
+    return (elapsed / cycleLength).clamp(0.0, 1.0);
+  }
+
+  String _formatStatusInWords(Subscription sub) {
+    if (sub.status == SubscriptionStatus.paused) {
+      return 'Paused · Next renewal postponed';
+    }
+    if (sub.status == SubscriptionStatus.cancelled) {
+      return 'Cancelled · No upcoming charges';
+    }
+    final days = sub.daysUntilRenewal();
+    final dateStr = DateFormatter.formatShortDate(sub.nextRenewalDate);
+    if (days == 0) return 'Renews today · $dateStr';
+    if (days == 1) return 'Renews tomorrow · $dateStr';
+    if (days > 1) return 'Renews in $days days · $dateStr';
+    return 'Overdue by ${days.abs()} days · $dateStr';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = context.theme;
+    final ff = context.ff;
 
     // Watch live subscription stream
     final subsAsync = ref.watch(allSubscriptionsStreamProvider);
@@ -123,10 +200,22 @@ class SubscriptionDetailScreen extends ConsumerWidget {
     final recentPayments =
         ref.watch(subscriptionPaymentsStreamProvider(currentSub.id)).value ??
         [];
-    final displayPayments = recentPayments.take(5).toList();
 
-    final days = currentSub.daysUntilRenewal();
+    final settings =
+        ref.watch(settingsStreamProvider).value ?? const AppSettings();
+    final isPrivacyBlur = settings.isPrivacyBlurEnabled;
+
     final isActive = currentSub.status == SubscriptionStatus.active;
+    final cycleProgress = _computeCycleProgress(currentSub);
+    final statusWords = _formatStatusInWords(currentSub);
+
+    final frequencySuffix = switch (currentSub.billingFrequency) {
+      SubscriptionFrequency.weekly => '/wk',
+      SubscriptionFrequency.monthly => '/mo',
+      SubscriptionFrequency.quarterly => '/qtr',
+      SubscriptionFrequency.yearly => '/yr',
+      SubscriptionFrequency.custom => '',
+    };
 
     return Scaffold(
       appBar: FfAppBar(
@@ -146,66 +235,158 @@ class SubscriptionDetailScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
-          vertical: FfSpace.md,
+        padding: const EdgeInsets.fromLTRB(
+          FfSpace.pageMargin,
+          FfSpace.sm,
+          FfSpace.pageMargin,
+          112,
         ),
         children: [
-          // ── 1. Top Amount & Status Hero Card ────────────────────────
-          FfCard(
-            variant: FfCardVariant.elevated,
+          // ── 1. Sand Hero Card (Pattern D) ───────────────────────────
+          FfHeroCard(
+            tone: isActive ? FfHeroTone.sand : FfHeroTone.dusk,
+            leading:
+                isActive
+                    ? FfProgressRing(
+                      value: cycleProgress,
+                      size: 48,
+                      semanticsLabel:
+                          '${(cycleProgress * 100).round()}% of billing cycle elapsed',
+                      color: ff.color.actionPrimary,
+                      child: FfMonogramTile(
+                        name: currentSub.merchant,
+                        size: 34,
+                        radius: FfRadius.md,
+                      ),
+                    )
+                    : FfMonogramTile(
+                      name: currentSub.merchant,
+                      size: 48,
+                      radius: FfRadius.md,
+                    ),
+            title:
+                '${currentSub.billingFrequency.displayName.toUpperCase()} PLAN',
+            subtitle: statusWords,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      'RECURRING COMMITMENT',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.secondary,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    FfAmountText(
+                      amount: currentSub.amount,
+                      size: FfAmountSize.hero,
+                      style: FfAmountStyle.split,
+                      isBlurred: isPrivacyBlur,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.sm,
-                        vertical: FfSpace.x3s,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isActive
-                                ? context.ff.color.moneyIncomeContainer
-                                : context.ff.color.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(FfRadius.full),
-                      ),
-                      child: Text(
-                        currentSub.status.displayName,
-                        style: context.ff.text.labelSm.copyWith(
-                          color:
-                              isActive
-                                  ? context.ff.color.moneyIncome
-                                  : context.ff.color.secondary,
-                          fontWeight: FontWeight.w600,
+                    if (frequencySuffix.isNotEmpty) ...[
+                      const SizedBox(width: FfSpace.x2s),
+                      Text(
+                        frequencySuffix,
+                        style: ff.text.titleSm.copyWith(
+                          color: ff.color.textSecondary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: FfSpace.xs),
-                Text(
-                  CurrencyFormatter.formatAmount(currentSub.amount),
-                  style: StillwaterTypography.numHero(
-                    color: context.ff.color.textPrimary,
+                const SizedBox(height: FfSpace.md),
+                FfHeroFigures([
+                  FfHeroFigure(
+                    'Monthly equiv',
+                    isPrivacyBlur
+                        ? '••••'
+                        : CurrencyFormatter.formatAmount(
+                          currentSub.monthlyEquivalentAmount,
+                        ),
                   ),
+                  FfHeroFigure(
+                    'Annual pace',
+                    isPrivacyBlur
+                        ? '••••'
+                        : CurrencyFormatter.formatAmount(
+                          currentSub.yearlyEquivalentAmount,
+                        ),
+                  ),
+                  FfHeroFigure(
+                    'Total paid',
+                    isPrivacyBlur
+                        ? '••••'
+                        : CurrencyFormatter.formatAmount(
+                          paymentTotals.totalPaid,
+                        ),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: FfSpace.lg),
+
+          // ── 2. Inline Reminder Chips ────────────────────────────────
+          const FfSectionHeader(title: 'Renewal Reminder'),
+          const SizedBox(height: FfSpace.xs),
+          FfCard(
+            padding: const EdgeInsets.all(FfSpace.md),
+            child: Wrap(
+              spacing: FfSpace.xs,
+              runSpacing: FfSpace.xs,
+              children: [
+                FfChip(
+                  label: '1 day before',
+                  isSelected:
+                      currentSub.isReminderEnabled &&
+                      currentSub.reminderDaysBefore == 1,
+                  onSelected:
+                      () => _updateReminder(
+                        context,
+                        ref,
+                        currentSub,
+                        enabled: true,
+                        daysBefore: 1,
+                      ),
                 ),
-                const SizedBox(height: FfSpace.x3s),
-                Text(
-                  'Billed ${currentSub.billingFrequency.displayName.toLowerCase()}',
-                  style: context.ff.text.body.copyWith(
-                    color: context.ff.color.secondary,
-                  ),
+                FfChip(
+                  label: '3 days before',
+                  isSelected:
+                      currentSub.isReminderEnabled &&
+                      currentSub.reminderDaysBefore == 3,
+                  onSelected:
+                      () => _updateReminder(
+                        context,
+                        ref,
+                        currentSub,
+                        enabled: true,
+                        daysBefore: 3,
+                      ),
+                ),
+                FfChip(
+                  label: '7 days before',
+                  isSelected:
+                      currentSub.isReminderEnabled &&
+                      currentSub.reminderDaysBefore == 7,
+                  onSelected:
+                      () => _updateReminder(
+                        context,
+                        ref,
+                        currentSub,
+                        enabled: true,
+                        daysBefore: 7,
+                      ),
+                ),
+                FfChip(
+                  label: 'Off',
+                  isSelected: !currentSub.isReminderEnabled,
+                  onSelected:
+                      () => _updateReminder(
+                        context,
+                        ref,
+                        currentSub,
+                        enabled: false,
+                        daysBefore: currentSub.reminderDaysBefore,
+                      ),
                 ),
               ],
             ),
@@ -213,105 +394,24 @@ class SubscriptionDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: FfSpace.lg),
 
-          // ── 2. Schedule & Financial Metrics ─────────────────────────
-          Row(
-            children: [
-              Expanded(
-                child: FfCard(
-                  padding: const EdgeInsets.all(FfSpace.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'NEXT RENEWAL',
-                        style: context.ff.text.labelSm.copyWith(
-                          color: context.ff.color.secondary,
-                          letterSpacing: 1.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: FfSpace.xs),
-                      Text(
-                        DateFormatter.formatShortDate(
-                          currentSub.nextRenewalDate,
-                        ),
-                        style: context.ff.text.titleSm.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: FfSpace.x3s),
-                      Text(
-                        isActive
-                            ? (days == 0
-                                ? 'Renews today'
-                                : (days > 0
-                                    ? 'In $days days'
-                                    : '${days.abs()}d ago'))
-                            : 'Plan inactive',
-                        style: context.ff.text.bodySm.copyWith(
-                          color:
-                              isActive && days <= 3
-                                  ? context.ff.color.statusWarning
-                                  : context.ff.color.secondary,
-                          fontWeight:
-                              isActive && days <= 3
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: FfSpace.sm),
-              Expanded(
-                child: FfCard(
-                  padding: const EdgeInsets.all(FfSpace.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ANNUAL COST',
-                        style: context.ff.text.labelSm.copyWith(
-                          color: context.ff.color.secondary,
-                          letterSpacing: 1.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: FfSpace.xs),
-                      Text(
-                        CurrencyFormatter.formatAmount(
-                          currentSub.yearlyEquivalentAmount,
-                        ),
-                        style: StillwaterTypography.numMd(
-                          color: context.ff.color.actionPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: FfSpace.x3s),
-                      Text(
-                        'Projected pace',
-                        style: context.ff.text.bodySm.copyWith(
-                          color: context.ff.color.secondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: FfSpace.lg),
-
           // ── 3. Plan Configuration Details ───────────────────────────
           const FfSectionHeader(title: 'Plan Details'),
+          const SizedBox(height: FfSpace.xs),
           FfGroupedContainer(
             children: [
               FfRow(
-                icon: Icons.repeat_rounded,
+                icon: Icons.event_repeat_rounded,
                 iconTone: FfTone.primary,
-                title: 'Billing Frequency',
-                subtitle: currentSub.billingFrequency.displayName,
+                title: 'Billing Cadence',
+                subtitle:
+                    '${currentSub.billingFrequency.displayName} · Next ${DateFormatter.formatShortDate(currentSub.nextRenewalDate)}',
+                showChevron: false,
+              ),
+              FfRow(
+                icon: Icons.category_outlined,
+                iconTone: FfTone.primary,
+                title: 'Category',
+                subtitle: currentSub.category,
                 showChevron: false,
               ),
               FfRow(
@@ -319,16 +419,6 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 iconTone: FfTone.primary,
                 title: 'Linked Payment Account',
                 subtitle: linkedAccount?.name ?? 'No account linked',
-                showChevron: false,
-              ),
-              FfRow(
-                icon: Icons.notifications_active_outlined,
-                iconTone: FfTone.primary,
-                title: 'Renewal Reminder',
-                subtitle:
-                    currentSub.isReminderEnabled
-                        ? '${currentSub.reminderDaysBefore} day before renewal'
-                        : 'Disabled',
                 showChevron: false,
               ),
               if (currentSub.notes != null && currentSub.notes!.isNotEmpty)
@@ -342,102 +432,22 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: FfSpace.xl),
+          const SizedBox(height: FfSpace.lg),
 
-          // ── 4. Payment History ─────────────────────────────────────
-          const FfSectionHeader(title: 'Payment History'),
-          FfCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Summary row
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    FfSpace.lg,
-                    FfSpace.md,
-                    FfSpace.lg,
-                    FfSpace.sm,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              CurrencyFormatter.formatAmount(
-                                paymentTotals.totalPaid,
-                              ),
-                              style: StillwaterTypography.numHero(
-                                color: context.ff.color.textPrimary,
-                              ).copyWith(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              'Total paid · ${paymentTotals.count} payment${paymentTotals.count == 1 ? '' : 's'}',
-                              style: context.ff.text.bodySm.copyWith(
-                                color: context.ff.color.secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (paymentTotals.lastPaymentDate != null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Last paid',
-                              style: context.ff.text.labelSm.copyWith(
-                                color: context.ff.color.secondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              DateFormatter.formatShortDate(
-                                paymentTotals.lastPaymentDate!,
-                              ),
-                              style: context.ff.text.body.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-                if (displayPayments.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      FfSpace.lg,
-                      FfSpace.x2s,
-                      FfSpace.lg,
-                      FfSpace.md,
-                    ),
-                    child: Text(
-                      'No payments recorded yet. Use "Record payment" to link a manual payment.',
-                      style: context.ff.text.bodySm.copyWith(
-                        color: context.ff.color.textSecondary,
-                      ),
-                    ),
-                  )
-                else
-                  ...displayPayments.map(
-                    (tx) => _buildPaymentRow(context, tx, theme),
-                  ),
-              ],
-            ),
+          // ── 4. Payment History (12-Mo Grid + Transactions) ──────────
+          SubscriptionPaymentHistorySection(
+            subscription: currentSub,
+            payments: recentPayments,
+            paymentTotals: paymentTotals,
+            isPrivacyBlur: isPrivacyBlur,
           ),
 
-          const SizedBox(height: FfSpace.md),
+          const SizedBox(height: FfSpace.xl),
 
-          // Record Payment button
+          // ── 5. Primary Action: Record Payment ────────────────────────
           FfButton(
             label: 'Record payment',
-            variant: FfButtonVariant.secondary,
+            variant: FfButtonVariant.primary,
             leadingIcon: const Icon(Icons.add_rounded, size: 18),
             onPressed: () {
               AddEditTransactionScreen.push<void>(
@@ -462,90 +472,48 @@ class SubscriptionDetailScreen extends ConsumerWidget {
             },
           ),
 
-          const SizedBox(height: FfSpace.xl),
+          const SizedBox(height: FfSpace.sm),
 
-          // ── 5. Action Buttons ───────────────────────────────────────
+          // ── 6. Secondary Actions: Pause/Resume & Edit ────────────────
           Row(
             children: [
               Expanded(
                 child: FfButton(
                   label: isActive ? 'Pause Plan' : 'Resume Plan',
                   variant: FfButtonVariant.secondary,
+                  leadingIcon: Icon(
+                    isActive
+                        ? Icons.pause_circle_outline_rounded
+                        : Icons.play_circle_outline_rounded,
+                    size: 18,
+                  ),
                   onPressed: () => _toggleStatus(context, ref, currentSub),
                 ),
               ),
               const SizedBox(width: FfSpace.sm),
               Expanded(
                 child: FfButton(
-                  label: 'Delete Plan',
-                  variant: FfButtonVariant.destructive,
-                  onPressed: () => _delete(context, ref, currentSub),
+                  label: 'Edit Plan',
+                  variant: FfButtonVariant.secondary,
+                  leadingIcon: const Icon(Icons.edit_outlined, size: 18),
+                  onPressed: () => _edit(context, currentSub),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: FfSpace.x3l),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: FfSpace.lg),
 
-  Widget _buildPaymentRow(
-    BuildContext context,
-    Transaction tx,
-    ThemeData theme,
-  ) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => TransactionDetailScreen(transaction: tx),
+          // ── 7. Destructive Action: Delete Plan ───────────────────────
+          Center(
+            child: FfButton(
+              label: 'Delete Subscription',
+              variant: FfButtonVariant.destructive,
+              leadingIcon: const Icon(Icons.delete_outline_rounded, size: 18),
+              onPressed: () => _delete(context, ref, currentSub),
+            ),
           ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.lg,
-          vertical: FfSpace.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormatter.formatShortDate(tx.date),
-                    style: context.ff.text.body.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (tx.notes != null && tx.notes!.isNotEmpty)
-                    Text(
-                      tx.notes!,
-                      style: context.ff.text.bodySm.copyWith(
-                        color: context.ff.color.secondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            FfAmountText(
-              amount: tx.amount,
-              type: TransactionType.expense,
-              size: FfAmountSize.sm,
-            ),
-            const SizedBox(width: FfSpace.x2s),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 16,
-              color: context.ff.color.textSecondary,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

@@ -29,12 +29,15 @@ def main():
 
     # B15b: Add / edit sheet
     # B15c: Subscriptions list
+    # B15d: Subscription detail
     scenarios = [
         ("b15_sheet_new", "compare_sheet_new.png"),
         ("b15_sheet_edit", "compare_sheet_edit.png"),
         ("b15_list_normal", "compare_list_normal.png"),
         ("b15_list_empty", "compare_list_empty.png"),
         ("b15_list_suggestions", "compare_list_suggestions.png"),
+        ("b15_detail_active", "compare_detail_active.png"),
+        ("b15_detail_paused", "compare_detail_paused.png"),
     ]
 
     for name, out_name in scenarios:
