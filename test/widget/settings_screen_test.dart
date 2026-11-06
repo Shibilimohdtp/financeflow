@@ -218,7 +218,9 @@ void main() {
         await tester.tap(find.text('App Settings'));
         await tester.pumpAndSettle();
 
-        // Search for 'pin'
+        // Open search from the app bar icon, then search for 'pin'
+        await tester.tap(find.byTooltip('Search settings'));
+        await tester.pumpAndSettle();
         final searchField = find.byType(TextField);
         expect(searchField, findsOneWidget);
         await tester.enterText(searchField, 'pin');

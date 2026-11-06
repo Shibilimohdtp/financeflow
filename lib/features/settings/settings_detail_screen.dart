@@ -13,9 +13,9 @@ import '../../shared/widgets/ff_hold_to_confirm_button.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_settings_index.dart';
-import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
-import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_page_header.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
 import '../alerts/alert_settings_sheet.dart';
 import '../alerts/alerts_inbox_screen.dart';
@@ -42,12 +42,31 @@ class SettingsDetailScreen extends ConsumerStatefulWidget {
 
 class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
+  bool _isSearchOpen = false;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _isSearchOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _closeSearch() {
+    _searchFocusNode.unfocus();
+    _searchController.clear();
+    setState(() {
+      _isSearchOpen = false;
+      _searchQuery = '';
+    });
   }
 
   void _push(BuildContext context, Widget screen) {
@@ -137,338 +156,392 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
     final searchMatches =
         isSearching ? searchSettings(_searchQuery) : const <SettingsEntry>[];
 
-    return FfPageScaffold(
-      title: 'Settings',
-      subtitle: 'Preferences & privacy',
-      body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: FfSpace.pageMargin,
-          vertical: FfSpace.md,
-        ),
-        children: [
-          // ── Search Field ─────────────────────────────────────────────────
-          FfTextField.search(
-            controller: _searchController,
-            hint: 'Search settings (e.g. PIN, theme, SMS, currency)...',
-            onChanged: (val) => setState(() => _searchQuery = val),
-            onSubmitted: (val) => setState(() => _searchQuery = val),
-          ),
+    final canPop = Navigator.of(context).canPop();
 
-          const SizedBox(height: FfSpace.md),
-
-          // ── If Searching: Show Matching Results ──────────────────────────
-          if (isSearching) ...[
-            SettingsSearchResults(
-              results: searchMatches,
-              onSelect:
-                  (entry) =>
-                      _handleDestination(context, entry.destination, settings),
-            ),
-          ] else ...[
-            // ── 1. Appearance ────────────────────────────────────────────────
-            const FfSectionHeader(title: 'Appearance'),
-            FfGroupedContainer(
-              dividerInset: FfRowLeading.icon,
-              children: [
-                FfRow(
-                  icon: Icons.palette_outlined,
-                  title: 'Theme',
-                  detail: settings.themePreference.displayName,
-                  onTap: () => showSettingsThemePicker(context, ref, settings),
-                ),
-                FfRow(
-                  icon: Icons.payments_outlined,
-                  title: 'Currency',
-                  detail: () {
-                    final currency = AppCurrency.fromCode(
-                      settings.currencyCode,
-                    );
-                    return '${currency.symbol} ${currency.code}';
-                  }(),
-                  onTap:
-                      () => showSettingsCurrencyPicker(context, ref, settings),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: FfSpace.xl),
-
-            // ── 2. Alerts & Notifications ────────────────────────────────────
-            const FfSectionHeader(title: 'Alerts & Notifications'),
-            FfGroupedContainer(
-              dividerInset: FfRowLeading.icon,
-              children: [
-                FfRow.toggle(
-                  icon: Icons.notifications_outlined,
-                  title: 'All Alerts & Notifications',
-                  subtitle: 'Master switch for local alerts and notifications',
-                  value:
-                      settings.isAlertsEnabled &&
-                      settings.isLocalNotificationsEnabled,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .updateSettings(
-                          settings.copyWith(
-                            isAlertsEnabled: val,
-                            isLocalNotificationsEnabled: val,
-                          ),
-                        );
-                  },
-                ),
-                FfRow(
-                  icon: Icons.tune_rounded,
-                  title: 'Notification & Alert Preferences',
-                  subtitle: 'Categories, lock screen privacy & permissions',
-                  onTap: () => AlertSettingsSheet.show(context),
-                ),
-                FfRow.toggle(
-                  icon: Icons.rate_review_outlined,
-                  title: 'Needs Review Alerts',
-                  subtitle:
-                      'Remind when imported transactions need confirmation',
-                  value:
-                      settings.isNeedsReviewNotificationsEnabled &&
-                      settings.isNeedsReviewAlertsEnabled,
-                  enabled:
-                      settings.isAlertsEnabled &&
-                      settings.isLocalNotificationsEnabled,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .updateSettings(
-                          settings.copyWith(
-                            isNeedsReviewNotificationsEnabled: val,
-                            isNeedsReviewAlertsEnabled: val,
-                          ),
-                        );
-                  },
-                ),
-                FfRow.toggle(
-                  icon: Icons.pie_chart_outline_rounded,
-                  title: 'Budget Alerts',
-                  subtitle: 'Notify when spending approaches limit',
-                  value:
-                      settings.isBudgetNotificationEnabled &&
-                      settings.isBudgetAlertsEnabled,
-                  enabled:
-                      settings.isAlertsEnabled &&
-                      settings.isLocalNotificationsEnabled,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .updateSettings(
-                          settings.copyWith(
-                            isBudgetNotificationEnabled: val,
-                            isBudgetAlertsEnabled: val,
-                          ),
-                        );
-                  },
-                ),
-                FfRow.toggle(
-                  icon: Icons.repeat_rounded,
-                  title: 'Subscription Alerts',
-                  subtitle: 'Notify before renewal dates',
-                  value:
-                      settings.isSubscriptionNotificationEnabled &&
-                      settings.isSubscriptionAlertsEnabled,
-                  enabled:
-                      settings.isAlertsEnabled &&
-                      settings.isLocalNotificationsEnabled,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .updateSettings(
-                          settings.copyWith(
-                            isSubscriptionNotificationEnabled: val,
-                            isSubscriptionAlertsEnabled: val,
-                          ),
-                        );
-                  },
-                ),
-                FfRow.toggle(
-                  icon: Icons.account_balance_outlined,
-                  title: 'Loan & EMI Alerts',
-                  subtitle: 'Remind before EMI due dates',
-                  value:
-                      settings.isLoanNotificationEnabled &&
-                      settings.isLoanAlertsEnabled,
-                  enabled:
-                      settings.isAlertsEnabled &&
-                      settings.isLocalNotificationsEnabled,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .updateSettings(
-                          settings.copyWith(
-                            isLoanNotificationEnabled: val,
-                            isLoanAlertsEnabled: val,
-                          ),
-                        );
-                  },
-                ),
-                FfRow.toggle(
-                  icon: Icons.backup_outlined,
-                  title: 'Backup Reminder',
-                  subtitle: 'Periodic reminder to create a backup',
-                  value:
-                      settings.isBackupNotificationEnabled &&
-                      settings.isBackupReminderEnabled,
-                  enabled:
-                      settings.isAlertsEnabled &&
-                      settings.isLocalNotificationsEnabled,
-                  onChanged: (val) {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .updateSettings(
-                          settings.copyWith(
-                            isBackupNotificationEnabled: val,
-                            isBackupReminderEnabled: val,
-                          ),
-                        );
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: FfSpace.xl),
-
-            // ── 3. Transaction Ingestion ─────────────────────────────────────
-            const FfSectionHeader(title: 'Transaction Ingestion'),
-            FfGroupedContainer(
-              dividerInset: FfRowLeading.icon,
-              children: [
-                FfRow.toggle(
-                  icon: Icons.notifications_active_outlined,
-                  title: 'Notification Detection',
-                  subtitle:
-                      settings.isNotificationDetectionEnabled
-                          ? ingestionStatus?.notificationAccess == true
-                              ? 'Active for ${settings.selectedNotificationPackages.length} payment apps'
-                              : 'Enabled, but Android access is not allowed'
-                          : 'Disabled · tap to set up',
-                  value:
-                      settings.isNotificationDetectionEnabled &&
-                      ingestionStatus?.notificationAccess == true,
-                  onChanged: (val) {
-                    if (val) {
-                      _push(context, const NotificationPermissionScreen());
-                    } else {
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .updateSettings(
-                            settings.copyWith(
-                              isNotificationDetectionEnabled: false,
-                            ),
-                          );
-                    }
-                  },
-                ),
-                FfRow.toggle(
-                  icon: Icons.sms_outlined,
-                  title: 'Bank SMS Detection',
-                  subtitle:
-                      settings.isSmsDetectionEnabled
-                          ? ingestionStatus?.smsPermission ==
-                                  IngestionPermissionState.granted
-                              ? 'Active for Indian banking SMS templates'
-                              : 'Enabled, but Android SMS permission is not granted'
-                          : 'Disabled · tap to set up',
-                  value:
-                      settings.isSmsDetectionEnabled &&
-                      ingestionStatus?.smsPermission ==
-                          IngestionPermissionState.granted,
-                  onChanged: (val) {
-                    if (val) {
-                      _push(context, const SmsPermissionScreen());
-                    } else {
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .updateSettings(
-                            settings.copyWith(isSmsDetectionEnabled: false),
-                          );
-                    }
-                  },
-                ),
-                const FfRow(
-                  icon: Icons.email_outlined,
-                  title: 'Bank Email Detection',
-                  subtitle:
-                      'Not configured · Gmail OAuth and scanning are unavailable in this build',
-                  detail: 'Unavailable',
-                  onTap: null,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: FfSpace.md),
-            IngestionDiagnosticsCard(
-              settings: settings,
-              ingestionStatus: ingestionStatus,
-              awaitingReview: awaitingReview,
-            ),
-
-            const SizedBox(height: FfSpace.xl),
-
-            // ── 4. Data Reset (Danger zone) ──────────────────────────────────
-            const FfSectionHeader(title: 'Data Reset'),
-            FfCard(
-              variant: FfCardVariant.warning,
-              padding: const EdgeInsets.all(FfSpace.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        size: 20,
-                        color: context.ff.color.statusError,
-                      ),
-                      const SizedBox(width: FfSpace.xs),
-                      Text(
-                        'Wipe All App Data',
-                        style: context.ff.text.titleSm.copyWith(
-                          color: context.ff.color.statusError,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  Text(
-                    'Permanently deletes all stored transactions, accounts, loans, and security keys from this device. Cannot be undone.',
-                    style: context.ff.text.bodySm.copyWith(
-                      color: context.ff.color.textSecondary,
+    return Scaffold(
+      backgroundColor: context.ff.color.surfacePage,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
+            SliverPersistentHeader(
+              pinned: _isSearchOpen,
+              delegate: FfPageHeaderSliverDelegate(
+                height: FfPageHeader.totalHeight,
+                isPinned: _isSearchOpen,
+                child: FfPageHeader(
+                  title: 'Settings',
+                  subtitle: 'Preferences & privacy',
+                  onBack:
+                      canPop ? () => Navigator.of(context).maybePop() : null,
+                  isSearchOpen: _isSearchOpen,
+                  searchController: _searchController,
+                  searchFocusNode: _searchFocusNode,
+                  searchHint: 'Search settings, e.g. PIN, theme, SMS…',
+                  onSearchChanged: (val) => setState(() => _searchQuery = val),
+                  onSearchClear:
+                      () => setState(() {
+                        _searchController.clear();
+                        _searchQuery = '';
+                      }),
+                  onCloseSearch: _closeSearch,
+                  actions: [
+                    FfCircleButton(
+                      icon: Icons.search_rounded,
+                      tooltip: 'Search settings',
+                      soft: true,
+                      onPressed: _openSearch,
                     ),
-                  ),
-                  const SizedBox(height: FfSpace.md),
-                  Semantics(
-                    label:
-                        'Hold 2.5s to wipe all local data — destructive action',
-                    child: FfHoldToConfirmButton(
-                      label: 'Hold 2.5s to Wipe All Local Data',
-                      holdingLabel: 'Wiping all local data in 2.5s...',
-                      onConfirmed: () async {
-                        await ref
-                            .read(settingsControllerProvider.notifier)
-                            .resetAllData();
-                        if (context.mounted) {
-                          FfToast.show(
-                            context,
-                            message: 'All local data was wiped.',
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                FfSpace.pageMargin,
+                FfSpace.md,
+                FfSpace.pageMargin,
+                FfSpace.x4l,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // ── If Searching: Show Matching Results ──────────────────────────
+                  if (isSearching) ...[
+                    SettingsSearchResults(
+                      results: searchMatches,
+                      onSelect:
+                          (entry) => _handleDestination(
+                            context,
+                            entry.destination,
+                            settings,
+                          ),
+                    ),
+                  ] else ...[
+                    // ── 1. Appearance ────────────────────────────────────────────────
+                    const FfSectionHeader(title: 'Appearance'),
+                    FfGroupedContainer(
+                      dividerInset: FfRowLeading.icon,
+                      children: [
+                        FfRow(
+                          icon: Icons.palette_outlined,
+                          title: 'Theme',
+                          detail: settings.themePreference.displayName,
+                          onTap:
+                              () => showSettingsThemePicker(
+                                context,
+                                ref,
+                                settings,
+                              ),
+                        ),
+                        FfRow(
+                          icon: Icons.payments_outlined,
+                          title: 'Currency',
+                          detail: () {
+                            final currency = AppCurrency.fromCode(
+                              settings.currencyCode,
+                            );
+                            return '${currency.symbol} ${currency.code}';
+                          }(),
+                          onTap:
+                              () => showSettingsCurrencyPicker(
+                                context,
+                                ref,
+                                settings,
+                              ),
+                        ),
+                      ],
+                    ),
 
-            const SizedBox(height: FfSpace.x4l),
+                    const SizedBox(height: FfSpace.xl),
+
+                    // ── 2. Alerts & Notifications ────────────────────────────────────
+                    const FfSectionHeader(title: 'Alerts & Notifications'),
+                    FfGroupedContainer(
+                      dividerInset: FfRowLeading.icon,
+                      children: [
+                        FfRow.toggle(
+                          icon: Icons.notifications_outlined,
+                          title: 'All Alerts & Notifications',
+                          subtitle:
+                              'Master switch for local alerts and notifications',
+                          value:
+                              settings.isAlertsEnabled &&
+                              settings.isLocalNotificationsEnabled,
+                          onChanged: (val) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(
+                                    isAlertsEnabled: val,
+                                    isLocalNotificationsEnabled: val,
+                                  ),
+                                );
+                          },
+                        ),
+                        FfRow(
+                          icon: Icons.tune_rounded,
+                          title: 'Notification & Alert Preferences',
+                          subtitle:
+                              'Categories, lock screen privacy & permissions',
+                          onTap: () => AlertSettingsSheet.show(context),
+                        ),
+                        FfRow.toggle(
+                          icon: Icons.rate_review_outlined,
+                          title: 'Needs Review Alerts',
+                          subtitle:
+                              'Remind when imported transactions need confirmation',
+                          value:
+                              settings.isNeedsReviewNotificationsEnabled &&
+                              settings.isNeedsReviewAlertsEnabled,
+                          enabled:
+                              settings.isAlertsEnabled &&
+                              settings.isLocalNotificationsEnabled,
+                          onChanged: (val) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(
+                                    isNeedsReviewNotificationsEnabled: val,
+                                    isNeedsReviewAlertsEnabled: val,
+                                  ),
+                                );
+                          },
+                        ),
+                        FfRow.toggle(
+                          icon: Icons.pie_chart_outline_rounded,
+                          title: 'Budget Alerts',
+                          subtitle: 'Notify when spending approaches limit',
+                          value:
+                              settings.isBudgetNotificationEnabled &&
+                              settings.isBudgetAlertsEnabled,
+                          enabled:
+                              settings.isAlertsEnabled &&
+                              settings.isLocalNotificationsEnabled,
+                          onChanged: (val) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(
+                                    isBudgetNotificationEnabled: val,
+                                    isBudgetAlertsEnabled: val,
+                                  ),
+                                );
+                          },
+                        ),
+                        FfRow.toggle(
+                          icon: Icons.repeat_rounded,
+                          title: 'Subscription Alerts',
+                          subtitle: 'Notify before renewal dates',
+                          value:
+                              settings.isSubscriptionNotificationEnabled &&
+                              settings.isSubscriptionAlertsEnabled,
+                          enabled:
+                              settings.isAlertsEnabled &&
+                              settings.isLocalNotificationsEnabled,
+                          onChanged: (val) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(
+                                    isSubscriptionNotificationEnabled: val,
+                                    isSubscriptionAlertsEnabled: val,
+                                  ),
+                                );
+                          },
+                        ),
+                        FfRow.toggle(
+                          icon: Icons.account_balance_outlined,
+                          title: 'Loan & EMI Alerts',
+                          subtitle: 'Remind before EMI due dates',
+                          value:
+                              settings.isLoanNotificationEnabled &&
+                              settings.isLoanAlertsEnabled,
+                          enabled:
+                              settings.isAlertsEnabled &&
+                              settings.isLocalNotificationsEnabled,
+                          onChanged: (val) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(
+                                    isLoanNotificationEnabled: val,
+                                    isLoanAlertsEnabled: val,
+                                  ),
+                                );
+                          },
+                        ),
+                        FfRow.toggle(
+                          icon: Icons.backup_outlined,
+                          title: 'Backup Reminder',
+                          subtitle: 'Periodic reminder to create a backup',
+                          value:
+                              settings.isBackupNotificationEnabled &&
+                              settings.isBackupReminderEnabled,
+                          enabled:
+                              settings.isAlertsEnabled &&
+                              settings.isLocalNotificationsEnabled,
+                          onChanged: (val) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(
+                                    isBackupNotificationEnabled: val,
+                                    isBackupReminderEnabled: val,
+                                  ),
+                                );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: FfSpace.xl),
+
+                    // ── 3. Transaction Ingestion ─────────────────────────────────────
+                    const FfSectionHeader(title: 'Transaction Ingestion'),
+                    FfGroupedContainer(
+                      dividerInset: FfRowLeading.icon,
+                      children: [
+                        FfRow.toggle(
+                          icon: Icons.notifications_active_outlined,
+                          title: 'Notification Detection',
+                          subtitle:
+                              settings.isNotificationDetectionEnabled
+                                  ? ingestionStatus?.notificationAccess == true
+                                      ? 'Active for ${settings.selectedNotificationPackages.length} payment apps'
+                                      : 'Enabled, but Android access is not allowed'
+                                  : 'Disabled · tap to set up',
+                          value:
+                              settings.isNotificationDetectionEnabled &&
+                              ingestionStatus?.notificationAccess == true,
+                          onChanged: (val) {
+                            if (val) {
+                              _push(
+                                context,
+                                const NotificationPermissionScreen(),
+                              );
+                            } else {
+                              ref
+                                  .read(settingsControllerProvider.notifier)
+                                  .updateSettings(
+                                    settings.copyWith(
+                                      isNotificationDetectionEnabled: false,
+                                    ),
+                                  );
+                            }
+                          },
+                        ),
+                        FfRow.toggle(
+                          icon: Icons.sms_outlined,
+                          title: 'Bank SMS Detection',
+                          subtitle:
+                              settings.isSmsDetectionEnabled
+                                  ? ingestionStatus?.smsPermission ==
+                                          IngestionPermissionState.granted
+                                      ? 'Active for Indian banking SMS templates'
+                                      : 'Enabled, but Android SMS permission is not granted'
+                                  : 'Disabled · tap to set up',
+                          value:
+                              settings.isSmsDetectionEnabled &&
+                              ingestionStatus?.smsPermission ==
+                                  IngestionPermissionState.granted,
+                          onChanged: (val) {
+                            if (val) {
+                              _push(context, const SmsPermissionScreen());
+                            } else {
+                              ref
+                                  .read(settingsControllerProvider.notifier)
+                                  .updateSettings(
+                                    settings.copyWith(
+                                      isSmsDetectionEnabled: false,
+                                    ),
+                                  );
+                            }
+                          },
+                        ),
+                        const FfRow(
+                          icon: Icons.email_outlined,
+                          title: 'Bank Email Detection',
+                          subtitle:
+                              'Not configured · Gmail OAuth and scanning are unavailable in this build',
+                          detail: 'Unavailable',
+                          onTap: null,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: FfSpace.md),
+                    IngestionDiagnosticsCard(
+                      settings: settings,
+                      ingestionStatus: ingestionStatus,
+                      awaitingReview: awaitingReview,
+                    ),
+
+                    const SizedBox(height: FfSpace.xl),
+
+                    // ── 4. Data Reset (Danger zone) ──────────────────────────────────
+                    const FfSectionHeader(title: 'Data Reset'),
+                    FfCard(
+                      variant: FfCardVariant.warning,
+                      padding: const EdgeInsets.all(FfSpace.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 20,
+                                color: context.ff.color.statusError,
+                              ),
+                              const SizedBox(width: FfSpace.xs),
+                              Text(
+                                'Wipe All App Data',
+                                style: context.ff.text.titleSm.copyWith(
+                                  color: context.ff.color.statusError,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: FfSpace.xs),
+                          Text(
+                            'Permanently deletes all stored transactions, accounts, loans, and security keys from this device. Cannot be undone.',
+                            style: context.ff.text.bodySm.copyWith(
+                              color: context.ff.color.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: FfSpace.md),
+                          Semantics(
+                            label:
+                                'Hold 2.5s to wipe all local data — destructive action',
+                            child: FfHoldToConfirmButton(
+                              label: 'Hold 2.5s to Wipe All Local Data',
+                              holdingLabel: 'Wiping all local data in 2.5s...',
+                              onConfirmed: () async {
+                                await ref
+                                    .read(settingsControllerProvider.notifier)
+                                    .resetAllData();
+                                if (context.mounted) {
+                                  FfToast.show(
+                                    context,
+                                    message: 'All local data was wiped.',
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: FfSpace.x4l),
+                  ],
+                ]),
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
