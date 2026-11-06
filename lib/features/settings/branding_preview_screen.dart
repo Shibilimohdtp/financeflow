@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../shared/widgets/financeflow_mark.dart';
-import '../../theme/stillwater_colors.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
+import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/ff.dart';
 
-/// Internal Branding & Stillwater Design System Preview Screen
+/// Internal Branding & Stillwater Bloom Design System Preview Screen (DS-B19).
 class BrandingPreviewScreen extends StatelessWidget {
   const BrandingPreviewScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final isDark = theme.brightness == Brightness.dark;
-
     return FfPageScaffold(
       title: 'Stillwater Branding Showcase',
       subtitle: 'Design system preview',
@@ -48,7 +43,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: FfSpace.md),
                 Text(
-                  'The Stillwater Mark · Calm Financial Control',
+                  'The Stillwater Ripple · Calm Financial Control',
                   style: context.ff.text.bodySm.copyWith(
                     color: context.ff.color.secondary,
                     fontWeight: FontWeight.w600,
@@ -70,20 +65,20 @@ class BrandingPreviewScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
-                    color: StillwaterColors.lightSurfaceApp,
+                    color: const Color(0xFFF3F2EC),
                     borderRadius: BorderRadius.circular(FfRadius.md),
                     border: Border.all(
-                      color: StillwaterColors.lightBorderHairline,
+                      color: const Color(0xFFE3E3D9),
                     ),
                   ),
                   child: Column(
                     children: [
-                      FinanceFlowMark(size: 44, variant: MarkVariant.daylight),
-                      SizedBox(height: FfSpace.sm),
+                      const FinanceFlowMark(size: 44, variant: MarkVariant.daylight),
+                      const SizedBox(height: FfSpace.sm),
                       Text(
                         'Daylight',
                         style: context.ff.text.label.copyWith(
-                          color: StillwaterColors.lightTextPrimary,
+                          color: const Color(0xFF1B1D17),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -98,20 +93,20 @@ class BrandingPreviewScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
-                    color: StillwaterColors.darkSurfaceApp,
+                    color: const Color(0xFF10120E),
                     borderRadius: BorderRadius.circular(FfRadius.md),
                     border: Border.all(
-                      color: StillwaterColors.darkBorderHairline,
+                      color: const Color(0xFF2C3024),
                     ),
                   ),
                   child: Column(
                     children: [
-                      FinanceFlowMark(size: 44, variant: MarkVariant.deepWater),
-                      SizedBox(height: FfSpace.sm),
+                      const FinanceFlowMark(size: 44, variant: MarkVariant.deepWater),
+                      const SizedBox(height: FfSpace.sm),
                       Text(
-                        'Lichen Ledger · Dark',
+                        'Deep Water',
                         style: context.ff.text.label.copyWith(
-                          color: StillwaterColors.darkTextPrimary,
+                          color: const Color(0xFFE4E4DC),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -126,16 +121,16 @@ class BrandingPreviewScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(FfSpace.md),
                   decoration: BoxDecoration(
-                    color: StillwaterColors.lightSecInk,
+                    color: const Color(0xFF1B1D17),
                     borderRadius: BorderRadius.circular(FfRadius.md),
                   ),
                   child: Column(
                     children: [
-                      FinanceFlowMark(
+                      const FinanceFlowMark(
                         size: 44,
                         variant: MarkVariant.monochrome,
                       ),
-                      SizedBox(height: FfSpace.sm),
+                      const SizedBox(height: FfSpace.sm),
                       Text(
                         'Monochrome',
                         style: context.ff.text.label.copyWith(
@@ -167,17 +162,17 @@ class BrandingPreviewScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _buildSizeRow(18, '18dp — Status Bar & Compact Indicators'),
-                _Divider(),
-                _buildSizeRow(24, '24dp — Standard Navigation & Tab Icons'),
-                _Divider(),
-                _buildSizeRow(32, '32dp — Inset Tile & Badge Icons'),
-                _Divider(),
-                _buildSizeRow(48, '48dp — Dialog Headers & Cards'),
-                _Divider(),
-                _buildSizeRow(72, '72dp — Lock Screen & Keypad Header'),
-                _Divider(),
-                _buildSizeRow(96, '96dp — Splash & Feature Hero Displays'),
+                _buildSizeRow(18, '18dp — Status Bar & Compact Indicators', context),
+                const FfDivider(),
+                _buildSizeRow(24, '24dp — Standard Navigation & Notification Icon', context),
+                const FfDivider(),
+                _buildSizeRow(32, '32dp — Inset Tile & Badge Icons', context),
+                const FfDivider(),
+                _buildSizeRow(48, '48dp — Dialog Headers & Cards', context),
+                const FfDivider(),
+                _buildSizeRow(72, '72dp — Lock Screen & Keypad Header', context),
+                const FfDivider(),
+                _buildSizeRow(96, '96dp — Splash & Feature Hero Displays', context),
               ],
             ),
           ),
@@ -203,33 +198,35 @@ class BrandingPreviewScreen extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: StillwaterColors.lightPrimary,
+                      color: const Color(0xFFF3F2EC),
                       borderRadius: BorderRadius.circular(FfRadius.md),
+                      border: Border.all(color: context.ff.color.borderSubtle),
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
                         size: 28,
-                        variant: MarkVariant.monochrome,
+                        variant: MarkVariant.daylight,
                       ),
                     ),
                   ),
                   title: const Text('Squircle Launcher Icon'),
-                  subtitle: const Text('Android & iOS adaptive mask'),
+                  subtitle: const Text('Android adaptive 66dp safe zone'),
                   trailing: const FfPrivacyBadge(label: 'Verified'),
                 ),
-                _Divider(),
+                const FfDivider(),
                 ListTile(
                   leading: Container(
                     width: 44,
                     height: 44,
-                    decoration: const BoxDecoration(
-                      color: StillwaterColors.lightPrimary,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F2EC),
                       shape: BoxShape.circle,
+                      border: Border.all(color: context.ff.color.borderSubtle),
                     ),
                     child: const Center(
                       child: FinanceFlowMark(
                         size: 28,
-                        variant: MarkVariant.monochrome,
+                        variant: MarkVariant.daylight,
                       ),
                     ),
                   ),
@@ -237,16 +234,13 @@ class BrandingPreviewScreen extends StatelessWidget {
                   subtitle: const Text('Pixel & Android round mask'),
                   trailing: const FfPrivacyBadge(label: 'Verified'),
                 ),
-                _Divider(),
+                const FfDivider(),
                 ListTile(
                   leading: Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color:
-                          isDark
-                              ? const Color(0xFF1E2624)
-                              : const Color(0xFF37413E),
+                      color: const Color(0xFF1B1D17),
                       borderRadius: BorderRadius.circular(FfRadius.sm),
                     ),
                     child: const Center(
@@ -257,7 +251,7 @@ class BrandingPreviewScreen extends StatelessWidget {
                     ),
                   ),
                   title: const Text('Monochrome Notification Icon'),
-                  subtitle: const Text('Status bar 24dp white silhouette'),
+                  subtitle: const Text('Status bar 24dp white alpha silhouette'),
                   trailing: const FfPrivacyBadge(label: 'Verified'),
                 ),
               ],
@@ -269,7 +263,7 @@ class BrandingPreviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSizeRow(double size, String label) {
+  Widget _buildSizeRow(double size, String label, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
       child: Row(
@@ -282,19 +276,12 @@ class BrandingPreviewScreen extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              style: context.ff.text.bodySm.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const FfDivider();
   }
 }
 

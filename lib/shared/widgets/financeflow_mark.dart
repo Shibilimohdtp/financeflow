@@ -1,15 +1,14 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../theme/stillwater_colors.dart';
 import '../../theme/ff.dart';
+import '../../theme/palettes/bloom_primitives.dart';
 
-/// Branding variants for the Stillwater Mark
+/// Branding variants for the Stillwater Mark.
 enum MarkVariant { auto, daylight, deepWater, monochrome, security }
 
-/// The official FinanceFlow Stillwater Mark widget.
+/// The official FinanceFlow Stillwater Mark widget (Stillwater Bloom DS-B19).
 ///
 /// Renders resolution-independent vector geometry with rounded endcaps,
-/// fluid current arcs, and a warm marigold core spark.
+/// concentric squircle currents, and a central radiant lime spark droplet.
 class FinanceFlowMark extends StatelessWidget {
   final double size;
   final MarkVariant variant;
@@ -35,22 +34,18 @@ class FinanceFlowMark extends StatelessWidget {
       case MarkVariant.auto:
         primaryColor =
             customPrimaryColor ??
-            (isDark
-                ? StillwaterColors.darkPrimary
-                : StillwaterColors.lightPrimary);
+            (isDark ? BloomPrimitives.darkInk : BloomPrimitives.lightInk);
         accentColor =
             customAccentColor ??
-            (isDark
-                ? StillwaterColors.darkAccent
-                : StillwaterColors.lightAccentBright);
+            (isDark ? BloomPrimitives.darkSpark : BloomPrimitives.lightSpark);
         break;
       case MarkVariant.daylight:
-        primaryColor = customPrimaryColor ?? StillwaterColors.lightPrimary;
-        accentColor = customAccentColor ?? StillwaterColors.lightAccentBright;
+        primaryColor = customPrimaryColor ?? BloomPrimitives.lightInk;
+        accentColor = customAccentColor ?? BloomPrimitives.lightSpark;
         break;
       case MarkVariant.deepWater:
-        primaryColor = customPrimaryColor ?? StillwaterColors.darkPrimary;
-        accentColor = customAccentColor ?? StillwaterColors.darkAccent;
+        primaryColor = customPrimaryColor ?? BloomPrimitives.darkInk;
+        accentColor = customAccentColor ?? BloomPrimitives.darkSpark;
         break;
       case MarkVariant.monochrome:
         primaryColor = customPrimaryColor ?? Colors.white;
@@ -62,13 +57,16 @@ class FinanceFlowMark extends StatelessWidget {
         break;
     }
 
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _StillwaterMarkPainter(
-          primaryColor: primaryColor,
-          accentColor: accentColor,
+    return Semantics(
+      label: 'FinanceFlow logo mark',
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _StillwaterMarkPainter(
+            primaryColor: primaryColor,
+            accentColor: accentColor,
+          ),
         ),
       ),
     );
@@ -79,76 +77,60 @@ class _StillwaterMarkPainter extends CustomPainter {
   final Color primaryColor;
   final Color accentColor;
 
-  _StillwaterMarkPainter({
+  const _StillwaterMarkPainter({
     required this.primaryColor,
     required this.accentColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2.0;
-    final cy = size.height / 2.0;
-    final scale = size.width / 512.0;
+    final s = size.width / 512.0;
 
-    final primaryPaint =
+    final strokePaint1 =
         Paint()
           ..color = primaryColor
           ..style = PaintingStyle.stroke
+          ..strokeWidth = 34 * s
           ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
           ..isAntiAlias = true;
 
-    final accentPaint =
+    final strokePaint2 =
+        Paint()
+          ..color = primaryColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 28 * s
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..isAntiAlias = true;
+
+    // 1. Outer Squircle Current
+    final pOuter =
+        Path()
+          ..moveTo(196 * s, 120 * s)
+          ..cubicTo(144 * s, 142 * s, 116 * s, 192 * s, 116 * s, 256 * s)
+          ..cubicTo(116 * s, 352 * s, 168 * s, 404 * s, 256 * s, 404 * s)
+          ..cubicTo(344 * s, 404 * s, 396 * s, 352 * s, 396 * s, 256 * s)
+          ..cubicTo(396 * s, 160 * s, 344 * s, 108 * s, 256 * s, 108 * s);
+    canvas.drawPath(pOuter, strokePaint1);
+
+    // 2. Inner Squircle Current
+    final pInner =
+        Path()
+          ..moveTo(292 * s, 180 * s)
+          ..cubicTo(316 * s, 196 * s, 328 * s, 220 * s, 328 * s, 256 * s)
+          ..cubicTo(328 * s, 316 * s, 300 * s, 344 * s, 256 * s, 344 * s)
+          ..cubicTo(212 * s, 344 * s, 184 * s, 316 * s, 184 * s, 256 * s)
+          ..cubicTo(184 * s, 196 * s, 212 * s, 168 * s, 256 * s, 168 * s);
+    canvas.drawPath(pInner, strokePaint2);
+
+    // 3. Central Focal Lime Spark
+    final sparkPaint =
         Paint()
           ..color = accentColor
           ..style = PaintingStyle.fill
           ..isAntiAlias = true;
-
-    // 1. Outer Protective Arc (Still Water Boundary)
-    primaryPaint.strokeWidth = 40 * scale;
-    final outerRadius = 188 * scale;
-    final outerRect = Rect.fromCircle(
-      center: Offset(cx, cy),
-      radius: outerRadius,
-    );
-    canvas.drawArc(
-      outerRect,
-      -250 * (math.pi / 180),
-      315 * (math.pi / 180),
-      false,
-      primaryPaint,
-    );
-
-    // 2. Inner Ascending Current (Flow & F-Geometry)
-    primaryPaint.strokeWidth = 34 * scale;
-    final midRadius = 120 * scale;
-    final midRect = Rect.fromCircle(center: Offset(cx, cy), radius: midRadius);
-    canvas.drawArc(
-      midRect,
-      -180 * (math.pi / 180),
-      235 * (math.pi / 180),
-      false,
-      primaryPaint,
-    );
-
-    // 3. Horizon Wave Arc
-    primaryPaint.strokeWidth = 26 * scale;
-    final horizonRadius = 68 * scale;
-    final horizonRect = Rect.fromCircle(
-      center: Offset(cx, cy + (24 * scale)),
-      radius: horizonRadius,
-    );
-    canvas.drawArc(
-      horizonRect,
-      -170 * (math.pi / 180),
-      160 * (math.pi / 180),
-      false,
-      primaryPaint,
-    );
-
-    // 4. Central Protected Spark / Droplet
-    final dotCenter = Offset(cx, cy - (54 * scale));
-    final dotRadius = 28 * scale;
-    canvas.drawCircle(dotCenter, dotRadius, accentPaint);
+    canvas.drawCircle(Offset(256 * s, 256 * s), 24 * s, sparkPaint);
   }
 
   @override
@@ -158,7 +140,7 @@ class _StillwaterMarkPainter extends CustomPainter {
   }
 }
 
-/// The official FinanceFlow Wordmark widget
+/// The official FinanceFlow Wordmark widget (Stillwater Bloom DS-B19).
 class FinanceFlowWordmark extends StatelessWidget {
   final double fontSize;
   final Color? color;
@@ -173,63 +155,59 @@ class FinanceFlowWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final mainColor =
-        color ??
-        (isDark ? StillwaterColors.darkPrimary : StillwaterColors.lightPrimary);
-    final shoreColor =
-        isDark
-            ? StillwaterColors.darkSecondary
-            : StillwaterColors.lightSecondary;
+        color ?? (isDark ? BloomPrimitives.darkInk : BloomPrimitives.lightInk);
+    final secondaryColor =
+        isDark ? BloomPrimitives.darkText2 : BloomPrimitives.lightText2;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RichText(
-          text: TextSpan(
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: fontSize,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: mainColor,
-            ),
-            children: [
-              const TextSpan(text: 'Finance'),
-              TextSpan(
-                text: 'Flow',
-                style: TextStyle(
-                  color: shoreColor,
-                  fontWeight: FontWeight.w600,
-                ),
+    return Semantics(
+      label: 'FinanceFlow',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RichText(
+            text: TextSpan(
+              style: TextStyle(
+                fontFamily: 'Geist',
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.8,
+                color: mainColor,
               ),
-            ],
-          ),
-        ),
-        if (showTagline) ...[
-          const SizedBox(height: FfSpace.x3s),
-          Text(
-            'PRIVATE · LOCAL-FIRST',
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: fontSize * 0.38,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.5,
-              color:
-                  isDark
-                      ? StillwaterColors.darkTextTertiary
-                      : StillwaterColors.lightTextTertiary,
+              children: [
+                const TextSpan(text: 'Finance'),
+                TextSpan(
+                  text: 'Flow',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
+          if (showTagline) ...[
+            const SizedBox(height: FfSpace.x3s),
+            Text(
+              'STILL WATER FOR YOUR FINANCIAL LIFE',
+              style: TextStyle(
+                fontFamily: 'Geist',
+                fontSize: fontSize * 0.38,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.5,
+                color: secondaryColor,
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
 
-/// Full Logo lockup combining Mark and Wordmark
+/// Full Logo lockup combining Mark and Wordmark.
 class FinanceFlowLogo extends StatelessWidget {
   final double markSize;
   final double fontSize;
