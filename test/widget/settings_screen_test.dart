@@ -5,11 +5,14 @@ import 'package:financeflow/features/settings/settings_detail_screen.dart';
 import 'package:financeflow/features/transactions/transactions_controller.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/repositories/pending_transaction_repository.dart';
+import 'package:financeflow/repositories/settings_repository.dart';
 import 'package:financeflow/shared/widgets/ff_surfaces.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/fake_repositories.dart';
 
 void main() {
   Widget createMoreScreen({
@@ -21,6 +24,9 @@ void main() {
     return ProviderScope(
       overrides: [
         settingsStreamProvider.overrideWith((ref) => Stream.value(settings)),
+        settingsRepositoryProvider.overrideWithValue(
+          FakeSettingsRepository(settings),
+        ),
         filteredTransactionsProvider.overrideWith((ref) => Stream.value([])),
         pendingTransactionsStreamProvider.overrideWith(
           (ref) => Stream.value([]),
@@ -148,6 +154,61 @@ void main() {
 
         expect(find.text('More'), findsOneWidget);
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('quick settings strip renders and interacts', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createMoreScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Amounts'), findsOneWidget);
+      expect(find.text('App Lock'), findsOneWidget);
+      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Bank SMS'), findsOneWidget);
+
+      await tester.tap(find.text('Amounts'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'Settings search matches keywords and shows empty state on miss',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(createMoreScreen());
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('App Settings'));
+        await tester.pumpAndSettle();
+
+        // Search for 'pin'
+        final searchField = find.byType(TextField);
+        expect(searchField, findsOneWidget);
+        await tester.enterText(searchField, 'pin');
+        await tester.pumpAndSettle();
+
+        expect(find.text('App PIN lock'), findsOneWidget);
+
+        // Search for non-existent keyword
+        await tester.enterText(searchField, 'xyznomatch999');
+        await tester.pumpAndSettle();
+
+        expect(find.text('No settings found'), findsOneWidget);
+
+        // Clear query returns normal view
+        await tester.enterText(searchField, '');
+        await tester.pumpAndSettle();
+
+        expect(find.text('Theme'), findsOneWidget);
+        expect(find.text('Ledger View'), findsOneWidget);
       },
     );
   });

@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../models/app_settings.dart';
+import '../../shared/widgets/ff_badge.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_page_header.dart';
+import '../../shared/widgets/ff_quick_toggle.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_surfaces.dart';
@@ -21,6 +24,7 @@ import '../financial_health/financial_health_screen.dart';
 import '../ingestion/csv_import_screen.dart';
 import '../ingestion/needs_review_controller.dart';
 import '../ingestion/needs_review_screen.dart';
+import '../ingestion/permissions/sms_permission_screen.dart';
 import '../investments/investments_screen.dart';
 import '../loans/loans_screen.dart';
 import '../personal_debts/lending_borrowing_screen.dart';
@@ -32,8 +36,9 @@ import 'settings_controller.dart';
 import 'settings_detail_screen.dart';
 import 'widgets/more_vault_card.dart';
 
-/// The More navigation hub (tab 4): redesigned to Stillwater Bloom Pattern F
-/// on FfAurora, organizing finance modules, alerts, security, backup, and settings.
+/// The More navigation hub (tab 4): redesigned to Stillwater Bloom as the
+/// launcher hub on FfAurora, combining quick settings toggles, vault status,
+/// feature module launchers, and preferences.
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
@@ -47,6 +52,10 @@ class MoreScreen extends ConsumerWidget {
         ref.watch(settingsStreamProvider).value ?? const AppSettings();
     final pendingCount = ref.watch(pendingReviewCountProvider);
 
+    final isLockActive = settings.isPinEnabled || settings.isBiometricEnabled;
+    final isAmountsBlurred = settings.isPrivacyBlurEnabled;
+    final isSmsActive = settings.isSmsDetectionEnabled;
+
     return FfAurora(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -59,10 +68,103 @@ class MoreScreen extends ConsumerWidget {
             ),
             children: [
               // ── Header on Aurora ───────────────────────────────────────────
-              const FfPageHeader(
+              FfPageHeader(
                 title: 'More',
                 subtitle: 'Modules & preferences',
-                padding: EdgeInsetsDirectional.only(bottom: FfSpace.x2s),
+                padding: const EdgeInsetsDirectional.only(bottom: FfSpace.x2s),
+                actions: [
+                  FfCircleButton(
+                    icon: Icons.settings_outlined,
+                    tooltip: 'App Settings',
+                    onPressed:
+                        () => _push(context, const SettingsDetailScreen()),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: FfSpace.md),
+
+              // ── Quick Settings Strip ───────────────────────────────────────
+              FfQuickToggleStrip(
+                tiles: [
+                  FfQuickToggleTile(
+                    icon:
+                        isAmountsBlurred
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                    title: 'Amounts',
+                    statusText: isAmountsBlurred ? 'Hidden' : 'Shown',
+                    statusIcon:
+                        isAmountsBlurred
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                    isActive: isAmountsBlurred,
+                    onTap: () {
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setPrivacyBlurEnabled(!isAmountsBlurred);
+                    },
+                  ),
+                  FfQuickToggleTile(
+                    icon:
+                        isLockActive
+                            ? Icons.lock_outline_rounded
+                            : Icons.lock_open_rounded,
+                    title: 'App Lock',
+                    statusText: isLockActive ? 'Active' : 'Off',
+                    statusIcon:
+                        isLockActive
+                            ? Icons.shield_rounded
+                            : Icons.info_outline,
+                    isActive: isLockActive,
+                    onTap: () => _push(context, const SecuritySettingsScreen()),
+                  ),
+                  FfQuickToggleTile(
+                    icon:
+                        settings.themePreference == AppThemePreference.deepWater
+                            ? Icons.dark_mode_outlined
+                            : settings.themePreference ==
+                                AppThemePreference.daylight
+                            ? Icons.light_mode_outlined
+                            : Icons.brightness_auto_outlined,
+                    title: 'Theme',
+                    statusText:
+                        settings.themePreference == AppThemePreference.deepWater
+                            ? 'Dark'
+                            : settings.themePreference ==
+                                AppThemePreference.daylight
+                            ? 'Light'
+                            : 'Auto',
+                    statusIcon: Icons.palette_outlined,
+                    isActive:
+                        settings.themePreference != AppThemePreference.system,
+                    onTap: () => _push(context, const SettingsDetailScreen()),
+                  ),
+                  FfQuickToggleTile(
+                    icon:
+                        isSmsActive
+                            ? Icons.sms_outlined
+                            : Icons.sms_failed_outlined,
+                    title: 'Bank SMS',
+                    statusText: isSmsActive ? 'Active' : 'Off',
+                    statusIcon:
+                        isSmsActive
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                    isActive: isSmsActive,
+                    onTap: () {
+                      if (!isSmsActive) {
+                        _push(context, const SmsPermissionScreen());
+                      } else {
+                        ref
+                            .read(settingsControllerProvider.notifier)
+                            .updateSettings(
+                              settings.copyWith(isSmsDetectionEnabled: false),
+                            );
+                      }
+                    },
+                  ),
+                ],
               ),
 
               const SizedBox(height: FfSpace.lg),
@@ -134,7 +236,10 @@ class MoreScreen extends ConsumerWidget {
                             : 'No pending transactions',
                     trailing:
                         pendingCount > 0
-                            ? _CountBadge(count: pendingCount)
+                            ? FfBadge(
+                              label: '$pendingCount',
+                              tone: FfTone.warning,
+                            )
                             : null,
                     onTap: () => _push(context, const NeedsReviewScreen()),
                   ),
@@ -239,7 +344,7 @@ class MoreScreen extends ConsumerWidget {
 
               const SizedBox(height: FfSpace.x2l),
 
-              // ── 6. About Footer ────────────────────────────────────────────
+              // ── 6. About Footer ────────────────────────────────────
               Center(
                 child: Column(
                   children: [
@@ -281,29 +386,3 @@ class MoreScreen extends ConsumerWidget {
 
 /// Backwards compatibility alias for the More tab.
 typedef SettingsScreen = MoreScreen;
-
-class _CountBadge extends StatelessWidget {
-  final int count;
-  const _CountBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: FfSpace.xs,
-        vertical: FfSpace.x3s,
-      ),
-      decoration: BoxDecoration(
-        color: context.ff.color.accent.withValues(alpha: FfTint.subtle.alpha),
-        borderRadius: BorderRadius.circular(FfRadius.full),
-      ),
-      child: Text(
-        '$count',
-        style: context.ff.text.labelSm.copyWith(
-          fontWeight: FontWeight.w700,
-          color: context.ff.color.accent,
-        ),
-      ),
-    );
-  }
-}
