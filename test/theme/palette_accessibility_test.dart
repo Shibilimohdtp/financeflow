@@ -9,14 +9,10 @@ import 'package:financeflow/theme/ff_colors.dart';
 import 'package:financeflow/theme/ff_contrast.dart';
 import 'package:financeflow/theme/palettes/ff_palette.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart' show Brightness;
 import 'package:flutter_test/flutter_test.dart';
 
-const knownIssues = <String, String>{
-  'lichen/light: income vs expense under deuteranopia':
-      'Lichen expense is raspberry (ΔE 5.8 from income). DS-8 moves it to brick.',
-  'lichen/dark: income vs expense under deuteranopia':
-      'Same pair in dark mode (ΔE 9.7). Fixed by the DS-8 expense change.',
-};
+const knownIssues = <String, String>{};
 
 Map<String, String> _failures() {
   final failures = <String, String>{};
@@ -32,6 +28,15 @@ Map<String, String> _failures() {
           failures['$where: ${rule.id}'] =
               '${rule.use}: ${ratio.toStringAsFixed(2)}:1, '
               'needs ${rule.minimum}:1';
+        }
+      }
+      for (final check in FfHeroContrastRules.measure(
+        palette.heroesFor(mode == 'light' ? Brightness.light : Brightness.dark),
+        colors,
+      )) {
+        if (check.ratio < check.minimum) {
+          failures['$where: ${check.id}'] =
+              '${check.ratio.toStringAsFixed(2)}:1, needs ${check.minimum}:1';
         }
       }
       for (final vision in FfVision.values) {
@@ -89,9 +94,13 @@ void main() {
   test('every rule names roles that every palette defines', () {
     for (final palette in FfPalettes.all) {
       for (final rule in FfContrastRules.all) {
-        expect(palette.light.missingRoles, isNot(contains(rule.foreground)));
-        expect(palette.dark.missingRoles, isNot(contains(rule.background)));
+        for (final colors in [palette.light, palette.dark]) {
+          expect(colors.missingRoles, isNot(contains(rule.foreground)));
+          expect(colors.missingRoles, isNot(contains(rule.background)));
+        }
       }
+      expect(palette.heroesLight.missingTones, isEmpty);
+      expect(palette.heroesDark.missingTones, isEmpty);
     }
     // Disabled text is exempt from contrast rules (WCAG 1.4.3).
     expect(

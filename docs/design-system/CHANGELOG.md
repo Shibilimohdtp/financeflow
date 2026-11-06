@@ -4,7 +4,8 @@ The shared record for every chat working on FinanceFlow's look: tokens, componen
 redesigns. **Read this before starting UI work and update it in the same commit as your change.** It exists so
 two chats never redo or undo each other's work.
 
-The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-proposal.md).
+The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-proposal.md). The current visual
+direction, Stillwater Bloom, is in [01-bloom-proposal.md](01-bloom-proposal.md).
 
 ## How to use this file
 
@@ -31,8 +32,12 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | DS-5c Inputs (`FfTextField`, `FfSelect`, menus) | done (6ee02b2) | 6 amount inputs with custom styles move to `FfAmountField` in DS-6; 2 compact inline `DropdownButton`s (CSV column mapping, transaction purpose) move with their screens in DS-7 |
 | DS-6 Data display & charts | done (0392127) | ad-hoc status pills and stat layouts inside screens adopt `FfBadge`/`FfStatTile` in DS-7 |
 | DS-7a–g Feature migrations (token sweep) | done (commit "feat(ui): DS-7 …") | every feature folder except budgets now reads `context.ff` and `Ff*` tokens; per-screen restructuring (FfScaffold, FfBadge/FfStatTile adoption) happens in the screen redesigns |
+| DS-B1 Bloom tokens (palette, roles, heroes, shape, elevation, blur, grain, density, effects, theme builder) | done (this commit) | no screen edits; components adopt the new tokens in DS-B3 |
+| DS-B2 Bloom type (Geist, scale, split amounts) | not started | build-config change: startup gate |
+| DS-B3 Bloom components | not started | |
+| DS-B4–B6 Home, Money, Accounts/Loans in Bloom | not started | |
 | DS-7h Budgets migration | not started | blocked on the budgets redesign chat (In flight) |
-| DS-8 Refinement, new palettes, theme picker | not started | |
+| DS-8 Refinement, new palettes, theme picker | partly done by DS-B1 | Lichen refinements (expense brick, tertiary text, readable Undo, brighter cards) landed with Bloom; Tide, Graphite, picker and pure black remain |
 | DS-9 Remove shims, enable guardrails | not started | |
 | DS-10 Gallery, docs, one-token demo | not started | |
 
@@ -46,6 +51,7 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 
 | Date | Slice | Commit | What changed |
 |---|---|---|---|
+| 2026-11-06 | DS-B1 | this commit | Stillwater Bloom tokens, approved by the owner ([01-bloom-proposal.md](01-bloom-proposal.md)). Lichen now maps to `palettes/bloom_primitives.dart`: canvas `#F3F2EC`/`#10120E`, ink actions (`actionPrimary` is ink, so every filled button, FAB, switch and link turns ink), lime `spark` for highlights, the approved shared money set (expense brick), darker tertiary text, readable toast action (lime on ink). New roles: `auroraCool/Warm/Leaf`, `surfaceGlass`/`borderGlass`, `spark`/`onSpark`/`sparkContainer`, `statusWarningFill`/`onStatusWarningFill`. New `FfHeroes` extension with five gradients (moss, rose, dusk, tide, sand) per mode, read with `context.ff.hero(tone)`. `FfShape` + `FfSquircleBorder` (superellipse with 0.6 smoothing; Flutter 3.29 has no native one) drive cards, dialogs, pickers, menus, toasts; buttons, chips and FAB are pills. Radius scale 6/12/16/24/36/44, page margin 20 → 16, sheets and dialogs 36. New `FfDensity` (comfortable/compact), `FfElevation` (soft two-layer shadows, rim in dark), `FfBlur`, `FfGrain`, `FfEffects` + `FfEffectsScope` (reduced when the platform disables animations or asks for high contrast). Contrast rules grew from 90 to 121 per mode plus 48 hero checks (text and labels on the darkest stop and the lightest text zone); tightest is 4.63:1. Both known palette issues are fixed. `theme_parity_test.dart` became `theme_build_test.dart` (the DS-1 snapshot was retired as planned; `legacy_colors.dart` stays to pin the frozen `StillwaterColors`). `StillwaterColors` keeps its old values for budgets until DS-9. Screenshots and the one-token demo are in `screenshots/ds-b1/`. |
 | 2026-11-05 | DS-0 | 7c6e015 | Audit, proposal, palette preview, `tool/design_system_audit.dart`, this log, AGENTS.md pointer. |
 | 2026-11-05 | DS-7 | "feat(ui): DS-7 …" | Mechanical token sweep of 76 files in `lib/features` (all but budgets) and `lib/shared/widgets`, done by a scripted codemod and then hand-fixed. `StillwaterTokens.*` → `FfSpace`/`FfRadius`/`FfIconSize`/`FfMotion` and component tokens (1,437 sites); `Theme.of(context).textTheme` and raw `fontSize`/`TextStyle(...)` → `context.ff.text` roles (432); `colorScheme` and theme colour getters → `context.ff.color` roles (601); `finColors`/`statusColors`/`accentColors`/`secColors` → roles; alpha literals → `FfTint`/`FfOpacity` (105); numeric `SizedBox`/`EdgeInsets`/radius/`Duration` → steps (118). `FfTint.whisper` (0.04) and `FfOpacity.half`/`muted`/`high` were added so no value shifted. Shims (`StillwaterTokens`, `FfListRow`, `FfSnackbar`, `FfConfirmDialog`) stay for budgets until DS-9. Font sizes snap to the nearest role, so a few texts move by 1 dp (e.g. the overdue-EMI body is now `bodySm`); screenshots in `screenshots/ds-7/`. |
 | 2026-11-05 | DS-6 | 0392127 | `FfAmountText` now takes a `tone` instead of a raw `colorOverride` (13 sites converted), clamps text scale to 1.3× and hides blurred figures from screen readers. `FfAmountField` was rebuilt as the real money input (outlined, plus `.bare` for hero panels, two-decimal input, tone-coloured symbol); the 5 hand-built amount inputs now use it, including Add transaction's. New `FfProgressBar` (sizes, palette track, pace marker, percent semantics) replaced 13 linear bars; `FfLoading` replaced 11 bare spinners. New `FfBadge`, `FfKeyValueRow` (row geometry, so dividers align) and `FfStatTile`; 4 private detail-row widgets (28 uses) now render `FfKeyValueRow`. `FfCard` is tokenized with a `tone` for the tinted variant. Chart axis labels, bar highlight and donut labels use tokens; donut labels pick palette ink/paper instead of pure black/white. Screenshots in `screenshots/ds-6/` (visually unchanged, as intended). |
@@ -66,6 +72,10 @@ The plan and its reasoning are in [00-audit-and-proposal.md](00-audit-and-propos
 | 2026-11-05 | App name stays FinanceFlow, and the current Lichen look stays the default identity (refined, not replaced). | owner |
 | 2026-11-05 | Money colours are shared across palettes; income and expense must stay apart under colour blindness (ΔE ≥ 10). Other money types always carry an icon and a label. | owner (approved proposal) |
 | 2026-11-05 | Theme choice is stored in the existing `AppSettingsEntity.themeMode` string, so no Isar schema change is needed. | owner (approved proposal) |
+| 2026-11-06 | Stillwater Bloom is the new default look (direction A: evolve Lichen). Geist replaces Manrope/Fraunces (DS-B2); split amounts for hero/large/stat, inline for rows; grain, blur and glass only on heroes and the dock; floating dock replaces the bottom bar; primary actions are ink; about 75% resemblance to the reference. | owner |
+| 2026-11-06 | Lime (`spark`) is only ever a fill with `onSpark` ink on it, never text on a light surface. Hero text sits between the deep stop and the text zone; the glow corner carries no text. | DS-B1 |
+| 2026-11-06 | Shapes come from `FfShape.of(radius)`; `FfShape.style` switches squircle/rounded for the whole app. Swap `FfSquircleBorder` for `RoundedSuperellipseBorder` after a Flutter ≥ 3.32 upgrade, in that one file. | DS-B1 |
+| 2026-11-06 | `StillwaterColors` (legacy primitives) stays frozen at the pre-Bloom values; only semantic roles moved. Budgets code that still reads it keeps the old colours until DS-7h/DS-9. | DS-B1 |
 | 2026-11-05 | Space, radius, size and motion tokens are `const` statics. Colour and type are read from `context.ff`. | owner (approved proposal) |
 
 | 2026-11-05 | The design system is called **Stillwater**. Palettes are Lichen (default), Tide and Graphite, plus a pure-black dark switch. Sandstone stays in the preview only, unless the owner asks for it. Modes are plain Light and Dark. Code uses the `Ff` prefix. | owner |
@@ -92,7 +102,6 @@ These are the open items. Palette items are also listed in `knownIssues` in `tes
 
 | Issue | Where | Fixed by |
 |---|---|---|
-| Income and expense too similar under deuteranopia (ΔE 5.8 light, 9.7 dark) | Lichen palette | DS-8 (expense moves to brick) |
 | Text sizes 9 and 10 used in feature code, below the type scale | 6 files: budgets (4), the dashboard budget card and the alerts inbox badge | DS-7h and the screen redesigns |
 
 ## Leakage over time
@@ -109,6 +118,7 @@ Command: `dart run tool/design_system_audit.dart --shared` (lib/ minus lib/theme
 | 2026-11-05 | DS-5c | 5 | 22 | 162 | 55 | 142 | 41 | 25 | 80 | 4 | 3 | 0 | 2 | 9 |
 | 2026-11-05 | DS-6 | 5 | 22 | 158 | 55 | 140 | 41 | 24 | 80 | 4 | 3 | 0 | 2 | 8 |
 | 2026-11-05 | DS-7 | 5 | 22 | 158† | 55 | 31 | 7 | 4 | 21 | 4 | 3 | 0 | 2 | 8 |
+| 2026-11-06 | DS-B1 | 5 | 22 | 158 | 55 | 31 | 7 | 4 | 21 | 4 | 3 | 0 | 2 | 8 |
 
 \* Not new literals: formatting joined multi-line `EdgeInsets` calls onto one line, where the line-based check now counts them. The remaining 2 pickers and 3 sheets are in budgets (other chat).
 † The alpha check counts every `withValues(alpha:)`, including the token form `withValues(alpha: FfTint.faint)`; after DS-7 only budgets, models and `main.dart` still pass raw numbers. Static colours left: `lib/models/category_colors.dart` and `money_record.dart` (data-owned colours, DS-9) and budgets.
@@ -125,5 +135,6 @@ checked in light and dark; say where (golden, emulator, Pixel 7).
 | Loans list and loan detail (app bar alignment, two-line title) | DS-5a | 570f490 | golden capture, light and dark, before and after: `screenshots/ds-5a/` |
 | Settings hub, App Settings, Security (rows, groups, dividers, toggles) | DS-5b | cc2fae2 | golden capture, light and dark, before and after: `screenshots/ds-5b/` |
 | Loan, goal and category forms (fields, selects, search) | DS-5c | 6ee02b2 | golden capture, light and dark, before and after: `screenshots/ds-5c/` |
-| Loans list and loan detail (amounts, progress, key-value rows) | DS-6 | this commit | golden capture, light and dark, before and after: `screenshots/ds-6/` (unchanged by design) |
-| Every feature screen outside budgets (token sweep; Loans and Settings shown) | DS-7 | this commit | golden capture, light and dark, before and after: `screenshots/ds-7/` (text-role snapping only) |
+| Loans list and loan detail (amounts, progress, key-value rows) | DS-6 | 0392127 | golden capture, light and dark, before and after: `screenshots/ds-6/` (unchanged by design) |
+| Every feature screen outside budgets (token sweep; Loans and Settings shown) | DS-7 | 85c5e2a | golden capture, light and dark, before and after: `screenshots/ds-7/` (text-role snapping only) |
+| Loans, Settings rows, loan and account sheets, toast, confirm dialog, date picker (Bloom tokens app-wide) | DS-B1 | this commit | golden capture, light and dark, before and after: `screenshots/ds-b1/`; no device |

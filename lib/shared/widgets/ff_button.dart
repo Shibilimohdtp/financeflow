@@ -27,10 +27,8 @@ class FfButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(
-        size == FfButtonSize.sm ? FfRadius.sm : FfRadius.md,
-      ),
+    final shape = FfShape.of(
+      size == FfButtonSize.sm ? FfButtonTokens.radiusSm : FfButtonTokens.radius,
     );
 
     final double minHeight = switch (size) {

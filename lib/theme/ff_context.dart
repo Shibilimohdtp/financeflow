@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'ff_colors.dart';
+import 'ff_hero.dart';
 import 'ff_typography.dart';
 import 'palettes/ff_palette.dart';
 
@@ -8,10 +9,18 @@ import 'palettes/ff_palette.dart';
 /// of the active theme.
 @immutable
 class FfThemeData {
-  const FfThemeData({required this.color, required this.text});
+  const FfThemeData({
+    required this.color,
+    required this.text,
+    required this.heroes,
+  });
 
   final FfColors color;
   final FfText text;
+  final FfHeroes heroes;
+
+  /// One hero gradient of the active theme.
+  FfHeroColors hero(FfHeroTone tone) => heroes[tone];
 }
 
 extension FfContext on BuildContext {
@@ -28,6 +37,9 @@ extension FfContext on BuildContext {
     return FfThemeData(
       color: color,
       text: theme.extension<FfText>() ?? FfTypography.forColors(color),
+      heroes:
+          theme.extension<FfHeroes>() ??
+          FfPalettes.lichen.heroesFor(theme.brightness),
     );
   }
 }

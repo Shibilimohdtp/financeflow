@@ -6,6 +6,7 @@ import 'package:financeflow/shared/widgets/ff_pickers.dart';
 import 'package:financeflow/shared/widgets/ff_toast.dart';
 import 'package:financeflow/theme/ff_colors.dart';
 import 'package:financeflow/theme/ff_contrast.dart';
+import 'package:financeflow/theme/ff_shape.dart';
 import 'package:financeflow/theme/ff_theme.dart';
 import 'package:financeflow/theme/tokens/ff_component_tokens.dart';
 import 'package:flutter/material.dart';
@@ -306,12 +307,8 @@ void main() {
       testWidgets('pickers use the dialog shape from the theme', (
         tester,
       ) async {
-        expect(
-          theme.datePickerTheme.shape,
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(FfDialogTokens.radius),
-          ),
-        );
+        expect(theme.datePickerTheme.shape, FfShape.of(FfDialogTokens.radius));
+        expect(theme.datePickerTheme.shape, theme.dialogTheme.shape);
       });
     });
   }

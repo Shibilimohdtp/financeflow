@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 
 import 'ff_colors.dart';
+import 'ff_hero.dart';
 
 /// Accessibility measurements for palettes: WCAG contrast and colour-vision
 /// simulation. Used by the guardrail test (every palette, every mode) and by
@@ -99,8 +100,9 @@ class FfContrastRule {
     this.foreground,
     this.background,
     this.minimum,
-    this.use,
-  );
+    this.use, {
+    this.backdrop,
+  });
 
   final FfColorRole foreground;
   final FfColorRole background;
@@ -109,10 +111,20 @@ class FfContrastRule {
   /// Where the pair appears, in plain words.
   final String use;
 
-  double measure(FfColors colors) =>
-      FfContrast.ratio(colors[foreground], colors[background]);
+  /// For a translucent [background] (glass): what shows through it.
+  final FfColorRole? backdrop;
 
-  String get id => '${foreground.name} on ${background.name}';
+  double measure(FfColors colors) {
+    final bg =
+        backdrop == null
+            ? colors[background]
+            : Color.alphaBlend(colors[background], colors[backdrop!]);
+    return FfContrast.ratio(colors[foreground], bg);
+  }
+
+  String get id =>
+      '${foreground.name} on ${background.name}'
+      '${backdrop == null ? '' : ' over ${backdrop!.name}'}';
 }
 
 /// Every pair checked for every palette in both modes. When a component
@@ -148,10 +160,62 @@ abstract final class FfContrastRules {
     FfColorRole.statusError: 'Error text and field errors',
   };
 
+  /// Aurora stops behind the page: headers and labels may sit on any of them.
+  static const auroraStops = [
+    FfColorRole.auroraCool,
+    FfColorRole.auroraWarm,
+    FfColorRole.auroraLeaf,
+  ];
+
   static final List<FfContrastRule> all = [
     for (final bg in textSurfaces)
       for (final fg in textOnSurfaces.entries)
         FfContrastRule(fg.key, bg, _t, fg.value),
+
+    // Text on the aurora wash (page header, total balance).
+    for (final bg in auroraStops)
+      for (final fg in const [
+        FfColorRole.textPrimary,
+        FfColorRole.textSecondary,
+        FfColorRole.textTertiary,
+        FfColorRole.moneyIncome,
+        FfColorRole.moneyExpense,
+      ])
+        FfContrastRule(fg, bg, _t, 'Text on the aurora wash'),
+
+    // Glass pills and the dock, over the page and the aurora.
+    for (final backdrop in [FfColorRole.surfacePage, ...auroraStops])
+      for (final fg in const [
+        FfColorRole.textPrimary,
+        FfColorRole.textSecondary,
+      ])
+        FfContrastRule(
+          fg,
+          FfColorRole.surfaceGlass,
+          _t,
+          'Text on glass (dock, glass bar)',
+          backdrop: backdrop,
+        ),
+
+    // The lime spark is a fill with ink on it, never text on light.
+    const FfContrastRule(
+      FfColorRole.onSpark,
+      FfColorRole.spark,
+      _t,
+      'Chart bubble value, counter badge, check mark',
+    ),
+    const FfContrastRule(
+      FfColorRole.textPrimary,
+      FfColorRole.sparkContainer,
+      _t,
+      'Text on a soft spark highlight',
+    ),
+    const FfContrastRule(
+      FfColorRole.onStatusWarningFill,
+      FfColorRole.statusWarningFill,
+      _t,
+      'Warning badge glyph (the "!" carries the meaning)',
+    ),
 
     // Boundaries and focus.
     const FfContrastRule(
@@ -342,5 +406,40 @@ abstract final class FfContrastRules {
       ),
     ])
       FfContrastRule(fg, bg, _t, use),
+  ];
+}
+
+/// One measured pair on a hero gradient.
+typedef FfHeroContrast = ({String id, double ratio, double minimum});
+
+/// Contrast on the hero gradients. Text is checked against the darkest stop
+/// and the lightest point text may cross (`zone`), in full and secondary
+/// opacity, plus the spark marker on deep heroes.
+abstract final class FfHeroContrastRules {
+  static List<FfHeroContrast> measure(FfHeroes heroes, FfColors colors) => [
+    for (final tone in FfHeroTone.values)
+      ...() {
+        final h = heroes[tone];
+        return [
+          for (final (stop, bg) in [('deep', h.deep), ('zone', h.zone)]) ...[
+            (
+              id: 'hero ${tone.name}: text on $stop',
+              ratio: FfContrast.ratio(h.onHero, bg),
+              minimum: FfContrast.text,
+            ),
+            (
+              id: 'hero ${tone.name}: label on $stop',
+              ratio: FfContrast.ratio(h.onHeroSecondary, bg),
+              minimum: FfContrast.text,
+            ),
+          ],
+          if (!h.isPale)
+            (
+              id: 'hero ${tone.name}: spark marker on zone',
+              ratio: FfContrast.ratio(colors.spark, h.zone),
+              minimum: FfContrast.ui,
+            ),
+        ];
+      }(),
   ];
 }

@@ -1,0 +1,511 @@
+<meta charset="utf-8">
+<title>Stillwater Bloom proposal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500&family=Manrope:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one reading column (proposal text) that widens to full-bleed rows for previews; phones sit in a scrollable strip. */
+:root{
+  --bg:#F3F2EC; --paper:#FEFEFA; --sunk:#ECEBE3; --fg:#1C1E18; --fg2:#575B50; --fg3:#62665A;
+  --line:#E3E3D9; --ink:#1B1D17; --on-ink:#F6F7EF; --lime:#CBE94C; --ok:#17694F; --bad:#A8432B;
+  --f-display:"Geist","Inter",system-ui,sans-serif; --f-body:"Manrope",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10120E; --paper:#191C16; --sunk:#0C0E0A; --fg:#ECEEE4; --fg2:#B8BDAE; --fg3:#9EA394;
+  --line:#2D3228; --ink:#ECEEE3; --on-ink:#151711; --lime:#C6E44A; --ok:#86D6A9; --bad:#F7A285; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10120E; --paper:#191C16; --sunk:#0C0E0A; --fg:#ECEEE4; --fg2:#B8BDAE; --fg3:#9EA394;
+  --line:#2D3228; --ink:#ECEEE3; --on-ink:#151711; --lime:#C6E44A; --ok:#86D6A9; --bad:#F7A285; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.col{max-width:760px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:-.02em;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,6vw,56px);line-height:1.05;font-weight:300}
+h2{font-size:28px;line-height:1.2;margin-bottom:14px}
+h3{font-size:18px;font-weight:500;margin:22px 0 8px}
+p{margin:0 0 12px} small,.muted{color:var(--fg2)}
+.eyebrow{font:500 12px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);margin-bottom:10px}
+.lede{font-size:18px;color:var(--fg2);max-width:62ch}
+.status{display:inline-flex;gap:8px;align-items:center;background:var(--ink);color:var(--on-ink);border-radius:999px;padding:6px 14px;font-size:13px;margin-top:18px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--lime)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:20px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--fg2);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+code,pre{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12.5px}
+pre{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px;overflow-x:auto;margin:8px 0 0;line-height:1.5}
+ul{margin:0 0 12px;padding-left:20px} li{margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.box{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:20px;min-width:0}
+.rec{border:1.5px solid var(--fg);}
+.tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--lime);color:#1B1D17}
+.pass{color:var(--ok);font-weight:600}.fail{color:var(--bad);font-weight:600}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+
+/* ---------- swatches ---------- */
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.sw div{border-radius:16px;padding:58px 10px 10px;font-size:11px;line-height:1.35;border:1px solid rgba(0,0,0,.06)}
+.sw b{display:block;font-size:12px}
+
+/* ---------- the FinanceFlow phone mock (explicit tokens per mode; not themed by the viewer) ---------- */
+.strip{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 18px;scroll-snap-type:x proximity}
+.ph{
+  --cv:#F3F2EC;--a1:#E9E3F1;--a2:#F7E4DC;--a3:#E4ECD3;--card:#FEFEFA;--sunk:#ECEBE3;--hair:#E3E3D9;--ctl:#858979;
+  --t1:#1C1E18;--t2:#575B50;--t3:#62665A;--ink:#1B1D17;--onink:#F6F7EF;--lime:#CBE94C;--onlime:#1B1D17;--limesoft:#EEF6CC;
+  --inc:#17694F;--exp:#A8432B;--trf:#5B6570;--glass:rgba(255,255,255,.62);--glassline:rgba(255,255,255,.75);--shadow:0 1px 2px rgba(27,29,23,.04),0 12px 32px -12px rgba(27,29,23,.14);
+  --warn:#F2A33A;
+  flex:0 0 360px;width:360px;height:760px;border-radius:44px;overflow:hidden;position:relative;scroll-snap-align:start;
+  font-family:var(--f-ui,"Geist"),"Inter",system-ui,sans-serif;color:var(--t1);
+  background:
+    radial-gradient(120% 60% at 0% 0%,var(--a1) 0%,transparent 60%),
+    radial-gradient(90% 55% at 100% 8%,var(--a2) 0%,transparent 62%),
+    radial-gradient(110% 50% at 40% 46%,var(--a3) 0%,transparent 70%),
+    var(--cv);
+  box-shadow:0 0 0 1px rgba(0,0,0,.08),0 30px 60px -30px rgba(0,0,0,.35);
+  font-feature-settings:"tnum" 1;
+}
+.ph.dk{
+  --cv:#10120E;--a1:#1C1724;--a2:#21181A;--a3:#151C10;--card:#191C16;--sunk:#0C0E0A;--hair:#2D3228;--ctl:#7E8674;
+  --t1:#ECEEE4;--t2:#B8BDAE;--t3:#9EA394;--ink:#ECEEE3;--onink:#151711;--lime:#C6E44A;--onlime:#151711;--limesoft:#2C3518;
+  --inc:#86D6A9;--exp:#F7A285;--trf:#B4C1CE;--glass:rgba(42,46,37,.70);--glassline:rgba(255,255,255,.10);--shadow:0 0 0 1px rgba(255,255,255,.04),0 12px 32px -12px rgba(0,0,0,.6);
+}
+.ph .scroll{position:absolute;inset:0;padding:40px 16px 120px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.sq{border-radius:36px;corner-shape:superellipse(1.6)}
+.sq-lg{border-radius:44px;corner-shape:superellipse(1.6)}
+.sq-md{border-radius:24px;corner-shape:superellipse(1.6)}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1}
+.cbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--ctl);display:grid;place-items:center;flex:none;color:var(--t1);background:transparent;position:relative}
+.cbtn.soft{border-color:var(--hair)}
+.cbtn svg,.ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.inkbtn{width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--onink);display:grid;place-items:center;flex:none}
+.inkbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6}
+.hero .inkbtn{background:#1B1D17;color:#F6F7EF}
+.lbl{font-size:12.5px;color:var(--t2);font-weight:400;letter-spacing:.005em}
+.ttl{font-size:22px;font-weight:400;letter-spacing:-.02em}
+.num{font-weight:300;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.num .u{font-size:.42em;font-weight:400;letter-spacing:0;color:var(--t2);vertical-align:.95em;margin-right:2px}
+.num .d{font-size:.45em;font-weight:300;color:var(--t2);letter-spacing:0}
+.num .r{font-size:.4em;color:var(--t3);font-weight:300;letter-spacing:0}
+.card{background:var(--card);box-shadow:var(--shadow);padding:18px}
+.pills{display:flex;gap:8px}
+.pill{height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--ctl);display:inline-flex;align-items:center;font-size:14px;white-space:nowrap;color:var(--t1)}
+.pill.on{background:var(--ink);color:var(--onink);border-color:var(--ink)}
+.search{height:48px;border-radius:999px;border:1px solid var(--ctl);display:flex;align-items:center;gap:10px;padding:0 18px;color:var(--t2);font-size:14px}
+.search svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5}
+.glass{background:var(--glass);border:1px solid var(--glassline);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
+.ondev{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:11.5px;color:var(--t2)}
+.ondev svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.6}
+.limechip{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:var(--lime);color:var(--onlime);font-size:12px;font-weight:500}
+
+/* hero gradient cards: deep stop -> text zone -> glow (glow area carries no text) */
+.hero{position:relative;color:#F8F9EF;padding:20px;overflow:hidden;isolation:isolate}
+.hero::after{content:"";position:absolute;inset:0;background-image:var(--grain,none);background-size:96px;mix-blend-mode:soft-light;opacity:.3;z-index:-1;pointer-events:none}
+.hero::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.08);pointer-events:none}
+.h-moss{background:radial-gradient(70% 60% at 92% 100%,#B5D24E 0%,rgba(181,210,78,0) 70%),linear-gradient(150deg,#27310F 0%,#4A5C1E 62%,#6E8429 100%);z-index:0}
+.h-rose{color:#1C1E18;background:radial-gradient(70% 60% at 95% 100%,#F9EAD9 0%,rgba(249,234,217,0) 70%),linear-gradient(150deg,#D9AEBE 0%,#E9C6C9 45%,#F1D6CB 100%)}
+.h-dusk{background:radial-gradient(70% 60% at 92% 100%,#A7889F 0%,rgba(167,136,159,0) 70%),linear-gradient(150deg,#2B2233 0%,#54445C 100%)}
+.h-tide{background:radial-gradient(70% 60% at 92% 100%,#7FBCA9 0%,rgba(127,188,169,0) 70%),linear-gradient(150deg,#173238 0%,#2C5A5E 100%)}
+.h-sand{color:#1C1E18;background:radial-gradient(70% 60% at 92% 100%,#F7F1E2 0%,rgba(247,241,226,0) 70%),linear-gradient(150deg,#D8C8A8 0%,#ECE2CC 100%)}
+.dk .h-moss{background:radial-gradient(70% 60% at 92% 100%,#8EA83A 0%,rgba(142,168,58,0) 70%),linear-gradient(150deg,#1A220A 0%,#3F4F19 70%,#55691F 100%)}
+.dk .h-rose{color:#F8EEF0;background:radial-gradient(70% 60% at 95% 100%,#A57078 0%,rgba(165,112,120,0) 70%),linear-gradient(150deg,#2E1B23 0%,#5B3843 100%)}
+.hero .lbl{color:currentColor;opacity:.78}
+.hero .num .u,.hero .num .d,.hero .num .r{color:currentColor;opacity:.75}
+.ring{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;position:relative;flex:none}
+.ring svg.arc{position:absolute;inset:0;width:48px;height:48px;transform:rotate(-90deg)}
+.ring .ico{display:grid;place-items:center}
+.dots{display:grid;grid-auto-flow:column;grid-template-rows:repeat(3,4px);gap:5px 5px}
+.dots i{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.28}
+.dots i.f{opacity:1}
+.dots i.l{background:#CBE94C;opacity:1}
+
+/* rows (compact density) */
+.list{background:var(--card);box-shadow:var(--shadow);padding:6px 0}
+.tx{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;position:relative}
+.tx+.tx::before{content:"";position:absolute;top:0;left:68px;right:16px;border-top:1px solid var(--hair)}
+.tile{width:40px;height:40px;border-radius:50%;border:1px solid var(--hair);display:grid;place-items:center;flex:none;color:var(--t1);position:relative}
+.tile svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tx .m{flex:1;min-width:0}
+.tx .m b{display:block;font-weight:400;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .m span{font-size:12.5px;color:var(--t2)}
+.amt{font-size:15px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:-.01em;text-align:right}
+.amt.in{color:var(--inc)}.amt.ex{color:var(--t1)}
+.amt small{display:block;font-size:11.5px;color:var(--t3);font-weight:400}
+.dayh{display:flex;justify-content:space-between;font-size:12.5px;color:var(--t2);padding:2px 6px}
+.warnc{position:absolute;top:-4px;right:-5px;width:18px;height:16px}
+/* dock */
+.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;display:flex;gap:6px;padding:6px;border-radius:999px;align-items:center}
+.dock .d{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:var(--t1);position:relative}
+.dock .d svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dock .d.on{width:auto;padding:0 18px 0 14px;border-radius:999px;background:var(--ink);color:var(--onink);display:flex;gap:8px;font-size:14px}
+.dock .badge{position:absolute;top:6px;right:5px;min-width:16px;height:16px;border-radius:999px;background:var(--lime);color:var(--onlime);font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+/* chart */
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+/* timeline grid */
+.mgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.mt{aspect-ratio:1/1.08;border-radius:14px;background:rgba(255,255,255,.35);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 0 7px;font-size:11px}
+.dk .mt{background:rgba(255,255,255,.07)}
+.mt .c{width:20px;height:20px;border-radius:50%;display:grid;place-items:center}
+.mt .c.ok{background:var(--lime);color:var(--onlime)}
+.mt .c.miss{border:1.2px solid currentColor;opacity:.85}
+.mt .c svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+.mt.future{opacity:.55}
+.capt{font-size:13px;color:var(--fg2);margin-top:6px}
+.stack{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+
+/* type specimen */
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.spec .box{display:flex;flex-direction:column;gap:10px}
+.spec .big{font-size:64px;font-weight:300;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.spec .big .u{font-size:26px;font-weight:400;vertical-align:28px;color:var(--fg2);letter-spacing:0;margin-right:3px}
+.spec .big .d{font-size:28px;color:var(--fg2);letter-spacing:0}
+.spec .colm{font-variant-numeric:tabular-nums;font-size:15px;display:grid;grid-template-columns:1fr auto;gap:2px 16px;border-top:1px solid var(--line);padding-top:8px}
+.spec .colm span:nth-child(even){text-align:right}
+.chk{font-size:12.5px;color:var(--fg2)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+
+<header class="col">
+  <div class="eyebrow">FinanceFlow · Stillwater design system · proposal DS-B0</div>
+  <h1>Stillwater Bloom</h1>
+  <p class="lede">A new visual direction for FinanceFlow, made by changing tokens and shared components rather than screens. It grows out of Lichen: an airy aurora canvas, big soft squircles, light oversized numerals, ink pills and one lime spark.</p>
+  <span class="status"><i></i>Awaiting owner approval · nothing built yet</span>
+</header>
+
+<section class="col">
+  <h2>Baseline, recorded 2026-11-05 on b66292a</h2>
+  <div class="tbl"><table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Flutter / Dart</td><td>3.29.2 / 3.7.2 (stable, March 2025)</td></tr>
+    <tr><td><code>flutter analyze</code></td><td class="pass">No issues found</td></tr>
+    <tr><td><code>flutter test test/theme test/widget_test.dart</code></td><td class="pass">20 passed (parity, palette accessibility, bundled fonts, startup smoke)</td></tr>
+    <tr><td>Leakage (<code>--shared</code>, 200 files)</td><td>Colors.* 5 · Color(0x 22 · alpha 158 · static colours 55 · fontSize 31 · TextStyle( 7 · EdgeInsets# 4 · SizedBox# 21 · AppBar( 4 · sheets 3 · dialogs 0 · pickers 2 · Divider( 8 (same as the DS-7 row)</td></tr>
+    <tr><td>Palettes in code</td><td>Only <b>Lichen</b>. Tide and Graphite are approved but not built (DS-8 has not started), so “re-skin the alternates” means building them in the new language.</td></tr>
+    <tr><td>Squircle support</td><td><code>RoundedSuperellipseBorder</code> arrived in Flutter 3.32, so it is <b>not available</b> on 3.29.2. <code>ContinuousRectangleBorder</code> exists but its curve is not a true squircle at large radii.</td></tr>
+    <tr><td>Fonts</td><td>Manrope 400–800 (has <code>tnum</code> and ₹), Fraunces 600/700. No light weight is bundled.</td></tr>
+  </table></div>
+</section>
+
+<section class="col">
+  <h2>Direction</h2>
+  <p>FinanceFlow should feel like a calm, well-lit room where your money sits in a few soft, solid objects. The page is a pale wash of lilac, blush and moss light. Money lives in large squircle cards; the few that matter most (an account, a loan, a goal) become grainy gradient “stones” cut from Lichen's own colours. Numbers are big and light, units are small and quiet. Everything you tap is ink. One lime spark marks the thing you are looking at right now. Everyday lists stay plain, dense and fast.</p>
+  <ul>
+    <li><b>Light numbers, heavy meaning.</b> Hierarchy comes from size and space, not bold weight.</li>
+    <li><b>Ink acts, lime points.</b> Ink is every action and selection. Lime is a fill that marks the current value or a completed step, always with ink on it.</li>
+    <li><b>Spend effects where they mean something.</b> Grain, gradient and glass only on hero surfaces and the dock. Lists and forms stay solid.</li>
+    <li><b>Two densities.</b> Comfortable for summaries, compact for lists. Airy never means sparse.</li>
+    <li><b>Private by default, visibly.</b> An “On device” cue on hero surfaces; amounts hide the same way everywhere.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="col"><h2>Inspired by, made ours</h2>
+  <p class="muted">About 75% recognisable as the same family; the signature on top is ours.</p></div>
+  <div class="tbl"><table>
+    <tr><th>Reference element</th><th>We keep</th><th>We change</th><th>Why</th></tr>
+    <tr><td>Aurora canvas</td><td>Pale multi-stop wash, cards floating over it</td><td>Lilac, blush and moss from Lichen's mushroom, rose and lichen; fades out by mid-screen; dark mode gets a faint plum/umber/moss version</td><td>Ties the wash to our palette; long lists sit on plain canvas</td></tr>
+    <tr><td>Squircle cards, 36–48 dp</td><td>Big superellipse corners, no borders, separation by tone and shadow</td><td>One <code>FfShape</code> with three sizes (24 / 36 / 44) and our own corner smoothing; compact lists use 24</td><td>Shape language switchable from one token</td></tr>
+    <tr><td>Grainy gradient hero cards</td><td>Gradient + fine grain + inner highlight</td><td>Five Lichen-derived gradients, each with a text zone and a no-text glow corner; two are pale with ink text</td><td>The reference puts white text on light lime; ours passes 4.5:1 everywhere</td></tr>
+    <tr><td>Thin ring icon, top left</td><td>Thin ring around an outline icon</td><td><b>The ring is a progress arc</b> (loan paid, goal saved, budget used), so it carries data</td><td>Signature detail with meaning</td></tr>
+    <tr><td>Dark ↗ button</td><td>Ink circle, ↗ glyph, opens detail</td><td>Same everywhere; never used for money direction</td><td>Income/expense use signs and labels</td></tr>
+    <tr><td>Light grotesk, small units</td><td>Light numerals, small currency and unit parts</td><td>Our face, tabular figures, Indian grouping, small paise, a dense row style</td><td>Money must line up and stay readable at 1.3×</td></tr>
+    <tr><td>Lime accent</td><td>One electric fill with dark ink</td><td>Tuned toward moss (#CBE94C); never text on light; the dark mode uses the same spark</td><td>Contrast and a Lichen family resemblance</td></tr>
+    <tr><td>Ink/outline pills</td><td>Ink selected, outline unselected</td><td>Outline uses the 3:1 control border, not a 1.3:1 hairline</td><td>Accessible boundary</td></tr>
+    <tr><td>Dot-matrix progress</td><td>Rows of dots that fill in</td><td>“Spore grid”: 3-row grid, filled dots ink or on-hero white, the current step lime, with a text value always beside it</td><td>Our motif; never colour or dots alone</td></tr>
+    <tr><td>Lime bubble chart</td><td>Bubble on selected point, dashed guide, triangle on axis</td><td>Bubble shows the money value; one series by default; drag to scrub with haptics</td><td>Finance charts need the value, not decoration</td></tr>
+    <tr><td>Range bands</td><td>Pastel rounded segments, marker line</td><td>Used for budget pace and credit utilisation, with labelled thresholds</td><td>Fits our data</td></tr>
+    <tr><td>Month grid timeline</td><td>Rounded month tiles, lime check / x</td><td>EMIs and subscription payments; “x” tiles also say “Missed”; future months faded</td><td>Status never by colour alone</td></tr>
+    <tr><td>Glass pills, floating dock</td><td>Frosted pill over gradients; floating dock of circles</td><td>Dock keeps our 5 tabs; the selected tab expands into an ink pill with its label; solid fallback when effects are reduced</td><td>Labels stay visible; cheaper on mid-range phones</td></tr>
+    <tr><td>Warning triangle badge</td><td>Small badge on the icon corner</td><td>Amber triangle with ink “!”; error uses a brick circle; each has a text label nearby</td><td>Readable, not colour-only</td></tr>
+    <tr><td>Not taken</td><td colspan="3">Their names, bank brands, copy (“24/38”, “Your Credits”), photography and backdrops, the avatar header, credit-bureau UI, italic labels.</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <div class="col"><h2>Palette: Lichen Bloom</h2>
+  <p>Every colour below is checked by the same rules as <code>FfContrastRules</code>: text ≥ 4.5:1, controls and focus ≥ 3:1. <span id="cSummary"></span></p></div>
+  <div class="grid2">
+    <div class="box"><h3 style="margin-top:0">Light</h3>
+      <div class="sw" id="swL"></div></div>
+    <div class="box" style="background:#10120E;color:#ECEEE4;border-color:#2D3228"><h3 style="margin-top:0">Dark</h3>
+      <div class="sw" id="swD"></div></div>
+  </div>
+  <h3>Hero gradients (light, then dark)</h3>
+  <p class="col muted">Assigned by tone, not by brand: Moss = accounts and net worth, Rose = loans and debts, Dusk = investments and cards, Tide = savings goals, Sand = cash, wallets and subscriptions. Rose and Sand are pale with ink text in light mode; in dark mode every hero is deep with light text.</p>
+  <div class="strip" id="heroes"></div>
+  <h3>Contrast results</h3>
+  <div class="grid2">
+    <div class="tbl" style="max-height:420px;overflow:auto"><table id="cL"></table></div>
+    <div class="tbl" style="max-height:420px;overflow:auto"><table id="cD"></table></div>
+  </div>
+  <p class="capt col">Money colours are the shared set already approved for DS-8 (expense moves to brick). Income against expense: <span id="cvd"></span>. Lime is a fill only; lime against white is 1.3:1 so it never carries meaning alone, and selected states also change to ink.</p>
+</section>
+
+<section>
+  <div class="col"><h2>Type</h2>
+  <p>The same money line set in three open-licence (OFL) families at weight 300 with tabular figures. The checks under each card run in your browser: they test whether the font itself has the ₹ glyph and real tabular figures, rather than borrowing them from a fallback font.</p></div>
+  <div class="spec" id="spec"></div>
+  <div class="grid2" style="margin-top:20px">
+    <div class="box rec"><span class="tag">Recommendation</span>
+      <h3>Geist for UI and numerals, Manrope kept as the fallback, Fraunces dropped</h3>
+      <p id="fontRec">Geist is a neo-grotesque with a crisp light weight; it reads closest to the reference and stays calm in lists. It has ₹ and tabular figures. We bundle 300, 400 and 500 as static cuts (the same <code>make_static_fonts.py</code> route as Manrope); Manrope stays as the fallback family. Inter (with its Display optical size) is the second choice: equally solid, but it is the face nearly every app uses, so it does less for our identity. Fraunces no longer fits the light, technical tone; onboarding and the loan hero move to the light display numerals.</p>
+    </div>
+    <div class="box"><h3 style="margin-top:0">Scale (changes in bold)</h3>
+      <div class="tbl" style="border:0"><table>
+        <tr><th>Role</th><th>Size / line</th><th>Weight</th></tr>
+        <tr><td>moneyHero</td><td><b>56 / 56</b>, clamp 40–56 by width</td><td><b>300</b></td></tr>
+        <tr><td>moneyLg</td><td><b>36 / 40</b></td><td><b>300</b></td></tr>
+        <tr><td>moneyMd</td><td>22 / 28</td><td><b>400</b></td></tr>
+        <tr><td>moneySm (rows)</td><td>15 / 20</td><td><b>400</b></td></tr>
+        <tr><td>moneyUnit (new)</td><td>0.42 × parent, raised</td><td>400, secondary</td></tr>
+        <tr><td>display / displaySm</td><td><b>40 / 28</b></td><td><b>300</b>, Geist</td></tr>
+        <tr><td>headline</td><td>24 / 30</td><td><b>400</b></td></tr>
+        <tr><td>title / titleSm</td><td>16 / 14</td><td><b>500</b></td></tr>
+        <tr><td>body / bodySm</td><td>14 / 13</td><td>400</td></tr>
+        <tr><td>label / labelSm</td><td>12.5 / 11</td><td>400 / 500</td></tr>
+      </table></div>
+    </div>
+  </div>
+  <h3>Money display rule</h3>
+  <ul class="col">
+    <li><code>FfAmountText</code> gets a <code>style</code>: <code>split</code> (big number, small raised currency symbol, small light paise; for hero, lg and stat tiles) and <code>inline</code> (one size, tabular, sign first; for rows and tables). <code>sm</code> is always inline.</li>
+    <li>Split degrades: when the amount does not fit, it steps down hero → lg → md before ellipsis (<code>FittedBox</code> clamp at 0.72), text scale clamped at 1.3× as today.</li>
+    <li>Paise are hidden on hero values when they are zero, never in rows. Indian grouping (4,82,310) comes from the locale formatter, not the widget.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2>Tokens: shape, elevation, blur, grain, density</h2>
+  <div class="tbl"><table>
+    <tr><th>Token</th><th>Value</th><th>Notes</th></tr>
+    <tr><td><code>FfShape.squircle(radius)</code></td><td>superellipse, smoothing 0.6</td><td>Custom <code>FfSquircleBorder</code> (an <code>OutlinedBorder</code>) on 3.29; becomes <code>RoundedSuperellipseBorder</code> after a Flutter upgrade by changing one file. <code>FfShape.style</code> = squircle | rounded switches the whole app.</td></tr>
+    <tr><td><code>FfRadius</code></td><td>xs 6 · sm 12 · md 16 · lg <b>24</b> · xl <b>36</b> · x2l <b>44</b> · full</td><td>Cards 24 → lists, 36 → summary cards, 44 → hero cards and sheets</td></tr>
+    <tr><td><code>FfElevation</code></td><td>flat · card · float · dock</td><td>Two-layer soft shadows tinted with ink; dark uses a 4% white rim instead of shadow</td></tr>
+    <tr><td><code>FfBlur</code></td><td>glass 18 σ · dock 24 σ</td><td>Only dock and glass pills on heroes; never inside a <code>ListView</code> item</td></tr>
+    <tr><td><code>FfGrain</code></td><td>96 px tile, opacity 0.5, soft-light</td><td>Generated once in Dart from a fixed seed after the first frame (no asset, no pubspec change), cached as a <code>ui.Image</code>; heroes render without it until ready</td></tr>
+    <tr><td><code>FfHeroGradient</code></td><td>moss, rose, dusk, tide, sand × light/dark</td><td>deep stop, text zone, glow, <code>onHero</code>; registered in the palette so new palettes supply their own</td></tr>
+    <tr><td><code>FfDensity</code></td><td>comfortable / compact</td><td>Rows 72 / 60 dp (never below 48), card padding 20 / 16, row gap 16 / 12, radius 36 / 24</td></tr>
+    <tr><td><code>FfEffects</code></td><td>full / reduced</td><td>Reduced = no blur, no grain, solid hero gradient. On when the system disables animations, high contrast is on, or the user picks it (stored as <code>fx=reduced</code> in <code>themeMode</code>)</td></tr>
+    <tr><td><code>FfSpace</code></td><td>unchanged (4 dp unit)</td><td><code>pageMargin</code> 20 → <b>16</b> so hero cards can be wide and carousels peek</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <div class="col"><h2>Components</h2>
+  <p>New and changed shared widgets. Each takes tones and variants, no raw colours, and gets widget tests in every palette, both modes and at 2× text.</p></div>
+  <div class="grid3" id="comps"></div>
+  <h3>Floating dock and the five tabs</h3>
+  <p class="col">The dock replaces <code>StillwaterBottomNavigationBar</code> inside the same shell, with the same five destinations (Home, Money, Plan, Insights, More) and badges. The selected tab expands into an ink pill with its label; the others are 48 dp circles with tooltips and semantic labels. Pages get bottom padding from <code>FfDock.insetOf(context)</code>. With reduced effects, or at 1.5× text and above, it falls back to a full-width solid bar with labels under every icon. The current widget stays as that fallback, so nothing is lost.</p>
+</section>
+
+<section>
+  <div class="col"><h2>Mock screens</h2>
+  <p>Home, Money (transactions) and a loan, light then dark, at 360 × 760 dp. These are HTML renderings of the proposed tokens and components with sample data, not Flutter output. Flutter goldens of the same screens come with the component slice. Scroll sideways.</p></div>
+  <div class="strip" id="phones"></div>
+</section>
+
+<section class="col">
+  <h2>Options</h2>
+  <div class="grid3" style="grid-template-columns:1fr">
+    <div class="box rec"><span class="tag">Recommended</span><h3>A. Evolve Lichen into Bloom</h3><p>One new default. Lichen's colours become the gradients, the aurora and the focus ring; actions turn ink; lime is added. Tide and Graphite are then built in the same language (Tide: sea-glass aurora, tide/sand gradients, same lime; Graphite: neutral aurora, mono gradients, lime only on data). Fits the decision that Lichen stays the identity, refined. Risk: everyone sees the change at once, so it lands behind the gallery and screenshots first.</p></div>
+    <div class="box"><h3 style="margin-top:0">B. Separate “Bloom” preset</h3><p>Today's look stays default; Bloom is a palette plus style switch in settings. Safest, but every component needs both shapes, densities and number styles maintained, which doubles test and screenshot work, and the old style keeps leaking.</p></div>
+    <div class="box"><h3 style="margin-top:0">C. Hybrid</h3><p>New shape, type and components; palette stays Lichen with only lime added (no aurora, no gradients). Cheapest, but it loses most of what makes the reference feel alive.</p></div>
+  </div>
+  <p class="muted">A keeps a back door: <code>FfShape.style</code> and <code>FfEffects</code> can restore rounded corners and flat surfaces with one token each.</p>
+</section>
+
+<section class="col">
+  <h2>Slice plan</h2>
+  <div class="tbl"><table>
+    <tr><th>Slice</th><th>Content</th><th>Gate</th></tr>
+    <tr><td><b>DS-B1</b> tokens</td><td>Bloom values in Lichen (aurora, ink, lime, heroes), <code>FfShape</code>, radii, elevation, blur, grain, density, effects tokens; new roles + contrast rules; theme builder updates (buttons ink, chips/pills, cards, sheets, nav). No screen edits. Includes the one-token demo (accent, card radius, base spacing) with screenshots, then revert.</td><td>analyze, theme tests, parity test updated to record intended differences</td></tr>
+    <tr><td><b>DS-B2</b> type</td><td>Bundle Geist 300/400/500 (+ licence in <code>assets/fonts/README.md</code>), new scale, drop Fraunces, <code>FfAmountText</code> split/inline</td><td>pubspec change → <b>standalone-startup gate</b>: debug and release APK builds; device cold start pending (backup gate first)</td></tr>
+    <tr><td><b>DS-B3</b> components</td><td><code>FfCard</code> (squircle, density), <code>FfHeroCard</code>, <code>FfCircleButton</code>, <code>FfInkButton</code>, <code>FfPillBar</code>, <code>FfGlass</code>, <code>FfDotMatrix</code>, <code>FfRangeBand</code>, <code>FfLineChart</code> (lime bubble), <code>FfMonthGrid</code>, <code>FfDock</code>, <code>FfStatTile</code> unit, <code>FfBadge</code> corner, <code>FfCarousel</code>, <code>FfAurora</code></td><td>widget tests per palette/mode/2× text</td></tr>
+    <tr><td><b>DS-10</b> gallery</td><td>Every token and component visible in the debug gallery</td><td>golden screenshots</td></tr>
+    <tr><td><b>DS-B4</b> Home</td><td>Hero carousel, cash-flow card, attention list, dock</td><td>before/after screenshots</td></tr>
+    <tr><td><b>DS-B5</b> Money</td><td>Search pill, filter pills, compact grouped rows</td><td>scroll frame-time check on device if connected</td></tr>
+    <tr><td><b>DS-B6</b> Accounts, Loans</td><td>Hero cards, month grid, line chart</td><td></td></tr>
+    <tr><td>DS-8 (rest)</td><td>Tide and Graphite in the Bloom language, theme picker, pure black, reduced-effects setting</td><td>backup gate before any device install</td></tr>
+  </table></div>
+  <p>This absorbs most of the unstarted DS-8 and the screen restructuring DS-7 deferred. Budgets stays with its own chat (DS-7h); it inherits the tokens and theme automatically but its screens are not edited.</p>
+  <h3>Risks</h3>
+  <ul>
+    <li><b>Performance.</b> Blur and large gradients on mid-range Android. Mitigated by blur only on the dock and hero glass, grain baked once, no effects in list items, the reduced-effects mode, and frame timing on the device in DS-B5.</li>
+    <li><b>Startup.</b> Grain generation and font registration must not delay the first frame; grain starts after the first route renders.</li>
+    <li><b>Parity test churn.</b> DS-B1 intentionally changes ThemeData; the parity test moves from “identical” to an explicit list of intended differences.</li>
+    <li><b>Legibility of light weights</b> at small sizes: weight 300 only at 28 dp and above.</li>
+    <li><b>Flutter upgrade</b> (for native superellipse) is a build change of its own and is not part of this plan.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2>Questions for you</h2>
+  <ol>
+    <li><b>Direction:</b> A (evolve Lichen), B (separate preset) or C (hybrid)? I recommend A.</li>
+    <li><b>Typeface:</b> Geist (recommended), Inter, or Manrope at a new light weight? Downloading the chosen family's files from the Google Fonts GitHub repository needs your OK, as it did for Manrope.</li>
+    <li><b>Money style:</b> split style for hero, large and stat amounts, inline for rows? I recommend yes.</li>
+    <li><b>Effects:</b> glass, blur and grain on hero surfaces and the dock only? I recommend yes.</li>
+    <li><b>Dock:</b> replace the bottom bar with the floating dock (bar kept as fallback)? I recommend yes.</li>
+    <li><b>Primary buttons turn ink</b> (Lichen green moves to gradients, focus and selected tints)? I recommend yes.</li>
+    <li><b>Balance:</b> is about 75% resemblance to the reference right, or do you want it closer or further away?</li>
+  </ol>
+</section>
+
+</div>
+
+<script id="contrast" type="application/json">{"light":[["text on canvas","#1C1E18","#F3F2EC",15.0,4.5],["text2 on canvas","#575B50","#F3F2EC",6.2,4.5],["text3 on canvas","#62665A","#F3F2EC",5.25,4.5],["text on auroraLilac","#1C1E18","#E9E3F1",13.4,4.5],["text2 on auroraLilac","#575B50","#E9E3F1",5.54,4.5],["text3 on auroraLilac","#62665A","#E9E3F1",4.69,4.5],["text on auroraBlush","#1C1E18","#F7E4DC",13.69,4.5],["text2 on auroraBlush","#575B50","#F7E4DC",5.66,4.5],["text3 on auroraBlush","#62665A","#F7E4DC",4.79,4.5],["text on auroraMoss","#1C1E18","#E4ECD3",13.81,4.5],["text2 on auroraMoss","#575B50","#E4ECD3",5.71,4.5],["text3 on auroraMoss","#62665A","#E4ECD3",4.83,4.5],["text on card","#1C1E18","#FEFEFA",16.64,4.5],["text2 on card","#575B50","#FEFEFA",6.88,4.5],["text3 on card","#62665A","#FEFEFA",5.82,4.5],["text on sunken","#1C1E18","#ECEBE3",14.07,4.5],["text2 on sunken","#575B50","#ECEBE3",5.82,4.5],["text3 on sunken","#62665A","#ECEBE3",4.92,4.5],["control border on card","#858979","#FEFEFA",3.55,3],["control border on canvas","#858979","#F3F2EC",3.2,3],["focus ring on card","#535B36","#FEFEFA",7.12,3],["onInk on ink (pill, button)","#F6F7EF","#1B1D17",15.77,4.5],["ink pill vs canvas (shape)","#1B1D17","#F3F2EC",15.16,3],["onLime on lime (bubble, badge)","#1B1D17","#CBE94C",12.39,4.5],["text on limeSoft (selected row)","#1C1E18","#EEF6CC",14.97,4.5],["text on selected","#1C1E18","#E8EFCB",14.13,4.5],["ink glyph on warning fill","#1B1D17","#F2A33A",8.16,4.5],["onError on error fill","#FFFFFF","#C9452E",4.8,4.5],["income on card","#17694F","#FEFEFA",6.55,4.5],["income on canvas","#17694F","#F3F2EC",5.91,4.5],["expense on card","#A8432B","#FEFEFA",5.93,4.5],["expense on canvas","#A8432B","#F3F2EC",5.35,4.5],["transfer on card","#5B6570","#FEFEFA",5.87,4.5],["transfer on canvas","#5B6570","#F3F2EC",5.29,4.5],["savings on card","#1F6E7A","#FEFEFA",5.82,4.5],["savings on canvas","#1F6E7A","#F3F2EC",5.25,4.5],["debt on card","#74507A","#FEFEFA",6.55,4.5],["debt on canvas","#74507A","#F3F2EC",5.9,4.5],["investment on card","#4A55A3","#FEFEFA",6.66,4.5],["investment on canvas","#4A55A3","#F3F2EC",6.0,4.5],["text on glass (over canvas)","#1C1E18","#F5F8EE",15.66,4.5],["text2 on glass (over canvas)","#575B50","#F5F8EE",6.48,4.5],["hero moss: text on deep","#F8F9EF","#27310F",12.91,4.5],["hero moss: label (on 78%) on deep","#CACDBE","#27310F",8.47,4.5],["hero moss: text on zone","#F8F9EF","#4A5C1E",6.97,4.5],["hero moss: label (on 78%) on zone","#D2D6C1","#4A5C1E",4.97,4.5],["hero moss: ink arrow button vs zone (shape)","#1B1D17","#4A5C1E",2.3,1.0],["hero moss: lime on zone (marker, UI)","#CBE94C","#4A5C1E",5.39,3],["hero moss: text on glass pill","#F8F9EF","#63733E",4.88,4.5],["hero rose: text on deep","#1C1E18","#D9AEBE",8.61,4.5],["hero rose: label (on 72%) on deep","#514646","#D9AEBE",4.64,4.5],["hero rose: text on zone","#1C1E18","#F1D6CB",12.19,4.5],["hero rose: label (on 72%) on zone","#58524A","#F1D6CB",5.59,4.5],["hero rose: ink arrow button vs zone (shape)","#1B1D17","#F1D6CB",12.33,1.0],["hero rose: lime on zone (marker, UI)","#CBE94C","#F1D6CB",1.01,1.0],["hero dusk: text on deep","#F8F6F9","#2B2233",14.17,4.5],["hero dusk: label (on 78%) on deep","#CBC7CD","#2B2233",9.13,4.5],["hero dusk: text on zone","#F8F6F9","#54445C",8.29,4.5],["hero dusk: label (on 78%) on zone","#D4CFD6","#54445C",5.81,4.5],["hero dusk: ink arrow button vs zone (shape)","#1B1D17","#54445C",1.91,1.0],["hero dusk: lime on zone (marker, UI)","#CBE94C","#54445C",6.49,3],["hero dusk: text on glass pill","#F8F6F9","#6C5E73",5.61,4.5],["hero tide: text on deep","#F2F8F6","#173238",12.6,4.5],["hero tide: label (on 78%) on deep","#C2CCCC","#173238",8.26,4.5],["hero tide: text on zone","#F2F8F6","#2C5A5E",7.15,4.5],["hero tide: label (on 78%) on zone","#C6D5D5","#2C5A5E",5.08,4.5],["hero tide: ink arrow button vs zone (shape)","#1B1D17","#2C5A5E",2.21,1.0],["hero tide: lime on zone (marker, UI)","#CBE94C","#2C5A5E",5.6,3],["hero tide: text on glass pill","#F2F8F6","#4A7175",5.0,4.5],["hero sand: text on deep","#1C1E18","#D8C8A8",10.21,4.5],["hero sand: label (on 72%) on deep","#514E40","#D8C8A8",5.07,4.5],["hero sand: text on zone","#1C1E18","#ECE2CC",13.07,4.5],["hero sand: label (on 72%) on zone","#56554A","#ECE2CC",5.84,4.5],["hero sand: ink arrow button vs zone (shape)","#1B1D17","#ECE2CC",13.22,1.0],["hero sand: lime on zone (marker, UI)","#CBE94C","#ECE2CC",1.07,1.0]],"dark":[["text on canvas","#ECEEE4","#10120E",16.07,4.5],["text2 on canvas","#B8BDAE","#10120E",9.8,4.5],["text3 on canvas","#9EA394","#10120E",7.28,4.5],["text on auroraLilac","#ECEEE4","#1C1724",14.96,4.5],["text2 on auroraLilac","#B8BDAE","#1C1724",9.13,4.5],["text3 on auroraLilac","#9EA394","#1C1724",6.78,4.5],["text on auroraBlush","#ECEEE4","#21181A",14.8,4.5],["text2 on auroraBlush","#B8BDAE","#21181A",9.03,4.5],["text3 on auroraBlush","#9EA394","#21181A",6.71,4.5],["text on auroraMoss","#ECEEE4","#151C10",14.86,4.5],["text2 on auroraMoss","#B8BDAE","#151C10",9.07,4.5],["text3 on auroraMoss","#9EA394","#151C10",6.74,4.5],["text on card","#ECEEE4","#191C16",14.7,4.5],["text2 on card","#B8BDAE","#191C16",8.96,4.5],["text3 on card","#9EA394","#191C16",6.66,4.5],["text on sunken","#ECEEE4","#0C0E0A",16.55,4.5],["text2 on sunken","#B8BDAE","#0C0E0A",10.09,4.5],["text3 on sunken","#9EA394","#0C0E0A",7.5,4.5],["control border on card","#7E8674","#191C16",4.55,3],["control border on canvas","#7E8674","#10120E",4.98,3],["focus ring on card","#C4CC9B","#191C16",10.22,3],["onInk on ink (pill, button)","#151711","#ECEEE3",15.4,4.5],["ink pill vs canvas (shape)","#ECEEE3","#10120E",16.06,3],["onLime on lime (bubble, badge)","#151711","#C6E44A",12.56,4.5],["text on limeSoft (selected row)","#ECEEE4","#2C3518",11.0,4.5],["text on selected","#ECEEE4","#2A3219",11.42,4.5],["ink glyph on warning fill","#1B1D17","#F2A33A",8.16,4.5],["onError on error fill","#2A0D07","#F08A73",7.41,4.5],["income on card","#86D6A9","#191C16",10.01,4.5],["income on canvas","#86D6A9","#10120E",10.95,4.5],["expense on card","#F7A285","#191C16",8.58,4.5],["expense on canvas","#F7A285","#10120E",9.38,4.5],["transfer on card","#B4C1CE","#191C16",9.4,4.5],["transfer on canvas","#B4C1CE","#10120E",10.28,4.5],["savings on card","#7FCFE0","#191C16",9.77,4.5],["savings on canvas","#7FCFE0","#10120E",10.68,4.5],["debt on card","#D9B0DC","#191C16",9.18,4.5],["debt on canvas","#D9B0DC","#10120E",10.04,4.5],["investment on card","#B6BEF4","#191C16",9.57,4.5],["investment on canvas","#B6BEF4","#10120E",10.46,4.5],["text on glass (over canvas)","#ECEEE4","#24291F",12.69,4.5],["text2 on glass (over canvas)","#B8BDAE","#24291F",7.74,4.5],["hero moss: text on deep","#F3F5E9","#1A220A",14.92,4.5],["hero moss: label (on 76%) on deep","#BFC2B3","#1A220A",9.07,4.5],["hero moss: text on zone","#F3F5E9","#3F4F19",8.13,4.5],["hero moss: label (on 76%) on zone","#C8CDB7","#3F4F19",5.49,4.5],["hero moss: ink arrow button vs zone (shape)","#ECEEE3","#3F4F19",7.64,1.0],["hero moss: lime on zone (marker, UI)","#C6E44A","#3F4F19",6.23,3],["hero moss: text on glass pill","#F3F5E9","#5A6839",5.48,4.5],["hero rose: text on deep","#F8EEF0","#2E1B23",14.25,4.5],["hero rose: label (on 76%) on deep","#C8BBBF","#2E1B23",8.72,4.5],["hero rose: text on zone","#F8EEF0","#5B3843",8.84,4.5],["hero rose: label (on 76%) on zone","#D2C2C6","#5B3843",5.87,4.5],["hero rose: ink arrow button vs zone (shape)","#ECEEE3","#5B3843",8.56,1.0],["hero rose: lime on zone (marker, UI)","#C6E44A","#5B3843",6.98,3],["hero rose: text on glass pill","#F8EEF0","#72545D",5.88,4.5],["hero dusk: text on deep","#F6F2F6","#1E1824",15.64,4.5],["hero dusk: label (on 76%) on deep","#C2BEC4","#1E1824",9.46,4.5],["hero dusk: text on zone","#F6F2F6","#43364A",10.16,4.5],["hero dusk: label (on 76%) on zone","#CBC5CD","#43364A",6.65,4.5],["hero dusk: ink arrow button vs zone (shape)","#ECEEE3","#43364A",9.6,1.0],["hero dusk: lime on zone (marker, UI)","#C6E44A","#43364A",7.83,3],["hero dusk: text on glass pill","#F6F2F6","#5D5263",6.64,4.5],["hero tide: text on deep","#EEF6F3","#0F2226",14.96,4.5],["hero tide: label (on 76%) on deep","#B8C3C2","#0F2226",9.1,4.5],["hero tide: text on zone","#EEF6F3","#244A4E",8.83,4.5],["hero tide: label (on 76%) on zone","#BECDCB","#244A4E",5.91,4.5],["hero tide: ink arrow button vs zone (shape)","#ECEEE3","#244A4E",8.27,1.0],["hero tide: lime on zone (marker, UI)","#C6E44A","#244A4E",6.74,3],["hero tide: text on glass pill","#EEF6F3","#436367",5.94,4.5],["hero sand: text on deep","#F7F3E8","#2A2416",13.9,4.5],["hero sand: label (on 76%) on deep","#C6C1B6","#2A2416",8.59,4.5],["hero sand: text on zone","#F7F3E8","#4F4630",8.41,4.5],["hero sand: label (on 76%) on zone","#CFC9BC","#4F4630",5.66,4.5],["hero sand: ink arrow button vs zone (shape)","#ECEEE3","#4F4630",7.95,1.0],["hero sand: lime on zone (marker, UI)","#C6E44A","#4F4630",6.48,3],["hero sand: text on glass pill","#F7F3E8","#68604D",5.62,4.5]],"cvd":{"light":{"typical":76.0,"deut":33.9,"prot":16.4,"trit":88.2},"dark":{"typical":64.3,"deut":19.2,"prot":11.7,"trit":74.3}}}</script>
+<script>
+(function(){
+  // ---- grain tile (same idea the app will use: one tile, generated once) ----
+  try{
+    const c=document.createElement('canvas');c.width=c.height=96;const x=c.getContext('2d');const im=x.createImageData(96,96);
+    let s=1337;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+    for(let i=0;i<im.data.length;i+=4){const v=Math.round(r()*255);im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}
+    x.putImageData(im,0,0);document.documentElement.style.setProperty('--grain','url('+c.toDataURL()+')');
+  }catch(e){}
+
+  const data=JSON.parse(document.getElementById('contrast').textContent);
+  // ---- contrast tables ----
+  let fails=0,total=0;
+  for(const m of ['light','dark']){
+    const t=document.getElementById(m==='light'?'cL':'cD');
+    let h='<tr><th>'+(m==='light'?'Light':'Dark')+' pair</th><th>Ratio</th><th>Need</th></tr>';
+    for(const [p,fg,bg,r,n] of data[m]){total++;const ok=r>=n;if(!ok)fails++;
+      h+='<tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+bg+';border:3px solid '+fg+';vertical-align:-1px;margin-right:6px"></span>'+p+'</td><td class="'+(ok?'pass':'fail')+'">'+r.toFixed(2)+'</td><td>'+n+'</td></tr>'}
+    t.innerHTML=h;
+  }
+  document.getElementById('cSummary').textContent=total+' pairs checked, '+fails+' failing.';
+  const cv=data.cvd;
+  document.getElementById('cvd').textContent='ΔE light '+cv.light.deut+' (deuteranopia), '+cv.light.prot+' (protanopia), '+cv.light.trit+' (tritanopia); dark '+cv.dark.deut+' / '+cv.dark.prot+' / '+cv.dark.trit+'. All above the 10 floor';
+
+  // ---- swatches ----
+  const L=[['Canvas','#F3F2EC'],['Aurora lilac','#E9E3F1'],['Aurora blush','#F7E4DC'],['Aurora moss','#E4ECD3'],['Card','#FEFEFA'],['Sunken','#ECEBE3'],['Hairline','#E3E3D9'],['Control border','#858979'],['Text','#1C1E18'],['Text 2','#575B50'],['Text 3','#62665A'],['Ink','#1B1D17'],['Lime','#CBE94C'],['Lime soft','#EEF6CC'],['Focus (lichen)','#535B36'],['Income','#17694F'],['Expense','#A8432B'],['Transfer','#5B6570'],['Warning badge','#F2A33A'],['Error badge','#C9452E']];
+  const D=[['Canvas','#10120E'],['Aurora plum','#1C1724'],['Aurora umber','#21181A'],['Aurora moss','#151C10'],['Card','#191C16'],['Raised','#22261E'],['Hairline','#2D3228'],['Control border','#7E8674'],['Text','#ECEEE4'],['Text 2','#B8BDAE'],['Text 3','#9EA394'],['Ink (pills)','#ECEEE3'],['Lime','#C6E44A'],['Lime soft','#2C3518'],['Focus','#C4CC9B'],['Income','#86D6A9'],['Expense','#F7A285'],['Transfer','#B4C1CE'],['Warning badge','#F2A33A'],['Error badge','#F08A73']];
+  const lum=h=>{const v=[1,3,5].map(i=>parseInt(h.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*v[0]+.7152*v[1]+.0722*v[2]};
+  const sw=(id,arr)=>{document.getElementById(id).innerHTML=arr.map(([n,h])=>'<div style="background:'+h+';color:'+(lum(h)>.3?'#1C1E18':'#F6F7EF')+'"><b>'+n+'</b>'+h+'</div>').join('')};
+  sw('swL',L);sw('swD',D);
+
+  // ---- icons ----
+  const I={
+    arrow:'<svg viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>',
+    back:'<svg viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></svg>',
+    more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r=".6"/><circle cx="12" cy="12" r=".6"/><circle cx="19" cy="12" r=".6"/></svg>',
+    eye:'<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    bell:'<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+    home:'<svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+    list:'<svg viewBox="0 0 24 24"><path d="M5 4h14v17l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 9h6M9 13h6"/></svg>',
+    pie:'<svg viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>',
+    spark:'<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+    dots:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>',
+    wallet:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2"/><circle cx="16" cy="14.5" r="1"/></svg>',
+    house:'<svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg>',
+    cart:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="19" r="1.3"/><circle cx="17" cy="19" r="1.3"/></svg>',
+    bolt:'<svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg>',
+    swap:'<svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg>',
+    down:'<svg viewBox="0 0 24 24"><path d="M17 7 7 17M15 17H7V9"/></svg>',
+    coffee:'<svg viewBox="0 0 24 24"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2M8 3v3M12 3v3"/></svg>',
+    fuel:'<svg viewBox="0 0 24 24"><path d="M5 20V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15M4 20h11M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3"/><path d="M7 8h5"/></svg>',
+    play:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/></svg>',
+    lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>',
+    filter:'<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
+    plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+    check:'<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+    x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    cal:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+    target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8"/></svg>',
+  };
+  const warnTri='<svg class="warnc" viewBox="0 0 18 16"><path d="M9 1.2 17 15H1z" fill="#F2A33A" stroke="none"/><path d="M9 6v4" stroke="#1B1D17" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="12.3" r=".9" fill="#1B1D17"/></svg>';
+  const ring=(pct,icon,stroke)=>{const C=2*Math.PI*22;return '<div class="ring"><svg class="arc" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="1.5"/><circle cx="24" cy="24" r="22" fill="none" stroke="'+(stroke||'currentColor')+'" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="'+(C*pct/100).toFixed(1)+' '+C.toFixed(1)+'"/></svg><span class="ico">'+I[icon]+'</span></div>'};
+  const dots=(n,filled,limeAt)=>{let s='<div class="dots">';for(let i=0;i<n;i++)s+='<i class="'+(i===limeAt?'l':i<filled?'f':'')+'"></i>';return s+'</div>'};
+  const amt=(u,n,d,cls)=>'<span class="num '+(cls||'')+'"><span class="u">'+u+'</span>'+n+(d?'<span class="d">'+d+'</span>':'')+'</span>';
+
+  // ---- hero cards row ----
+  const heroDefs=[['moss','Moss','Accounts',false],['rose','Rose','Loans',false],['dusk','Dusk','Investments',false],['tide','Tide','Goals',false],['sand','Sand','Cash',false]];
+  const heroCard=(k,name,use,dk)=>'<div class="'+(dk?'ph dk':'ph')+'" style="flex:0 0 244px;width:244px;height:auto;border-radius:0;box-shadow:none;background:transparent;overflow:visible"><div class="hero h-'+k+' sq-lg" style="height:200px;display:flex;flex-direction:column"><div class="row">'+ring(62,'wallet')+'<div style="line-height:1.15"><div style="font-size:15px">'+name+'</div><div class="lbl">'+use+'</div></div><span class="sp"></span><span class="inkbtn">'+I.arrow+'</span></div><span class="sp"></span><div class="lbl">Text zone</div><div style="font-size:34px">'+amt('₹','1,24,500','.00')+'</div></div><div class="capt" style="margin-top:8px">'+name+(dk?' · dark':' · light')+'</div></div>';
+  document.getElementById('heroes').innerHTML=heroDefs.map(d=>heroCard(d[0],d[1],d[2],false)).join('')+heroDefs.filter(d=>d[0]==='moss'||d[0]==='rose').map(d=>heroCard(d[0],d[1],d[2],true)).join('');
+
+  // ---- type specimen ----
+  const fonts=[['Geist','Geist','Vercel · OFL 1.1 · 9 weights, tnum, ss01'],['Inter Display','Inter','rsms · OFL 1.1 · opsz axis, tnum, cv11 single-storey a'],['Manrope 300','Manrope','already bundled (400–800); 300 must be cut from the variable font']];
+  const spec=document.getElementById('spec');
+  spec.innerHTML=fonts.map(([n,f,meta],i)=>'<div class="box" style="font-family:\''+f+'\',system-ui'+(f==='Inter'?';font-optical-sizing:auto':'')+'"><div class="eyebrow" style="font-family:var(--f-body)">'+n+'</div><div class="muted" style="font-size:13px">Total balance</div><div class="big"><span class="u">₹</span>4,82,310<span class="d">.45</span></div><div style="font-size:40px;font-weight:300;letter-spacing:-.03em;line-height:1">31<span style="font-size:18px;color:var(--fg2)">/120 EMIs</span> &nbsp;26<span style="font-size:18px;color:var(--fg2)">%</span></div><div style="font-size:22px;font-weight:400;letter-spacing:-.02em">Home loan · November</div><div style="font-size:14px">Groceries at the weekly market, paid from Salary account</div><div class="colm"><span>Groceries</span><span>−₹2,340.00</span><span>Salary</span><span style="color:var(--ok)">+₹82,000.00</span><span>Electricity</span><span>−₹1,118.50</span><span>Fuel</span><span>−₹4,111.11</span></div><div class="chk" data-font="'+f+'">'+meta+'<br><span class="res">checking glyphs…</span></div></div>').join('');
+  // glyph + tabular check: compare widths against two different fallbacks
+  const cvs=document.createElement('canvas').getContext('2d');
+  const w=(t,font)=>{cvs.font=font;return cvs.measureText(t).width};
+  document.fonts.ready.then(()=>Promise.all(fonts.map(f=>document.fonts.load('300 40px "'+f[1]+'"','₹0123')))).then(()=>{
+    document.querySelectorAll('.chk').forEach(el=>{
+      const f=el.dataset.font;const a=w('₹','300 40px "'+f+'", monospace'),b=w('₹','300 40px "'+f+'", serif');
+      const has=Math.abs(a-b)<.01;
+      el.querySelector('.res').innerHTML='₹ glyph in font: <b class="'+(has?'pass':'fail')+'">'+(has?'yes':'no, falls back')+'</b>';
+      el.dataset.rupee=has?'1':'0';
+    });
+  }).catch(()=>{});
+
+  // ---- components ----
+  const comp=(name,api,demo,dk)=>'<div class="box" style="display:flex;flex-direction:column;gap:12px"><div class="ph'+(dk?' dk':'')+'" style="flex:none;width:100%;height:auto;border-radius:22px;padding:18px;box-shadow:none">'+demo+'</div><div><b style="font-family:var(--f-display);font-weight:500">'+name+'</b><pre>'+api+'</pre></div></div>';
+  const chartSvg=(w,h)=>{const pts=[[0,52],[30,48],[62,40],[95,44],[128,30],[160,26],[192,34],[224,22],[256,18],[288,24]];const sx=w/288,sy=h/70;const p=pts.map(([x,y])=>[x*sx,y*sy]);
+    const d='M'+p.map(q=>q.map(v=>v.toFixed(1)).join(',')).join(' L');const sel=p[7];
+    let g='';for(let i=1;i<4;i++)g+='<line x1="0" x2="'+w+'" y1="'+(i*h/4)+'" y2="'+(i*h/4)+'" stroke="var(--t3)" stroke-opacity=".35" stroke-dasharray="2 4"/>';
+    return '<svg viewBox="0 -26 '+w+' '+(h+50)+'">'+g+'<path d="'+d+'" fill="none" stroke="var(--t1)" stroke-width="1.5"/>'+p.map((q,i)=>i%3===1?'<circle cx="'+q[0]+'" cy="'+q[1]+'" r="2.6" fill="var(--t1)"/>':'').join('')+'<line x1="'+sel[0]+'" x2="'+sel[0]+'" y1="'+sel[1]+'" y2="'+(h+8)+'" stroke="var(--t1)" stroke-dasharray="3 3"/><path d="M'+(sel[0]-5)+','+(h+16)+' L'+sel[0]+','+(h+8)+' L'+(sel[0]+5)+','+(h+16)+'Z" fill="var(--t1)"/><circle cx="'+sel[0]+'" cy="'+(sel[1]-4)+'" r="22" fill="var(--lime)"/><text x="'+sel[0]+'" y="'+(sel[1])+'" text-anchor="middle" font-size="11.5" fill="var(--onlime)" font-family="Geist,Inter,sans-serif">₹18.2L</text><text x="'+sel[0]+'" y="'+(h+32)+'" text-anchor="middle" font-size="11" fill="var(--t2)" font-family="Geist,Inter,sans-serif">Aug</text></svg>'};
+  const comps=[
+    ['FfHeroCard','FfHeroCard(\n  gradient: FfHeroGradient.moss,\n  leading: FfProgressRing(value: .62,\n    icon: FfIcons.wallet),\n  title: \'Salary account\',\n  onOpen: () => …,   // ink ↗\n  child: FfAmountText.split(124500),\n)','<div class="hero h-moss sq-lg"><div class="row">'+ring(62,'wallet')+'<div style="font-size:15px;line-height:1.2">Salary account<div class="lbl">Savings</div></div><span class="sp"></span><span class="inkbtn">'+I.arrow+'</span></div><div style="height:26px"></div><div class="lbl">Available</div><div style="font-size:38px">'+amt('₹','1,24,500','.00')+'</div></div>'],
+    ['FfCard (squircle, density)','FfCard(\n  density: FfDensity.comfortable,\n  shape: FfCardShape.lg,  // 36\n  child: …,\n)','<div class="card sq"><div class="row">'+'<span class="cbtn soft">'+I.cal+warnTri+'</span><span class="sp"></span><span class="cbtn soft" style="background:var(--sunk);border-color:transparent">'+I.arrow+'</span></div><div style="font-size:18px;margin:16px 0 18px">Bills due this week</div><div class="row" style="align-items:flex-end"><span class="num" style="font-size:44px">3<span class="r">/7</span></span><span class="sp"></span>'+dots(18,9,null).replace('class="dots"','class="dots" style="color:var(--t1)"')+'</div></div>'],
+    ['FfCircleButton · FfInkButton','FfCircleButton(icon: FfIcons.back,\n  tooltip: \'Back\', onPressed: …)\nFfInkButton.open(onPressed: …)\n// 48 dp target, 44 dp visual','<div class="row"><span class="cbtn">'+I.back+'</span><span class="cbtn">'+I.more+'</span><span class="cbtn soft">'+I.eye+'</span><span class="sp"></span><span class="inkbtn">'+I.arrow+'</span></div>'],
+    ['FfPillBar','FfPillBar<TxFilter>(\n  values: TxFilter.values,\n  selected: filter,\n  label: (f) => f.label,\n  onSelected: …,\n)','<div class="pills" style="overflow:hidden"><span class="pill on">All</span><span class="pill">Expenses</span><span class="pill">Income</span></div><div class="search" style="margin-top:12px">'+I.search+'Search transactions</div>'],
+    ['FfGlass','FfGlass.pill(\n  child: …,   // solid when\n)            // effects reduced','<div class="hero h-dusk sq-md" style="padding:14px"><div class="glass row" style="border-radius:999px;padding:6px 6px 6px 16px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2)"><span style="font-size:14px;color:#F8F6F9">Recent changes</span><span class="sp"></span><span class="limechip">2</span><span class="inkbtn" style="width:38px;height:38px">'+I.arrow+'</span></div></div><div class="ondev glass" style="margin-top:12px">'+I.lock+'On device</div>'],
+    ['FfDotMatrix','FfDotMatrix(\n  total: 120, done: 31,\n  rows: 3, current: 31,\n  semanticsLabel: \'31 of 120 EMIs paid\',\n)','<div class="row" style="align-items:flex-end"><span class="num" style="font-size:40px">31<span class="r">/120</span></span><span class="sp"></span><div style="color:var(--t1)">'+dots(24,8,8)+'</div></div><div class="lbl" style="margin-top:8px">EMIs paid · lime marks the current one</div>'],
+    ['FfRangeBand','FfRangeBand(\n  bands: [FfBand.good(0, .3),\n    FfBand.watch(.3, .5), FfBand.high(.5, 1)],\n  value: .23, label: \'23% used\',\n)','<div style="position:relative;padding-top:22px"><div style="display:flex;gap:6px;height:38px"><div class="sq-md" style="flex:3;background:#DDEFD9;border-radius:12px"></div><div style="flex:2;background:#F6E7C8;border-radius:12px"></div><div style="flex:5;background:#F6DCD5;border-radius:12px"></div></div><div style="position:absolute;left:23%;top:6px;bottom:-4px;border-left:1.5px solid var(--t1)"></div><svg style="position:absolute;left:calc(23% - 6px);top:0" width="12" height="10" viewBox="0 0 12 10"><path d="M0 0h12L6 9z" fill="var(--t1)"/></svg></div><div class="row lbl" style="margin-top:8px"><span>Good · under 30%</span><span class="sp"></span><b style="font-weight:500;color:var(--t1)">23% used</b></div>'],
+    ['FfLineChart (lime bubble)','FfLineChart(\n  series: outstanding,\n  selected: aug,\n  bubble: (p) => money.compact(p.y),\n  onScrub: …,  // haptic tick\n)','<div class="chart">'+chartSvg(288,70)+'</div>'],
+    ['FfMonthGrid','FfMonthGrid(\n  months: emiMonths,\n  statusOf: (m) => m.status,\n)  // paid ✓ lime · missed ✕ + label','<div class="hero h-rose sq-md" style="padding:12px"><div class="mgrid">'+['Jun','Jul','Aug','Sep','Oct','Nov'].map((m,i)=>'<div class="mt'+(i===5?' future':'')+'"><span>'+m+'</span>'+(i===3?'<span class="c miss">'+I.x+'</span>':i===5?'<span style="height:20px"></span>':'<span class="c ok">'+I.check+'</span>')+'</div>').join('')+'</div><div class="lbl" style="margin-top:8px;opacity:1;color:#4A3F45">Sep missed · paid late on 9 Oct</div></div>'],
+    ['FfStatTile · FfBadge corner','FfStatTile(label: \'Spent\',\n  value: FfAmountText.split(48210),\n  unit: \'of ₹60k\')\nFfIconTile(icon, corner: FfCorner.warning)','<div class="row" style="gap:16px;align-items:flex-start"><div><div class="lbl">Spent</div><div style="font-size:32px">'+amt('₹','48,210')+'</div><div class="lbl">of ₹60,000</div></div><span class="sp"></span><span class="tile" style="width:48px;height:48px">'+I.bolt+warnTri+'</span></div>'],
+    ['FfDock','FfDock(\n  selected: tab, onSelected: …,\n  items: [FfDockItem(\'Home\', …),\n    …, FfDockItem(\'More\', badge: 3)],\n)','<div style="position:relative;height:64px"><div class="dock glass" style="bottom:0">'+'<span class="d on">'+I.home+'Home</span><span class="d">'+I.list+'<span class="badge">4</span></span><span class="d">'+I.pie+'</span><span class="d">'+I.spark+'</span><span class="d">'+I.dots+'</span></div></div>'],
+    ['FfCarousel','FfCarousel(\n  peek: 28, gap: 12,\n  children: accounts.map(…),\n)  // snaps, semantic “2 of 4”','<div style="display:flex;gap:10px;overflow:hidden;margin-right:-18px"><div class="hero h-moss sq-md" style="flex:0 0 72%;height:110px;padding:14px"><div class="lbl">Salary account</div><div style="font-size:26px;margin-top:22px">'+amt('₹','1,24,500')+'</div></div><div class="hero h-sand sq-md" style="flex:0 0 72%;height:110px;padding:14px"><div class="lbl">Cash wallet</div></div></div>'],
+  ];
+  document.getElementById('comps').innerHTML=comps.map((c,i)=>comp(c[0],c[1],c[2],i===7||i===10)).join('');
+
+  // ---- phones ----
+  const head=(left,title,right)=>'<div class="row">'+left+'<span class="sp" style="text-align:center;font-size:17px">'+(title||'')+'</span>'+right+'</div>';
+  const dock=(on)=>{const it=[['home','Home'],['list','Money'],['pie','Plan'],['spark','Insights'],['dots','More']];return '<div class="dock glass">'+it.map(([ic,l],i)=>i===on?'<span class="d on">'+I[ic]+l+'</span>':'<span class="d" aria-label="'+l+'">'+I[ic]+(i===1&&on!==1?'<span class="badge">4</span>':'')+'</span>').join('')+'</div>'};
+  const home=dk=>'<div class="ph'+(dk?' dk':'')+'"><div class="scroll">'+
+    head('<span class="cbtn soft" style="font-size:15px">FF</span>','','<span class="cbtn soft">'+I.eye+'</span><span class="cbtn soft">'+I.bell+'<span class="badge" style="position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 2px var(--cv)"></span></span>')+
+    '<div style="margin-top:6px"><div class="lbl">Good evening · Total balance</div><div style="font-size:52px;margin-top:6px">'+amt('₹','4,82,310','.45')+'</div><div class="row" style="margin-top:10px"><span class="limechip" style="height:26px">+₹12,400</span><span class="lbl">this month</span><span class="sp"></span><span class="ondev glass">'+I.lock+'On device</span></div></div>'+
+    '<div style="display:flex;gap:12px;margin-right:-16px">'+
+      '<div class="hero h-moss sq-lg" style="flex:0 0 286px;height:212px;display:flex;flex-direction:column"><div class="row">'+ring(62,'wallet')+'<div style="font-size:15px;line-height:1.2">Salary account<div class="lbl">Savings · 62% of goal buffer</div></div><span class="sp"></span><span class="inkbtn">'+I.arrow+'</span></div><span class="sp"></span><div class="lbl">Available</div><div class="row" style="align-items:flex-end"><div style="font-size:38px">'+amt('₹','1,24,500')+'</div><span class="sp"></span>'+dots(21,14,14)+'</div></div>'+
+      '<div class="hero h-rose sq-lg" style="flex:0 0 286px;height:212px"><div class="row">'+ring(26,'house','#1B1D17')+'<div style="font-size:15px">Home loan</div></div></div>'+
+    '</div>'+
+    '<div class="card sq"><div class="row"><span style="font-size:17px">November</span><span class="sp"></span><span class="pill" style="height:32px;padding:0 12px;font-size:13px">Cash flow</span></div><div class="row" style="margin-top:14px;align-items:flex-start"><div style="flex:1"><div class="lbl">Money in</div><div style="font-size:26px;color:var(--inc)">'+amt('+₹','82,000')+'</div></div><div style="flex:1"><div class="lbl">Money out</div><div style="font-size:26px">'+amt('−₹','48,210')+'</div></div></div><div class="chart" style="margin-top:4px">'+chartSvg(296,44)+'</div></div>'+
+    '<div class="dayh"><span>Needs attention</span><span>2</span></div>'+
+    '<div class="list sq-md"><div class="tx"><span class="tile">'+I.house+warnTri+'</span><div class="m"><b>Home loan EMI</b><span>Due tomorrow · ₹18,450</span></div><span class="inkbtn" style="width:36px;height:36px">'+I.arrow+'</span></div><div class="tx"><span class="tile">'+I.list+'</span><div class="m"><b>4 SMS to review</b><span>Verify merchant and category</span></div><span class="inkbtn" style="width:36px;height:36px">'+I.arrow+'</span></div></div>'+
+    '</div>'+dock(0)+'</div>';
+  const txRow=(ic,t,s,a,inc,sub)=>'<div class="tx"><span class="tile">'+I[ic]+'</span><div class="m"><b>'+t+'</b><span>'+s+'</span></div><div class="amt '+(inc?'in':'ex')+'">'+a+(sub?'<small>'+sub+'</small>':'')+'</div></div>';
+  const money=dk=>'<div class="ph'+(dk?' dk':'')+'"><div class="scroll" style="gap:12px">'+
+    head('<span class="ttl">Money</span>','','<span class="cbtn soft">'+I.filter+'</span><span class="inkbtn">'+I.plus+'</span>')+
+    '<div class="search">'+I.search+'Search payee, note or amount</div>'+
+    '<div class="pills" style="margin-right:-16px;overflow:hidden"><span class="pill on">All</span><span class="pill">Expenses</span><span class="pill">Income</span><span class="pill">Transfers</span></div>'+
+    '<div class="row" style="padding:2px 6px"><div><div class="lbl">Spent in Nov</div><div style="font-size:24px">'+amt('₹','48,210')+'</div></div><span class="sp"></span><div style="text-align:right"><div class="lbl">Received</div><div style="font-size:24px;color:var(--inc)">'+amt('₹','82,000')+'</div></div></div>'+
+    '<div class="dayh"><span>Today, 5 Nov</span><span>−₹2,794</span></div>'+
+    '<div class="list sq-md">'+txRow('cart','Weekly market','Groceries · Salary account','−₹2,340.00')+txRow('coffee','Corner café','Eating out · UPI','−₹454.00')+'</div>'+
+    '<div class="dayh"><span>Yesterday, 4 Nov</span><span>+₹77,889</span></div>'+
+    '<div class="list sq-md">'+txRow('down','Salary','Income · Salary account','+₹82,000.00',true)+txRow('bolt','Electricity board','Utilities · Auto-debit','−₹1,118.50',false)+txRow('fuel','Fuel station','Transport · Credit card','−₹2,992.50')+txRow('swap','To Emergency fund','Transfer','₹10,000.00',false,'Savings goal')+txRow('play','Streaming','Subscriptions · Card','−₹649.00')+'</div>'+
+    '</div>'+dock(1)+'</div>';
+  const loan=dk=>'<div class="ph'+(dk?' dk':'')+'"><div class="scroll">'+
+    head('<span class="cbtn">'+I.back+'</span>','Home loan','<span class="cbtn">'+I.more+'</span>')+
+    '<div class="hero h-rose sq-lg" style="padding:20px">'+
+      '<div class="row">'+ring(26,'house',dk?'#CBE94C':'#1B1D17')+'<div style="font-size:15px;line-height:1.2">Home loan<div class="lbl">8.4% · 20 years</div></div><span class="sp"></span><span class="ondev glass" style="color:inherit;background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.3)">'+I.lock+'On device</span></div>'+
+      '<div class="lbl" style="margin-top:22px">Paid so far</div><div style="font-size:44px">'+amt('₹','6,12,000')+'</div><div class="lbl">of ₹24,00,000 · 26%</div>'+
+      '<div class="row" style="margin-top:16px;align-items:flex-end"><div><div class="lbl">EMIs</div><span class="num" style="font-size:30px">31<span class="r">/120</span></span></div><span class="sp"></span>'+dots(24,7,7)+'</div>'+
+      '<div class="mgrid" style="margin-top:16px">'+['Jun','Jul','Aug','Sep','Oct','Nov'].map((m,i)=>'<div class="mt'+(i===5?' future':'')+'"><span>'+m+'</span>'+(i===3?'<span class="c miss">'+I.x+'</span>':i===5?'<span style="font-size:10px">6th</span>':'<span class="c ok">'+I.check+'</span>')+'</div>').join('')+'</div>'+
+      '<div class="lbl" style="margin-top:8px">September missed · paid late on 9 Oct</div>'+
+    '</div>'+
+    '<div class="card sq"><div class="row"><span class="cbtn soft">'+I.spark+'</span><span style="font-size:16px">Outstanding principal</span><span class="sp"></span></div><div class="chart" style="margin-top:6px">'+chartSvg(296,64)+'</div></div>'+
+    '</div><div class="glass row" style="position:absolute;left:16px;right:16px;bottom:18px;border-radius:999px;padding:6px"><span class="pill on" style="height:48px;flex:1;justify-content:center">Pay ₹18,450 EMI</span><span class="pill" style="height:48px;border-color:var(--ctl)">Prepay</span></div></div>';
+  document.getElementById('phones').innerHTML=home(false)+money(false)+loan(false)+home(true)+money(true)+loan(true);
+})();
+</script>

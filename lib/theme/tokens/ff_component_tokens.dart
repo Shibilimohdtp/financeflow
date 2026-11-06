@@ -1,3 +1,5 @@
+import 'dart:ui' show Brightness;
+
 import 'package:flutter/painting.dart';
 
 import 'ff_foundation.dart';
@@ -10,17 +12,95 @@ abstract final class FfButtonTokens {
   static const double heightLg = FfTouch.minTarget; // 48
   static const double heightMd = 44;
   static const double heightSm = 36;
-  static const double radius = FfRadius.md;
-  static const double radiusSm = FfRadius.sm;
+
+  /// Buttons are pills (Stillwater Bloom).
+  static const double radius = FfRadius.full;
+  static const double radiusSm = FfRadius.full;
   static const double iconGap = FfSpace.xs;
   static const double spinnerSize = 18;
   static const double spinnerStroke = 2;
 }
 
 abstract final class FfCardTokens {
+  /// List groups and everyday cards (compact density).
   static const double radius = FfRadius.lg;
+
+  /// Summary cards (comfortable density).
+  static const double radiusSummary = FfRadius.xl;
+
+  /// Hero gradient cards.
+  static const double radiusHero = FfRadius.x2l;
   static const double padding = FfSpace.lg;
   static const double borderWidth = FfBorderWidth.hairline;
+}
+
+/// Spacing density. Summaries and heroes are comfortable; lists are compact,
+/// so the airy look never turns the transaction list sparse. Rows are never
+/// shorter than a touch target.
+enum FfDensity {
+  comfortable(
+    rowHeight: 72,
+    cardPadding: FfSpace.lg,
+    gap: FfSpace.md,
+    cardRadius: FfCardTokens.radiusSummary,
+  ),
+  compact(
+    rowHeight: 60,
+    cardPadding: FfSpace.md,
+    gap: FfSpace.sm,
+    cardRadius: FfCardTokens.radius,
+  );
+
+  const FfDensity({
+    required this.rowHeight,
+    required this.cardPadding,
+    required this.gap,
+    required this.cardRadius,
+  });
+
+  final double rowHeight;
+  final double cardPadding;
+  final double gap;
+  final double cardRadius;
+}
+
+/// Soft, two-layer shadows tinted with the palette's shadow colour. In dark
+/// mode surfaces separate by tone, so [card] and [float] add a faint rim
+/// instead of a dark shadow.
+abstract final class FfElevation {
+  static List<BoxShadow> card(Color shadow, Brightness brightness) =>
+      brightness == Brightness.dark
+          ? _rim
+          : [
+            BoxShadow(
+              color: shadow.withValues(alpha: 0.04),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+            BoxShadow(
+              color: shadow.withValues(alpha: 0.10),
+              blurRadius: 32,
+              spreadRadius: -12,
+              offset: const Offset(0, 12),
+            ),
+          ];
+
+  /// Floating things: the dock, glass bars, raised menus.
+  static List<BoxShadow> float(Color shadow, Brightness brightness) => [
+    if (brightness == Brightness.dark) ..._rim,
+    BoxShadow(
+      color: shadow.withValues(
+        alpha: brightness == Brightness.dark ? 0.5 : 0.16,
+      ),
+      blurRadius: 40,
+      spreadRadius: -16,
+      offset: const Offset(0, 18),
+    ),
+  ];
+
+  static const List<BoxShadow> _rim = [
+    BoxShadow(color: Color(0x0AFFFFFF), spreadRadius: 1),
+  ];
 }
 
 abstract final class FfFieldTokens {
@@ -65,7 +145,7 @@ abstract final class FfRowTokens {
 }
 
 abstract final class FfSheetTokens {
-  static const double radius = FfRadius.x2l;
+  static const double radius = FfRadius.xl;
   static const Size dragHandle = Size(32, 4);
 
   /// Tallest a sheet may grow, as a share of the screen height.
@@ -83,7 +163,8 @@ abstract final class FfNavBarTokens {
 }
 
 abstract final class FfFabTokens {
-  static const double radius = FfRadius.md;
+  /// Circle (or pill when extended), like every ink action.
+  static const double radius = FfRadius.full;
   static const double elevation = 2;
 }
 

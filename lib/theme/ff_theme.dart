@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'ff_colors.dart';
+import 'ff_shape.dart';
 import 'ff_typography.dart';
 import 'palettes/ff_palette.dart';
 import 'stillwater_colors.dart';
@@ -21,6 +22,7 @@ abstract final class FfTheme {
 
   static ThemeData build(FfPalette palette, Brightness brightness) {
     final c = palette.colorsFor(brightness);
+    final heroes = palette.heroesFor(brightness);
     final text = FfTypography.forColors(c);
     final textTheme = text.toTextTheme();
     final isDark = brightness == Brightness.dark;
@@ -64,9 +66,7 @@ abstract final class FfTheme {
       surfaceTint: c.actionPrimary,
     );
 
-    final buttonShape = RoundedRectangleBorder(
-      borderRadius: ffRadius(FfButtonTokens.radius),
-    );
+    final buttonShape = FfShape.of(FfButtonTokens.radius);
     final buttonLabel = textTheme.labelLarge?.copyWith(
       fontWeight: FontWeight.w600,
     );
@@ -89,6 +89,7 @@ abstract final class FfTheme {
       extensions: [
         c,
         text,
+        heroes,
         FfFinColors.fromColors(c),
         FfStatusColors.fromColors(c),
         FfAccentColors.fromColors(c),
@@ -111,8 +112,8 @@ abstract final class FfTheme {
       cardTheme: CardTheme(
         color: c.surfaceCard,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: ffRadius(FfCardTokens.radius),
+        shape: FfShape.of(
+          FfCardTokens.radius,
           side: BorderSide(
             color: c.borderSubtle,
             width: FfCardTokens.borderWidth,
@@ -128,6 +129,15 @@ abstract final class FfTheme {
           shape: buttonShape,
           textStyle: buttonLabel,
           elevation: 0,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: c.actionPrimary,
+          foregroundColor: c.onActionPrimary,
+          minimumSize: const Size(0, FfButtonTokens.heightLg),
+          shape: buttonShape,
+          textStyle: buttonLabel,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -205,37 +215,47 @@ abstract final class FfTheme {
       dialogTheme: DialogTheme(
         backgroundColor: c.surfaceRaised,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: ffRadius(FfDialogTokens.radius),
-        ),
+        shape: FfShape.of(FfDialogTokens.radius),
         elevation: FfDialogTokens.elevation,
       ),
       datePickerTheme: DatePickerThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: ffRadius(FfDialogTokens.radius),
-        ),
+        shape: FfShape.of(FfDialogTokens.radius),
       ),
       timePickerTheme: TimePickerThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: ffRadius(FfDialogTokens.radius),
+        shape: FfShape.of(FfDialogTokens.radius),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: c.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        shape: FfShape.of(FfRadius.md),
+      ),
+      chipTheme: ChipThemeData(
+        shape: FfShape.of(
+          FfChipTokens.radius,
+          side: BorderSide(
+            color: c.borderControl,
+            width: FfBorderWidth.regular,
+          ),
+        ),
+        selectedColor: c.actionPrimary,
+        checkmarkColor: c.onActionPrimary,
+        secondaryLabelStyle: textTheme.labelLarge?.copyWith(
+          color: c.onActionPrimary,
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: c.actionPrimary,
         foregroundColor: c.onActionPrimary,
         elevation: FfFabTokens.elevation,
-        shape: RoundedRectangleBorder(
-          borderRadius: ffRadius(FfFabTokens.radius),
-        ),
+        shape: FfShape.of(FfFabTokens.radius),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: c.surfaceToast,
         contentTextStyle: textTheme.bodyMedium?.copyWith(
           color: c.onSurfaceToast,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: ffRadius(FfToastTokens.radius),
-        ),
+        actionTextColor: c.toastAction,
+        shape: FfShape.of(FfToastTokens.radius),
         behavior: SnackBarBehavior.floating,
       ),
       dividerTheme: DividerThemeData(

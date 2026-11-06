@@ -24,19 +24,22 @@ abstract final class FfSpace {
   static const double x3l = unit * 10; // 40
   static const double x4l = unit * 14; // 56
 
-  /// Horizontal margin of every screen.
-  static const double pageMargin = lg;
+  /// Horizontal margin of every screen. 16 rather than 20 since DS-B1, so
+  /// hero cards can be wide and carousels can peek past the edge.
+  static const double pageMargin = md;
 }
 
-/// Corner radius scale.
+/// Corner radius scale. Stillwater Bloom (DS-B1) uses large, soft corners;
+/// shapes are drawn as squircles through `FfShape`, so one switch there
+/// changes the whole app's shape language.
 abstract final class FfRadius {
-  static const double xs = 4; // tags, tiny badges
-  static const double sm = 8; // small buttons, icon tiles
-  static const double md = 12; // inputs, buttons, chart cards
-  static const double lg = 16; // cards, list containers
-  static const double xl = 24; // dialogs, hero cards
-  static const double x2l = 28; // bottom sheet top corners
-  static const double full = 999; // chips, pills
+  static const double xs = 6; // tags, tiny badges
+  static const double sm = 12; // icon tiles, small controls
+  static const double md = 16; // inputs, banners, toasts
+  static const double lg = 24; // cards and list groups (compact density)
+  static const double xl = 36; // summary cards, dialogs, sheets
+  static const double x2l = 44; // hero cards
+  static const double full = 999; // pills, buttons, chips
 }
 
 /// Stroke widths.
@@ -93,6 +96,22 @@ enum FfTint {
 
   const FfTint(this.alpha);
   final double alpha;
+}
+
+/// Blur radii (sigma) for glass. Only the dock and glass pills on hero
+/// cards blur; never inside a scrolling list item. When effects are reduced
+/// (`FfEffects`), glass is drawn as a solid surface instead.
+abstract final class FfBlur {
+  static const double glass = 18;
+  static const double dock = 24;
+}
+
+/// Film grain on hero surfaces: one small tile, generated once from a fixed
+/// seed and repeated. Skipped when effects are reduced.
+abstract final class FfGrain {
+  static const int tileSize = 96;
+  static const int seed = 1337;
+  static const double opacity = 0.3;
 }
 
 /// Layout breakpoints (window width in dp).

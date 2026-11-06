@@ -30,6 +30,12 @@ enum FfColorRole {
   toastAction, // snackbar action such as Undo
   surfaceInverse,
   onSurfaceInverse,
+  // The aurora wash behind the page (FfAurora). Text may sit on any stop.
+  auroraCool,
+  auroraWarm,
+  auroraLeaf,
+  surfaceGlass, // translucent glass pill or bar (solid when effects are reduced)
+  borderGlass,
 
   // Text
   textPrimary,
@@ -59,6 +65,11 @@ enum FfColorRole {
   onAccent,
   accentContainer,
   onAccentContainer,
+  // The lime spark: a fill that marks the current value or a finished step.
+  // Never used as text on a light surface; always carries [onSpark].
+  spark,
+  onSpark,
+  sparkContainer,
 
   // Money
   moneyIncome,
@@ -84,6 +95,8 @@ enum FfColorRole {
   statusError,
   onStatusError,
   statusErrorContainer,
+  statusWarningFill, // warning badge on an icon corner
+  onStatusWarningFill,
   privacyBoundary, // "may leave this device" markers
   // Utility
   scrim,
@@ -129,6 +142,11 @@ class FfColors extends ThemeExtension<FfColors> {
   Color get toastAction => this[FfColorRole.toastAction];
   Color get surfaceInverse => this[FfColorRole.surfaceInverse];
   Color get onSurfaceInverse => this[FfColorRole.onSurfaceInverse];
+  Color get auroraCool => this[FfColorRole.auroraCool];
+  Color get auroraWarm => this[FfColorRole.auroraWarm];
+  Color get auroraLeaf => this[FfColorRole.auroraLeaf];
+  Color get surfaceGlass => this[FfColorRole.surfaceGlass];
+  Color get borderGlass => this[FfColorRole.borderGlass];
 
   Color get textPrimary => this[FfColorRole.textPrimary];
   Color get textSecondary => this[FfColorRole.textSecondary];
@@ -156,6 +174,9 @@ class FfColors extends ThemeExtension<FfColors> {
   Color get onAccent => this[FfColorRole.onAccent];
   Color get accentContainer => this[FfColorRole.accentContainer];
   Color get onAccentContainer => this[FfColorRole.onAccentContainer];
+  Color get spark => this[FfColorRole.spark];
+  Color get onSpark => this[FfColorRole.onSpark];
+  Color get sparkContainer => this[FfColorRole.sparkContainer];
 
   Color get moneyIncome => this[FfColorRole.moneyIncome];
   Color get moneyIncomeContainer => this[FfColorRole.moneyIncomeContainer];
@@ -180,6 +201,8 @@ class FfColors extends ThemeExtension<FfColors> {
   Color get statusError => this[FfColorRole.statusError];
   Color get onStatusError => this[FfColorRole.onStatusError];
   Color get statusErrorContainer => this[FfColorRole.statusErrorContainer];
+  Color get statusWarningFill => this[FfColorRole.statusWarningFill];
+  Color get onStatusWarningFill => this[FfColorRole.onStatusWarningFill];
   Color get privacyBoundary => this[FfColorRole.privacyBoundary];
 
   Color get scrim => this[FfColorRole.scrim];

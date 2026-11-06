@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../ff_colors.dart';
+import '../ff_hero.dart';
 import 'lichen.dart';
 
 /// A colour theme: one complete set of semantic colours for light mode and
@@ -13,6 +14,8 @@ class FfPalette {
     required this.name,
     required this.light,
     required this.dark,
+    required this.heroesLight,
+    required this.heroesDark,
   });
 
   /// Stable identifier stored in settings. Never rename an existing id.
@@ -24,8 +27,15 @@ class FfPalette {
   final FfColors light;
   final FfColors dark;
 
+  /// Hero gradients (see [FfHeroTone]) for each mode.
+  final FfHeroes heroesLight;
+  final FfHeroes heroesDark;
+
   FfColors colorsFor(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
+
+  FfHeroes heroesFor(Brightness brightness) =>
+      brightness == Brightness.dark ? heroesDark : heroesLight;
 }
 
 /// Every palette the app offers. The first one is the default.
