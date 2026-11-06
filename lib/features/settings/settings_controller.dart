@@ -86,12 +86,6 @@ class SettingsController extends StateNotifier<AsyncValue<AppSettings>> {
     state = AsyncValue.data(await repo.getSettings());
   }
 
-  Future<void> setDenseMode(bool enabled) async {
-    final repo = _ref.read(settingsRepositoryProvider);
-    await repo.setDenseMode(enabled);
-    state = AsyncValue.data(await repo.getSettings());
-  }
-
   Future<void> updateSettings(AppSettings settings) async {
     final repo = _ref.read(settingsRepositoryProvider);
     await repo.updateSettings(settings);

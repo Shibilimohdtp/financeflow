@@ -211,7 +211,7 @@ void main() {
     );
 
     test(
-      'Privacy settings toggle privacy blur and dense mode safely',
+      'Privacy settings toggle privacy blur safely',
       () async {
         final settingsRepo = FakeSettingsRepository();
         var settings = await settingsRepo.getSettings();
@@ -221,9 +221,6 @@ void main() {
         settings = await settingsRepo.getSettings();
         expect(settings.isPrivacyBlurEnabled, isTrue);
 
-        await settingsRepo.setDenseMode(true);
-        settings = await settingsRepo.getSettings();
-        expect(settings.isDenseMode, isTrue);
       },
     );
   });

@@ -815,7 +815,6 @@ class BackupDataPayload {
     'isPrivacyBlurEnabled': s.isPrivacyBlurEnabled,
     'isScreenshotProtectionEnabled': s.isScreenshotProtectionEnabled,
     'currencyCode': s.currencyCode,
-    'isDenseMode': s.isDenseMode,
     'isNotificationDetectionEnabled': s.isNotificationDetectionEnabled,
     'isSmsDetectionEnabled': s.isSmsDetectionEnabled,
     'selectedNotificationPackages': s.selectedNotificationPackages,
@@ -860,7 +859,6 @@ class BackupDataPayload {
         isScreenshotProtectionEnabled:
             j['isScreenshotProtectionEnabled'] as bool? ?? false,
         currencyCode: j['currencyCode'] as String? ?? 'INR',
-        isDenseMode: j['isDenseMode'] as bool? ?? false,
         isNotificationDetectionEnabled:
             j['isNotificationDetectionEnabled'] as bool? ?? false,
         isSmsDetectionEnabled: j['isSmsDetectionEnabled'] as bool? ?? false,

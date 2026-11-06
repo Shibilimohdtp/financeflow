@@ -28,7 +28,6 @@ import '../ingestion/permissions/sms_permission_screen.dart';
 import '../security/security_settings_screen.dart';
 import 'branding_preview_screen.dart';
 import 'settings_controller.dart';
-import 'widgets/density_visualizer_card.dart';
 import 'widgets/ingestion_diagnostics_card.dart';
 import 'widgets/settings_picker_sheets.dart';
 import 'widgets/settings_search_results.dart';
@@ -67,18 +66,6 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
         break;
       case SettingsDestination.currencySheet:
         showSettingsCurrencyPicker(context, ref, settings);
-        break;
-      case SettingsDestination.density:
-        ref
-            .read(settingsControllerProvider.notifier)
-            .setDenseMode(!settings.isDenseMode);
-        FfToast.show(
-          context,
-          message:
-              settings.isDenseMode
-                  ? 'Switched to comfortable view.'
-                  : 'Switched to ledger view (dense).',
-        );
         break;
       case SettingsDestination.security:
       case SettingsDestination.pinSheet:
@@ -203,8 +190,6 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: FfSpace.sm),
-            DensityVisualizerCard(settings: settings),
 
             const SizedBox(height: FfSpace.xl),
 

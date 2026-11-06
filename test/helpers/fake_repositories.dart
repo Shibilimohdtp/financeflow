@@ -136,11 +136,6 @@ class FakeSettingsRepository implements SettingsRepository {
     _controller.add(_settings);
   }
 
-  @override
-  Future<void> setDenseMode(bool enabled) async {
-    _settings = _settings.copyWith(isDenseMode: enabled);
-    _controller.add(_settings);
-  }
 
   void dispose() {
     _controller.close();

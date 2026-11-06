@@ -74,7 +74,6 @@ void main() {
 
   final sampleSettings = AppSettings(
     themePreference: AppThemePreference.system,
-    isDenseMode: false,
     currencyCode: 'INR',
     isPinEnabled: true,
     isBiometricEnabled: true,

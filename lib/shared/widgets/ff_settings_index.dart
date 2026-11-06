@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 enum SettingsGroup {
   appearance(
     label: 'Look & feel',
-    description: 'Theme, display density and currency formatting',
+    description: 'Theme and currency formatting',
     icon: Icons.palette_outlined,
   ),
   security(
@@ -48,7 +48,6 @@ enum SettingsGroup {
 enum SettingsDestination {
   appearance,
   themeSheet,
-  density,
   currencySheet,
   security,
   pinSheet,
@@ -124,24 +123,6 @@ const List<SettingsEntry> kSettingsIndex = [
     group: SettingsGroup.appearance,
     icon: Icons.palette_outlined,
     destination: SettingsDestination.themeSheet,
-  ),
-  SettingsEntry(
-    id: 'density',
-    title: 'Display density (Ledger view)',
-    subtitle: 'Comfortable spacing or compact transaction rows',
-    keywords: [
-      'density',
-      'compact',
-      'ledger',
-      'dense',
-      'comfortable',
-      'rows',
-      'padding',
-      'spacing',
-    ],
-    group: SettingsGroup.appearance,
-    icon: Icons.density_medium_rounded,
-    destination: SettingsDestination.density,
   ),
   SettingsEntry(
     id: 'currency',

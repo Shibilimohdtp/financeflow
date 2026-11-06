@@ -46,7 +46,6 @@ abstract class SettingsRepository {
   Future<void> setBiometricEnabled(bool enabled);
   Future<void> setPinEnabled(bool enabled);
   Future<void> setPrivacyBlurEnabled(bool enabled);
-  Future<void> setDenseMode(bool enabled);
 }
 
 class IsarSettingsRepository implements SettingsRepository {
@@ -64,7 +63,6 @@ class IsarSettingsRepository implements SettingsRepository {
       isPrivacyBlurEnabled: entity.isPrivacyBlurEnabled,
       isScreenshotProtectionEnabled: entity.isScreenshotProtectionEnabled,
       currencyCode: entity.currencyCode,
-      isDenseMode: entity.isDenseMode,
       isNotificationDetectionEnabled: entity.isNotificationDetectionEnabled,
       isSmsDetectionEnabled: entity.isSmsDetectionEnabled,
       selectedNotificationPackages:
@@ -149,7 +147,6 @@ class IsarSettingsRepository implements SettingsRepository {
       entity.isScreenshotProtectionEnabled =
           settings.isScreenshotProtectionEnabled;
       entity.currencyCode = settings.currencyCode;
-      entity.isDenseMode = settings.isDenseMode;
       entity.isNotificationDetectionEnabled =
           settings.isNotificationDetectionEnabled;
       entity.isSmsDetectionEnabled = settings.isSmsDetectionEnabled;
@@ -226,11 +223,5 @@ class IsarSettingsRepository implements SettingsRepository {
   Future<void> setPrivacyBlurEnabled(bool enabled) async {
     final current = await getSettings();
     await updateSettings(current.copyWith(isPrivacyBlurEnabled: enabled));
-  }
-
-  @override
-  Future<void> setDenseMode(bool enabled) async {
-    final current = await getSettings();
-    await updateSettings(current.copyWith(isDenseMode: enabled));
   }
 }

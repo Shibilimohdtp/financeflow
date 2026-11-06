@@ -48,7 +48,6 @@ class AppSettings {
   final bool isPrivacyBlurEnabled;
   final bool isScreenshotProtectionEnabled;
   final String currencyCode;
-  final bool isDenseMode;
 
   // Phase 3 Ingestion Settings
   final bool isNotificationDetectionEnabled;
@@ -93,7 +92,6 @@ class AppSettings {
     this.isPrivacyBlurEnabled = false,
     this.isScreenshotProtectionEnabled = false,
     this.currencyCode = 'INR',
-    this.isDenseMode = false,
     this.isNotificationDetectionEnabled = false,
     this.isSmsDetectionEnabled = false,
     this.selectedNotificationPackages = const [
@@ -141,7 +139,6 @@ class AppSettings {
     bool? isPrivacyBlurEnabled,
     bool? isScreenshotProtectionEnabled,
     String? currencyCode,
-    bool? isDenseMode,
     bool? isNotificationDetectionEnabled,
     bool? isSmsDetectionEnabled,
     List<String>? selectedNotificationPackages,
@@ -182,7 +179,6 @@ class AppSettings {
       isScreenshotProtectionEnabled:
           isScreenshotProtectionEnabled ?? this.isScreenshotProtectionEnabled,
       currencyCode: currencyCode ?? this.currencyCode,
-      isDenseMode: isDenseMode ?? this.isDenseMode,
       isNotificationDetectionEnabled:
           isNotificationDetectionEnabled ?? this.isNotificationDetectionEnabled,
       isSmsDetectionEnabled:

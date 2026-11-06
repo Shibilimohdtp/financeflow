@@ -123,7 +123,6 @@ void main() {
 
       expect(find.byType(SettingsDetailScreen), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
-      expect(find.text('Ledger View'), findsOneWidget);
       expect(find.text('Currency'), findsOneWidget);
       expect(find.text('Notification Detection'), findsOneWidget);
       expect(find.text('Bank SMS Detection'), findsOneWidget);
@@ -238,7 +237,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Theme'), findsOneWidget);
-        expect(find.text('Ledger View'), findsOneWidget);
       },
     );
 
@@ -286,18 +284,5 @@ void main() {
       expect(find.text('Select Currency'), findsNothing);
     });
 
-    testWidgets('density visualizer card toggles dense mode', (tester) async {
-      await tester.pumpWidget(
-        createSettingsDetailScreen(const AppSettings(isDenseMode: false)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Row Density'), findsOneWidget);
-      expect(find.text('Swiggy'), findsOneWidget);
-
-      // Tap 'Ledger View' option
-      await tester.tap(find.text('Ledger View'));
-      await tester.pumpAndSettle();
-    });
   });
 }

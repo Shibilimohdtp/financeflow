@@ -35,8 +35,6 @@ void main() {
       final currencyResults = searchSettings('dollar');
       expect(currencyResults.any((e) => e.id == 'currency'), isTrue);
 
-      final ledgerResults = searchSettings('ledger');
-      expect(ledgerResults.any((e) => e.id == 'density'), isTrue);
     });
   });
 
