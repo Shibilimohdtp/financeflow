@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/formatting/currency_formatter.dart';
-import '../../core/formatting/date_formatter.dart';
 import '../../models/money_record.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
 import 'money_records_controller.dart';
+import 'widgets/money_record_date_pickers.dart';
 import '../accounts/accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
@@ -365,114 +365,11 @@ class _AddEditMoneyRecordSheetState
                   const SizedBox(height: FfSpace.lg),
 
                   // ── 4. Transaction Date & Due Date ────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Date',
-                              style: context.ff.text.label.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: FfSpace.xs),
-                            InkWell(
-                              onTap: _pickTransactionDate,
-                              borderRadius: BorderRadius.circular(FfRadius.md),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: FfSpace.md,
-                                  vertical: FfSpace.md,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: context.ff.color.borderSubtle,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    FfRadius.md,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today_outlined,
-                                      size: 16,
-                                      color: context.ff.color.actionPrimary,
-                                    ),
-                                    const SizedBox(width: FfSpace.sm),
-                                    Expanded(
-                                      child: Text(
-                                        DateFormatter.formatShortDate(
-                                          _transactionDate,
-                                        ),
-                                        style: context.ff.text.bodySm.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: FfSpace.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Expected Due Date',
-                              style: context.ff.text.label.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: FfSpace.xs),
-                            InkWell(
-                              onTap: _pickDueDate,
-                              borderRadius: BorderRadius.circular(FfRadius.md),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: FfSpace.md,
-                                  vertical: FfSpace.md,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: context.ff.color.borderSubtle,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    FfRadius.md,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.event_available_outlined,
-                                      size: 16,
-                                      color: context.ff.color.actionPrimary,
-                                    ),
-                                    const SizedBox(width: FfSpace.sm),
-                                    Expanded(
-                                      child: Text(
-                                        DateFormatter.formatShortDate(_dueDate),
-                                        style: context.ff.text.bodySm.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  MoneyRecordDatePickers(
+                    transactionDate: _transactionDate,
+                    dueDate: _dueDate,
+                    onPickTransactionDate: _pickTransactionDate,
+                    onPickDueDate: _pickDueDate,
                   ),
 
                   const SizedBox(height: FfSpace.lg),

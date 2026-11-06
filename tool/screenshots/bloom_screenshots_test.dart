@@ -13,10 +13,13 @@ import 'package:financeflow/shared/widgets/ff_account_preview_card.dart';
 import 'package:financeflow/shared/widgets/ff_account_type_tiles.dart';
 import 'package:financeflow/shared/widgets/ff_amount_hero.dart';
 import 'package:financeflow/shared/widgets/ff_amount_text.dart';
+import 'package:financeflow/shared/widgets/ff_balance_band.dart';
 import 'package:financeflow/shared/widgets/ff_card.dart';
 import 'package:financeflow/shared/widgets/ff_corner_badge.dart';
 import 'package:financeflow/shared/widgets/ff_data_viz.dart';
+import 'package:financeflow/shared/widgets/ff_due_chip.dart';
 import 'package:financeflow/shared/widgets/ff_icon_tile.dart';
+import 'package:financeflow/shared/widgets/ff_ledger_entry_row.dart';
 import 'package:financeflow/shared/widgets/ff_monogram_tile.dart';
 import 'package:financeflow/shared/widgets/ff_navigation.dart';
 import 'package:financeflow/shared/widgets/ff_progress.dart';
@@ -653,7 +656,10 @@ Widget _subscriptionSheet(BuildContext context) {
           FfRenewalChip(daysUntilRenewal: 1),
           FfRenewalChip(daysUntilRenewal: 3),
           FfRenewalChip(daysUntilRenewal: 12),
-          FfRenewalChip(daysUntilRenewal: 10, status: SubscriptionStatus.paused),
+          FfRenewalChip(
+            daysUntilRenewal: 10,
+            status: SubscriptionStatus.paused,
+          ),
         ],
       ),
       const SizedBox(height: 24),
@@ -679,9 +685,82 @@ Widget _subscriptionSheet(BuildContext context) {
       const SizedBox(height: 24),
       Text('Renewal 30-Day Strip', style: ff.text.titleLg),
       const SizedBox(height: 12),
-      FfRenewalStrip(
-        subscriptions: [sampleSub],
-        referenceDate: refDate,
+      FfRenewalStrip(subscriptions: [sampleSub], referenceDate: refDate),
+    ],
+  );
+}
+
+Widget _lendingSheet(BuildContext context) {
+  final ff = context.ff;
+  final refDate = DateTime(2026, 11, 6);
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      Text('Due Chips (Boundary Rules)', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          FfDueChip(
+            dueDate: refDate.subtract(const Duration(days: 12)),
+            asOfDate: refDate,
+          ),
+          FfDueChip(dueDate: refDate, asOfDate: refDate),
+          FfDueChip(
+            dueDate: refDate.add(const Duration(days: 1)),
+            asOfDate: refDate,
+          ),
+          FfDueChip(
+            dueDate: refDate.add(const Duration(days: 3)),
+            asOfDate: refDate,
+          ),
+          FfDueChip(
+            dueDate: refDate.add(const Duration(days: 20)),
+            asOfDate: refDate,
+          ),
+          FfDueChip(dueDate: refDate, isSettled: true, asOfDate: refDate),
+        ],
+      ),
+      const SizedBox(height: 24),
+      Text('Two-Sided Balance Band', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      const FfBalanceBand(
+        leftLabel: 'Owed to you',
+        leftAmount: 7000,
+        rightLabel: 'You owe',
+        rightAmount: 5000,
+        onHero: false,
+      ),
+      const SizedBox(height: 24),
+      Text('Ledger Entry Row', style: ff.text.titleLg),
+      const SizedBox(height: 12),
+      FfCard(
+        variant: FfCardVariant.standard,
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            FfLedgerEntryRow(
+              title: 'Money lent',
+              date: DateTime(2026, 10, 1),
+              amount: 7500,
+              runningBalance: 7500,
+              isInflow: false,
+              accountName: 'HDFC Salary',
+              allocationBadge: 'Partly paid',
+              allocationTone: FfTone.debt,
+            ),
+            const Divider(height: 1),
+            FfLedgerEntryRow(
+              title: 'Repayment received',
+              date: DateTime(2026, 10, 20),
+              amount: 3000,
+              runningBalance: 4500,
+              isInflow: true,
+              accountName: 'HDFC Salary',
+            ),
+          ],
+        ),
       ),
     ],
   );
@@ -784,6 +863,24 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/bloom_subscription_components_$mode.png'),
+      );
+    });
+    testWidgets('lending components, $mode', (tester) async {
+      tester.view.physicalSize = const Size(390, 850);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.runAsync(FfGrainTile.load);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: theme,
+          home: Scaffold(body: Builder(builder: _lendingSheet)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/bloom_lending_components_$mode.png'),
       );
     });
   }

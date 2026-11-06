@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/extensions/context_extensions.dart';
 import '../../core/formatting/currency_formatter.dart';
-import '../../core/formatting/date_formatter.dart';
 import '../../models/money_advance.dart';
 import '../../models/money_record.dart';
 import '../../models/money_repayment.dart';
 import '../../services/money_lending_calculator.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../theme/stillwater_typography.dart';
 import 'add_edit_money_record_sheet.dart';
 import 'money_record_detail_screen.dart';
 import 'money_records_controller.dart';
+import 'widgets/lending_summary_box.dart';
+import 'widgets/money_record_card.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_app_bar.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_progress.dart';
 import '../../theme/ff.dart';
 
 class LendingBorrowingScreen extends ConsumerWidget {
@@ -94,7 +90,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                     children: [
                       // Owed to Me (Lent)
                       Expanded(
-                        child: _SummaryBox(
+                        child: LendingSummaryBox(
                           title: 'OWED TO ME',
                           amount: summary.totalOwedToMe,
                           subtitle:
@@ -111,7 +107,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                       const SizedBox(width: FfSpace.md),
                       // I Owe (Borrowed)
                       Expanded(
-                        child: _SummaryBox(
+                        child: LendingSummaryBox(
                           title: 'I OWE',
                           amount: summary.totalIOwe,
                           subtitle:
@@ -142,7 +138,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  _FilterChipItem(
+                  LendingFilterChipItem(
                     label: 'All',
                     isSelected: currentFilter == MoneyRecordFilter.all,
                     onTap: () {
@@ -151,7 +147,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(width: FfSpace.sm),
-                  _FilterChipItem(
+                  LendingFilterChipItem(
                     label: 'Owed to Me',
                     count: summary.activeLentCount,
                     isSelected: currentFilter == MoneyRecordFilter.owedToMe,
@@ -161,7 +157,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(width: FfSpace.sm),
-                  _FilterChipItem(
+                  LendingFilterChipItem(
                     label: 'I Owe',
                     count: summary.activeBorrowedCount,
                     isSelected: currentFilter == MoneyRecordFilter.iOwe,
@@ -171,7 +167,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(width: FfSpace.sm),
-                  _FilterChipItem(
+                  LendingFilterChipItem(
                     label: 'Overdue',
                     count: summary.overdueCount,
                     color: context.ff.color.moneyExpense,
@@ -182,7 +178,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(width: FfSpace.sm),
-                  _FilterChipItem(
+                  LendingFilterChipItem(
                     label: 'Due Soon',
                     count: summary.dueSoonCount,
                     color: context.ff.color.moneyDebt,
@@ -193,7 +189,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(width: FfSpace.sm),
-                  _FilterChipItem(
+                  LendingFilterChipItem(
                     label: 'Settled',
                     count: summary.settledCount,
                     isSelected: currentFilter == MoneyRecordFilter.settled,
@@ -251,7 +247,7 @@ class LendingBorrowingScreen extends ConsumerWidget {
                   final advs = advancesByRecord[record.id] ?? const [];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: FfSpace.sm),
-                    child: _MoneyRecordCard(
+                    child: MoneyRecordCard(
                       record: record,
                       advances: advs,
                       repayments: reps,
@@ -261,409 +257,6 @@ class LendingBorrowingScreen extends ConsumerWidget {
                 }, childCount: records.length),
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryBox extends StatelessWidget {
-  final String title;
-  final double amount;
-  final String subtitle;
-  final Color color;
-  final IconData icon;
-  final VoidCallback onAddTap;
-
-  const _SummaryBox({
-    required this.title,
-    required this.amount,
-    required this.subtitle,
-    required this.color,
-    required this.icon,
-    required this.onAddTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FfCard(
-      variant: FfCardVariant.standard,
-      padding: const EdgeInsets.all(FfSpace.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, color: color, size: 16),
-                  const SizedBox(width: FfSpace.xs),
-                  Text(
-                    title,
-                    style: context.ff.text.labelSm.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-              InkWell(
-                onTap: onAddTap,
-                borderRadius: BorderRadius.circular(FfRadius.sm),
-                child: Padding(
-                  padding: const EdgeInsets.all(FfSpace.x2s),
-                  child: Icon(
-                    Icons.add_circle_outline_rounded,
-                    size: 18,
-                    color: color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: FfSpace.sm),
-          Text(
-            CurrencyFormatter.format(amount),
-            style: context.ff.text.titleLg.copyWith(
-              fontWeight: FontWeight.w800,
-              fontFeatures: StillwaterTypography.tabularFeatures,
-            ),
-          ),
-          const SizedBox(height: FfSpace.x2s),
-          Text(
-            subtitle,
-            style: context.ff.text.labelSm.copyWith(
-              color: context.ff.color.secondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChipItem extends StatelessWidget {
-  final String label;
-  final int? count;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Color? color;
-
-  const _FilterChipItem({
-    required this.label,
-    this.count,
-    required this.isSelected,
-    required this.onTap,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final activeColor = color ?? context.ff.color.actionPrimary;
-
-    return FilterChip(
-      selected: isSelected,
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label),
-          if (count != null && count! > 0) ...[
-            const SizedBox(width: FfSpace.x2s),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: FfSpace.x2s,
-                vertical: FfSpace.x3s,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    isSelected
-                        ? context.ff.color.onActionPrimary.withValues(
-                          alpha: FfTint.medium.alpha,
-                        )
-                        : activeColor.withValues(alpha: FfTint.subtle.alpha),
-                borderRadius: BorderRadius.circular(FfRadius.full),
-              ),
-              child: Text(
-                count.toString(),
-                style: context.ff.text.labelSm.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isSelected
-                          ? context.ff.color.onActionPrimary
-                          : activeColor,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-      onSelected: (_) => onTap(),
-      selectedColor: activeColor,
-      labelStyle: context.ff.text.label.copyWith(
-        color:
-            isSelected
-                ? context.ff.color.onActionPrimary
-                : context.ff.color.textPrimary,
-        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-      ),
-      backgroundColor: context.ff.color.surfaceCard,
-      side: BorderSide(
-        color:
-            isSelected
-                ? activeColor
-                : context.ff.color.borderSubtle.withValues(
-                  alpha: FfTint.strong.alpha,
-                ),
-        width: 1,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(FfRadius.full),
-      ),
-      showCheckmark: false,
-      padding: const EdgeInsets.symmetric(
-        horizontal: FfSpace.sm,
-        vertical: FfSpace.x2s,
-      ),
-    );
-  }
-}
-
-class _MoneyRecordCard extends StatelessWidget {
-  final MoneyRecord record;
-  final List<MoneyAdvance> advances;
-  final List<MoneyRepayment> repayments;
-  final VoidCallback onTap;
-
-  const _MoneyRecordCard({
-    required this.record,
-    this.advances = const [],
-    required this.repayments,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isLent = record.type == MoneyRecordType.lent;
-    final typeColor =
-        isLent ? context.ff.color.moneyIncome : context.ff.color.moneyExpense;
-    final totalAdvanced = record.calculateTotalAdvanced(advances);
-    final totalRepaid = record.calculateTotalRepaid(repayments);
-    final remaining = record.calculateRemainingAmount(
-      repayments,
-      advances: advances,
-    );
-    final isSettled = record.isFullySettled(repayments, advances: advances);
-    final isOverdue = record.isOverdue(
-      repayments: repayments,
-      advances: advances,
-    );
-    final isDueSoon = record.isDueSoon(
-      repayments: repayments,
-      advances: advances,
-    );
-    final status = record.calculateStatus(repayments, advances: advances);
-    final effectiveDueDate = record.calculateEffectiveDueDate(
-      advances: advances,
-      repayments: repayments,
-    );
-    final progress =
-        totalAdvanced > 0 ? (totalRepaid / totalAdvanced).clamp(0.0, 1.0) : 0.0;
-    final advanceCount = advances.isNotEmpty ? advances.length : 1;
-
-    return FfCard(
-      variant: FfCardVariant.standard,
-      onTap: onTap,
-      padding: const EdgeInsets.all(FfSpace.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Person name, direction badge, advance count, remaining amount
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Avatar circle with icon
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: FfTint.subtle.alpha),
-                  borderRadius: BorderRadius.circular(FfRadius.md),
-                ),
-                child: Icon(record.type.icon, color: typeColor, size: 20),
-              ),
-              const SizedBox(width: FfSpace.md),
-
-              // Person name, direction subtitle, and advance count pill
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            record.personName,
-                            style: context.ff.text.titleSm.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (advanceCount > 1) ...[
-                          const SizedBox(width: FfSpace.xs),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: FfSpace.x2s,
-                              vertical: FfSpace.x3s,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.ff.color.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(FfRadius.sm),
-                            ),
-                            child: Text(
-                              '$advanceCount advances',
-                              style: context.ff.text.labelSm.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: context.ff.color.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: FfSpace.x3s),
-                    Row(
-                      children: [
-                        Text(
-                          isLent ? 'Lent' : 'Borrowed',
-                          style: context.ff.text.bodySm.copyWith(
-                            color: typeColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          ' · ${DateFormatter.formatShortDate(record.transactionDate)}',
-                          style: context.ff.text.bodySm.copyWith(
-                            color: context.ff.color.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Balance & total advanced amount
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    CurrencyFormatter.format(remaining),
-                    style: context.ff.text.title.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color:
-                          isSettled ? context.ff.color.moneyIncome : typeColor,
-                      fontFeatures: StillwaterTypography.tabularFeatures,
-                    ),
-                  ),
-                  if (totalRepaid > 0.001 || totalAdvanced > remaining)
-                    Text(
-                      'Total: ${CurrencyFormatter.format(totalAdvanced)}',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.secondary,
-                        fontFeatures: StillwaterTypography.tabularFeatures,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-
-          // Row 2: Progress bar (if partially repaid)
-          if (totalRepaid > 0.001 && !isSettled) ...[
-            const SizedBox(height: FfSpace.sm),
-            FfProgressBar(
-              value: progress,
-              color: typeColor,
-              size: FfProgressSize.sm,
-            ),
-          ],
-
-          const SizedBox(height: FfSpace.sm),
-          const FfDivider(),
-          const SizedBox(height: FfSpace.sm),
-
-          // Row 3: Due date with relative badge & status pill
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Due Date indicator
-              Row(
-                children: [
-                  Icon(
-                    isOverdue
-                        ? Icons.warning_amber_rounded
-                        : (isDueSoon
-                            ? Icons.schedule_rounded
-                            : Icons.calendar_today_outlined),
-                    size: 14,
-                    color:
-                        isOverdue
-                            ? context.ff.color.moneyExpense
-                            : (isDueSoon
-                                ? context.ff.color.moneyDebt
-                                : context.ff.color.secondary),
-                  ),
-                  const SizedBox(width: FfSpace.x2s),
-                  Text(
-                    isSettled
-                        ? 'Settled'
-                        : (isOverdue
-                            ? 'Overdue (${DateFormatter.formatShortDate(effectiveDueDate)})'
-                            : 'Due ${DateFormatter.formatShortDate(effectiveDueDate)}'),
-                    style: context.ff.text.bodySm.copyWith(
-                      color:
-                          isOverdue
-                              ? context.ff.color.moneyExpense
-                              : (isDueSoon
-                                  ? context.ff.color.moneyDebt
-                                  : context.ff.color.secondary),
-                      fontWeight:
-                          (isOverdue || isDueSoon)
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: FfSpace.sm,
-                  vertical: FfSpace.x2s,
-                ),
-                decoration: BoxDecoration(
-                  color: status
-                      .colorFor(isDark: context.isDarkMode)
-                      .withValues(alpha: FfTint.subtle.alpha),
-                  borderRadius: BorderRadius.circular(FfRadius.full),
-                ),
-                child: Text(
-                  status.displayName,
-                  style: context.ff.text.labelSm.copyWith(
-                    color: status.colorFor(isDark: context.isDarkMode),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
