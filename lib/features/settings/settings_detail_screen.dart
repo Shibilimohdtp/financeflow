@@ -152,6 +152,7 @@ class _SettingsDetailScreenState extends ConsumerState<SettingsDetailScreen> {
 
     return FfPageScaffold(
       title: 'Settings',
+      subtitle: 'Preferences & privacy',
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: FfSpace.pageMargin,

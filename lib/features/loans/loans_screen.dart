@@ -7,13 +7,11 @@ import '../../repositories/loan_repository.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import 'add_edit_loan_sheet.dart';
 import 'loan_detail_screen.dart';
 import 'loans_controller.dart';
 import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_amount_text.dart';
@@ -23,8 +21,9 @@ import '../../shared/widgets/ff_data_viz.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
 import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
-import '../../shared/widgets/ff_surfaces.dart';
 import '../../theme/ff_tone.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_surfaces.dart';
 import '../../theme/ff.dart';
 
 class LoansScreen extends ConsumerWidget {
@@ -45,18 +44,9 @@ class LoansScreen extends ConsumerWidget {
     final summary = ref.watch(loansSummaryProvider);
     final loansAsync = ref.watch(allLoansStreamProvider);
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Loans & EMIs',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
-            child: Center(
-              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Loans & EMIs',
+      subtitle: 'Loans on this device',
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'loans_add_fab',
         tooltip: 'Add loan',

@@ -5,7 +5,6 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../models/savings_goal.dart';
 import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_badge.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_data_viz.dart';
@@ -18,6 +17,7 @@ import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import 'add_edit_savings_goal_sheet.dart';
@@ -83,18 +83,16 @@ class SavingsGoalsScreen extends ConsumerWidget {
     final goalsSummariesAsync = ref.watch(savingsGoalSummariesProvider);
     final overallSummaryAsync = ref.watch(overallSavingsGoalSummaryProvider);
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Savings Goals',
-        subtitle: 'Targeted on-device savings',
-        actions: [
-          FfCircleButton(
-            icon: Icons.add_rounded,
-            tooltip: 'Add savings goal',
-            onPressed: () => _openAddGoal(context),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Savings Goals',
+      subtitle: 'Targeted on-device savings',
+      actions: [
+        FfCircleButton(
+          icon: Icons.add_rounded,
+          tooltip: 'Add savings goal',
+          onPressed: () => _openAddGoal(context),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'savings_goals_fab',
         tooltip: 'Add savings goal',

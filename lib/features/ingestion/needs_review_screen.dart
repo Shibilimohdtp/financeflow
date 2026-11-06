@@ -8,13 +8,14 @@ import '../../models/transaction.dart';
 import '../../repositories/pending_transaction_repository.dart';
 import '../../services/categorization_service.dart';
 import '../../services/default_account_service.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_source_badge.dart';
 import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
 import '../transactions/add_edit_transaction_screen.dart';
 import 'needs_review_controller.dart';
@@ -167,66 +168,64 @@ class _NeedsReviewScreenState extends ConsumerState<NeedsReviewScreen> {
           }
         }).toList();
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Needs Review Queue',
-        actions: [
-          if (items.isNotEmpty) ...[
-            IconButton(
-              icon: const Icon(Icons.playlist_add_check_rounded),
-              tooltip:
-                  validCount > 0
-                      ? 'Approve All Valid ($validCount)'
-                      : 'Approve All Valid',
-              onPressed:
-                  busy || validCount == 0
-                      ? null
-                      : () => _runAction(() async {
-                        final count = await ref
-                            .read(needsReviewControllerProvider.notifier)
-                            .approveAllValid(items);
-                        if (context.mounted) {
-                          FfToast.show(
-                            context,
-                            message: 'Approved $count valid transactions.',
-                            actionLabel: 'Undo',
-                            onAction:
-                                () =>
-                                    ref
-                                        .read(
-                                          needsReviewControllerProvider
-                                              .notifier,
-                                        )
-                                        .undoLastApprove(),
-                          );
-                        }
-                      }),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_sweep_outlined),
-              tooltip: 'Clear Queue',
-              onPressed:
-                  busy
-                      ? null
-                      : () => _runAction(() async {
-                        final confirmed = await FfDialog.confirm(
+    return FfPageScaffold(
+      title: 'Needs Review Queue',
+      subtitle: 'Transactions to confirm',
+      actions: [
+        if (items.isNotEmpty) ...[
+          FfCircleButton(
+            icon: Icons.playlist_add_check_rounded,
+            tooltip:
+                validCount > 0
+                    ? 'Approve All Valid ($validCount)'
+                    : 'Approve All Valid',
+            onPressed:
+                busy || validCount == 0
+                    ? null
+                    : () => _runAction(() async {
+                      final count = await ref
+                          .read(needsReviewControllerProvider.notifier)
+                          .approveAllValid(items);
+                      if (context.mounted) {
+                        FfToast.show(
                           context,
-                          title: 'Clear Review Queue?',
-                          message:
-                              'All unapproved pending transactions will be deleted.',
-                          confirmLabel: 'Clear All',
-                          destructive: true,
+                          message: 'Approved $count valid transactions.',
+                          actionLabel: 'Undo',
+                          onAction:
+                              () =>
+                                  ref
+                                      .read(
+                                        needsReviewControllerProvider.notifier,
+                                      )
+                                      .undoLastApprove(),
                         );
-                        if (confirmed == true) {
-                          await ref
-                              .read(needsReviewControllerProvider.notifier)
-                              .clearAll();
-                        }
-                      }),
-            ),
-          ],
+                      }
+                    }),
+          ),
+          FfCircleButton(
+            icon: Icons.delete_sweep_outlined,
+            tooltip: 'Clear Queue',
+            onPressed:
+                busy
+                    ? null
+                    : () => _runAction(() async {
+                      final confirmed = await FfDialog.confirm(
+                        context,
+                        title: 'Clear Review Queue?',
+                        message:
+                            'All unapproved pending transactions will be deleted.',
+                        confirmLabel: 'Clear All',
+                        destructive: true,
+                      );
+                      if (confirmed == true) {
+                        await ref
+                            .read(needsReviewControllerProvider.notifier)
+                            .clearAll();
+                      }
+                    }),
+          ),
         ],
-      ),
+      ],
       body:
           pending.isLoading
               ? const FfLoading()

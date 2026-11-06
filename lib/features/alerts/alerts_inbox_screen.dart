@@ -12,12 +12,12 @@ import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
 import '../../shared/widgets/ff_navigation.dart';
-import '../../shared/widgets/ff_page_header.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
 import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import '../backup/backup_screen.dart';
@@ -244,78 +244,63 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
   @override
   Widget build(BuildContext context) {
     final alertsAsync = ref.watch(activeAlertsStreamProvider);
-    final canPop = Navigator.of(context).canPop();
 
-    // Same non-sticky header as the other Bloom screens: it sits at the top of
-    // the scrolling content on the aurora, not in a separate app bar.
-    final header = FfPageHeader(
+    final actions = [
+      FfCircleButton(
+        icon: Icons.done_all_rounded,
+        tooltip: 'Mark All Read',
+        soft: true,
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          ref.read(alertsControllerProvider.notifier).markAllAsRead();
+        },
+      ),
+      const SizedBox(width: FfSpace.xs),
+      FfCircleButton(
+        icon: Icons.tune_rounded,
+        tooltip: 'Alert Settings',
+        soft: true,
+        onPressed: () => AlertSettingsSheet.show(context),
+      ),
+    ];
+
+    return FfPageScaffold(
+      onAurora: true,
       title: 'Alerts & Reminders',
-      onBack: canPop ? () => Navigator.of(context).pop() : null,
-      actions: [
-        FfCircleButton(
-          icon: Icons.done_all_rounded,
-          tooltip: 'Mark All Read',
-          soft: true,
-          onPressed: () {
-            HapticFeedback.selectionClick();
-            ref.read(alertsControllerProvider.notifier).markAllAsRead();
-          },
-        ),
-        const SizedBox(width: FfSpace.xs),
-        FfCircleButton(
-          icon: Icons.tune_rounded,
-          tooltip: 'Alert Settings',
-          soft: true,
-          onPressed: () => AlertSettingsSheet.show(context),
-        ),
-      ],
-    );
-
-    return FfAurora(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          bottom: false,
-          child: alertsAsync.when(
-            data: (alerts) => _buildBody(context, header, alerts),
-            loading:
-                () => ListView(
-                  padding: const EdgeInsets.only(top: FfSpace.xs),
-                  children: [
-                    header,
-                    const Padding(
-                      padding: EdgeInsets.all(FfSpace.x4l),
-                      child: FfLoading(),
-                    ),
-                  ],
+      subtitle: 'Reminders, on-device',
+      actions: actions,
+      body: alertsAsync.when(
+        data: (alerts) => _buildBody(context, alerts),
+        loading:
+            () => ListView(
+              padding: const EdgeInsets.only(top: FfSpace.xs),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(FfSpace.x4l),
+                  child: FfLoading(),
                 ),
-            error:
-                (e, _) => ListView(
-                  padding: const EdgeInsets.only(top: FfSpace.xs),
-                  children: [
-                    header,
-                    Padding(
-                      padding: const EdgeInsets.all(FfSpace.xl),
-                      child: Text(
-                        'Error loading alerts: $e',
-                        style: context.ff.text.body.copyWith(
-                          color: context.ff.color.statusError,
-                        ),
-                      ),
+              ],
+            ),
+        error:
+            (e, _) => ListView(
+              padding: const EdgeInsets.only(top: FfSpace.xs),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(FfSpace.xl),
+                  child: Text(
+                    'Error loading alerts: $e',
+                    style: context.ff.text.body.copyWith(
+                      color: context.ff.color.statusError,
                     ),
-                  ],
+                  ),
                 ),
-          ),
-        ),
+              ],
+            ),
       ),
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    Widget header,
-    List<AlertItem> alerts,
-  ) {
+  Widget _buildBody(BuildContext context, List<AlertItem> alerts) {
     final totalCount = alerts.length;
     final unreadCount = alerts.where((a) => !a.isRead).length;
     final urgentCount =
@@ -343,7 +328,6 @@ class _AlertsInboxScreenState extends ConsumerState<AlertsInboxScreen> {
       child: ListView(
         padding: const EdgeInsets.only(top: FfSpace.xs, bottom: FfSpace.x4l),
         children: [
-          header,
           // ── Command Status Hero Card ───────────────────────────────────────
           _buildCommandHero(
             context: context,

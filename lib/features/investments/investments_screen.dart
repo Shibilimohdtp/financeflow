@@ -7,7 +7,6 @@ import '../../repositories/investment_repository.dart';
 import '../../services/investment_calculator.dart';
 import '../../shared/widgets/ff_allocation_band.dart';
 import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_asset_type_tiles.dart';
 import '../../shared/widgets/ff_badge.dart';
 import '../../shared/widgets/ff_card.dart';
@@ -19,6 +18,8 @@ import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
 import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import 'add_edit_investment_sheet.dart';
@@ -61,18 +62,17 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> {
     final summary = ref.watch(portfolioSummaryProvider);
     final invsAsync = ref.watch(allInvestmentsStreamProvider);
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Investments',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'Add Investment',
-            onPressed: () => _openAddSheet(context),
-          ),
-          const SizedBox(width: FfSpace.sm),
-        ],
-      ),
+    return FfPageScaffold(
+      onAurora: true,
+      title: 'Investments',
+      subtitle: 'Portfolio, on-device',
+      actions: [
+        FfCircleButton(
+          icon: Icons.add_rounded,
+          tooltip: 'Add investment',
+          onPressed: () => _openAddSheet(context),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'investments_fab',
         tooltip: 'Add investment',
@@ -80,142 +80,139 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Investment'),
       ),
-      body: FfAurora(
-        child: invsAsync.when(
-          data: (investments) {
-            final active = investments.where((i) => !i.isArchived).toList();
+      body: invsAsync.when(
+        data: (investments) {
+          final active = investments.where((i) => !i.isArchived).toList();
 
-            if (active.isEmpty) {
-              return ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: FfSpace.pageMargin,
-                  vertical: FfSpace.lg,
-                ),
-                children: [
-                  // Hero empty portfolio
-                  _buildEmptyHero(context),
-                  const SizedBox(height: FfSpace.x3l),
-                  FfEmptyState(
-                    icon: Icons.show_chart_rounded,
-                    title: 'No investments recorded',
-                    description:
-                        'Track stocks, mutual funds, gold, fixed deposits, and PPF with manual on-device valuations.',
-                    actionLabel: 'Add Investment',
-                    onAction: () => _openAddSheet(context),
-                  ),
-                ],
-              );
-            }
-
-            // Extract unique asset types present
-            final presentTypes =
-                active.map((i) => i.assetType).toSet().toList();
-
-            // Filter holdings
-            final filtered =
-                _selectedAssetType == null
-                    ? active
-                    : active
-                        .where((i) => i.assetType == _selectedAssetType)
-                        .toList();
-
+          if (active.isEmpty) {
             return ListView(
-              padding: const EdgeInsets.fromLTRB(
-                FfSpace.pageMargin,
-                FfSpace.sm,
-                FfSpace.pageMargin,
-                112,
+              padding: const EdgeInsets.symmetric(
+                horizontal: FfSpace.pageMargin,
+                vertical: FfSpace.lg,
               ),
               children: [
-                // ── 1. Portfolio Value Dusk Hero ──────────────────────────────
-                _buildPortfolioHero(context, summary),
-                const SizedBox(height: FfSpace.lg),
-
-                // ── 2. Asset Allocation Breakdown ─────────────────────────────
-                if (summary.allocationSlices.isNotEmpty) ...[
-                  const FfSectionHeader(title: 'Asset Allocation'),
-                  const SizedBox(height: FfSpace.xs),
-                  FfCard(
-                    padding: const EdgeInsets.all(FfSpace.md),
-                    child: FfAllocationBand(
-                      slices:
-                          summary.allocationSlices
-                              .map(
-                                (s) => FfAllocationSlice(
-                                  label: s.label,
-                                  value: s.totalValue,
-                                  percentage: s.percentage,
-                                ),
-                              )
-                              .toList(),
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.lg),
-                ],
-
-                // ── 3. Asset Class Filter Pills ───────────────────────────────
-                if (presentTypes.length > 1) ...[
-                  FfPillBar<AssetType?>(
-                    padding: EdgeInsets.zero,
-                    values: [null, ...presentTypes],
-                    selected: _selectedAssetType,
-                    label: (type) {
-                      if (type == null) return 'All (${active.length})';
-                      final count =
-                          active.where((i) => i.assetType == type).length;
-                      return '${type.displayName} ($count)';
-                    },
-                    onSelected:
-                        (type) => setState(() => _selectedAssetType = type),
-                  ),
-                  const SizedBox(height: FfSpace.md),
-                ],
-
-                // ── 4. Holdings Section ───────────────────────────────────────
-                FfSectionHeader(title: 'Holdings', count: filtered.length),
-                const SizedBox(height: FfSpace.xs),
-
-                if (filtered.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: FfSpace.xl),
-                    child: Center(
-                      child: Text(
-                        'No holdings in this asset class.',
-                        style: context.ff.text.bodySm.copyWith(
-                          color: context.ff.color.textSecondary,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  for (final inv in filtered) ...[
-                    _HoldingCard(
-                      investment: inv,
-                      onTap: () => _openDetail(context, inv),
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                  ],
+                // Hero empty portfolio
+                _buildEmptyHero(context),
+                const SizedBox(height: FfSpace.x3l),
+                FfEmptyState(
+                  icon: Icons.show_chart_rounded,
+                  title: 'No investments recorded',
+                  description:
+                      'Track stocks, mutual funds, gold, fixed deposits, and PPF with manual on-device valuations.',
+                  actionLabel: 'Add Investment',
+                  onAction: () => _openAddSheet(context),
+                ),
               ],
             );
-          },
-          loading:
-              () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(FfSpace.x4l),
-                  child: FfLoading(),
-                ),
-              ),
-          error:
-              (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(FfSpace.lg),
-                  child: Text(
-                    'Could not load investments: $e',
-                    style: context.ff.text.body,
+          }
+
+          // Extract unique asset types present
+          final presentTypes = active.map((i) => i.assetType).toSet().toList();
+
+          // Filter holdings
+          final filtered =
+              _selectedAssetType == null
+                  ? active
+                  : active
+                      .where((i) => i.assetType == _selectedAssetType)
+                      .toList();
+
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(
+              FfSpace.pageMargin,
+              FfSpace.sm,
+              FfSpace.pageMargin,
+              112,
+            ),
+            children: [
+              // ── 1. Portfolio Value Dusk Hero ──────────────────────────────
+              _buildPortfolioHero(context, summary),
+              const SizedBox(height: FfSpace.lg),
+
+              // ── 2. Asset Allocation Breakdown ─────────────────────────────
+              if (summary.allocationSlices.isNotEmpty) ...[
+                const FfSectionHeader(title: 'Asset Allocation'),
+                const SizedBox(height: FfSpace.xs),
+                FfCard(
+                  padding: const EdgeInsets.all(FfSpace.md),
+                  child: FfAllocationBand(
+                    slices:
+                        summary.allocationSlices
+                            .map(
+                              (s) => FfAllocationSlice(
+                                label: s.label,
+                                value: s.totalValue,
+                                percentage: s.percentage,
+                              ),
+                            )
+                            .toList(),
                   ),
                 ),
+                const SizedBox(height: FfSpace.lg),
+              ],
+
+              // ── 3. Asset Class Filter Pills ───────────────────────────────
+              if (presentTypes.length > 1) ...[
+                FfPillBar<AssetType?>(
+                  padding: EdgeInsets.zero,
+                  values: [null, ...presentTypes],
+                  selected: _selectedAssetType,
+                  label: (type) {
+                    if (type == null) return 'All (${active.length})';
+                    final count =
+                        active.where((i) => i.assetType == type).length;
+                    return '${type.displayName} ($count)';
+                  },
+                  onSelected:
+                      (type) => setState(() => _selectedAssetType = type),
+                ),
+                const SizedBox(height: FfSpace.md),
+              ],
+
+              // ── 4. Holdings Section ───────────────────────────────────────
+              FfSectionHeader(title: 'Holdings', count: filtered.length),
+              const SizedBox(height: FfSpace.xs),
+
+              if (filtered.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: FfSpace.xl),
+                  child: Center(
+                    child: Text(
+                      'No holdings in this asset class.',
+                      style: context.ff.text.bodySm.copyWith(
+                        color: context.ff.color.textSecondary,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                for (final inv in filtered) ...[
+                  _HoldingCard(
+                    investment: inv,
+                    onTap: () => _openDetail(context, inv),
+                  ),
+                  const SizedBox(height: FfSpace.xs),
+                ],
+            ],
+          );
+        },
+        loading:
+            () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(FfSpace.x4l),
+                child: FfLoading(),
               ),
-        ),
+            ),
+        error:
+            (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(FfSpace.lg),
+                child: Text(
+                  'Could not load investments: $e',
+                  style: context.ff.text.body,
+                ),
+              ),
+            ),
       ),
     );
   }

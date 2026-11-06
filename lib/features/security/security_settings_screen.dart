@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_protection_ring.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import '../settings/settings_controller.dart';
@@ -66,18 +65,9 @@ class _SecuritySettingsScreenState
     if (isPrivacyBlur) activeSafeguards++;
     if (isScreenshotProtection) activeSafeguards++;
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Security & Privacy',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.pageMargin),
-            child: Center(
-              child: FfPrivacyBadge(label: 'Hardware Keystore', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Security & Privacy',
+      subtitle: 'Lock, PIN & protection',
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: FfSpace.pageMargin,

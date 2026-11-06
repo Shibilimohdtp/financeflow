@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/financial_health.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_badge.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_data_viz.dart';
 import '../../shared/widgets/ff_progress.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
 import '../../shared/widgets/ff_surfaces.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import 'financial_health_controller.dart';
@@ -28,19 +27,9 @@ class FinancialHealthScreen extends ConsumerWidget {
     final c = ff.color;
     final reportAsync = ref.watch(financialHealthReportProvider);
 
-    return Scaffold(
-      backgroundColor: c.surfacePage,
-      appBar: const FfAppBar(
-        title: 'Financial Health',
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.pageMargin),
-            child: Center(
-              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Financial Health',
+      subtitle: 'Wellness score, on-device',
       body: reportAsync.when(
         data: (report) => _buildContent(context, report),
         loading:

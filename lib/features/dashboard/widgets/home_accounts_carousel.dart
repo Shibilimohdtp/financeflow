@@ -22,7 +22,7 @@ class HomeAccountsCarousel extends StatelessWidget {
   final bool isPrivacyBlur;
   final VoidCallback onOpenAccounts;
 
-  static const double height = 196;
+  static const double height = 172;
 
   /// Hero tone by what the account holds, never by bank or brand.
   static FfHeroTone toneFor(AccountType type) => switch (type) {

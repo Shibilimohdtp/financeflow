@@ -16,13 +16,15 @@ import 'widgets/emi_schedule_view.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../shared/widgets/ff_key_value_row.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_data_viz.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
-import '../../shared/widgets/ff_surfaces.dart';
 import '../../theme/ff_tone.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_surfaces.dart';
 import '../../theme/ff.dart';
 
 class LoanDetailScreen extends ConsumerWidget {
@@ -205,40 +207,21 @@ class LoanDetailScreen extends ConsumerWidget {
     );
     final daysUntilDue = currentLoan.daysUntilDue();
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: currentLoan.name,
-        subtitle: currentLoan.lender,
-        actions: [
-          Semantics(
-            label: 'View amortization schedule',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.table_chart_outlined),
-              tooltip: 'Amortization Schedule',
-              onPressed: () => _openSchedule(context, currentLoan),
-            ),
-          ),
-          Semantics(
-            label: 'Edit loan',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Edit',
-              onPressed: () => _edit(context, currentLoan),
-            ),
-          ),
-          Semantics(
-            label: 'Delete loan',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.delete_outline_rounded),
-              tooltip: 'Delete',
-              onPressed: () => _delete(context, ref, currentLoan),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: currentLoan.name,
+      subtitle: currentLoan.lender,
+      actions: [
+        FfCircleButton(
+          icon: Icons.edit_outlined,
+          tooltip: 'Edit loan',
+          onPressed: () => _edit(context, currentLoan),
+        ),
+        FfCircleButton(
+          icon: Icons.delete_outline_rounded,
+          tooltip: 'Delete loan',
+          onPressed: () => _delete(context, ref, currentLoan),
+        ),
+      ],
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: FfSpace.pageMargin,
@@ -314,10 +297,11 @@ class LoanDetailScreen extends ConsumerWidget {
           const SizedBox(height: FfSpace.lg),
 
           // ── 6. Amortization Schedule Access ─────────────────────────────
-          FfButton(
-            label: 'View Complete Amortization Schedule',
-            variant: FfButtonVariant.outlined,
-            onPressed: () => _openSchedule(context, currentLoan),
+          _ScheduleEntryCard(
+            paidCount: paidItems.length,
+            totalCount: schedule.length,
+            overdueCount: overdueItems.length,
+            onOpen: () => _openSchedule(context, currentLoan),
           ),
 
           const SizedBox(height: FfSpace.md),
@@ -416,6 +400,65 @@ class _BalanceHeroSection extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Drill-down into the full payment schedule: a quiet card with a count and
+/// the outward ↗ open button (Bloom Pattern D secondary navigation).
+class _ScheduleEntryCard extends StatelessWidget {
+  const _ScheduleEntryCard({
+    required this.paidCount,
+    required this.totalCount,
+    required this.overdueCount,
+    required this.onOpen,
+  });
+
+  final int paidCount;
+  final int totalCount;
+  final int overdueCount;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final ff = context.ff;
+    final details =
+        overdueCount > 0
+            ? '$paidCount of $totalCount paid · $overdueCount overdue'
+            : '$paidCount of $totalCount paid';
+
+    return FfCard(
+      density: FfDensity.compact,
+      onTap: onOpen,
+      child: Row(
+        children: [
+          const FfIconTile(
+            icon: Icons.calendar_month_outlined,
+            tone: FfTone.debt,
+          ),
+          const SizedBox(width: FfSpace.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Payment schedule', style: ff.text.titleSm),
+                const SizedBox(height: FfSpace.x3s),
+                Text(
+                  details,
+                  style: ff.text.label.copyWith(
+                    color: overdueCount > 0 ? ff.color.statusError : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FfInkButton.open(
+            onPressed: onOpen,
+            tooltip: 'Open payment schedule',
+            small: true,
+          ),
+        ],
       ),
     );
   }

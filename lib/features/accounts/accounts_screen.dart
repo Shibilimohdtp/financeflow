@@ -4,7 +4,6 @@ import '../../models/account.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../settings/settings_controller.dart';
@@ -12,7 +11,6 @@ import 'accounts_controller.dart';
 import 'add_edit_account_sheet.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_dialog.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_menu.dart';
 import '../../shared/widgets/ff_progress.dart';
@@ -20,6 +18,7 @@ import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
 import '../../shared/widgets/ff_badge.dart';
 import '../../theme/ff_tone.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../theme/ff.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
@@ -57,18 +56,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final settings = ref.watch(settingsStreamProvider).value;
     final isPrivacyBlur = settings?.isPrivacyBlurEnabled ?? false;
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Financial Accounts',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
-            child: Center(
-              child: FfPrivacyBadge(label: '100% Local', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Financial Accounts',
+      subtitle: 'Balances, on-device',
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'accounts_fab',
         tooltip: 'Add account',

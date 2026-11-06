@@ -118,7 +118,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Macbook EMI Schedule'), findsOneWidget);
+      expect(find.text('Macbook EMI'), findsOneWidget);
       expect(find.textContaining('Overdue'), findsWidgets);
       expect(find.textContaining('Upcoming'), findsWidgets);
       expect(find.text('Mark All Paid'), findsOneWidget);

@@ -93,56 +93,68 @@ class BudgetsScreen extends ConsumerWidget {
               onRefresh: () async {
                 ref.invalidate(activeBudgetsStreamProvider);
               },
-              child: ListView(
+              child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                // Room for the FAB, and for the floating dock when the shell
-                // draws content under it.
-                padding: EdgeInsets.only(
-                  top: FfSpace.xs,
-                  bottom: FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
-                ),
-                children: [
-                  PlanHeader(
-                    onBack:
-                        canPop ? () => Navigator.of(context).maybePop() : null,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: PlanHeader(
+                      onBack:
+                          canPop
+                              ? () => Navigator.of(context).maybePop()
+                              : null,
+                    ),
                   ),
-                  const SizedBox(height: FfSpace.sm),
-                  ...(loading
-                          ? const AsyncValue<BudgetBoard>.loading()
-                          : boardAsync)
-                      .when(
-                        loading: () => const [_PlanSkeleton()],
-                        error:
-                            (e, _) => [
-                              Padding(
-                                padding: const EdgeInsets.all(
-                                  FfSpace.pageMargin,
-                                ),
-                                child: FfEmptyState(
-                                  icon: Icons.error_outline_rounded,
-                                  title: 'Couldn\'t load your plan',
-                                  description:
-                                      'Your budgets and transactions are safe on this '
-                                      'device. Try again in a moment.',
-                                  actionLabel: 'Try again',
-                                  onAction: () {
-                                    ref.invalidate(activeBudgetsStreamProvider);
-                                  },
-                                ),
-                              ),
-                            ],
-                        data:
-                            (board) =>
-                                !hasAnyBudget
-                                    ? [_setup(context, ref, isPrivacyBlur)]
-                                    : _plan(
-                                      context,
-                                      ref,
-                                      board,
-                                      period,
-                                      isPrivacyBlur,
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                      bottom:
+                          FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        const SizedBox(height: FfSpace.sm),
+                        ...(loading
+                                ? const AsyncValue<BudgetBoard>.loading()
+                                : boardAsync)
+                            .when(
+                              loading: () => const [_PlanSkeleton()],
+                              error:
+                                  (e, _) => [
+                                    Padding(
+                                      padding: const EdgeInsets.all(
+                                        FfSpace.pageMargin,
+                                      ),
+                                      child: FfEmptyState(
+                                        icon: Icons.error_outline_rounded,
+                                        title: 'Couldn\'t load your plan',
+                                        description:
+                                            'Your budgets and transactions are safe on this '
+                                            'device. Try again in a moment.',
+                                        actionLabel: 'Try again',
+                                        onAction: () {
+                                          ref.invalidate(
+                                            activeBudgetsStreamProvider,
+                                          );
+                                        },
+                                      ),
                                     ),
-                      ),
+                                  ],
+                              data:
+                                  (board) =>
+                                      !hasAnyBudget
+                                          ? [
+                                            _setup(context, ref, isPrivacyBlur),
+                                          ]
+                                          : _plan(
+                                            context,
+                                            ref,
+                                            board,
+                                            period,
+                                            isPrivacyBlur,
+                                          ),
+                            ),
+                      ]),
+                    ),
+                  ),
                 ],
               ),
             ),

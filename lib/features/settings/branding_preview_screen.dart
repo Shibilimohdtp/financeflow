@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/financeflow_mark.dart';
 import '../../theme/stillwater_colors.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_divider.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../theme/ff.dart';
 
 /// Internal Branding & Stillwater Design System Preview Screen
@@ -16,18 +16,9 @@ class BrandingPreviewScreen extends StatelessWidget {
     final theme = context.theme;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Stillwater Branding Showcase',
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: FfSpace.lg),
-            child: Center(
-              child: FfPrivacyBadge(label: 'Design Showcase', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Stillwater Branding Showcase',
+      subtitle: 'Design system preview',
       body: ListView(
         padding: const EdgeInsets.symmetric(
           horizontal: FfSpace.lg,

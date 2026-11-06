@@ -183,6 +183,7 @@ class DashboardScreen extends ConsumerWidget {
                           .setPrivacyBlurEnabled(!isPrivacyBlur);
                     },
                   ),
+                  const SizedBox(height: FfSpace.lg),
                   // 1. Main Balance Hero Card (Primary Command Anchor)
                   TotalBalanceHero(
                     totalBalance: totalBalance,

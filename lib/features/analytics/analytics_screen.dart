@@ -73,100 +73,109 @@ class AnalyticsScreen extends ConsumerWidget {
             color: context.ff.color.actionPrimary,
             onRefresh:
                 () async => ref.invalidate(analyticsRawTransactionsProvider),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                FfSpace.pageMargin,
-                FfSpace.xs,
-                FfSpace.pageMargin,
-                FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
-              ),
-              children: [
-                FfPageHeader(
-                  title: 'Insights',
-                  subtitle: 'Trends & cash flow',
-                  padding: const EdgeInsetsDirectional.only(
-                    bottom: FfSpace.x2s,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: FfPageHeader(
+                    title: 'Insights',
+                    subtitle: 'Trends & cash flow',
+                    actions: [
+                      FfCircleButton(
+                        icon:
+                            isPrivacyBlur
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                        tooltip:
+                            isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
+                        soft: true,
+                        onPressed: () {
+                          ref
+                              .read(settingsControllerProvider.notifier)
+                              .setPrivacyBlurEnabled(!isPrivacyBlur);
+                        },
+                      ),
+                      FfCircleButton(
+                        icon: Icons.health_and_safety_outlined,
+                        tooltip: 'Financial health',
+                        soft: true,
+                        onPressed: () => _openFinancialHealth(context),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    FfCircleButton(
-                      icon:
-                          isPrivacyBlur
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                      tooltip: isPrivacyBlur ? 'Show amounts' : 'Hide amounts',
-                      soft: true,
-                      onPressed: () {
-                        ref
-                            .read(settingsControllerProvider.notifier)
-                            .setPrivacyBlurEnabled(!isPrivacyBlur);
-                      },
-                    ),
-                    FfCircleButton(
-                      icon: Icons.health_and_safety_outlined,
-                      tooltip: 'Financial health',
-                      soft: true,
-                      onPressed: () => _openFinancialHealth(context),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: FfSpace.xs),
-                FfPeriodBar(
-                  period: period,
-                  onChanged: (p) {
-                    if (p != null) {
-                      ref.read(reportPeriodProvider.notifier).state = p;
-                    }
-                  },
-                ),
-                const SizedBox(height: FfSpace.md),
-                reportAsync.when(
-                  data:
-                      (report) =>
-                          report.totalExpense == 0 && report.totalIncome == 0
-                              ? const FfCard(
-                                child: FfEmptyState(
-                                  icon: Icons.insights_rounded,
-                                  title: 'No spending or income in this period',
-                                  description:
-                                      'Pick another period, or add transactions to see where your money goes.',
-                                ),
-                              )
-                              : _report(
-                                context,
-                                report,
-                                period,
-                                show,
-                                isPrivacyBlur,
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    FfSpace.pageMargin,
+                    0,
+                    FfSpace.pageMargin,
+                    FfDock.insetOf(context) + FfSpace.x4l + FfSpace.x3l,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      const SizedBox(height: FfSpace.xs),
+                      FfPeriodBar(
+                        period: period,
+                        onChanged: (p) {
+                          if (p != null) {
+                            ref.read(reportPeriodProvider.notifier).state = p;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: FfSpace.md),
+                      reportAsync.when(
+                        data:
+                            (report) =>
+                                report.totalExpense == 0 &&
+                                        report.totalIncome == 0
+                                    ? const FfCard(
+                                      child: FfEmptyState(
+                                        icon: Icons.insights_rounded,
+                                        title:
+                                            'No spending or income in this period',
+                                        description:
+                                            'Pick another period, or add transactions to see where your money goes.',
+                                      ),
+                                    )
+                                    : _report(
+                                      context,
+                                      report,
+                                      period,
+                                      show,
+                                      isPrivacyBlur,
+                                    ),
+                        loading:
+                            () => const FfSkeletonLoader(
+                              child: Column(
+                                children: [
+                                  FfSkeletonBlock(
+                                    height: 190,
+                                    borderRadius: FfRadius.x2l,
+                                  ),
+                                  SizedBox(height: FfSpace.md),
+                                  FfSkeletonBlock(
+                                    height: 68,
+                                    borderRadius: FfRadius.lg,
+                                  ),
+                                  SizedBox(height: FfSpace.md),
+                                  FfSkeletonBlock(
+                                    height: 260,
+                                    borderRadius: FfRadius.xl,
+                                  ),
+                                ],
                               ),
-                  loading:
-                      () => const FfSkeletonLoader(
-                        child: Column(
-                          children: [
-                            FfSkeletonBlock(
-                              height: 190,
-                              borderRadius: FfRadius.x2l,
                             ),
-                            SizedBox(height: FfSpace.md),
-                            FfSkeletonBlock(
-                              height: 68,
-                              borderRadius: FfRadius.lg,
+                        error:
+                            (e, _) => const FfCard(
+                              child: FfEmptyState(
+                                icon: Icons.error_outline_rounded,
+                                title: 'Could not calculate insights',
+                                description:
+                                    'Pull down to refresh and try again.',
+                              ),
                             ),
-                            SizedBox(height: FfSpace.md),
-                            FfSkeletonBlock(
-                              height: 260,
-                              borderRadius: FfRadius.xl,
-                            ),
-                          ],
-                        ),
                       ),
-                  error:
-                      (e, _) => const FfCard(
-                        child: FfEmptyState(
-                          icon: Icons.error_outline_rounded,
-                          title: 'Could not calculate insights',
-                          description: 'Pull down to refresh and try again.',
-                        ),
-                      ),
+                    ]),
+                  ),
                 ),
               ],
             ),

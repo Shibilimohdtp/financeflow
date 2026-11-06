@@ -80,9 +80,24 @@ void main() {
 
       // Verify header stats
       expect(find.text('15 Paid'), findsOneWidget);
+
+      // The hero, progress and filter sit above the rows, so scroll to them
+      // (the rows are built lazily and are below the first viewport).
+      await tester.scrollUntilVisible(
+        find.textContaining('Upcoming'),
+        100,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pumpAndSettle();
       expect(find.textContaining('Upcoming'), findsWidgets);
 
-      // Verify that initially visible schedule items are rendered
+      // Verify that schedule items are rendered
+      await tester.scrollUntilVisible(
+        find.textContaining('July 2025'),
+        100,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pumpAndSettle();
       expect(find.textContaining('July 2025'), findsWidgets);
       expect(find.textContaining('Paid 3 Jul 2025'), findsWidgets);
 
@@ -101,12 +116,10 @@ void main() {
       expect(find.textContaining('Paid 3 Nov 2025'), findsWidgets);
 
       // Scroll down further to see unpaid items
-      await tester.scrollUntilVisible(
+      await _scrollUntilFound(
+        tester,
         find.byIcon(Icons.check_circle_outline_rounded),
-        100,
-        scrollable: find.byType(Scrollable),
       );
-      await tester.pumpAndSettle();
 
       // Verify unpaid checkmark buttons exist
       expect(find.byIcon(Icons.check_circle_outline_rounded), findsWidgets);
@@ -184,6 +197,9 @@ void main() {
 
     expect(find.text('2 Paid'), findsOneWidget);
 
+    // Paid rows sit below the hero and attention card; bring them into view.
+    await _scrollUntilFound(tester, find.byIcon(Icons.undo_rounded));
+
     // Find undo button for paid installments
     final undoButtons = find.byIcon(Icons.undo_rounded);
     expect(undoButtons, findsNWidgets(2));
@@ -204,4 +220,15 @@ void main() {
     expect(find.text('1 Paid'), findsOneWidget);
     expect(find.byIcon(Icons.undo_rounded), findsNWidgets(1));
   });
+}
+
+/// Scrolls the schedule list until [finder] is built. Rows are built lazily,
+/// so a finder for a row far down the list has no match until it is scrolled
+/// into the cache extent.
+Future<void> _scrollUntilFound(WidgetTester tester, Finder finder) async {
+  for (var i = 0; i < 40 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
+    await tester.pumpAndSettle();
+  }
+  expect(finder, findsWidgets);
 }

@@ -19,6 +19,7 @@ class FfPageHeader extends StatelessWidget {
     this.titleStyle,
     this.titleWidget,
     this.onBack,
+    this.leading,
     this.actions,
     this.isSearchOpen = false,
     this.searchController,
@@ -40,6 +41,10 @@ class FfPageHeader extends StatelessWidget {
   final TextStyle? titleStyle;
   final Widget? titleWidget;
   final VoidCallback? onBack;
+
+  /// A custom leading control, shown before the title (for example a plain
+  /// back arrow matching [FfAppBar]). Use [onBack] for the round back button.
+  final Widget? leading;
   final List<Widget>? actions;
 
   // Search mode properties
@@ -108,7 +113,10 @@ class FfPageHeader extends StatelessWidget {
       key: const ValueKey('ff_page_header_normal'),
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (onBack != null) ...[
+        if (leading != null) ...[
+          leading!,
+          const SizedBox(width: FfSpace.xs),
+        ] else if (onBack != null) ...[
           FfCircleButton(
             icon: Icons.arrow_back_rounded,
             tooltip: 'Back',

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../shared/widgets/ff_surfaces.dart';
+import '../../theme/ff.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/formatting/currency_formatter.dart';
@@ -6,7 +8,6 @@ import '../../models/app_settings.dart';
 import '../../models/subscription.dart';
 import '../../repositories/subscription_repository.dart';
 import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_empty_state.dart';
@@ -14,7 +15,6 @@ import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
 import '../../shared/widgets/ff_monogram_tile.dart';
 import '../../shared/widgets/ff_navigation.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_renewal_chip.dart';
 import '../../shared/widgets/ff_renewal_strip.dart';
@@ -22,8 +22,8 @@ import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_stat_tile.dart';
-import '../../shared/widgets/ff_surfaces.dart';
-import '../../theme/ff.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
+import '../../shared/widgets/ff_round_buttons.dart';
 import '../../theme/ff_tone.dart';
 import '../settings/settings_controller.dart';
 import 'add_edit_subscription_sheet.dart';
@@ -113,23 +113,16 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     final suggestions = suggestionsAsync.value ?? const [];
     final hasSuggestions = suggestions.isNotEmpty && !_isSuggestionsDismissed;
 
-    return Scaffold(
-      appBar: FfAppBar(
-        title: 'Subscriptions',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'Add subscription',
-            onPressed: () => _openAddSheet(context),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(right: FfSpace.md),
-            child: Center(
-              child: FfPrivacyBadge(label: 'On-device', iconOnly: true),
-            ),
-          ),
-        ],
-      ),
+    return FfPageScaffold(
+      title: 'Subscriptions',
+      subtitle: 'Recurring payments, on-device',
+      actions: [
+        FfCircleButton(
+          icon: Icons.add_rounded,
+          tooltip: 'Add subscription',
+          onPressed: () => _openAddSheet(context),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'subscriptions_fab',
         tooltip: 'Add subscription',

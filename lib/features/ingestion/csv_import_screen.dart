@@ -6,16 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/ingestion/parsed_transaction.dart';
-import '../../shared/widgets/ff_app_bar.dart';
+import '../../shared/widgets/ff_page_scaffold.dart';
 import '../../shared/widgets/ff_banner.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_surfaces.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
@@ -144,76 +142,64 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final categories = ref.watch(categoriesStreamProvider).value ?? [];
     final accounts = ref.watch(rawAccountsStreamProvider).value ?? [];
 
-    return FfAurora(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: const FfAppBar(
-          title: 'Import CSV Statement',
-          actions: [
-            Padding(
-              padding: EdgeInsets.only(right: FfSpace.md),
-              child: Center(
-                child: FfPrivacyBadge(label: '100% Offline', iconOnly: true),
-              ),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // ── 1. Offline Privacy Notice Banner ──────────────────────────
-            const FfBanner(
-              tone: FfBannerTone.success,
-              message:
-                  'Files are parsed locally on this device. Statement data never leaves your phone.',
-            ),
+    return FfPageScaffold(
+      onAurora: true,
+      title: 'Import CSV Statement',
+      subtitle: 'Statement import, offline',
+      body: Column(
+        children: [
+          // ── 1. Offline Privacy Notice Banner ──────────────────────────
+          const FfBanner(
+            tone: FfBannerTone.success,
+            message:
+                'Files are parsed locally on this device. Statement data never leaves your phone.',
+          ),
 
-            // ── 2. Loading State ─────────────────────────────────────────
-            if (state.isLoading) ...[
-              FfProgressBar(
-                value: null,
-                color: ff.color.actionPrimary,
-                size: FfProgressSize.md,
-              ),
-              if (state.progressStep != null)
-                Padding(
-                  padding: const EdgeInsets.all(FfSpace.sm),
-                  child: Text(
-                    state.progressStep!,
-                    style: ff.text.labelSm.copyWith(
-                      color: ff.color.textSecondary,
-                    ),
+          // ── 2. Loading State ─────────────────────────────────────────
+          if (state.isLoading) ...[
+            FfProgressBar(
+              value: null,
+              color: ff.color.actionPrimary,
+              size: FfProgressSize.md,
+            ),
+            if (state.progressStep != null)
+              Padding(
+                padding: const EdgeInsets.all(FfSpace.sm),
+                child: Text(
+                  state.progressStep!,
+                  style: ff.text.labelSm.copyWith(
+                    color: ff.color.textSecondary,
                   ),
                 ),
-            ],
-
-            // ── 3. Error Banner ──────────────────────────────────────────
-            if (state.errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(FfSpace.md),
-                child: FfBanner(
-                  tone: FfBannerTone.error,
-                  message: state.errorMessage!,
-                ),
               ),
+          ],
 
-            // ── 4. Main Body ─────────────────────────────────────────────
-            Expanded(
-              child:
-                  !state.hasSession
-                      ? _buildFileSelectionView(context)
-                      : CsvPreviewList(
-                        session: state.session!,
-                        categories: categories,
-                        accounts: accounts,
-                        onEditColumns: () => _showMappingSheet(context),
-                      ),
+          // ── 3. Error Banner ──────────────────────────────────────────
+          if (state.errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.all(FfSpace.md),
+              child: FfBanner(
+                tone: FfBannerTone.error,
+                message: state.errorMessage!,
+              ),
             ),
 
-            // ── 5. Sticky Bottom Commit Bar ──────────────────────────────
-            if (state.hasSession)
-              _buildBottomCommitBar(context, state.session!),
-          ],
-        ),
+          // ── 4. Main Body ─────────────────────────────────────────────
+          Expanded(
+            child:
+                !state.hasSession
+                    ? _buildFileSelectionView(context)
+                    : CsvPreviewList(
+                      session: state.session!,
+                      categories: categories,
+                      accounts: accounts,
+                      onEditColumns: () => _showMappingSheet(context),
+                    ),
+          ),
+
+          // ── 5. Sticky Bottom Commit Bar ──────────────────────────────
+          if (state.hasSession) _buildBottomCommitBar(context, state.session!),
+        ],
       ),
     );
   }
