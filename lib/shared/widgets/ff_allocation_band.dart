@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/formatting/currency_formatter.dart';
 import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 

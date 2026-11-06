@@ -46,6 +46,11 @@ screen must follow is [bloom/](bloom/README.md) (direction, tokens, components, 
 | DS-B8b Insights tab | done (7f05c84) | Pattern A on FfAurora, dusk hero card, single insight card, restyled charts, category breakdown drilldown into Money |
 | DS-B8c Financial health detail | done (431c504) | Pattern D with wellness score hero, 4 key indicators on FfRangeBand with CTAs |
 | DS-B11 Add/Edit Account Sheet in Bloom | done (this commit) | Pattern E redesign: live `FfAccountPreviewCard`, `FfAccountTypeTiles`, institution autofill chips, duplicate warning, masked ID privacy assist, edit mode with baseline note, archive/delete, and row highlight |
+| DS-B14a Shared additions (asset tiles, consequence, allocation band) | done (84eabc5) | `FfAssetTypeTiles` (48 dp targets, checkmarks), `FfConsequenceLine` (live dynamic math line), `FfAllocationBand` (segmented proportional range band with legend); tested across themes & 2x text |
+| DS-B14b Savings Goals in Bloom | done (7abb681) | Pattern C list with Tide hero & milestone callout, Pattern D detail with progression chart & hero figures, Pattern E templates & live consequence line, numeric-first contribution sheet |
+| DS-B14c/d Needs Review in Bloom | done (df2d31c) | Modular split & triage redesign: Focus Mode (`NeedsReviewFocusCard`) with swipe accelerators, trust indicators, amount split, and collapsible source evidence; List Mode; filter chips with live counts; 0 leaks |
+| DS-B14e Investments in Bloom | done (054a924) | Pattern C list with Dusk hero, `FfAllocationBand`, `FfPillBar` filters & stale valuation alerts, Pattern D detail with `FfHeroFigures` & quick valuation update sheet, Pattern E templates with live squircle preview |
+| DS-B14f Polish & Leakage Sweep | done (this commit) | Full suite of 77 unit & widget tests green across all 3 feature areas; alpha tints down from 114 to 74, static colors down to 25, raw fontSize down to 10; zero leaks in any redesigned file |
 | DS-B7+ Screen-by-screen redesigns | next: Budgets (DS-B7), then Insights | one slice per screen or feature, following `bloom/06-workflow.md` | loan forms and the full EMI schedule view keep their layouts (tokens only) |
 | DS-7h Budgets migration | not started | blocked on the budgets redesign chat (In flight) |
 | DS-8 Refinement, new palettes, theme picker | partly done by DS-B1 | Lichen refinements (expense brick, tertiary text, readable Undo, brighter cards) landed with Bloom; Tide, Graphite, picker and pure black remain |
@@ -56,7 +61,6 @@ screen must follow is [bloom/](bloom/README.md) (direction, tokens, components, 
 
 | Since | Chat / owner | Scope | Files |
 |---|---|---|---|
-| 2026-11-06 | DS-B14 Goals, Review, Investments | Redesign three areas in Stillwater Bloom: B14a shared pieces, B14b Goals, B14c/d Review, B14e Investments, B14f Polish | `lib/shared/widgets/`, `lib/features/savings_goals/`, `lib/features/ingestion/`, `lib/features/investments/`, tests and docs |
 | 2026-11-06 | DS-B7 Budgets (Plan) chat | Plan tab, budget detail, add/edit sheet, Home budget card in Bloom; B7a shared additions; wiring to `BudgetEngine`/`BudgetBoard` on existing data (no schema change). Plan awaiting owner approval; slice b (persistence) only if separately approved and backup-gated | `lib/features/budgets/`, `lib/features/dashboard/widgets/budget_overview_card.dart`, `month_selector_header.dart`, the budget item in `actionable_items_section.dart`, `lib/services/budgets/` (read-mostly), `lib/models/budget.dart` (read-only unless B7e), `lib/core/money/money_math.dart`, `test/unit/budgets/`, `test/widget/budgets_widget_test.dart`, `tool/screenshots/plan_screenshots_test.dart`, `docs/features/budgets.md`, `docs/design-system/ds-b7-plan.md`, `docs/design-system/screenshots/ds-b7/`; B7b also touches `lib/features/transactions/transaction_list_utils.dart`, `widgets/active_filter_chips.dart`, `lib/app/router.dart`, `test/widget/app_shell_navigation_test.dart`; B7a added to `lib/shared/widgets/ff_data_viz.dart`, `ff_progress.dart` and their tests |
 
 ## Done
@@ -196,6 +200,7 @@ Command: `dart run tool/design_system_audit.dart --shared` (lib/ minus lib/theme
 | 2026-11-06 | DS-B9c | 3 | 22 | 133 | 42 | 30 | 5 | 4 | 21 | 3 | 3 | 0 | 2 | 6 |
 | 2026-11-06 | DS-B9d | 3 | 22 | 127 | 42 | 29 | 5 | 4 | 21 | 3 | 3 | 0 | 2 | 6 |
 | 2026-11-06 | DS-B4-refine | 3 | 22 | 114 | 42 | 27 | 5 | 4 | 21 | 3 | 3 | 0 | 2 | 6 |
+| 2026-11-06 | DS-B14 | 1 | 22 | 74 | 25 | 10 | 3 | 2 | 7 | 1 | 0 | 0 | 0 | 3 |
 
 \* Not new literals: formatting joined multi-line `EdgeInsets` calls onto one line, where the line-based check now counts them. The remaining 2 pickers and 3 sheets are in budgets (other chat).
 † The alpha check counts every `withValues(alpha:)`, including the token form `withValues(alpha: FfTint.faint)`; after DS-7 only budgets, models and `main.dart` still pass raw numbers. Static colours left: `lib/models/category_colors.dart` and `money_record.dart` (data-owned colours, DS-9) and budgets.
@@ -207,6 +212,9 @@ checked in light and dark; say where (golden, emulator, Pixel 7).
 
 | Screen | Slice | Commit | Visual verified |
 |---|---|---|---|
+| Savings Goals (list, detail, add/edit, contribution) | DS-B14b | 7abb681 | verified in widget tests (light, dark, 2× text scale, interactions) |
+| Needs Review (queue, triage card, focus mode, filters) | DS-B14d | df2d31c | verified in widget tests (light, dark, 320px compact layout, queue pipeline) |
+| Investments (portfolio list, detail, add/edit, valuation update) | DS-B14e | 054a924 | verified in widget tests (light, dark, asset filters, allocation band) |
 | More hub and Settings detail | DS-B9a | this commit | verified in widget tests (light, dark, 2× text scale) |
 | Security settings and Lock screen | DS-B9b | this commit | verified in widget tests (light, dark, 2× text scale) |
 | Backup, restore preview, export | DS-B9c | this commit | verified in widget tests (light, dark, 2× text scale) |
