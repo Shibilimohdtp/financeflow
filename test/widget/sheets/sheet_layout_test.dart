@@ -4,13 +4,19 @@ import 'package:financeflow/features/accounts/add_edit_account_sheet.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/alerts/alert_settings_sheet.dart';
 import 'package:financeflow/features/ingestion/widgets/csv_column_mapper_sheet.dart';
+import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/investments/add_edit_investment_sheet.dart';
+import 'package:financeflow/features/personal_debts/add_advance_sheet.dart';
+import 'package:financeflow/features/personal_debts/add_edit_money_record_sheet.dart';
+import 'package:financeflow/features/personal_debts/add_repayment_sheet.dart';
+import 'package:financeflow/features/personal_debts/money_records_controller.dart';
 import 'package:financeflow/features/budgets/add_edit_budget_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_edit_savings_goal_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_goal_contribution_sheet.dart';
 import 'package:financeflow/features/savings_goals/savings_goals_controller.dart';
 import 'package:financeflow/features/subscriptions/add_edit_subscription_sheet.dart';
 import 'package:financeflow/models/app_settings.dart';
+import 'package:financeflow/models/money_record.dart';
 import 'package:financeflow/models/savings_goal.dart';
 import 'package:financeflow/repositories/account_repository.dart';
 import 'package:financeflow/repositories/settings_repository.dart';
@@ -26,6 +32,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fake_notification_service.dart';
 import '../../helpers/fake_repositories.dart';
+
+final _record = MoneyRecord(
+  id: 'r1',
+  type: MoneyRecordType.lent,
+  personName: 'Ahmed',
+  normalizedPersonName: 'ahmed',
+  originalAmount: 10000,
+  transactionDate: DateTime(2026, 10, 1),
+  dueDate: DateTime(2026, 12, 1),
+  createdAt: DateTime(2026, 10, 1),
+  updatedAt: DateTime(2026, 10, 1),
+);
+
+List<Override> _lendingOverrides() => [
+  allMoneyRecordsStreamProvider.overrideWith((ref) => Stream.value([])),
+  rawAccountsStreamProvider.overrideWith((ref) => Stream.value([])),
+  accountsWithBalancesProvider.overrideWithValue(const AsyncValue.data([])),
+];
 
 final _goal = SavingsGoal(
   id: 'g1',
@@ -109,6 +133,12 @@ final Map<String, (Widget, List<Override>)> sheets = {
       settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),
     ],
   ),
+  'lending record': (const AddEditMoneyRecordSheet(), _lendingOverrides()),
+  'repayment': (
+    AddRepaymentSheet(record: _record, remainingBalance: 7000),
+    _lendingOverrides(),
+  ),
+  'advance': (AddAdvanceSheet(record: _record), _lendingOverrides()),
 };
 
 Future<void> _open(

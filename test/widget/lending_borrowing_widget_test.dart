@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_amount_field.dart';
+import 'package:financeflow/shared/widgets/ff_sheet_footer.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/personal_debts/add_edit_money_record_sheet.dart';
 import 'package:financeflow/features/personal_debts/add_repayment_sheet.dart';
@@ -169,11 +171,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('I Lent Money'), findsWidgets);
-      expect(find.text('Save Record'), findsOneWidget);
+      expect(find.text('I lent money'), findsWidgets);
+      expect(find.text('Add record'), findsOneWidget);
 
       // Attempt submit without filling
-      await tester.tap(find.text('Save Record'));
+      await tester.tap(find.text('Add record'));
       await tester.pumpAndSettle();
 
       expect(find.text("Person's name is required"), findsOneWidget);
@@ -184,11 +186,11 @@ void main() {
         'Uncle Robert',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, '0.00'),
+        find.widgetWithText(FfAmountField, 'Amount'),
         '15000',
       );
 
-      await tester.tap(find.text('Save Record'));
+      await tester.tap(find.text('Add record'));
       await tester.pumpAndSettle();
 
       final allRecords = await fakeRepo.getAllRecords();
@@ -274,16 +276,23 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Record Repayment'), findsOneWidget);
-    expect(find.text('Pay Full'), findsOneWidget);
+    expect(find.text('Add repayment'), findsWidgets); // title and CTA
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.text('All of it (₹7,000)'), findsOneWidget);
 
-    // Tap Pay Full
-    await tester.tap(find.text('Pay Full'));
+    // Pay everything that is left
+    await tester.tap(find.text('All of it (₹7,000)'));
     await tester.pumpAndSettle();
 
-    expect(find.text('7000'), findsOneWidget);
+    expect(find.text('7,000'), findsOneWidget);
+    expect(find.textContaining('Clears the balance'), findsOneWidget);
 
-    await tester.tap(find.text('Save Repayment'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(FfSheetFooter),
+        matching: find.text('Add repayment'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final reps = await fakeRepo.getRepaymentsForRecord(testRecord1.id);

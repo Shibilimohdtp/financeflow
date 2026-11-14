@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/money_record.dart';
 import '../../../shared/widgets/ff_suggestion_chips.dart';
 import '../../../shared/widgets/ff_text_field.dart';
+import '../../../shared/widgets/ff_field_label.dart';
 import '../../../theme/ff.dart';
 import 'money_record_collision_banner.dart';
 
@@ -27,16 +28,12 @@ class MoneyRecordPersonField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          type == MoneyRecordType.lent
-              ? 'Lent to (Person Name)'
-              : 'Borrowed from (Person Name)',
-          style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
+        FfFieldLabel(
+          type == MoneyRecordType.lent ? 'Lent to' : 'Borrowed from',
         ),
         const SizedBox(height: FfSpace.xs),
         FfTextField(

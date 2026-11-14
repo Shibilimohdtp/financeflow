@@ -6,6 +6,7 @@ import '../../../models/money_record.dart';
 import '../../../shared/widgets/ff_chip.dart';
 import '../../../shared/widgets/ff_consequence_line.dart';
 import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_field_label.dart';
 import '../../../theme/ff.dart';
 import '../../../theme/ff_tone.dart';
 
@@ -32,7 +33,6 @@ class MoneyRecordAccountSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
     final isLent = type == MoneyRecordType.lent;
 
     final selectedAccount =
@@ -65,10 +65,7 @@ class MoneyRecordAccountSection extends StatelessWidget {
         ),
         if (recordInTransactions && accounts.isNotEmpty) ...[
           const SizedBox(height: FfSpace.sm),
-          Text(
-            'Account to use',
-            style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
-          ),
+          FfFieldLabel('Account'),
           const SizedBox(height: FfSpace.xs),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -79,7 +76,7 @@ class MoneyRecordAccountSection extends StatelessWidget {
                     label: acc.name,
                     leading: const Icon(
                       Icons.account_balance_wallet_outlined,
-                      size: 16,
+                      size: FfIconSize.sm,
                     ),
                     isSelected:
                         acc.id == (selectedAccountId ?? accounts.first.id),

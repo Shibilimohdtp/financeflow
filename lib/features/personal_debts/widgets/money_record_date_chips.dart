@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/formatting/date_formatter.dart';
 import '../../../shared/widgets/ff_chip.dart';
 import '../../../shared/widgets/ff_pickers.dart';
+import '../../../shared/widgets/ff_field_label.dart';
 import '../../../theme/ff.dart';
 
 /// Intention-based date selectors with quick presets and calendar fallback.
@@ -57,7 +58,6 @@ class MoneyRecordDateChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
     final now = DateTime.now();
     final today = _startOfDay(now);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -81,10 +81,7 @@ class MoneyRecordDateChips extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Transaction Date ─────────────────────────────────────────────
-        Text(
-          'Date',
-          style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
-        ),
+        FfFieldLabel('Date'),
         const SizedBox(height: FfSpace.xs),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -107,7 +104,10 @@ class MoneyRecordDateChips extends StatelessWidget {
                     isCustomTx
                         ? DateFormatter.formatShortDate(transactionDate)
                         : 'Pick date',
-                leading: const Icon(Icons.calendar_today_outlined, size: 16),
+                leading: const Icon(
+                  Icons.calendar_today_outlined,
+                  size: FfIconSize.sm,
+                ),
                 isSelected: isCustomTx,
                 onSelected: () => _pickCustomTxDate(context),
               ),
@@ -118,10 +118,7 @@ class MoneyRecordDateChips extends StatelessWidget {
         const SizedBox(height: FfSpace.lg),
 
         // ── Expected Due Date ─────────────────────────────────────────────
-        Text(
-          'Expected Due Date',
-          style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
-        ),
+        FfFieldLabel('Due back by'),
         const SizedBox(height: FfSpace.xs),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -156,7 +153,10 @@ class MoneyRecordDateChips extends StatelessWidget {
                     isCustomDue
                         ? DateFormatter.formatShortDate(dueDate)
                         : 'Custom',
-                leading: const Icon(Icons.event_available_outlined, size: 16),
+                leading: const Icon(
+                  Icons.event_available_outlined,
+                  size: FfIconSize.sm,
+                ),
                 isSelected: isCustomDue,
                 onSelected: () => _pickCustomDueDate(context),
               ),

@@ -28,8 +28,7 @@ class FfEntityPreviewCard extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  /// A small badge or chip at the end of the title line (due date,
-  /// renewal, status).
+  /// A small badge or chip under the title (due date, renewal, status).
   final Widget? status;
 
   /// What the figure is ("Target", "Valuation", "Owes you").
@@ -102,13 +101,15 @@ class FfEntityPreviewCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
+                        // Under the title, not beside it, so a long chip
+                        // never squeezes the name at large text.
+                        if (status != null) ...[
+                          const SizedBox(height: FfSpace.xs),
+                          status!,
+                        ],
                       ],
                     ),
                   ),
-                  if (status != null) ...[
-                    const SizedBox(width: FfSpace.sm),
-                    status!,
-                  ],
                 ],
               ),
               if (figure != null) ...[

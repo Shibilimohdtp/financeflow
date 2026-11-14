@@ -63,10 +63,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('I Lent Money'), findsOneWidget);
-      expect(find.text('I Borrowed Money'), findsOneWidget);
+      expect(find.text('I lent money'), findsOneWidget);
+      expect(find.text('I borrowed money'), findsOneWidget);
 
-      await tester.tap(find.text('I Borrowed Money'));
+      await tester.tap(find.text('I borrowed money'));
       await tester.pumpAndSettle();
 
       expect(selected, MoneyRecordType.borrowed);

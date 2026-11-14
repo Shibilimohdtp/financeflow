@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/ff_chip.dart';
+import '../../../shared/widgets/ff_field_label.dart';
 import '../../../theme/ff.dart';
 
 /// Inline reminder cadence selector chips (Off, On due date, 1d, 3d, 7d before).
@@ -18,15 +19,11 @@ class MoneyRecordReminderSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Due Reminder',
-          style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
-        ),
+        FfFieldLabel('Remind me'),
         const SizedBox(height: FfSpace.xs),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

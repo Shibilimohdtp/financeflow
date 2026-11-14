@@ -5,8 +5,10 @@ import '../../core/formatting/currency_formatter.dart';
 import '../../models/account.dart';
 import '../../models/money_record.dart';
 import '../../shared/widgets/ff_amount_field.dart';
-import '../../shared/widgets/ff_button.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_dialog.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
@@ -75,12 +77,7 @@ class _AddEditMoneyRecordSheetState
     _type = init?.type ?? widget.defaultType ?? MoneyRecordType.lent;
     _nameController = TextEditingController(text: init?.personName ?? '');
     _amountController = TextEditingController(
-      text:
-          init != null
-              ? (init.originalAmount.truncateToDouble() == init.originalAmount
-                  ? init.originalAmount.toInt().toString()
-                  : init.originalAmount.toStringAsFixed(2))
-              : '',
+      text: init != null ? FfAmountField.formatInput(init.originalAmount) : '',
     );
     _notesController = TextEditingController(text: init?.notes ?? '');
 
@@ -115,10 +112,10 @@ class _AddEditMoneyRecordSheetState
 
     final confirmed = await FfDialog.confirm(
       context,
-      title: 'Delete Record?',
+      title: 'Delete record?',
       message:
           'Remove "${record.personName}" and all associated history? This action cannot be undone.',
-      confirmLabel: 'Delete Record',
+      confirmLabel: 'Delete record',
       destructive: true,
     );
 
@@ -247,7 +244,6 @@ class _AddEditMoneyRecordSheetState
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
     final allRecords =
         ref.watch(allMoneyRecordsStreamProvider).value ?? const [];
     final accounts =
@@ -288,19 +284,8 @@ class _AddEditMoneyRecordSheetState
                   (!isEditing || r.id != widget.initialRecord?.id);
             }).firstOrNull;
 
-    final sheetTitle =
-        isEditing
-            ? 'Edit Record'
-            : (_type == MoneyRecordType.lent
-                ? 'I Lent Money'
-                : 'I Borrowed Money');
-
-    final sheetSubtitle =
-        isEditing
-            ? 'Update relationship details'
-            : (_type == MoneyRecordType.lent
-                ? 'Track money you handed over to someone'
-                : 'Track money you received from someone');
+    final sheetTitle = isEditing ? 'Edit record' : 'New record';
+    const sheetSubtitle = 'Money between you and someone you know';
 
     return Form(
       key: _formKey,
@@ -311,12 +296,10 @@ class _AddEditMoneyRecordSheetState
 
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: FfSpace.lg,
-                vertical: FfSpace.md,
-              ),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // ── 1. Live Preview Card ──────────────────────────────
                   MoneyRecordPreviewCard(
@@ -330,16 +313,19 @@ class _AddEditMoneyRecordSheetState
                     isSettled: widget.initialRecord?.settledAt != null,
                   ),
 
-                  const SizedBox(height: FfSpace.lg),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
                   // ── 2. Direction Selection (Create mode) ──────────────
-                  if (!isEditing) ...[
-                    MoneyRecordDirectionTiles(
-                      selectedType: _type,
-                      onChanged: (newType) => setState(() => _type = newType),
+                  if (!isEditing)
+                    FfSheetGroup(
+                      children: [
+                        MoneyRecordDirectionTiles(
+                          selectedType: _type,
+                          onChanged:
+                              (newType) => setState(() => _type = newType),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: FfSpace.lg),
-                  ],
 
                   // ── 3. Person's Name Field & Suggestions ───────────────
                   MoneyRecordPersonField(
@@ -353,17 +339,14 @@ class _AddEditMoneyRecordSheetState
                       setState(() {});
                     },
                   ),
-                  const SizedBox(height: FfSpace.lg),
+                  const SizedBox(height: FfSheetTokens.itemGap),
 
                   // ── 4. Amount Field ───────────────────────────────────
-                  Text(
-                    'Amount',
-                    style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
                   FfAmountField(
                     controller: _amountController,
-                    hint: '0.00',
+                    label: 'Amount',
+                    size: FfAmountSize.md,
+                    groupDigits: true,
                     tone:
                         _type == MoneyRecordType.lent
                             ? FfTone.income
@@ -372,7 +355,7 @@ class _AddEditMoneyRecordSheetState
                       if (val == null || val.trim().isEmpty) {
                         return 'Amount is required';
                       }
-                      final parsed = CurrencyFormatter.parse(val.trim());
+                      final parsed = FfAmountField.parse(val);
                       if (parsed == null || parsed <= 0) {
                         return 'Enter a positive amount';
                       }
@@ -380,7 +363,7 @@ class _AddEditMoneyRecordSheetState
                     },
                   ),
 
-                  const SizedBox(height: FfSpace.lg),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
                   // ── 5. Dates as Quick Chips ───────────────────────────
                   MoneyRecordDateChips(
@@ -391,7 +374,7 @@ class _AddEditMoneyRecordSheetState
                     onDueDateChanged: (d) => setState(() => _dueDate = d),
                   ),
 
-                  const SizedBox(height: FfSpace.lg),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
                   // ── 6. Account & Consequence Line ─────────────────────
                   if (!isEditing) ...[
@@ -406,23 +389,19 @@ class _AddEditMoneyRecordSheetState
                       type: _type,
                       amount: _parsedAmount,
                     ),
-                    const SizedBox(height: FfSpace.lg),
+                    const SizedBox(height: FfSheetTokens.groupGap),
                   ],
 
                   // ── 7. Notes ──────────────────────────────────────────
-                  Text(
-                    'Notes (Optional)',
-                    style: ff.text.label.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
                   FfTextField(
                     controller: _notesController,
+                    label: 'Notes (optional)',
                     maxLines: 2,
                     maxLength: 300,
                     hint: 'e.g. Emergency expense, will pay after payday',
                   ),
 
-                  const SizedBox(height: FfSpace.md),
+                  const SizedBox(height: FfSheetTokens.itemGap),
 
                   // ── 8. Reminder Cadence Chips ─────────────────────────
                   MoneyRecordReminderSelector(
@@ -435,7 +414,20 @@ class _AddEditMoneyRecordSheetState
                       });
                     },
                   ),
-                  const SizedBox(height: FfSpace.lg),
+                  // ── Delete (edit only, end of the body) ───────────────
+                  if (isEditing) ...[
+                    const SizedBox(height: FfSheetTokens.groupGap),
+                    FfGroupedContainer(
+                      children: [
+                        FfRow(
+                          title: 'Delete record',
+                          icon: Icons.delete_outline_rounded,
+                          destructive: true,
+                          onTap: _handleDelete,
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -443,33 +435,9 @@ class _AddEditMoneyRecordSheetState
 
           // ── Sheet Footer ──────────────────────────────────────────────
           FfSheetFooter(
-            child:
-                isEditing
-                    ? Row(
-                      children: [
-                        Expanded(
-                          child: FfButton(
-                            label: 'Delete',
-                            variant: FfButtonVariant.destructive,
-                            onPressed: _handleDelete,
-                          ),
-                        ),
-                        const SizedBox(width: FfSpace.md),
-                        Expanded(
-                          flex: 2,
-                          child: FfButton(
-                            label: 'Save Changes',
-                            isLoading: _isSaving,
-                            onPressed: _save,
-                          ),
-                        ),
-                      ],
-                    )
-                    : FfButton(
-                      label: 'Save Record',
-                      isLoading: _isSaving,
-                      onPressed: _save,
-                    ),
+            primaryLabel: isEditing ? 'Save changes' : 'Add record',
+            isPrimaryLoading: _isSaving,
+            onPrimaryPressed: _isSaving ? null : _save,
           ),
         ],
       ),

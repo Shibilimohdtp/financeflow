@@ -6,17 +6,20 @@ import '../../models/money_record.dart';
 import '../../models/account.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_typography.dart';
 import 'money_records_controller.dart';
 import '../accounts/accounts_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../shared/widgets/ff_pickers.dart';
+import '../../shared/widgets/ff_amount_hero.dart';
+import '../../shared/widgets/ff_chip.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_amount_field.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
 
 class AddRepaymentSheet extends ConsumerStatefulWidget {
   final MoneyRecord record;
@@ -59,10 +62,7 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
 
   void _setFullAmount() {
     final amount = widget.remainingBalance;
-    _amountController.text =
-        amount.truncateToDouble() == amount
-            ? amount.toInt().toString()
-            : amount.toStringAsFixed(2);
+    _amountController.text = FfAmountField.formatInput(amount);
   }
 
   Future<void> _pickDate() async {
@@ -79,11 +79,29 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
     }
   }
 
+  /// The inline amount error, with the messages the field validator used.
+  String? _amountError;
+
+  String? _validateAmount() {
+    final text = _amountController.text.trim();
+    if (text.isEmpty) return 'Amount is required';
+    final parsed = FfAmountField.parse(text);
+    if (parsed == null || parsed <= 0) return 'Enter a positive amount';
+    if (parsed > (widget.remainingBalance + 0.001)) {
+      return 'Cannot exceed ${CurrencyFormatter.format(widget.remainingBalance)}';
+    }
+    return null;
+  }
+
   Future<void> _save() async {
+    final amountError = _validateAmount();
+    if (amountError != null) {
+      setState(() => _amountError = amountError);
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
-    final amount =
-        CurrencyFormatter.parse(_amountController.text.trim()) ?? 0.0;
+    final amount = FfAmountField.parse(_amountController.text) ?? 0.0;
     if (amount <= 0) {
       FfToast.show(
         context,
@@ -155,95 +173,97 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
     _selectedAccountId ??= accounts.firstOrNull?.id;
     if (accounts.isEmpty) _recordInTransactions = false;
 
+    final entered = FfAmountField.parse(_amountController.text) ?? 0.0;
+    final left = widget.remainingBalance - entered;
+    final String consequence;
+    if (entered <= 0) {
+      consequence =
+          '${CurrencyFormatter.format(widget.remainingBalance)} is still outstanding';
+    } else if (left <= 0.001) {
+      consequence = 'Clears the balance with ${widget.record.personName}';
+    } else {
+      consequence = 'Leaves ${CurrencyFormatter.format(left)} outstanding';
+    }
+
     return Form(
       key: _formKey,
       child: FfSheet(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FfSheetHeader(
-            title: 'Record Repayment',
+            title: 'Add repayment',
             subtitle:
                 isLent
-                    ? 'Payment from ${widget.record.personName}'
-                    : 'Payment to ${widget.record.personName}',
+                    ? 'Money ${widget.record.personName} paid back'
+                    : 'Money you paid back to ${widget.record.personName}',
           ),
-
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: FfSpace.lg,
-                vertical: FfSpace.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          FfSheetBody(
+            children: [
+              // ── Amount first (archetype A) ───────────────────────────────
+              FfSheetGroup(
                 children: [
-                  // Outstanding balance banner
-                  Container(
-                    padding: const EdgeInsets.all(FfSpace.md),
-                    decoration: BoxDecoration(
-                      color: context.ff.color.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(FfRadius.md),
-                      border: Border.all(
-                        color: context.ff.color.borderSubtle.withValues(
-                          alpha: FfTint.strong.alpha,
-                        ),
+                  FfAmountHero(
+                    controller: _amountController,
+                    label: 'Amount repaid',
+                    tone: isLent ? FfTone.income : FfTone.expense,
+                    autofocus: true,
+                    groupDigits: true,
+                    errorText: _amountError,
+                    consequence: consequence,
+                    consequenceIcon: Icons.account_balance_wallet_outlined,
+                    onChanged: (_) => setState(() => _amountError = null),
+                  ),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FfChip(
+                      label:
+                          'All of it (${CurrencyFormatter.format(widget.remainingBalance)})',
+                      isSelected:
+                          (entered - widget.remainingBalance).abs() < 0.001,
+                      leading: const Icon(
+                        Icons.done_all_rounded,
+                        size: FfIconSize.sm,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'OUTSTANDING BALANCE',
-                              style: context.ff.text.labelSm.copyWith(
-                                color: context.ff.color.secondary,
-                                letterSpacing: 0.8,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: FfSpace.x2s),
-                            Text(
-                              CurrencyFormatter.format(widget.remainingBalance),
-                              style: context.ff.text.title.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontFeatures:
-                                    StillwaterTypography.tabularFeatures,
-                              ),
-                            ),
-                          ],
-                        ),
-                        TextButton.icon(
-                          onPressed: _setFullAmount,
-                          icon: const Icon(Icons.flash_on_rounded, size: 16),
-                          label: const Text('Pay Full'),
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: FfSpace.sm,
-                              vertical: FfSpace.xs,
-                            ),
-                          ),
-                        ),
-                      ],
+                      onSelected:
+                          () => setState(() {
+                            _setFullAmount();
+                            _amountError = null;
+                          }),
                     ),
                   ),
+                ],
+              ),
 
-                  const SizedBox(height: FfSpace.lg),
-
-                  FfRow.toggle(
-                    title: 'Record in transactions and update balance',
-                    subtitle:
-                        isLent
-                            ? 'Money received increases the selected account.'
-                            : 'Money paid decreases the selected account.',
-                    value: _recordInTransactions,
-                    onChanged:
-                        (value) =>
-                            setState(() => _recordInTransactions = value),
+              // ── When and where ───────────────────────────────────────────
+              FfSheetGroup(
+                children: [
+                  FfGroupedContainer(
+                    children: [
+                      FfRow(
+                        icon: Icons.calendar_today_outlined,
+                        title: 'Date',
+                        detail: DateFormatter.formatShortDate(_repaymentDate),
+                        showChevron: true,
+                        onTap: _pickDate,
+                      ),
+                      FfRow.toggle(
+                        icon: Icons.sync_alt_rounded,
+                        title: 'Record in my accounts',
+                        subtitle:
+                            isLent
+                                ? 'Money received increases the account'
+                                : 'Money paid decreases the account',
+                        value: _recordInTransactions,
+                        onChanged:
+                            accounts.isEmpty
+                                ? null
+                                : (value) => setState(
+                                  () => _recordInTransactions = value,
+                                ),
+                      ),
+                    ],
                   ),
-                  if (_recordInTransactions) ...[
+                  if (_recordInTransactions)
                     FfSelect<String>(
                       value: _selectedAccountId,
                       label: 'Account',
@@ -259,112 +279,27 @@ class _AddRepaymentSheetState extends ConsumerState<AddRepaymentSheet> {
                       onChanged:
                           (value) => setState(() => _selectedAccountId = value),
                     ),
-                    const SizedBox(height: FfSpace.lg),
-                  ],
+                ],
+              ),
 
-                  // Repayment Amount Input
-                  Text(
-                    'Repayment Amount',
-                    style: context.ff.text.label.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfAmountField(
-                    controller: _amountController,
-                    hint: '0.00',
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Amount is required';
-                      }
-                      final parsed = CurrencyFormatter.parse(val.trim());
-                      if (parsed == null || parsed <= 0) {
-                        return 'Enter a positive amount';
-                      }
-                      if (parsed > (widget.remainingBalance + 0.001)) {
-                        return 'Cannot exceed ${CurrencyFormatter.format(widget.remainingBalance)}';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // Repayment Date
-                  Text(
-                    'Payment Date',
-                    style: context.ff.text.label.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  InkWell(
-                    onTap: _pickDate,
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: FfSpace.md,
-                        vertical: FfSpace.md,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: context.ff.color.borderSubtle,
-                        ),
-                        borderRadius: BorderRadius.circular(FfRadius.md),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 18,
-                            color: context.ff.color.actionPrimary,
-                          ),
-                          const SizedBox(width: FfSpace.sm),
-                          Text(
-                            DateFormatter.formatShortDate(_repaymentDate),
-                            style: context.ff.text.body.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            'Change',
-                            style: context.ff.text.labelSm.copyWith(
-                              color: context.ff.color.actionPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // Optional Notes
-                  Text(
-                    'Notes (Optional)',
-                    style: context.ff.text.label.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
+              // ── Note ─────────────────────────────────────────────────────
+              FfSheetGroup(
+                last: true,
+                children: [
                   FfTextField(
                     controller: _notesController,
+                    label: 'Notes (optional)',
                     maxLines: 2,
                     maxLength: 200,
-                    hint: 'e.g. UPI transfer, Part 1 of 2',
+                    hint: 'e.g. UPI transfer, part 1 of 2',
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-
           FfSheetFooter(
-            primaryLabel: 'Save Repayment',
+            primaryLabel: 'Add repayment',
             isPrimaryLoading: _isSaving,
-            secondaryLabel: 'Cancel',
-            onSecondaryPressed: () => Navigator.of(context).pop(),
             onPrimaryPressed: _save,
           ),
         ],
