@@ -7,9 +7,11 @@ import 'ff_amount_text.dart';
 
 /// The hero container for financial amount entry in Stillwater Bloom.
 ///
-/// Features a type-reactive tinted squircle card (`FfRadius.xl`), large light
-/// Geist numerals (`moneyHero` 44/300), an optional clear button, a quiet
-/// consequence caption below, and inline human error feedback.
+/// Archetype A of the sheet recipe (amount first): a card with a faint wash
+/// of [tone] (`FfRadius.xl`), large light Geist numerals (`moneyHero`
+/// 44/300) with the currency always shown, an optional clear button, a quiet
+/// live consequence line below, and inline error text. The wash is faint and
+/// the border neutral so the card reads as active, never as disabled.
 class FfAmountHero extends StatelessWidget {
   final TextEditingController controller;
   final FfTone tone;
@@ -22,6 +24,9 @@ class FfAmountHero extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onClear;
   final Widget? trailing;
+
+  /// Group digits as the user types; read back with `FfAmountField.parse`.
+  final bool groupDigits;
 
   const FfAmountHero({
     super.key,
@@ -36,6 +41,7 @@ class FfAmountHero extends StatelessWidget {
     this.onChanged,
     this.onClear,
     this.trailing,
+    this.groupDigits = false,
   });
 
   @override
@@ -46,12 +52,11 @@ class FfAmountHero extends StatelessWidget {
 
     final toneColor = tone.foreground(c);
     final surfaceColor =
-        isDark ? c.surfaceCard : c.tint(toneColor, FfTint.subtle);
+        isDark
+            ? Color.alphaBlend(c.tint(toneColor, FfTint.whisper), c.surfaceCard)
+            : Color.alphaBlend(c.tint(toneColor, FfTint.faint), c.surfaceCard);
 
-    final borderColor =
-        errorText != null
-            ? c.statusError
-            : (isDark ? c.borderSubtle : c.tint(toneColor, FfTint.medium));
+    final borderColor = errorText != null ? c.statusError : c.borderSubtle;
 
     return Container(
       decoration: BoxDecoration(
@@ -79,10 +84,7 @@ class FfAmountHero extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: ff.text.labelSm.copyWith(
-                  color: c.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: ff.text.label.copyWith(color: c.textSecondary),
               ),
               if (trailing != null)
                 trailing!
@@ -97,7 +99,7 @@ class FfAmountHero extends StatelessWidget {
                       padding: const EdgeInsets.all(FfSpace.x3s),
                       child: Icon(
                         Icons.close_rounded,
-                        size: 16,
+                        size: FfIconSize.sm,
                         color: c.textSecondary,
                       ),
                     ),
@@ -119,6 +121,7 @@ class FfAmountHero extends StatelessWidget {
                   tone: tone,
                   size: FfAmountSize.hero,
                   onChanged: onChanged,
+                  groupDigits: groupDigits,
                 ),
               ),
             ],
@@ -131,7 +134,7 @@ class FfAmountHero extends StatelessWidget {
               children: [
                 Icon(
                   Icons.info_outline_rounded,
-                  size: 14,
+                  size: FfIconSize.xs,
                   color: c.statusError,
                 ),
                 const SizedBox(width: FfSpace.x2s),
@@ -152,7 +155,7 @@ class FfAmountHero extends StatelessWidget {
               children: [
                 Icon(
                   consequenceIcon ?? Icons.account_balance_wallet_outlined,
-                  size: 14,
+                  size: FfIconSize.xs,
                   color: c.textSecondary,
                 ),
                 const SizedBox(width: FfSpace.x2s),

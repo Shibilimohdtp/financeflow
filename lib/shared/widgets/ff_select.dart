@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/ff.dart';
+import 'ff_field_label.dart';
 import 'ff_sheet.dart';
 import 'ff_sheet_header.dart';
 
@@ -54,12 +55,7 @@ class FfSelect<T> extends StatelessWidget {
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(
-                    FfSpace.lg,
-                    FfSpace.xs,
-                    FfSpace.lg,
-                    FfSpace.lg,
-                  ),
+                  padding: FfSheetBody.standardPadding,
                   children: [
                     for (final item in items)
                       _OptionRow<T>(
@@ -90,14 +86,13 @@ class FfSelect<T> extends StatelessWidget {
       enabled: active,
       builder: (state) {
         final selectedChild = _selectedChild();
-        return InkWell(
+        final box = InkWell(
           borderRadius: ffRadius(FfFieldTokens.radius),
           onTap: active ? () => _open(context) : null,
           child: InputDecorator(
             isEmpty: selectedChild == null,
             isFocused: false,
             decoration: InputDecoration(
-              labelText: label,
               helperText: helper,
               helperMaxLines: 3,
               errorText: state.errorText,
@@ -123,6 +118,22 @@ class FfSelect<T> extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       child: selectedChild,
                     ),
+          ),
+        );
+        if (label == null) return box;
+        return MergeSemantics(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: active ? () => _open(context) : null,
+                child: FfFieldLabel(label!, enabled: active),
+              ),
+              const SizedBox(height: FfSheetTokens.labelGap),
+              box,
+            ],
           ),
         );
       },
@@ -157,27 +168,20 @@ class _OptionRow<T> extends StatelessWidget {
         borderRadius: ffRadius(FfFieldTokens.radius),
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 48),
+          constraints: const BoxConstraints(minHeight: FfTouch.minTarget),
           padding: const EdgeInsets.symmetric(
             horizontal: FfSpace.md,
             vertical: FfSpace.sm,
           ),
           decoration: BoxDecoration(
-            color:
-                selected ? ff.color.actionPrimaryContainer : Colors.transparent,
+            color: selected ? ff.color.surfaceSelected : Colors.transparent,
             borderRadius: ffRadius(FfFieldTokens.radius),
           ),
           child: Row(
             children: [
               Expanded(
                 child: DefaultTextStyle.merge(
-                  style: ff.text.bodyLg.copyWith(
-                    fontWeight: selected ? FontWeight.w600 : null,
-                    color:
-                        selected
-                            ? ff.color.onActionPrimaryContainer
-                            : ff.color.textPrimary,
-                  ),
+                  style: ff.text.bodyLg.copyWith(color: ff.color.textPrimary),
                   child: child,
                 ),
               ),
@@ -185,7 +189,7 @@ class _OptionRow<T> extends StatelessWidget {
                 Icon(
                   Icons.check_rounded,
                   size: FfIconSize.lg,
-                  color: ff.color.onActionPrimaryContainer,
+                  color: ff.color.actionPrimary,
                 ),
             ],
           ),

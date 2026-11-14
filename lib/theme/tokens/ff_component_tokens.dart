@@ -109,6 +109,9 @@ abstract final class FfFieldTokens {
   static const double radius = FfRadius.md;
   static const double paddingH = FfSpace.md;
   static const double paddingV = FfSpace.md;
+
+  /// A short inline field inside a row (a day of the month, a count).
+  static const double compactWidth = 84;
 }
 
 abstract final class FfChipTokens {
@@ -153,6 +156,21 @@ abstract final class FfSheetTokens {
 
   /// Tallest a sheet may grow, as a share of the screen height.
   static const double maxHeightFraction = 0.9;
+
+  /// Side padding of the header, body and footer.
+  static const double paddingH = FfSpace.lg;
+
+  /// Space at the end of the scrolling body.
+  static const double bodyBottom = FfSpace.xl;
+
+  /// Gap between blocks inside one group (label → field, field → helper).
+  static const double itemGap = FfSpace.md;
+
+  /// Gap between groups in a sheet body.
+  static const double groupGap = FfSpace.xl;
+
+  /// Gap between a field label and its control.
+  static const double labelGap = FfSpace.xs;
 }
 
 abstract final class FfDialogTokens {

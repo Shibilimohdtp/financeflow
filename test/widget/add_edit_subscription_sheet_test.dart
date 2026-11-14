@@ -7,6 +7,8 @@ import 'package:financeflow/repositories/subscription_repository.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_text_field.dart';
+import 'package:financeflow/shared/widgets/ff_amount_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test/helpers/fake_repositories.dart';
@@ -83,7 +85,7 @@ void main() {
 
       // Enter merchant
       await tester.enterText(
-        find.widgetWithText(TextField, 'Service or Merchant Name'),
+        find.widgetWithText(FfTextField, 'Service or Merchant Name'),
         'Spotify',
       );
       await tester.pump();
@@ -93,7 +95,7 @@ void main() {
 
       // Enter amount
       await tester.enterText(
-        find.widgetWithText(TextField, 'Recurring Amount'),
+        find.widgetWithText(FfAmountField, 'Recurring Amount'),
         '119',
       );
       await tester.pump();
@@ -140,7 +142,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Recurring Amount'),
+      find.widgetWithText(FfAmountField, 'Recurring Amount'),
       '200',
     );
     await tester.pump();
@@ -169,7 +171,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(
-        find.widgetWithText(TextField, 'Service or Merchant Name'),
+        find.widgetWithText(FfTextField, 'Service or Merchant Name'),
         'netflix',
       );
       await tester.pump();

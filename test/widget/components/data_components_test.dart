@@ -194,8 +194,9 @@ void main() {
         expect(key.currentState!.validate(), isFalse);
         await tester.pump();
         expect(find.text('Enter an amount'), findsOneWidget);
-        final field = tester.widget<TextField>(find.byType(TextField));
-        expect(field.decoration!.prefixStyle!.color, c.moneyExpense);
+        // The currency stays visible and takes the tone colour.
+        final symbol = tester.widget<Text>(find.text('₹'));
+        expect(symbol.style!.color, c.moneyExpense);
       });
 
       testWidgets('bare variant has no border', (tester) async {

@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/ff.dart';
+import 'ff_field_label.dart';
 
 /// A text input. Borders, fill, padding and text styles come from the theme;
 /// callers describe the field with semantic slots ([label], [hint], [icon],
 /// [prefixText], [helper], [suffix]) instead of an `InputDecoration`.
+///
+/// The [label] sits above the box (an `FfFieldLabel`), never floating inside
+/// the border; the hint is inside, helper and error text below. Screen
+/// readers hear the label and the field as one.
 ///
 /// Use [FfTextField.search] for in-page search boxes and `FfAmountField` for
 /// money entry.
@@ -138,7 +143,6 @@ class FfTextField extends StatelessWidget {
               ),
             )
             : InputDecoration(
-              labelText: label,
               hintText: hint,
               helperText: helper,
               helperMaxLines: 3,
@@ -151,7 +155,7 @@ class FfTextField extends StatelessWidget {
               counterText: maxLength == null ? null : '',
             );
 
-    return TextFormField(
+    final field = TextFormField(
       controller: controller,
       initialValue: controller == null ? initialValue : null,
       focusNode: focusNode,
@@ -173,6 +177,18 @@ class FfTextField extends StatelessWidget {
       readOnly: readOnly,
       obscureText: obscureText,
       autofillHints: autofillHints,
+    );
+    if (_search || label == null) return field;
+    return MergeSemantics(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FfFieldLabel(label!, enabled: enabled),
+          const SizedBox(height: FfSheetTokens.labelGap),
+          field,
+        ],
+      ),
     );
   }
 }

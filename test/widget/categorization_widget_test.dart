@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_text_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
@@ -77,8 +78,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Type Swiggy in merchant field
-      final merchantField = find.byWidgetPredicate(
-        (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
+      final merchantField = find.descendant(
+        of: find.widgetWithText(FfTextField, 'Payee (optional)'),
+        matching: find.byType(TextField),
       );
       expect(merchantField, findsOneWidget);
 

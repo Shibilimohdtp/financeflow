@@ -91,6 +91,27 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfBarChart` (`charts/ff_bar_chart.dart`) | Rounded comparison bars with spark value bubble, tabular Geist numerals, accessible steppers | `FfBarChart(items: [BarChartItem(label, value, secondaryValue:)], selectedIndex:, onSelected:, showYAxis:)` |
 | `FfDonutChart` (`charts/ff_donut_chart.dart`) | Proportional category ring with high-contrast segment numbers, light center amount, accessible semantics | `FfDonutChart(slices: [DonutSlice(label, value, colorToken:)], selectedSliceIndex:, onSliceSelected:, showSegmentNumbers:)` |
 
+## Sheets (DS-B20)
+
+Recipe: `04-screen-recipes.md` → E1. Changes to existing widgets are marked "changed".
+
+| Widget | Use | Key API |
+|---|---|---|
+| `FfSheetHeader` (changed) | Title `titleLg` without the bold override, subtitle in `textSecondary` (was the mushroom `secondary`), handle from `FfSheetTokens.dragHandle`, close as a 48 dp target; hairline only when told the body is scrolled | `FfSheetHeader(title:, subtitle:, onClose:)`; `trailing` kept for compatibility but not used by new sheets |
+| `FfSheet` (changed) | Watches the body's vertical scroll and shares it through `FfSheetScroll`, so the header and footer hairlines follow it even for sheets with their own scroll view | API unchanged |
+| `FfSheetBody` (new, `ff_sheet.dart`) | The scrolling body of every sheet: standard padding (`FfSheetBody.standardPadding`), drag dismisses the keyboard, children stretched | `FfSheetBody(children: [...])`; long pickers keep a `Flexible(ListView(padding: FfSheetBody.standardPadding))` |
+| `FfSheetGroup` (new, `ff_sheet.dart`) | One labelled group in a sheet body: `FfFieldLabel`, children spaced by `itemGap`, `groupGap` after | `FfSheetGroup(label: 'Type', children: [...], last:)` |
+| `FfSheetFooter` (changed) | One full-width primary; optional text-button secondary above it; hairline only while content scrolls under it | `FfSheetFooter(primaryLabel:, onPrimaryPressed:, isPrimaryLoading:, secondaryLabel:, onSecondaryPressed:)`; the outlined side-by-side Cancel layout is removed |
+| `FfFieldLabel` (new) | The one "what is this" label above a field, chip row, tile grid or segmented pill | `FfFieldLabel('Category', trailing:)` |
+| `FfTextField` (changed) | Label now sits above the box (rendered with `FfFieldLabel`), never floating/notched; field semantics keep the label | API unchanged |
+| `FfAmountField` (changed) | ₹ always visible (a prefix icon, not `prefixText`); hint `0`; label above; optional `helper`. With `groupDigits: true` digits group as you type (`FfAmountInputFormatter`, Indian or thousands by `CurrencyFormatter.current`) | `FfAmountField.parse(text)`, `FfAmountField.formatInput(amount)` for edit forms. `groupDigits` defaults to `false` while sheets owned by other chats still read with `double.tryParse`; turn it on per sheet as each one reads through `parse` |
+| `FfAmountHero` (changed) | Faint tone wash on the card colour, neutral border (no longer looks disabled) | adds `groupDigits` |
+| `FfSelect` (changed) | Label above the box (tapping it opens the picker too); options sheet uses the standard body padding; selected option is a calm `surfaceSelected` fill with an ink check (no bold) | API unchanged |
+| `FfEntityPreviewCard` (new) | Live preview at the top of an entity sheet (archetype B) | `FfEntityPreviewCard(leading: FfEntityPreviewCard.disc(context, FfHeroTone.tide, icon), title:, subtitle:, status:, figureCaption:, figure: FfAmountText(lg), footer:, semanticLabel:)`; `FfAccountPreviewCard`, `FfSubscriptionPreviewCard` and the investment/goal/lending previews become thin wrappers over it |
+| `FfChoiceTiles<T>` (new) | 3-up grid of icon-led options, ink fill + check when selected, labels wrap to 2 lines | `FfChoiceTiles(options: [FfChoiceTile(value:, icon:, label:)], selected:, onChanged:, columns: 3, layout: stacked/inline)`; `FfAccountTypeTiles`, `FfAssetTypeTiles`, `FfSubscriptionTypeTiles` and the lending direction tiles become wrappers over it |
+| `FfDisclosureRow` (new) | The single collapsible "More details" group at the end of a form | `FfDisclosureRow(title: 'More details', children: [...])` |
+| `FfMonogramTile` (pending, DS-B15 owns the file) | Initials should ignore tokens with no letter or digit ("Friend / Person" gives "F/" today); empty name should show a person icon | Reported to the Subscriptions chat; Lending can also pass an empty name |
+
 ## Adding or changing a component
 
 1. Shared file in `lib/shared/widgets/`, tokens in `lib/theme/tokens/ff_component_tokens.dart`.

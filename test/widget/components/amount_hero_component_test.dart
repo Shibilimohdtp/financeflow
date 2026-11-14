@@ -35,7 +35,7 @@ void main() {
 
       expect(find.text('Amount spent'), findsOneWidget);
       expect(find.text('450'), findsOneWidget);
-      expect(find.text('₹ '), findsOneWidget);
+      expect(find.text('₹'), findsOneWidget);
     });
 
     testWidgets('renders consequence line when provided', (tester) async {

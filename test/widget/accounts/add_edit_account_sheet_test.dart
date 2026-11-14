@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_text_field.dart';
+import 'package:financeflow/shared/widgets/ff_amount_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/add_edit_account_sheet.dart';
 import 'package:financeflow/models/account.dart';
@@ -80,12 +82,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter name so button switches from guidance to Add Account
-      final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
       await tester.enterText(nameFinder, 'My Bank');
 
       // Clear the default '0' in opening balance
       final balanceFinder = find.widgetWithText(
-        TextFormField,
+        FfAmountField,
         'Opening Balance',
       );
       await tester.enterText(balanceFinder, '');
@@ -102,9 +104,9 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
       final balanceFinder = find.widgetWithText(
-        TextFormField,
+        FfAmountField,
         'Opening Balance',
       );
 
@@ -147,7 +149,7 @@ void main() {
         findsOneWidget,
       );
 
-      final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
       await tester.enterText(nameFinder, 'ICICI Salary Account');
 
       await tester.tap(find.text('Save Changes'));
@@ -198,7 +200,7 @@ void main() {
         await tester.tap(find.text('Open Sheet'));
         await tester.pumpAndSettle();
 
-        final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+        final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
         await tester.enterText(nameFinder, 'hdfc salary');
         await tester.pumpAndSettle();
 
@@ -250,11 +252,11 @@ void main() {
       await tester.tap(find.text('Card'));
       await tester.pumpAndSettle();
 
-      final nameFinder = find.widgetWithText(TextFormField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
       await tester.enterText(nameFinder, 'ICICI Coral');
 
       final balanceFinder = find.widgetWithText(
-        TextFormField,
+        FfAmountField,
         'Current balance owed',
       );
       await tester.enterText(balanceFinder, '8500');
@@ -375,16 +377,17 @@ void main() {
       expect(find.text('Add Financial Account'), findsOneWidget);
     });
 
-    testWidgets('handles viewInsets keyboard height without crash or overflow', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createSheetWidget(viewInsets: const EdgeInsets.only(bottom: 300)),
-      );
-      await tester.tap(find.text('Open Sheet'));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'handles viewInsets keyboard height without crash or overflow',
+      (tester) async {
+        await tester.pumpWidget(
+          createSheetWidget(viewInsets: const EdgeInsets.only(bottom: 300)),
+        );
+        await tester.tap(find.text('Open Sheet'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Add Financial Account'), findsOneWidget);
-    });
+        expect(find.text('Add Financial Account'), findsOneWidget);
+      },
+    );
   });
 }

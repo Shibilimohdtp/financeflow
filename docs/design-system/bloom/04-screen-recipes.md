@@ -89,6 +89,101 @@ showFfSheet → FfSheet
 Full-screen forms (Add transaction) follow the same order inside a Scaffold with `FfAppBar`. No section labels in
 ALL CAPS; use `text.label` sentence case.
 
+### E1. Sheet system (DS-B20, approved by the owner 2026-11-14)
+
+All sheets share **one skeleton**. The body follows **one of four archetypes**, chosen by the sheet's job. Each
+domain keeps its own tone (the hero tone of its money kind), so a loan sheet still feels like Loans and a goal
+sheet like Goals. Sheets do not all have to look the same, but they all have the same structure.
+
+#### The skeleton (every sheet)
+
+```
+showFfSheet → FfSheet                          content-sized, grows to FfSheetTokens.maxHeightFraction (0.9)
+├ FfSheetHeader                                handle · title · one-line subtitle · close (X)
+│   hairline under it ONLY while the body is scrolled (FfSheetBody tells it)
+├ FfSheetBody                                  scroll + standard padding (FfSheetTokens.paddingH)
+│   └ FfSheetGroup(label:, children:) …         archetype A / B / C / D; itemGap inside, groupGap between
+└ FfSheetFooter (A, B; optional for C)        one full-width primary FfButton; hairline only when body scrolls under it
+```
+
+| Rule | Detail |
+|---|---|
+| Title | Sentence case, `text.titleLg` (no bold override). "New loan", "Edit account", "Add repayment", "Notifications". Create → "New ‹thing›"; edit → "Edit ‹thing›"; add to an existing thing → "Add ‹thing›" |
+| Subtitle | One short line saying what this sheet is for, not how to fill it, not privacy claims. `text.bodySm`, `textSecondary`. "A spending limit for one category", "Money you're setting aside for something" |
+| Header trailing | Close X only. No privacy badges in sheet headers (the on-device cue lives on top-level screens) |
+| Dismiss | The X, swipe down, or tap outside. **No Cancel button** |
+| Footer | One full-width primary `FfButton`. A secondary action, if really needed, is `FfButtonVariant.text` above it. Destructive actions (Delete) sit at the end of the body as a text/destructive button, never in the footer |
+| CTA verbs | Fixed: **Create** ‹thing› (new standalone object), **Add** ‹thing› (an item to a list or to an existing object: account, holding, repayment, money to a goal), **Save changes** (edit). Sentence case |
+| Disabled CTA | Where a sheet already disables its CTA until valid, the label says what is missing ("Enter amount", "Enter account name"). Sheets that validate on tap keep doing so (behaviour unchanged) |
+| Height | Content-sized, capped at 0.9. No sheet sets its own height |
+| Colour | Tones from `context.ff.hero(...)` / `FfTone`; no literals |
+
+#### Shared building blocks inside the body
+
+| Block | Rule |
+|---|---|
+| Group label | `FfFieldLabel` (`text.label`, sentence case, `textSecondary`) above a chip row, tile grid or segmented pill. Never ALL CAPS, never letter-spaced, never bold `FfSectionHeader` inside a sheet |
+| Text field | `FfTextField` with its **label above the box** (same `FfFieldLabel` style), hint inside, helper/error below. No placeholder-only fields, no notched/floating labels |
+| Amount field | `FfAmountField`: the **₹ is always visible** (also when empty and unfocused), digits group as you type in the app's convention (Indian: 1,00,000.00), hint is `0` (never a fake example like "1,00,000"), value read back with `FfAmountField.parse`. Edit mode shows the stored value grouped ("3,246.32") |
+| Choice | Chips (`FfChip`, wrap) for up to ~8 short options; icon tiles (`FfChoiceTiles`, 3-up grid, label may wrap to 2 lines, never truncated, never a horizontal scroller) for 4–6 icon-led kinds; `FfSegmentedPill` for 2–4 modes; more than 8 → a short row of likely options + "All ‹things›" that opens a Pattern C picker. Selected = ink fill; tiles also show a check. Horizontal chip scrollers only for suggestions (`FfSuggestionChips`), never for a required choice |
+| Dates | Quick chips (Today / Yesterday / …) + a calendar chip that shows the chosen date |
+| Live line | `FfConsequenceLine` under the input it explains |
+| Optional extras | One collapsible "More details" row (`FfDisclosureRow`) at the end of the form |
+| Gaps | `FfSpace.md` inside a group, `FfSpace.xl` between groups |
+
+#### Archetypes
+
+**A · Amount-first** — the amount *is* the point (one number the user types).
+```
+FfAmountHero(tone, label: 'Amount borrowed', consequence: live line)   ← first, autofocus on create
+group label + choices / fields
+FfDisclosureRow('More details')
+```
+Hero surface: `surfaceCard` with a **faint** tone wash (`FfTint.faint`) and no tinted border, so it reads as active,
+not disabled. ₹ in the tone colour, digits ink. Used by: Loan, Budget, Goal contribution, Repayment, Advance,
+Investment value update, Add transaction (reference).
+
+**B · Entity** — the user is describing a *thing* with identity (name, kind, schedule, person).
+```
+FfEntityPreviewCard(tone, leading: icon | monogram, title, subtitle, figure, status chip)   ← live, not tappable
+kind choice (tiles or chips)
+name field, amount field, schedule…
+FfDisclosureRow('More details')
+```
+The preview is the only place the figure is shown large; the amount input below it is an ordinary `FfAmountField`
+(`md`). Preview surface is a solid comfortable `FfCard` with the domain tone on the leading tile and figure; the
+**account** preview alone keeps its gradient (it is a miniature of the Home account hero). Empty name → a neutral
+person/flag icon, never initials made from placeholder text. Used by: Account (moss), Savings goal (tide), Investment
+(dusk), Subscription (sand), Lending record (rose).
+
+**C · Choice** — pick one or several things and close.
+```
+optional FfTextField.search (more than ~10 items)
+FfGroupedContainer of FfRow (selected → trailing check) | FfChoiceTiles | chips
+footer only when the choice is multi-select or must be confirmed ("Show 24 transactions", "Apply")
+```
+Used by: `FfSelect`, period chooser, category / account pickers, payment account picker, filter & sort, theme and
+currency pickers, recurring suggestions, CSV column mapper.
+
+**D · Settings** — toggles that apply immediately.
+```
+group label + FfGroupedContainer(FfRow.toggle …)   ← no footer, changes save as they happen
+```
+Used by: Notifications (alert settings). The guided PIN sheet is a Pattern G flow inside the skeleton.
+
+#### Domain tones in sheets
+
+| Sheet | Archetype | Tone |
+|---|---|---|
+| Account | B | moss (gradient preview) |
+| Savings goal / contribution | B / A | tide |
+| Investment / value update | B / A | dusk |
+| Loan | A | rose (`FfTone.debt` on the hero) |
+| Budget | A | rose (plan) |
+| Subscription | B | sand |
+| Lending record / repayment / advance | B / A | rose; lent vs borrowed shown by icon + words |
+| Notifications | D | none |
+
 ## F. Settings-style: Settings, Security, Backup, Export, Alert settings
 
 ```

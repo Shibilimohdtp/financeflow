@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_text_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/categories/categories_controller.dart';
@@ -343,8 +344,9 @@ void main() {
     expect(find.text('Lulu Hypermarket'), findsNothing);
 
     // Focus payee field
-    final payeeField = find.byWidgetPredicate(
-      (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
+    final payeeField = find.descendant(
+      of: find.widgetWithText(FfTextField, 'Payee (optional)'),
+      matching: find.byType(TextField),
     );
     await tester.tap(payeeField);
     await tester.pumpAndSettle();
@@ -387,8 +389,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(history: history));
       await tester.pumpAndSettle();
 
-      final payeeField = find.byWidgetPredicate(
-        (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
+      final payeeField = find.descendant(
+        of: find.widgetWithText(FfTextField, 'Payee (optional)'),
+        matching: find.byType(TextField),
       );
       await tester.tap(payeeField);
       await tester.pumpAndSettle();
@@ -515,8 +518,9 @@ void main() {
       await tester.enterText(amountField, '5000');
 
       // Enter Transfer reference
-      final merchantField = find.byWidgetPredicate(
-        (w) => w is TextField && w.decoration?.labelText == 'Note (optional)',
+      final merchantField = find.descendant(
+        of: find.widgetWithText(FfTextField, 'Note (optional)'),
+        matching: find.byType(TextField),
       );
       await tester.enterText(merchantField, 'Transfer to Cash');
 

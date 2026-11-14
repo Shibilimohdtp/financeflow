@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
-import 'ff_button.dart';
-import '../../theme/ff.dart';
 
-/// A standard sticky bottom sheet footer with top divider hairline, safe-area insets,
-/// and support for a single full-width primary CTA or dual (secondary + primary) actions.
+import '../../theme/ff.dart';
+import 'ff_button.dart';
+import 'ff_sheet.dart';
+
+/// The sticky footer of a sheet: one full-width primary button, and at most
+/// one quiet text-button secondary above it. Dismissal is the header's X,
+/// so there is no Cancel button. Destructive actions (Delete) belong at the
+/// end of the sheet body, not here.
+///
+/// Inside an `FfSheet` it draws a hairline on top only while the body has
+/// more content underneath it.
 class FfSheetFooter extends StatelessWidget {
   final Widget? child;
   final String? primaryLabel;
   final VoidCallback? onPrimaryPressed;
   final bool isPrimaryLoading;
+
+  /// An optional text-button action shown above the primary button.
   final String? secondaryLabel;
   final VoidCallback? onSecondaryPressed;
   final EdgeInsetsGeometry? padding;
@@ -26,68 +35,57 @@ class FfSheetFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final c = context.ff.color;
+    final scroll = FfSheetScroll.maybeOf(context);
+    // Outside a sheet (or before the body reports) keep the hairline.
+    final showHairline = scroll?.moreBelow ?? true;
 
     final effectivePadding =
         padding ??
-        EdgeInsets.fromLTRB(
-          FfSpace.lg,
+        const EdgeInsets.fromLTRB(
+          FfSheetTokens.paddingH,
           FfSpace.sm,
-          FfSpace.lg,
-          FfSpace.sm + bottomInset,
+          FfSheetTokens.paddingH,
+          FfSpace.sm,
         );
 
     Widget content;
     if (child != null) {
       content = child!;
-    } else if (secondaryLabel != null && primaryLabel != null) {
-      content = Row(
+    } else {
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: FfButton(
+          if (secondaryLabel != null && onSecondaryPressed != null) ...[
+            FfButton(
               label: secondaryLabel!,
-              variant: FfButtonVariant.outlined,
-              onPressed:
-                  onSecondaryPressed ?? () => Navigator.of(context).pop(),
+              variant: FfButtonVariant.text,
+              onPressed: onSecondaryPressed,
             ),
-          ),
-          const SizedBox(width: FfSpace.md),
-          Expanded(
-            child: FfButton(
+            const SizedBox(height: FfSpace.x2s),
+          ],
+          if (primaryLabel != null)
+            FfButton(
               label: primaryLabel!,
               isLoading: isPrimaryLoading,
               onPressed: onPrimaryPressed,
             ),
-          ),
         ],
       );
-    } else if (primaryLabel != null) {
-      content = SizedBox(
-        width: double.infinity,
-        child: FfButton(
-          label: primaryLabel!,
-          isLoading: isPrimaryLoading,
-          onPressed: onPrimaryPressed,
-        ),
-      );
-    } else {
-      content = const SizedBox.shrink();
     }
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: context.ff.color.surfacePage,
+        color: c.surfaceSheet,
         border: Border(
           top: BorderSide(
-            color: context.ff.color.borderSubtle.withValues(
-              alpha: FfOpacity.half,
-            ),
+            color: showHairline ? c.borderSubtle : Colors.transparent,
             width: FfBorderWidth.hairline,
           ),
         ),
       ),
-      padding: effectivePadding,
-      child: content,
+      child: Padding(padding: effectivePadding, child: content),
     );
   }
 }

@@ -14,6 +14,8 @@ import 'package:financeflow/shared/widgets/ff_surfaces.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_text_field.dart';
+import 'package:financeflow/shared/widgets/ff_amount_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_repositories.dart';
@@ -258,7 +260,7 @@ void main() {
 
         // Enter holding name
         await tester.enterText(
-          find.widgetWithText(TextFormField, 'Holding / Asset Name'),
+          find.widgetWithText(FfTextField, 'Holding / Asset Name'),
           'Tata Steel Shares',
         );
         await tester.pumpAndSettle();
@@ -274,11 +276,11 @@ void main() {
 
         // Enter price and current value
         await tester.enterText(
-          find.widgetWithText(TextFormField, 'Purchase / Unit Price'),
+          find.widgetWithText(FfAmountField, 'Purchase / Unit Price'),
           '150',
         );
         await tester.enterText(
-          find.widgetWithText(TextFormField, 'Current Value'),
+          find.widgetWithText(FfAmountField, 'Current Value'),
           '175',
         );
         await tester.pumpAndSettle();

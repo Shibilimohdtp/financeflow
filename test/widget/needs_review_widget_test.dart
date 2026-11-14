@@ -16,6 +16,7 @@ import 'package:financeflow/repositories/pending_transaction_repository.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_text_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/fake_repositories.dart';
 
@@ -103,8 +104,9 @@ Future<ParsedTransaction> _pumpQueue(
   return item;
 }
 
-Finder _payeeField() => find.byWidgetPredicate(
-  (w) => w is TextField && w.decoration?.labelText == 'Payee (optional)',
+Finder _payeeField() => find.descendant(
+  of: find.widgetWithText(FfTextField, 'Payee (optional)'),
+  matching: find.byType(TextField),
 );
 
 void main() {
@@ -413,4 +415,3 @@ void main() {
     },
   );
 }
-
