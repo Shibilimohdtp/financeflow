@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_numeric_keypad.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
@@ -112,20 +111,17 @@ class _GuidedPinSetupSheetState extends ConsumerState<_GuidedPinSetupSheet> {
     final activePin = _isConfirmStep ? _confirmPin : _firstPin;
 
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
-          title: _isConfirmStep ? 'Confirm Security PIN' : 'Set Security PIN',
+          title: _isConfirmStep ? 'Confirm your PIN' : 'Set a PIN',
           subtitle:
               _isConfirmStep
-                  ? 'Re-enter your 4-digit PIN to confirm'
-                  : 'PIN is stored in your hardware keystore',
+                  ? 'Enter the same 4 digits again'
+                  : 'Four digits that unlock FinanceFlow',
         ),
-        const FfDivider(),
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: FfSpace.pageMargin,
-            vertical: FfSpace.md,
-          ),
+          padding: FfSheetBody.standardPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -135,10 +131,13 @@ class _GuidedPinSetupSheetState extends ConsumerState<_GuidedPinSetupSheet> {
                 children: List.generate(4, (index) {
                   final isFilled = index < activePin.length;
                   return AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
+                    duration:
+                        MediaQuery.of(context).disableAnimations
+                            ? Duration.zero
+                            : FfMotion.fast,
                     margin: const EdgeInsets.symmetric(horizontal: FfSpace.xs),
-                    width: 16,
-                    height: 16,
+                    width: FfIconSize.sm,
+                    height: FfIconSize.sm,
                     decoration: ShapeDecoration(
                       shape: FfShape.of(
                         FfRadius.full,
@@ -171,15 +170,16 @@ class _GuidedPinSetupSheetState extends ConsumerState<_GuidedPinSetupSheet> {
                   children: [
                     Icon(
                       Icons.warning_amber_rounded,
-                      size: 16,
+                      size: FfIconSize.sm,
                       color: ff.color.statusError,
                     ),
                     const SizedBox(width: FfSpace.xs),
-                    Text(
-                      _errorMessage!,
-                      style: ff.text.bodySm.copyWith(
-                        color: ff.color.statusError,
-                        fontWeight: FontWeight.w500,
+                    Flexible(
+                      child: Text(
+                        _errorMessage!,
+                        style: ff.text.bodySm.copyWith(
+                          color: ff.color.statusError,
+                        ),
                       ),
                     ),
                   ],
@@ -187,10 +187,7 @@ class _GuidedPinSetupSheetState extends ConsumerState<_GuidedPinSetupSheet> {
               else
                 Text(
                   _isConfirmStep ? 'Step 2 of 2' : 'Step 1 of 2',
-                  style: ff.text.labelSm.copyWith(
-                    color: ff.color.textSecondary,
-                    letterSpacing: 0.5,
-                  ),
+                  style: ff.text.label.copyWith(color: ff.color.textSecondary),
                 ),
 
               const SizedBox(height: FfSpace.lg),

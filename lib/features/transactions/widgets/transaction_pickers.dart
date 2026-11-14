@@ -6,8 +6,9 @@ import '../../../core/formatting/currency_formatter.dart';
 import '../../../models/account.dart';
 import '../../../models/category.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
-import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_icon_tile.dart';
+import '../../../shared/widgets/ff_grouped_container.dart';
+import '../../../shared/widgets/ff_empty_state.dart';
 import '../../../shared/widgets/ff_row.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
@@ -76,9 +77,7 @@ class AccountTileButton extends StatelessWidget {
                             children: [
                               Text(
                                 account!.name,
-                                style: context.ff.text.bodyLg.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: context.ff.text.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -104,7 +103,6 @@ class AccountTileButton extends StatelessWidget {
             error!,
             style: context.ff.text.bodySm.copyWith(
               color: context.ff.color.statusError,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -160,24 +158,19 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
             .toList();
 
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        FfSheetHeader(
+          title: 'Choose category',
+          subtitle: 'What this money was for',
+          onClose: () => Navigator.pop(context),
+        ),
         Flexible(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.lg,
-              FfSpace.sm,
-              FfSpace.lg,
-              FfSpace.lg,
-            ),
+            padding: FfSheetBody.standardPadding,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FfSheetHeader(
-                  title: 'Choose Category',
-                  padding: EdgeInsets.zero,
-                  onClose: () => Navigator.pop(context),
-                ),
-                const SizedBox(height: FfSpace.sm),
                 FfTextField.search(
                   controller: _searchController,
                   hint: 'Search categories...',
@@ -221,7 +214,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                                       crossAxisCount: crossAxisCount,
                                       crossAxisSpacing: FfSpace.sm,
                                       mainAxisSpacing: FfSpace.sm,
-                                      childAspectRatio: 1.3,
+                                      childAspectRatio: 1.1,
                                     ),
                                 itemBuilder: (context, index) {
                                   final category = filtered[index];
@@ -302,18 +295,14 @@ class _CategoryGridTile extends StatelessWidget {
                       size: 32,
                     ),
                     const SizedBox(height: FfSpace.x2s),
+                    // Two lines before anything is cut ("Miscellaneous").
                     Text(
                       category.name,
                       textAlign: TextAlign.center,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: context.ff.text.label.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color:
-                            isSelected
-                                ? context.ff.color.actionPrimary
-                                : context.ff.color.textPrimary,
+                        color: context.ff.color.textPrimary,
                       ),
                     ),
                   ],
@@ -361,48 +350,32 @@ class AccountPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Flexible(
-          child: Padding(
-            padding: const EdgeInsets.all(FfSpace.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FfSheetHeader(
-                  title: title,
-                  padding: EdgeInsets.zero,
-                  onClose: () => Navigator.pop(context),
-                ),
-                const SizedBox(height: FfSpace.sm),
-                if (accounts.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(FfSpace.xl),
-                    child: Text('No eligible account available.'),
-                  )
-                else
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: accounts.length,
-                      separatorBuilder: (_, _) => const FfDivider(),
-                      itemBuilder: (context, index) {
-                        final account = accounts[index];
-                        final isSelected = account.id == selected?.id;
-
-                        return FfRow(
-                          leading: FfIconTile(icon: _icon(account.type)),
-                          title: account.name,
-                          subtitle:
-                              '${account.displaySubtitle} • ${CurrencyFormatter.formatAmount(account.currentBalance)}',
-                          selected: isSelected,
-                          onTap: () => Navigator.pop(context, account),
-                        );
-                      },
+        FfSheetHeader(title: title, onClose: () => Navigator.pop(context)),
+        FfSheetBody(
+          children: [
+            if (accounts.isEmpty)
+              FfEmptyState(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'No account to choose',
+                description: 'Add an account first, then pick it here.',
+              )
+            else
+              FfGroupedContainer(
+                children: [
+                  for (final account in accounts)
+                    FfRow(
+                      leading: FfIconTile(icon: _icon(account.type)),
+                      title: account.name,
+                      subtitle:
+                          '${account.displaySubtitle} · ${CurrencyFormatter.formatAmount(account.currentBalance)}',
+                      selected: account.id == selected?.id,
+                      onTap: () => Navigator.pop(context, account),
                     ),
-                  ),
-              ],
-            ),
-          ),
+                ],
+              ),
+          ],
         ),
       ],
     );

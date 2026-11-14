@@ -190,7 +190,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pumpAndSettle();
-    expect(find.text('Filter & sort'), findsOneWidget);
+    expect(find.text('Filter and sort'), findsOneWidget);
     // The sheet has its own kind chips (the list's kind pills sit behind it).
     for (final label in ['Spending', 'Income', 'Transfers']) {
       expect(
@@ -209,7 +209,7 @@ void main() {
     await tester.tap(find.text('Show results'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Filter & sort'), findsNothing);
+    expect(find.text('Filter and sort'), findsNothing);
     expect(find.widgetWithText(InputChip, 'Income'), findsOneWidget);
     expect(find.text('Employer'), findsOneWidget);
     expect(find.text('Swiggy Biryani'), findsNothing);

@@ -4,13 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/formatting/app_currency.dart';
 import '../../../models/app_settings.dart';
 import '../../../shared/widgets/ff_chip.dart';
-import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_row.dart';
+import '../../../shared/widgets/ff_consequence_line.dart';
+import '../../../shared/widgets/ff_field_label.dart';
+import '../../../shared/widgets/ff_grouped_container.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../shared/widgets/ff_text_field.dart';
 import '../../../shared/widgets/ff_theme_preview_card.dart';
 import '../../../theme/ff.dart';
+import '../../../theme/ff_tone.dart';
 import '../settings_controller.dart';
 
 /// Opens the live theme preference bottom sheet with interactive miniature
@@ -34,15 +37,11 @@ void showSettingsThemePicker(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const FfSheetHeader(
-                title: 'Theme Preference',
-                subtitle: 'Live visual miniatures. Updates immediately.',
+                title: 'Theme',
+                subtitle: 'Changes apply right away',
               ),
-              const FfDivider(),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: FfSpace.pageMargin,
-                  vertical: FfSpace.md,
-                ),
+                padding: FfSheetBody.standardPadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -194,17 +193,16 @@ class _CurrencyPickerSheetState extends ConsumerState<_CurrencyPickerSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const FfSheetHeader(
-          title: 'Select Currency',
-          subtitle: 'Display formatting only. No conversion applied.',
+          title: 'Currency',
+          subtitle: 'How amounts are shown; nothing is converted',
         ),
-        const FfDivider(),
 
         // Search Input
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            FfSpace.pageMargin,
-            FfSpace.sm,
-            FfSpace.pageMargin,
+            FfSheetTokens.paddingH,
+            FfSpace.xs,
+            FfSheetTokens.paddingH,
             FfSpace.xs,
           ),
           child: FfTextField.search(
@@ -218,19 +216,12 @@ class _CurrencyPickerSheetState extends ConsumerState<_CurrencyPickerSheet> {
         if (_filterQuery.trim().isEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.pageMargin,
+              horizontal: FfSheetTokens.paddingH,
               vertical: FfSpace.xs,
             ),
             child: Row(
               children: [
-                Text(
-                  'POPULAR',
-                  style: ff.text.labelSm.copyWith(
-                    color: ff.color.textTertiary,
-                    letterSpacing: 1.0,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const FfFieldLabel('Popular'),
                 const SizedBox(width: FfSpace.sm),
                 Expanded(
                   child: SingleChildScrollView(
@@ -263,27 +254,33 @@ class _CurrencyPickerSheetState extends ConsumerState<_CurrencyPickerSheet> {
         Flexible(
           child: ListView(
             shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
+            padding: const EdgeInsets.symmetric(
+              horizontal: FfSheetTokens.paddingH,
+              vertical: FfSpace.xs,
+            ),
             children: [
-              for (final currency in filtered)
-                FfRow(
-                  key: ValueKey('currency-${currency.code}'),
-                  leading: SizedBox(
-                    width: FfRowTokens.iconTile,
-                    child: Center(
-                      child: Text(
-                        currency.symbol,
-                        style: ff.text.titleLg.copyWith(
-                          fontWeight: FontWeight.w600,
+              if (filtered.isNotEmpty)
+                FfGroupedContainer(
+                  children: [
+                    for (final currency in filtered)
+                      FfRow(
+                        key: ValueKey('currency-${currency.code}'),
+                        leading: SizedBox(
+                          width: FfRowTokens.iconTile,
+                          child: Center(
+                            child: Text(
+                              currency.symbol,
+                              style: ff.text.titleLg,
+                            ),
+                          ),
                         ),
+                        title: currency.displayName,
+                        subtitle:
+                            '${currency.code} · ${currency.usesIndianGrouping ? 'Lakh/Crore grouping' : 'Thousands grouping'}',
+                        selected: currency == selected,
+                        onTap: () => _selectCurrency(currency, currentSettings),
                       ),
-                    ),
-                  ),
-                  title: currency.displayName,
-                  subtitle:
-                      '${currency.code} · ${currency.usesIndianGrouping ? 'Lakh/Crore grouping' : 'Thousands grouping'}',
-                  selected: currency == selected,
-                  onTap: () => _selectCurrency(currency, currentSettings),
+                  ],
                 ),
               if (filtered.isEmpty)
                 Padding(
@@ -303,19 +300,18 @@ class _CurrencyPickerSheetState extends ConsumerState<_CurrencyPickerSheet> {
         ),
 
         // Bottom Disclaimer
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            FfSpace.pageMargin,
+        const Padding(
+          padding: EdgeInsets.fromLTRB(
+            FfSheetTokens.paddingH,
             FfSpace.xs,
-            FfSpace.pageMargin,
+            FfSheetTokens.paddingH,
             FfSpace.md,
           ),
-          child: Text(
-            'Note: FinanceFlow stores all amounts in local numerical format. Switching currency alters display symbols only and does not perform exchange rate conversions.',
-            style: ff.text.labelSm.copyWith(
-              color: ff.color.textTertiary,
-              height: 1.3,
-            ),
+          child: FfConsequenceLine(
+            text:
+                'Switching currency changes the symbol and grouping only. Amounts are not converted.',
+            icon: Icons.info_outline_rounded,
+            tone: FfTone.neutral,
           ),
         ),
       ],

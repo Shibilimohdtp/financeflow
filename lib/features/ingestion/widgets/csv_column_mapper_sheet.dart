@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../services/ingestion/parsers/csv_column_mapper.dart';
-import '../../../shared/widgets/ff_button.dart';
-import '../../../shared/widgets/ff_divider.dart';
 import '../../../shared/widgets/ff_select.dart';
 import '../../../shared/widgets/ff_sheet.dart';
+import '../../../shared/widgets/ff_sheet_footer.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
 import '../../../theme/ff.dart';
 
@@ -57,23 +56,19 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
     final items = _buildDropdownItems();
 
     return FfSheet(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const FfSheetHeader(
-          title: 'Map CSV Columns',
-          subtitle:
-              'Select which column in your CSV matches each transaction field.',
+          title: 'Match CSV columns',
+          subtitle: 'Which column in your file holds each detail',
         ),
-        const FfDivider(),
-        Expanded(
+        Flexible(
           child: ListView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.pageMargin,
-              vertical: FfSpace.md,
-            ),
+            shrinkWrap: true,
+            padding: FfSheetBody.standardPadding,
             children: [
               FfSelect<int?>(
-                label: 'Date Column *',
+                label: 'Date (required)',
                 value: _sanitize(_mapping.dateIndex),
                 items: items,
                 onChanged: (idx) {
@@ -85,9 +80,9 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSheetTokens.itemGap),
               FfSelect<int?>(
-                label: 'Merchant / Narration *',
+                label: 'Payee or narration (required)',
                 value: _sanitize(_mapping.merchantIndex),
                 items: items,
                 onChanged: (idx) {
@@ -99,9 +94,9 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSheetTokens.itemGap),
               FfSelect<int?>(
-                label: 'Debit Column',
+                label: 'Debit (money out)',
                 value: _sanitize(_mapping.debitIndex),
                 items: items,
                 onChanged: (idx) {
@@ -113,9 +108,9 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSheetTokens.itemGap),
               FfSelect<int?>(
-                label: 'Credit Column',
+                label: 'Credit (money in)',
                 value: _sanitize(_mapping.creditIndex),
                 items: items,
                 onChanged: (idx) {
@@ -127,9 +122,9 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSheetTokens.itemGap),
               FfSelect<int?>(
-                label: 'Amount (Single Column)',
+                label: 'Amount (one column for both)',
                 value: _sanitize(_mapping.amountIndex),
                 items: items,
                 onChanged: (idx) {
@@ -141,9 +136,9 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSheetTokens.itemGap),
               FfSelect<int?>(
-                label: 'Reference / UTR',
+                label: 'Reference or UTR',
                 value: _sanitize(_mapping.referenceIndex),
                 items: items,
                 onChanged: (idx) {
@@ -155,7 +150,7 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.md),
+              const SizedBox(height: FfSheetTokens.itemGap),
               FfSelect<int?>(
                 label: 'Category',
                 value: _sanitize(_mapping.categoryIndex),
@@ -169,18 +164,15 @@ class _CsvColumnMapperSheetState extends State<CsvColumnMapperSheet> {
                   });
                 },
               ),
-              const SizedBox(height: FfSpace.xl),
-              FfButton(
-                label: 'Apply Column Mapping',
-                variant: FfButtonVariant.primary,
-                onPressed: () {
-                  widget.onApply(_mapping);
-                  Navigator.of(context).pop();
-                },
-              ),
-              const SizedBox(height: FfSpace.lg),
             ],
           ),
+        ),
+        FfSheetFooter(
+          primaryLabel: 'Apply columns',
+          onPrimaryPressed: () {
+            widget.onApply(_mapping);
+            Navigator.of(context).pop();
+          },
         ),
       ],
     );

@@ -12,6 +12,7 @@ import 'package:financeflow/shared/widgets/ff_theme_preview_card.dart';
 import 'package:financeflow/theme/stillwater_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:financeflow/shared/widgets/ff_sheet_header.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_repositories.dart';
@@ -251,9 +252,15 @@ void main() {
       await tester.tap(find.text('Theme'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Theme Preference'), findsOneWidget);
       expect(
-        find.text('Live visual miniatures. Updates immediately.'),
+        find.descendant(
+          of: find.byType(FfSheetHeader),
+          matching: find.text('Theme'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Changes apply right away'),
         findsOneWidget,
       );
       expect(find.byType(FfThemePreviewCard), findsNWidgets(3));
@@ -266,8 +273,14 @@ void main() {
       await tester.tap(find.text('Currency'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Select Currency'), findsOneWidget);
-      expect(find.text('POPULAR'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(FfSheetHeader),
+          matching: find.text('Currency'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Popular'), findsOneWidget);
 
       // Search for USD
       final searchField = find.descendant(
@@ -283,8 +296,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Sheet dismissed
-      expect(find.text('Select Currency'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(FfSheetHeader),
+          matching: find.text('Currency'),
+        ),
+        findsNothing,
+      );
     });
-
   });
 }

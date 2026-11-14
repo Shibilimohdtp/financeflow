@@ -7,8 +7,8 @@ import '../../../models/category.dart';
 import '../../../shared/widgets/ff_card.dart';
 import '../../../shared/widgets/ff_category_tile.dart';
 import '../../../shared/widgets/ff_chip.dart';
-import '../../../shared/widgets/ff_divider.dart';
-import '../../../shared/widgets/ff_privacy_badge.dart';
+import '../../../shared/widgets/ff_button.dart';
+import '../../../shared/widgets/ff_field_label.dart';
 import '../../../shared/widgets/ff_sheet.dart';
 import '../../../shared/widgets/ff_sheet_footer.dart';
 import '../../../shared/widgets/ff_sheet_header.dart';
@@ -169,19 +169,14 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
       children: [
         // ── 1. Sheet Header ──────────────────────────────────────────────
         const FfSheetHeader(
-          title: 'Filter & sort',
-          subtitle: 'Refine transactions by kind, account, category, or amount',
-          trailing: FfPrivacyBadge(label: '100% Local', iconOnly: true),
+          title: 'Filter and sort',
+          subtitle: 'Narrow the list to what you are looking for',
         ),
-        const FfDivider(),
 
         Flexible(
           child: ListView(
             shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(
-              horizontal: FfSpace.pageMargin,
-              vertical: FfSpace.sm,
-            ),
+            padding: FfSheetBody.standardPadding,
             children: [
               // ── 2. Active Filters Scope Status Bar ──────────────────────
               if (activeFiltersCount > 0) ...[
@@ -206,21 +201,16 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                       Expanded(
                         child: Text(
                           '$activeFiltersCount ${activeFiltersCount == 1 ? 'filter active' : 'filters active'}',
-                          style: ff.text.labelSm.copyWith(
+                          style: ff.text.labelLg.copyWith(
                             color: ff.color.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: _resetAll,
-                        child: Text(
-                          'Clear all',
-                          style: ff.text.labelSm.copyWith(
-                            color: ff.color.actionPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      FfButton(
+                        label: 'Clear all',
+                        variant: FfButtonVariant.text,
+                        size: FfButtonSize.sm,
+                        onPressed: _resetAll,
                       ),
                     ],
                   ),
@@ -594,32 +584,26 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ff = context.ff;
     return Padding(
-      padding: const EdgeInsets.only(bottom: FfSpace.xs),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: ff.color.textSecondary),
-              const SizedBox(width: FfSpace.x3s),
-              Text(
-                title,
-                style: ff.text.titleSm.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: ff.color.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          if (subtitle != null)
-            Text(
-              subtitle!,
-              style: ff.text.labelSm.copyWith(
-                color: ff.color.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-        ],
+      padding: const EdgeInsets.only(bottom: FfSheetTokens.labelGap),
+      child: Semantics(
+        header: true,
+        child: FfFieldLabel(
+          title,
+          trailing:
+              subtitle == null
+                  ? null
+                  : Flexible(
+                    child: Text(
+                      subtitle!,
+                      textAlign: TextAlign.end,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: ff.text.label.copyWith(
+                        color: ff.color.textPrimary,
+                      ),
+                    ),
+                  ),
+        ),
       ),
     );
   }
@@ -688,7 +672,6 @@ class _AccountCard extends StatelessWidget {
                       isSelected
                           ? ff.color.onActionPrimary
                           : ff.color.textPrimary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ],
@@ -771,7 +754,6 @@ class _CategoryCard extends StatelessWidget {
                       isSelected
                           ? ff.color.onActionPrimary
                           : ff.color.textPrimary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ],
@@ -807,10 +789,7 @@ class _PresetChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: ff.text.labelSm.copyWith(
-              color: ff.color.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
+            style: ff.text.labelSm.copyWith(color: ff.color.textSecondary),
           ),
         ),
       ),

@@ -248,7 +248,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Picker title and search field are visible
-      expect(find.text('Choose Category'), findsOneWidget);
+      expect(find.text('Choose category'), findsOneWidget);
       expect(find.text('Search categories...'), findsOneWidget);
 
       // All compatible categories are visible in the full grid
@@ -292,7 +292,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Picker closed, Transport is now selected and visible on the quick bar
-      expect(find.text('Choose Category'), findsNothing);
+      expect(find.text('Choose category'), findsNothing);
       expect(find.text('Transport'), findsOneWidget);
     },
   );
