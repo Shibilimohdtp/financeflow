@@ -55,18 +55,18 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.text('Notification Preferences'), findsOneWidget);
-      expect(find.text('Master Switch'), findsOneWidget);
-      expect(find.text('Local Alerts & Notifications'), findsOneWidget);
-      expect(find.text('Active Notification Categories'), findsOneWidget);
-      expect(find.text('Needs Review Transactions'), findsOneWidget);
-      expect(find.text('Budget Limits'), findsOneWidget);
-      expect(find.text('Subscription Renewals'), findsOneWidget);
-      expect(find.text('Loan & EMI Due Dates'), findsOneWidget);
-      expect(find.text('Encrypted Backup Reminders'), findsOneWidget);
-      expect(find.text('Lock Screen Privacy'), findsOneWidget);
-      expect(find.text('Hide Financial Details'), findsOneWidget);
-      expect(find.text('100% Local & Battery Friendly'), findsOneWidget);
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Cancel'), findsNothing);
+      expect(find.text('Alerts and notifications'), findsOneWidget);
+      expect(find.text('Remind me about'), findsOneWidget);
+      expect(find.text('Items to review'), findsOneWidget);
+      expect(find.text('Budget limits'), findsOneWidget);
+      expect(find.text('Subscription renewals'), findsOneWidget);
+      expect(find.text('Loan and EMI due dates'), findsOneWidget);
+      expect(find.text('Backup reminders'), findsOneWidget);
+      expect(find.text('Lock screen'), findsOneWidget);
+      expect(find.text('Hide amounts and payees'), findsOneWidget);
+      expect(find.textContaining('Scheduled on this device'), findsOneWidget);
     });
 
     testWidgets('toggling category switch updates settings', (tester) async {
@@ -79,7 +79,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Find Budget Limits row and tap its switch
-      final budgetLimitsText = find.text('Budget Limits');
+      final budgetLimitsText = find.text('Budget limits');
       expect(budgetLimitsText, findsOneWidget);
 
       final switchWidgets = find.byType(Switch);

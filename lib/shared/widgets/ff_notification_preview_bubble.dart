@@ -63,19 +63,36 @@ class FfNotificationPreviewBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: FfSpace.xs),
-                Text(
-                  'FinanceFlow',
-                  style: ff.text.labelSm.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: ff.color.textSecondary,
+                // Flexible so large text shortens the app name line instead
+                // of overflowing the bubble.
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'FinanceFlow',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ff.text.labelSm.copyWith(
+                            color: ff.color.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: FfSpace.x3s),
+                      Flexible(
+                        child: Text(
+                          '· Just now',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ff.text.labelSm.copyWith(
+                            color: ff.color.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: FfSpace.x3s),
-                Text(
-                  '· Just now',
-                  style: ff.text.labelSm.copyWith(color: ff.color.textTertiary),
-                ),
-                const Spacer(),
+                const SizedBox(width: FfSpace.xs),
                 FfBadge(
                   label: hideSensitive ? 'Masked' : 'Unmasked',
                   tone: hideSensitive ? FfTone.success : FfTone.warning,
