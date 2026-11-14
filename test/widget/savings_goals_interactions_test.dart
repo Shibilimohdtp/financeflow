@@ -94,7 +94,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        expect(find.text('Create Savings Goal'), findsOneWidget);
+        expect(find.text('New savings goal'), findsOneWidget);
+        expect(find.text('Cancel'), findsNothing);
         expect(find.text('Emergency Fund'), findsOneWidget);
         expect(find.text('Trip / Vacation'), findsOneWidget);
 
@@ -104,7 +105,8 @@ void main() {
 
         // Name and amount should be prefilled
         expect(find.text('Emergency Fund'), findsWidgets);
-        expect(find.text('100000'), findsOneWidget);
+        // The amount field groups digits; the preview shows the same.
+        expect(find.text('1,00,000'), findsOneWidget);
         expect(find.textContaining('gets you there by'), findsOneWidget);
       },
     );
@@ -140,15 +142,18 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        expect(find.text('Add Funds'), findsOneWidget);
-        expect(find.text('+₹5,000'), findsOneWidget);
+        expect(find.text('Add money'), findsWidgets);
+        expect(find.text('+ ₹5,000'), findsOneWidget);
 
         // Tap +₹5,000 chip
-        await tester.tap(find.text('+₹5,000'));
+        await tester.tap(find.text('+ ₹5,000'));
         await tester.pumpAndSettle();
 
-        expect(find.text('5000'), findsOneWidget);
-        expect(find.textContaining('Reaches 10% of target'), findsOneWidget);
+        expect(find.text('5,000'), findsOneWidget);
+        expect(
+          find.textContaining('Reaches 10% of the target'),
+          findsOneWidget,
+        );
       },
     );
 

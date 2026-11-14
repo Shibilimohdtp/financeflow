@@ -12,11 +12,10 @@ import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_amount_field.dart';
 import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_consequence_line.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_disclosure_row.dart';
+import '../../shared/widgets/ff_entity_preview_card.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_sheet.dart';
@@ -49,6 +48,9 @@ class _AddEditSavingsGoalSheetState
   Account? _selectedAccount;
   bool _showAdvanced = false;
   bool _isSubmitting = false;
+
+  /// The timeline preset last chosen (months), or null for a picked date.
+  int? _presetMonths;
 
   bool get isEditing => widget.initialGoal != null;
 
@@ -100,9 +102,7 @@ class _AddEditSavingsGoalSheetState
     _amountController = TextEditingController(
       text:
           initial != null
-              ? (initial.targetAmount.truncateToDouble() == initial.targetAmount
-                  ? initial.targetAmount.toInt().toString()
-                  : initial.targetAmount.toString())
+              ? FfAmountField.formatInput(initial.targetAmount)
               : '',
     );
     _notesController = TextEditingController(text: initial?.notes ?? '');
@@ -137,8 +137,9 @@ class _AddEditSavingsGoalSheetState
     HapticFeedback.selectionClick();
     setState(() {
       _nameController.text = template.name;
-      _amountController.text = template.amount.toInt().toString();
+      _amountController.text = FfAmountField.formatInput(template.amount);
       _targetDate = DateTime.now().add(Duration(days: template.months * 30));
+      _presetMonths = template.months;
     });
   }
 
@@ -150,7 +151,10 @@ class _AddEditSavingsGoalSheetState
       lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
     if (picked != null) {
-      setState(() => _targetDate = picked);
+      setState(() {
+        _targetDate = picked;
+        _presetMonths = null;
+      });
     }
   }
 
@@ -158,13 +162,14 @@ class _AddEditSavingsGoalSheetState
     HapticFeedback.selectionClick();
     setState(() {
       _targetDate = DateTime.now().add(Duration(days: months * 30));
+      _presetMonths = months;
     });
   }
 
   String _computeConsequence() {
     final amount = CurrencyFormatter.parse(_amountController.text) ?? 0.0;
     if (amount <= 0) {
-      return 'Enter a target amount to preview required monthly savings.';
+      return 'Enter a target to see how much to set aside each month.';
     }
     final days = math.max(1, _targetDate.difference(DateTime.now()).inDays);
     final months = math.max(1.0, days / 30.4375);
@@ -243,265 +248,178 @@ class _AddEditSavingsGoalSheetState
     final icon = SavingsGoalsScreen.getGoalIcon(currentName);
 
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
-          title: isEditing ? 'Edit Savings Goal' : 'Create Savings Goal',
-          subtitle: 'Targeted on-device savings',
+          title: isEditing ? 'Edit savings goal' : 'New savings goal',
+          subtitle: "Money you're setting aside for something",
         ),
-        const FfDivider(),
-
-        // Form Content
         Flexible(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
-            child: Form(
-              key: _formKey,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: FfSpace.sm),
+                  // ── Live preview (archetype B) ───────────────────────────
+                  FfEntityPreviewCard(
+                    leading: FfEntityPreviewCard.disc(
+                      context,
+                      FfHeroTone.tide,
+                      icon,
+                    ),
+                    title: currentName,
+                    subtitle:
+                        'By ${DateFormatter.formatShortDate(_targetDate)}',
+                    figureCaption: 'Target',
+                    figure: FfAmountText(
+                      amount: currentAmount,
+                      size: FfAmountSize.lg,
+                      style: FfAmountStyle.split,
+                      tone: FfTone.neutral,
+                      showSign: false,
+                    ),
+                    semanticLabel:
+                        'Preview: $currentName, target '
+                        '${CurrencyFormatter.formatAmount(currentAmount)} by '
+                        '${DateFormatter.formatShortDate(_targetDate)}',
+                  ),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
-                  // ── Mini Live Preview Card ───────────────────────────────
-                  FfCard(
-                    variant: FfCardVariant.tinted,
-                    tone: FfTone.savings,
-                    child: Row(
+                  // ── Templates ────────────────────────────────────────────
+                  if (!isEditing)
+                    FfSheetGroup(
+                      label: 'Start from',
                       children: [
-                        FfIconTile(icon: icon, tone: FfTone.savings),
-                        const SizedBox(width: FfSpace.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                currentName,
-                                style: context.ff.text.titleSm,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                        Wrap(
+                          spacing: FfChipTokens.gap,
+                          runSpacing: FfChipTokens.gap,
+                          children: [
+                            for (final t in _templates)
+                              FfChip(
+                                label: t.name,
+                                leading: Icon(t.icon, size: FfIconSize.sm),
+                                isSelected:
+                                    _nameController.text.trim() == t.name,
+                                onSelected: () => _applyTemplate(t),
                               ),
-                              Text(
-                                'Due ${DateFormatter.formatShortDate(_targetDate)}',
-                                style: context.ff.text.bodySm,
-                              ),
-                            ],
-                          ),
-                        ),
-                        FfAmountText(
-                          amount: currentAmount,
-                          size: FfAmountSize.md,
-                          style: FfAmountStyle.split,
-                          tone: FfTone.neutral,
-                          showSign: false,
+                          ],
                         ),
                       ],
                     ),
-                  ),
 
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Quick Templates ───────────────────────────────────────
-                  if (!isEditing) ...[
-                    Text(
-                      'Templates',
-                      style: context.ff.text.labelSm.copyWith(
-                        color: context.ff.color.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                    SizedBox(
-                      height: 38,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: _templates.length,
-                        separatorBuilder:
-                            (_, __) => const SizedBox(width: FfSpace.xs),
-                        itemBuilder: (context, i) {
-                          final t = _templates[i];
-                          return FfChip(
-                            label: t.name,
-                            leading: Icon(t.icon, size: 14),
-                            isSelected: _nameController.text.trim() == t.name,
-                            onSelected: () => _applyTemplate(t),
-                          );
+                  // ── Name and target ──────────────────────────────────────
+                  FfSheetGroup(
+                    children: [
+                      FfTextField(
+                        controller: _nameController,
+                        label: 'Goal name',
+                        textCapitalization: TextCapitalization.words,
+                        hint: 'e.g. Japan trip, Emergency fund',
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter goal name';
+                          }
+                          return null;
                         },
                       ),
-                    ),
-                    const SizedBox(height: FfSpace.lg),
-                  ],
-
-                  // ── Goal Name ─────────────────────────────────────────────
-                  Text(
-                    'Goal name',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfTextField(
-                    controller: _nameController,
-                    textCapitalization: TextCapitalization.words,
-                    hint: 'e.g. MacBook Pro, Japan Trip, Emergency Fund',
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter goal name';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Target Amount ─────────────────────────────────────────
-                  Text(
-                    'Target amount',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfAmountField(
-                    controller: _amountController,
-                    hint: '1,00,000',
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Target Date & Quick Chips ─────────────────────────────
-                  Text(
-                    'Target timeline',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  Wrap(
-                    spacing: FfSpace.xs,
-                    runSpacing: FfSpace.xs,
-                    children: [
-                      FfChip(
-                        label: '3 months',
-                        isSelected: false,
-                        onSelected: () => _setDatePreset(3),
-                      ),
-                      FfChip(
-                        label: '6 months',
-                        isSelected: false,
-                        onSelected: () => _setDatePreset(6),
-                      ),
-                      FfChip(
-                        label: '1 year',
-                        isSelected: false,
-                        onSelected: () => _setDatePreset(12),
-                      ),
-                      FfChip(
-                        label: '2 years',
-                        isSelected: false,
-                        onSelected: () => _setDatePreset(24),
-                      ),
-                      FfChip(
-                        label: DateFormatter.formatShortDate(_targetDate),
-                        leading: const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 14,
-                        ),
-                        isSelected: true,
-                        onSelected: _selectTargetDate,
+                      FfAmountField(
+                        controller: _amountController,
+                        label: 'Target amount',
+                        size: FfAmountSize.md,
+                        tone: FfTone.savings,
+                        groupDigits: true,
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── Live Consequence Line ────────────────────────────────
-                  FfConsequenceLine(
-                    text: _computeConsequence(),
-                    icon: Icons.savings_outlined,
-                    tone: FfTone.savings,
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Advanced / Optional Details ──────────────────────────
-                  InkWell(
-                    onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
-                      child: Row(
+                  // ── Timeline ─────────────────────────────────────────────
+                  FfSheetGroup(
+                    label: 'Reach it in',
+                    children: [
+                      Wrap(
+                        spacing: FfChipTokens.gap,
+                        runSpacing: FfChipTokens.gap,
                         children: [
-                          Icon(
-                            _showAdvanced
-                                ? Icons.keyboard_arrow_up_rounded
-                                : Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: context.ff.color.textSecondary,
-                          ),
-                          const SizedBox(width: FfSpace.xs),
-                          Text(
-                            _showAdvanced
-                                ? 'Hide optional account and notes'
-                                : 'Dedicated account & notes (optional)',
-                            style: context.ff.text.bodySm.copyWith(
-                              color: context.ff.color.actionPrimary,
-                              fontWeight: FontWeight.w500,
+                          for (final (label, months) in const [
+                            ('3 months', 3),
+                            ('6 months', 6),
+                            ('1 year', 12),
+                            ('2 years', 24),
+                          ])
+                            FfChip(
+                              label: label,
+                              isSelected: _presetMonths == months,
+                              onSelected: () => _setDatePreset(months),
                             ),
+                          FfChip(
+                            label: DateFormatter.formatShortDate(_targetDate),
+                            leading: const Icon(
+                              Icons.calendar_today_outlined,
+                              size: FfIconSize.sm,
+                            ),
+                            isSelected: _presetMonths == null,
+                            onSelected: _selectTargetDate,
                           ),
                         ],
                       ),
-                    ),
+                      FfConsequenceLine(
+                        text: _computeConsequence(),
+                        icon: Icons.savings_outlined,
+                        tone: FfTone.savings,
+                      ),
+                    ],
                   ),
 
-                  if (_showAdvanced) ...[
-                    const SizedBox(height: FfSpace.sm),
-                    accountsAsync.when(
-                      data: (accounts) {
-                        final activeAccounts =
-                            accounts.where((a) => !a.isArchived).toList();
-                        return FfSelect<Account>(
-                          value: _selectedAccount,
-                          label: 'Dedicated Savings Account',
-                          items: [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('No dedicated account'),
-                            ),
-                            ...activeAccounts.map(
-                              (a) => DropdownMenuItem(
-                                value: a,
-                                child: Text(a.name),
+                  // ── More details ─────────────────────────────────────────
+                  FfDisclosureRow(
+                    subtitle: 'Savings account and a note',
+                    initiallyExpanded: _showAdvanced,
+                    onExpansionChanged: (v) => _showAdvanced = v,
+                    children: [
+                      accountsAsync.when(
+                        data: (accounts) {
+                          final activeAccounts =
+                              accounts.where((a) => !a.isArchived).toList();
+                          return FfSelect<Account>(
+                            value: _selectedAccount,
+                            label: 'Savings account (optional)',
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('No dedicated account'),
                               ),
-                            ),
-                          ],
-                          onChanged:
-                              (val) => setState(() => _selectedAccount = val),
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
-                    const SizedBox(height: FfSpace.md),
-                    FfTextField(
-                      controller: _notesController,
-                      maxLines: 2,
-                      label: 'Notes',
-                      hint: 'e.g. Set aside 10% bonus each quarter',
-                    ),
-                  ],
-
-                  const SizedBox(height: FfSpace.xl),
+                              ...activeAccounts.map(
+                                (a) => DropdownMenuItem(
+                                  value: a,
+                                  child: Text(a.name),
+                                ),
+                              ),
+                            ],
+                            onChanged:
+                                (val) => setState(() => _selectedAccount = val),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                      FfTextField(
+                        controller: _notesController,
+                        maxLines: 2,
+                        label: 'Notes (optional)',
+                        hint: 'e.g. Set aside 10% of each bonus',
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
         ),
         FfSheetFooter(
-          secondaryLabel: 'Cancel',
-          primaryLabel: isEditing ? 'Save Changes' : 'Create Goal',
+          primaryLabel: isEditing ? 'Save changes' : 'Create goal',
           isPrimaryLoading: _isSubmitting,
           onPrimaryPressed: _isSubmitting ? null : _submit,
         ),

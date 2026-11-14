@@ -10,9 +10,8 @@ import '../../models/goal_contribution.dart';
 import '../../models/savings_goal.dart';
 import '../../repositories/account_repository.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_hero.dart';
 import '../../shared/widgets/ff_chip.dart';
-import '../../shared/widgets/ff_consequence_line.dart';
-import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_select.dart';
 import '../../shared/widgets/ff_sheet.dart';
@@ -66,10 +65,7 @@ class _AddGoalContributionSheetState
   void _setAmount(double amount) {
     HapticFeedback.selectionClick();
     setState(() {
-      _amountController.text =
-          amount.truncateToDouble() == amount
-              ? amount.toInt().toString()
-              : amount.toString();
+      _amountController.text = FfAmountField.formatInput(amount);
     });
   }
 
@@ -161,192 +157,143 @@ class _AddGoalContributionSheetState
             ? (newTotal / widget.goal.targetAmount * 100).clamp(0, 100)
             : 100.0;
 
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final isToday = DateUtils.isSameDay(_date, DateTime.now());
+    final isYesterday = DateUtils.isSameDay(_date, yesterday);
+    final remaining = widget.goal.targetAmount - currentSaved;
+
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
-          title: 'Add Funds',
-          subtitle: 'Contributing to "${widget.goal.name}"',
+          title: 'Add money',
+          subtitle: 'Towards ${widget.goal.name}',
         ),
-        const FfDivider(),
-
-        // Form Content
         Flexible(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
-            child: Form(
-              key: _formKey,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: FfSpace.sm),
-
-                  // ── Consequence / Projection Line ────────────────────────
-                  FfConsequenceLine(
-                    text:
-                        depositAmount > 0
-                            ? 'Reaches ${projectedPct.toStringAsFixed(0)}% of target (+${(projectedPct - currentPct).toStringAsFixed(0)}%)'
-                            : 'Currently at ${currentPct.toStringAsFixed(0)}% of ${CurrencyFormatter.formatAmount(widget.goal.targetAmount)}',
-                    icon: Icons.trending_up_rounded,
-                    tone: FfTone.savings,
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Deposit Amount ────────────────────────────────────────
-                  Text(
-                    'Deposit amount',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfAmountField(
-                    controller: _amountController,
-                    hint: '5,000',
-                    autofocus: true,
-                  ),
-
-                  const SizedBox(height: FfSpace.sm),
-
-                  // ── Quick Amount Presets ──────────────────────────────────
-                  Wrap(
-                    spacing: FfSpace.xs,
-                    runSpacing: FfSpace.xs,
+                  // ── Amount first (archetype A) ───────────────────────────
+                  FfSheetGroup(
                     children: [
-                      FfChip(
-                        label: '+₹1,000',
-                        isSelected: false,
-                        onSelected: () => _setAmount(depositAmount + 1000),
+                      FfAmountHero(
+                        controller: _amountController,
+                        tone: FfTone.savings,
+                        label: 'Amount',
+                        autofocus: true,
+                        groupDigits: true,
+                        consequenceIcon: Icons.trending_up_rounded,
+                        consequence:
+                            depositAmount > 0
+                                ? 'Reaches ${projectedPct.toStringAsFixed(0)}% of the target (+${(projectedPct - currentPct).toStringAsFixed(0)}%)'
+                                : 'At ${currentPct.toStringAsFixed(0)}% of ${CurrencyFormatter.formatAmount(widget.goal.targetAmount)}',
                       ),
-                      FfChip(
-                        label: '+₹5,000',
-                        isSelected: false,
-                        onSelected: () => _setAmount(depositAmount + 5000),
-                      ),
-                      FfChip(
-                        label: '+₹10,000',
-                        isSelected: false,
-                        onSelected: () => _setAmount(depositAmount + 10000),
-                      ),
-                      if (widget.goal.targetAmount > currentSaved)
-                        FfChip(
-                          label:
-                              'Remaining (${CurrencyFormatter.formatAmount(widget.goal.targetAmount - currentSaved)})',
-                          isSelected: false,
-                          onSelected:
-                              () => _setAmount(
-                                widget.goal.targetAmount - currentSaved,
-                              ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Date ──────────────────────────────────────────────────
-                  Text(
-                    'Deposit date',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  Wrap(
-                    spacing: FfSpace.xs,
-                    runSpacing: FfSpace.xs,
-                    children: [
-                      FfChip(
-                        label: 'Today',
-                        isSelected: DateUtils.isSameDay(_date, DateTime.now()),
-                        onSelected:
-                            () => setState(() => _date = DateTime.now()),
-                      ),
-                      FfChip(
-                        label: 'Yesterday',
-                        isSelected: DateUtils.isSameDay(
-                          _date,
-                          DateTime.now().subtract(const Duration(days: 1)),
-                        ),
-                        onSelected:
-                            () => setState(
-                              () =>
-                                  _date = DateTime.now().subtract(
-                                    const Duration(days: 1),
-                                  ),
+                      Wrap(
+                        spacing: FfChipTokens.gap,
+                        runSpacing: FfChipTokens.gap,
+                        children: [
+                          for (final step in const [1000.0, 5000.0, 10000.0])
+                            FfChip(
+                              label:
+                                  '+ ${CurrencyFormatter.formatAmount(step)}',
+                              isSelected: false,
+                              onSelected:
+                                  () => _setAmount(depositAmount + step),
                             ),
-                      ),
-                      FfChip(
-                        label: DateFormatter.formatShortDate(_date),
-                        leading: const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 14,
-                        ),
-                        isSelected:
-                            !DateUtils.isSameDay(_date, DateTime.now()) &&
-                            !DateUtils.isSameDay(
-                              _date,
-                              DateTime.now().subtract(const Duration(days: 1)),
+                          if (remaining > 0)
+                            FfChip(
+                              label:
+                                  'What is left (${CurrencyFormatter.formatAmount(remaining)})',
+                              isSelected: false,
+                              onSelected: () => _setAmount(remaining),
                             ),
-                        onSelected: _selectDate,
+                        ],
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Source Account ────────────────────────────────────────
-                  Text(
-                    'Source account (optional)',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  accountsAsync.when(
-                    data: (accounts) {
-                      final activeAccounts =
-                          accounts.where((a) => !a.isArchived).toList();
-                      return FfSelect<Account>(
-                        value: _selectedAccount,
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('Direct / Cash deposit'),
+                  // ── Date ─────────────────────────────────────────────────
+                  FfSheetGroup(
+                    label: 'Date',
+                    children: [
+                      Wrap(
+                        spacing: FfChipTokens.gap,
+                        runSpacing: FfChipTokens.gap,
+                        children: [
+                          FfChip(
+                            label: 'Today',
+                            isSelected: isToday,
+                            onSelected:
+                                () => setState(() => _date = DateTime.now()),
                           ),
-                          ...activeAccounts.map(
-                            (a) =>
-                                DropdownMenuItem(value: a, child: Text(a.name)),
+                          FfChip(
+                            label: 'Yesterday',
+                            isSelected: isYesterday,
+                            onSelected: () => setState(() => _date = yesterday),
+                          ),
+                          FfChip(
+                            label: DateFormatter.formatShortDate(_date),
+                            leading: const Icon(
+                              Icons.calendar_today_outlined,
+                              size: FfIconSize.sm,
+                            ),
+                            isSelected: !isToday && !isYesterday,
+                            onSelected: _selectDate,
                           ),
                         ],
-                        onChanged:
-                            (val) => setState(() => _selectedAccount = val),
-                      );
-                    },
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── Notes ─────────────────────────────────────────────────
-                  FfTextField(
-                    controller: _notesController,
-                    label: 'Notes (optional)',
-                    hint: 'e.g. Monthly salary savings transfer',
+                  // ── From and note ────────────────────────────────────────
+                  FfSheetGroup(
+                    last: true,
+                    children: [
+                      accountsAsync.when(
+                        data: (accounts) {
+                          final activeAccounts =
+                              accounts.where((a) => !a.isArchived).toList();
+                          return FfSelect<Account>(
+                            value: _selectedAccount,
+                            label: 'From account (optional)',
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('Direct / Cash deposit'),
+                              ),
+                              ...activeAccounts.map(
+                                (a) => DropdownMenuItem(
+                                  value: a,
+                                  child: Text(a.name),
+                                ),
+                              ),
+                            ],
+                            onChanged:
+                                (val) => setState(() => _selectedAccount = val),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                      FfTextField(
+                        controller: _notesController,
+                        label: 'Notes (optional)',
+                        hint: 'e.g. Monthly salary transfer',
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(height: FfSpace.xl),
                 ],
               ),
             ),
           ),
         ),
         FfSheetFooter(
-          secondaryLabel: 'Cancel',
-          primaryLabel: 'Confirm Deposit',
+          primaryLabel: 'Add money',
           isPrimaryLoading: _isSubmitting,
           onPrimaryPressed: _isSubmitting ? null : _submit,
         ),
