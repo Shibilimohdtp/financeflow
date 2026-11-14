@@ -6,13 +6,15 @@ import '../../core/formatting/date_formatter.dart';
 import '../../models/loan.dart';
 import '../../repositories/account_repository.dart';
 import '../../services/loan_calculator.dart';
+import '../../shared/widgets/ff_amount_field.dart';
 import '../../shared/widgets/ff_amount_hero.dart';
+import '../../shared/widgets/ff_disclosure_row.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_consequence_line.dart';
 import '../../shared/widgets/ff_row.dart';
-import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
@@ -92,7 +94,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
     _nameController = TextEditingController(text: init?.name ?? '');
     _lenderController = TextEditingController(text: init?.lender ?? '');
     _principalController = TextEditingController(
-      text: init != null ? init.principalAmount.toStringAsFixed(0) : '',
+      text: init != null ? FfAmountField.formatInput(init.principalAmount) : '',
     );
     _rateController = TextEditingController(
       text: init != null ? init.interestRate.toStringAsFixed(2) : '8.50',
@@ -101,7 +103,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
       text: init != null ? init.tenureMonths.toString() : '24',
     );
     _emiController = TextEditingController(
-      text: init != null ? init.emiAmount.toStringAsFixed(2) : '',
+      text: init != null ? FfAmountField.formatInput(init.emiAmount) : '',
     );
     _paymentDayController = TextEditingController(
       text: init != null ? init.paymentDay.toString() : '5',
@@ -133,7 +135,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
   // ── Calculation helpers ────────────────────────────────────────────────────
 
   void _recalculateEmi() {
-    final p = double.tryParse(_principalController.text.trim()) ?? 0.0;
+    final p = FfAmountField.parse(_principalController.text) ?? 0.0;
     final r = double.tryParse(_rateController.text.trim()) ?? 0.0;
     final n = int.tryParse(_tenureController.text.trim()) ?? 0;
 
@@ -144,7 +146,9 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
         tenureMonths: n,
         interestType: _interestType,
       );
-      _emiController.text = calculated.toStringAsFixed(2);
+      _emiController.text = FfAmountField.formatInput(
+        double.parse(calculated.toStringAsFixed(2)),
+      );
       setState(() {});
     }
   }
@@ -152,10 +156,10 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
   /// Returns a preview summary for the repayment block.
   /// Returns null if required fields are incomplete.
   ({double emi, double total, double interest, DateTime endDate})? _preview() {
-    final p = double.tryParse(_principalController.text.trim()) ?? 0.0;
+    final p = FfAmountField.parse(_principalController.text) ?? 0.0;
     final r = double.tryParse(_rateController.text.trim()) ?? 0.0;
     final n = int.tryParse(_tenureController.text.trim()) ?? 0;
-    final emi = double.tryParse(_emiController.text.trim()) ?? 0.0;
+    final emi = FfAmountField.parse(_emiController.text) ?? 0.0;
     if (p <= 0 || n <= 0 || emi <= 0) return null;
 
     final tempLoan = Loan(
@@ -193,10 +197,10 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
   List<AmortizationScheduleItem> _getPastInstallmentsPreview() {
     if (widget.initialLoan != null) return const [];
-    final p = double.tryParse(_principalController.text.trim()) ?? 0.0;
+    final p = FfAmountField.parse(_principalController.text) ?? 0.0;
     final r = double.tryParse(_rateController.text.trim()) ?? 0.0;
     final n = int.tryParse(_tenureController.text.trim()) ?? 0;
-    final emi = double.tryParse(_emiController.text.trim()) ?? 0.0;
+    final emi = FfAmountField.parse(_emiController.text) ?? 0.0;
     final day = _paymentDayInt();
     if (p <= 0 || n <= 0 || emi <= 0) return const [];
 
@@ -243,10 +247,10 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
   }
 
   bool _validateNumericFields() {
-    final p = double.tryParse(_principalController.text.trim());
+    final p = FfAmountField.parse(_principalController.text);
     final r = double.tryParse(_rateController.text.trim());
     final n = int.tryParse(_tenureController.text.trim());
-    final emi = double.tryParse(_emiController.text.trim());
+    final emi = FfAmountField.parse(_emiController.text);
 
     String? pErr, rErr, nErr, eErr;
     if (p == null || p <= 0) pErr = 'Enter a valid principal amount.';
@@ -271,10 +275,10 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
 
     setState(() => _isSaving = true);
 
-    final principal = double.parse(_principalController.text.trim());
+    final principal = FfAmountField.parse(_principalController.text)!;
     final rate = double.tryParse(_rateController.text.trim()) ?? 0.0;
     final tenure = int.parse(_tenureController.text.trim());
-    final emi = double.parse(_emiController.text.trim());
+    final emi = FfAmountField.parse(_emiController.text)!;
     final paymentDay = _paymentDayInt();
 
     try {
@@ -355,10 +359,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
       children: [
         FfSheetHeader(
           title: isEdit ? 'Edit loan' : 'New loan',
-          subtitle:
-              isEdit
-                  ? 'Update the terms as your lender shows them.'
-                  : 'Start with the amount, then the terms.',
+          subtitle: 'Money you borrowed and pay back each month',
           onClose: () => Navigator.of(context).pop(),
         ),
 
@@ -366,12 +367,8 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
           child: Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                FfSpace.lg,
-                FfSpace.xs,
-                FfSpace.lg,
-                FfSpace.md,
-              ),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               children: [
                 // ── 1. Principal hero ──────────────────────────────
                 FfAmountHero(
@@ -384,13 +381,14 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                           ? 'Enter the amount, rate and tenure to see the EMI.'
                           : 'About ${CurrencyFormatter.formatAmount(previewData.emi)} a month for $_tenureText months.',
                   consequenceIcon: Icons.event_repeat_rounded,
+                  groupDigits: true,
                   onChanged: (_) {
                     setState(() => _principalError = null);
                     _recalculateEmi();
                   },
                 ),
 
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: FfSheetTokens.groupGap),
 
                 // ── 2. Who and what ────────────────────────────────
                 _inputField(
@@ -404,7 +402,7 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                               ? 'Loan name is required.'
                               : null,
                 ),
-                const SizedBox(height: FfSpace.md),
+                const SizedBox(height: FfSheetTokens.itemGap),
                 _inputField(
                   controller: _lenderController,
                   label: 'Lender',
@@ -418,210 +416,181 @@ class _AddEditLoanSheetState extends ConsumerState<AddEditLoanSheet> {
                               : null,
                 ),
 
-                const SizedBox(height: FfSpace.lg),
+                const SizedBox(height: FfSheetTokens.groupGap),
 
                 // ── 3. Type as tappable chips ──────────────────────
-                const FfSectionHeader(title: 'Type'),
-                Wrap(
-                  spacing: FfSpace.xs,
-                  runSpacing: FfSpace.xs,
+                FfSheetGroup(
+                  label: 'Type',
                   children: [
-                    for (final t in LoanType.values)
-                      FfChip(
-                        label: t.displayName,
-                        isSelected: _loanType == t,
-                        leading: Icon(
-                          _loanTypeIcon(t),
-                          size: 15,
-                          color:
-                              _loanType == t
-                                  ? context.ff.color.onActionPrimaryContainer
-                                  : context.ff.color.secondary,
-                        ),
-                        onSelected: () => setState(() => _loanType = t),
-                      ),
+                    Wrap(
+                      spacing: FfChipTokens.gap,
+                      runSpacing: FfChipTokens.gap,
+                      children: [
+                        for (final t in LoanType.values)
+                          FfChip(
+                            label: t.displayName,
+                            isSelected: _loanType == t,
+                            leading: Icon(
+                              _loanTypeIcon(t),
+                              size: FfIconSize.sm,
+                              color:
+                                  _loanType == t
+                                      ? context.ff.color.onActionPrimary
+                                      : context.ff.color.textSecondary,
+                            ),
+                            onSelected: () => setState(() => _loanType = t),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-
-                const SizedBox(height: FfSpace.lg),
 
                 // ── 4. Terms ───────────────────────────────────────
-                const FfSectionHeader(title: 'Terms'),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                FfSheetGroup(
+                  label: 'Terms',
                   children: [
-                    Expanded(
-                      child: _NumericInputField(
-                        controller: _rateController,
-                        label: 'Interest',
-                        suffix: '% a year',
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        errorText: _rateError,
-                        onChanged: (_) {
-                          setState(() => _rateError = null);
-                          _recalculateEmi();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: FfSpace.md),
-                    Expanded(
-                      child: _NumericInputField(
-                        controller: _tenureController,
-                        label: 'Tenure',
-                        suffix: 'months',
-                        keyboardType: TextInputType.number,
-                        errorText: _tenureError,
-                        onChanged: (_) {
-                          setState(() => _tenureError = null);
-                          _recalculateEmi();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: FfSpace.md),
-                FfSegmentedPill<InterestType>(
-                  options: [
-                    FfSegmentOption(
-                      value: InterestType.reducingBalance,
-                      label: InterestType.reducingBalance.displayName,
-                    ),
-                    FfSegmentOption(
-                      value: InterestType.flatRate,
-                      label: InterestType.flatRate.displayName,
-                    ),
-                  ],
-                  selectedValue: _interestType,
-                  onSelected: (t) {
-                    setState(() => _interestType = t);
-                    _recalculateEmi();
-                  },
-                ),
-                const SizedBox(height: FfSpace.xs),
-                FfConsequenceLine(
-                  text:
-                      _interestType == InterestType.reducingBalance
-                          ? 'Interest falls as you repay the principal.'
-                          : 'Interest is charged on the original principal.',
-                  icon: Icons.info_outline_rounded,
-                ),
-                const SizedBox(height: FfSpace.md),
-                _NumericInputField(
-                  controller: _emiController,
-                  label: 'Monthly EMI',
-                  suffix: CurrencyFormatter.currencySymbol,
-                  prefixSymbol: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  errorText: _emiError,
-                  helperText:
-                      'Calculated for you · edit if your lender differs',
-                  onChanged: (_) => setState(() => _emiError = null),
-                ),
-
-                // ── 5. What it costs ───────────────────────────────
-                if (previewData != null) ...[
-                  const SizedBox(height: FfSpace.lg),
-                  _RepaymentPreview(data: previewData),
-                ],
-
-                // ── 6. Schedule ────────────────────────────────────
-                const SizedBox(height: FfSpace.lg),
-                const FfSectionHeader(title: 'Schedule'),
-                FfCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      FfRow(
-                        title: 'Start date',
-                        icon: Icons.event_outlined,
-                        detail: DateFormatter.formatShortDate(_startDate),
-                        showChevron: true,
-                        onTap: _selectDate,
-                      ),
-                      FfRow(
-                        title: 'Due day each month',
-                        subtitle: 'Between 1 and 28',
-                        icon: Icons.today_outlined,
-                        trailing: SizedBox(
-                          width: 84,
-                          child: FfTextField(
-                            controller: _paymentDayController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(2),
-                            ],
-                            hint: '5',
-                            onChanged: (_) => setState(() {}),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _NumericInputField(
+                            controller: _rateController,
+                            label: 'Interest',
+                            suffix: '% a year',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            errorText: _rateError,
+                            onChanged: (_) {
+                              setState(() => _rateError = null);
+                              _recalculateEmi();
+                            },
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Past loan notice ───────────────────────────────
-                if (pastInstallments.isNotEmpty) ...[
-                  const SizedBox(height: FfSpace.md),
-                  _PastLoanNotice(
-                    installments: pastInstallments,
-                    markPaid: _markPastPaid,
-                    onChanged: (v) => setState(() => _markPastPaid = v),
-                  ),
-                ],
-
-                // ── 7. More options ────────────────────────────────
-                const SizedBox(height: FfSpace.md),
-                FfCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      FfRow(
-                        title: 'Account and notes',
-                        subtitle:
-                            _showMoreOptions
-                                ? null
-                                : 'Optional: linked account, a note',
-                        icon: Icons.tune_rounded,
-                        showChevron: true,
-                        onTap:
-                            () => setState(
-                              () => _showMoreOptions = !_showMoreOptions,
-                            ),
-                      ),
-                      if (_showMoreOptions) ...[
-                        Padding(
-                          padding: const EdgeInsets.all(FfSpace.md),
-                          child: Column(
-                            children: [
-                              _AccountSelector(
-                                accounts: accounts,
-                                selected: _selectedAccountId,
-                                onChanged:
-                                    (v) =>
-                                        setState(() => _selectedAccountId = v),
-                              ),
-                              const SizedBox(height: FfSpace.md),
-                              _inputField(
-                                controller: _notesController,
-                                label: 'Notes (optional)',
-                                hint: 'Anything else about this loan',
-                                icon: Icons.notes_outlined,
-                                maxLines: 2,
-                              ),
-                            ],
+                        const SizedBox(width: FfSpace.md),
+                        Expanded(
+                          child: _NumericInputField(
+                            controller: _tenureController,
+                            label: 'Tenure',
+                            suffix: 'months',
+                            keyboardType: TextInputType.number,
+                            errorText: _tenureError,
+                            onChanged: (_) {
+                              setState(() => _tenureError = null);
+                              _recalculateEmi();
+                            },
                           ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                    FfSegmentedPill<InterestType>(
+                      options: [
+                        FfSegmentOption(
+                          value: InterestType.reducingBalance,
+                          label: InterestType.reducingBalance.displayName,
+                        ),
+                        FfSegmentOption(
+                          value: InterestType.flatRate,
+                          label: InterestType.flatRate.displayName,
+                        ),
+                      ],
+                      selectedValue: _interestType,
+                      onSelected: (t) {
+                        setState(() => _interestType = t);
+                        _recalculateEmi();
+                      },
+                    ),
+                    FfConsequenceLine(
+                      text:
+                          _interestType == InterestType.reducingBalance
+                              ? 'Interest falls as you repay the principal.'
+                              : 'Interest is charged on the original principal.',
+                      icon: Icons.info_outline_rounded,
+                    ),
+                    FfAmountField(
+                      controller: _emiController,
+                      label: 'Monthly EMI',
+                      size: FfAmountSize.md,
+                      tone: FfTone.debt,
+                      groupDigits: true,
+                      helper:
+                          'Calculated for you · edit if your lender differs',
+                      errorText: _emiError,
+                      onChanged: (_) => setState(() => _emiError = null),
+                    ),
+
+                    // ── 5. What it costs ───────────────────────────────
+                    if (previewData != null)
+                      _RepaymentPreview(data: previewData),
+                  ],
                 ),
 
-                const SizedBox(height: FfSpace.lg),
+                // ── 6. Schedule ────────────────────────────────────
+                FfSheetGroup(
+                  label: 'Schedule',
+                  children: [
+                    FfGroupedContainer(
+                      children: [
+                        FfRow(
+                          title: 'Start date',
+                          icon: Icons.event_outlined,
+                          detail: DateFormatter.formatShortDate(_startDate),
+                          showChevron: true,
+                          onTap: _selectDate,
+                        ),
+                        FfRow(
+                          title: 'Due day each month',
+                          subtitle: 'Between 1 and 28',
+                          icon: Icons.today_outlined,
+                          trailing: SizedBox(
+                            width: FfFieldTokens.compactWidth,
+                            child: FfTextField(
+                              controller: _paymentDayController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(2),
+                              ],
+                              hint: '5',
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // ── Past loan notice ───────────────────────────────
+                    if (pastInstallments.isNotEmpty)
+                      _PastLoanNotice(
+                        installments: pastInstallments,
+                        markPaid: _markPastPaid,
+                        onChanged: (v) => setState(() => _markPastPaid = v),
+                      ),
+                  ],
+                ),
+
+                // ── 7. More details ────────────────────────────────
+                FfDisclosureRow(
+                  subtitle: 'Linked account and a note',
+                  initiallyExpanded: _showMoreOptions,
+                  onExpansionChanged: (v) => _showMoreOptions = v,
+                  children: [
+                    _AccountSelector(
+                      accounts: accounts,
+                      selected: _selectedAccountId,
+                      onChanged: (v) => setState(() => _selectedAccountId = v),
+                    ),
+                    _inputField(
+                      controller: _notesController,
+                      label: 'Notes (optional)',
+                      hint: 'Anything else about this loan',
+                      icon: Icons.notes_outlined,
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: FfSheetTokens.groupGap),
 
                 // ── Trust notice ───────────────────────────────────
                 const FfConsequenceLine(
@@ -682,10 +651,8 @@ class _NumericInputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String suffix;
-  final bool prefixSymbol;
   final TextInputType keyboardType;
   final String? errorText;
-  final String? helperText;
   final ValueChanged<String>? onChanged;
 
   const _NumericInputField({
@@ -693,9 +660,7 @@ class _NumericInputField extends StatelessWidget {
     required this.label,
     required this.suffix,
     required this.keyboardType,
-    this.prefixSymbol = false,
     this.errorText,
-    this.helperText,
     this.onChanged,
   });
 
@@ -712,10 +677,8 @@ class _NumericInputField extends StatelessWidget {
           FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
       ],
       label: label,
-      prefixText: prefixSymbol ? '${CurrencyFormatter.currencySymbol}  ' : null,
-      suffixText: prefixSymbol ? null : suffix,
+      suffixText: suffix,
       errorText: errorText,
-      helper: helperText,
       onChanged: onChanged,
     );
   }
@@ -730,7 +693,7 @@ class _RepaymentPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FfCard(
-      padding: const EdgeInsets.all(FfSpace.md),
+      density: FfDensity.compact,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -797,42 +760,44 @@ class _PastLoanNotice extends StatelessWidget {
     final total = installments.fold<double>(0.0, (s, it) => s + it.emiAmount);
     final count = installments.length;
 
-    return FfCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FfRow.toggle(
-            title: 'This loan started earlier',
-            subtitle:
-                '$count past installment${count > 1 ? 's' : ''} '
-                '(${DateFormatter.formatShortDate(installments.first.dueDate)} – '
-                '${DateFormatter.formatShortDate(installments.last.dueDate)}), '
-                'about ${CurrencyFormatter.formatAmount(total)}.',
-            icon: Icons.history_rounded,
-            value: markPaid,
-            onChanged: onChanged,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.md,
-              0,
-              FfSpace.md,
-              FfSpace.md,
+    return FfGroupedContainer(
+      showDividers: false,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FfRow.toggle(
+              title: 'This loan started earlier',
+              subtitle:
+                  '$count past installment${count > 1 ? 's' : ''} '
+                  '(${DateFormatter.formatShortDate(installments.first.dueDate)} – '
+                  '${DateFormatter.formatShortDate(installments.last.dueDate)}), '
+                  'about ${CurrencyFormatter.formatAmount(total)}.',
+              icon: Icons.history_rounded,
+              value: markPaid,
+              onChanged: onChanged,
             ),
-            child: FfConsequenceLine(
-              text:
-                  markPaid
-                      ? 'Marked as paid. The next due date moves forward.'
-                      : 'Kept as overdue until you mark each one paid.',
-              icon:
-                  markPaid
-                      ? Icons.check_circle_outline_rounded
-                      : Icons.schedule_rounded,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                FfRowTokens.textInsetAfterIcon,
+                0,
+                FfRowTokens.paddingH,
+                FfSpace.md,
+              ),
+              child: FfConsequenceLine(
+                text:
+                    markPaid
+                        ? 'Marked as paid. The next due date moves forward.'
+                        : 'Kept as overdue until you mark each one paid.',
+                icon:
+                    markPaid
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.schedule_rounded,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }

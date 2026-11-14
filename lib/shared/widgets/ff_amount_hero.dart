@@ -82,9 +82,11 @@ class FfAmountHero extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: ff.text.label.copyWith(color: c.textSecondary),
+              Expanded(
+                child: Text(
+                  label,
+                  style: ff.text.label.copyWith(color: c.textSecondary),
+                ),
               ),
               if (trailing != null)
                 trailing!
