@@ -7,7 +7,6 @@ import 'package:financeflow/features/investments/investment_detail_screen.dart';
 import 'package:financeflow/features/investments/investments_controller.dart';
 import 'package:financeflow/features/investments/investments_screen.dart';
 import 'package:financeflow/shared/widgets/ff_allocation_band.dart';
-import 'package:financeflow/shared/widgets/ff_card.dart';
 import 'package:financeflow/shared/widgets/ff_consequence_line.dart';
 import 'package:financeflow/shared/widgets/ff_empty_state.dart';
 import 'package:financeflow/shared/widgets/ff_surfaces.dart';
@@ -16,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:financeflow/shared/widgets/ff_text_field.dart';
 import 'package:financeflow/shared/widgets/ff_amount_field.dart';
+import 'package:financeflow/shared/widgets/ff_entity_preview_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_repositories.dart';
@@ -231,12 +231,13 @@ void main() {
         await tester.tap(find.text('Update Current Valuation'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Update Valuation'), findsOneWidget);
-        expect(find.byType(FfConsequenceLine), findsOneWidget);
-        expect(find.text('Update Value'), findsOneWidget);
+        expect(find.text('Update value'), findsOneWidget);
+        expect(find.textContaining('Valuation unchanged'), findsOneWidget);
+        expect(find.text('Save value'), findsOneWidget);
+        expect(find.text('Cancel'), findsNothing);
 
         // Close valuation sheet
-        await tester.tap(find.text('Cancel'));
+        await tester.tap(find.byTooltip('Close'));
         await tester.pumpAndSettle();
       },
     );
@@ -254,13 +255,13 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Add Investment'), findsOneWidget);
-        expect(find.text('Asset Class'), findsOneWidget);
+        expect(find.text('New holding'), findsWidgets);
+        expect(find.text('Asset class'), findsOneWidget);
         expect(find.byType(FfConsequenceLine), findsOneWidget);
 
         // Enter holding name
         await tester.enterText(
-          find.widgetWithText(FfTextField, 'Holding / Asset Name'),
+          find.widgetWithText(FfTextField, 'Holding name'),
           'Tata Steel Shares',
         );
         await tester.pumpAndSettle();
@@ -268,7 +269,7 @@ void main() {
         // Live preview card updates with name
         expect(
           find.descendant(
-            of: find.byType(FfCard),
+            of: find.byType(FfEntityPreviewCard),
             matching: find.text('Tata Steel Shares'),
           ),
           findsOneWidget,
@@ -276,17 +277,18 @@ void main() {
 
         // Enter price and current value
         await tester.enterText(
-          find.widgetWithText(FfAmountField, 'Purchase / Unit Price'),
+          find.widgetWithText(FfAmountField, 'Purchase price (per unit)'),
           '150',
         );
         await tester.enterText(
-          find.widgetWithText(FfAmountField, 'Current Value'),
+          find.widgetWithText(FfAmountField, 'Current value'),
           '175',
         );
         await tester.pumpAndSettle();
 
-        // Tap "Add Holding"
-        await tester.tap(find.text('Add Holding'));
+        // Tap "Add holding"
+        await tester.ensureVisible(find.text('Add holding'));
+        await tester.tap(find.text('Add holding'));
         await tester.pumpAndSettle();
 
         // Verify saved in repository

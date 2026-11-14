@@ -7,12 +7,12 @@ import '../../models/investment.dart';
 import '../../repositories/account_repository.dart';
 import '../../repositories/investment_repository.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_hero.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_app_bar.dart';
 import '../../shared/widgets/ff_asset_type_tiles.dart';
 import '../../shared/widgets/ff_badge.dart';
 import '../../shared/widgets/ff_button.dart';
-import '../../shared/widgets/ff_consequence_line.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_icon_tile.dart';
@@ -48,10 +48,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
     Investment currentInv,
   ) async {
     final controller = TextEditingController(
-      text:
-          currentInv.currentValue.truncateToDouble() == currentInv.currentValue
-              ? currentInv.currentValue.toInt().toString()
-              : currentInv.currentValue.toString(),
+      text: FfAmountField.formatInput(currentInv.currentValue),
     );
 
     final confirmed = await showFfSheet<bool>(
@@ -71,55 +68,42 @@ class InvestmentDetailScreen extends ConsumerWidget {
             final deltaSign = isGain ? '+' : '';
 
             String consequence;
-            FfTone consequenceTone;
             if (delta == 0) {
               consequence =
                   'Valuation unchanged at ${CurrencyFormatter.formatAmount(currentInv.currentValue)}';
-              consequenceTone = FfTone.neutral;
             } else {
               consequence =
                   'Valuation shifts by $deltaSign${CurrencyFormatter.formatAmount(delta)} ($deltaSign${pctDelta.toStringAsFixed(1)}%)';
-              consequenceTone = isGain ? FfTone.income : FfTone.error;
             }
 
             return FfSheet(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 FfSheetHeader(
-                  title: 'Update Valuation',
-                  subtitle:
-                      'Enter latest on-device valuation for "${currentInv.name}"',
+                  title: 'Update value',
+                  subtitle: 'What ${currentInv.name} is worth today',
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: FfSpace.pageMargin,
-                    vertical: FfSpace.md,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FfAmountField(
-                        controller: controller,
-                        autofocus: true,
-                        label: 'Current Market Value',
-                        tone: FfTone.investment,
-                        onChanged: (_) => setSheetState(() {}),
-                      ),
-                      const SizedBox(height: FfSpace.md),
-                      FfConsequenceLine(
-                        text: consequence,
-                        tone: consequenceTone,
-                        icon:
-                            isGain
-                                ? Icons.trending_up_rounded
-                                : Icons.trending_down_rounded,
-                      ),
-                    ],
-                  ),
+                FfSheetBody(
+                  children: [
+                    FfAmountHero(
+                      controller: controller,
+                      autofocus: true,
+                      label: 'Current value',
+                      tone: FfTone.investment,
+                      groupDigits: true,
+                      consequence: consequence,
+                      consequenceIcon:
+                          delta == 0
+                              ? Icons.horizontal_rule_rounded
+                              : (isGain
+                                  ? Icons.trending_up_rounded
+                                  : Icons.trending_down_rounded),
+                      onChanged: (_) => setSheetState(() {}),
+                    ),
+                  ],
                 ),
                 FfSheetFooter(
-                  secondaryLabel: 'Cancel',
-                  primaryLabel: 'Update Value',
-                  onSecondaryPressed: () => Navigator.of(ctx).pop(false),
+                  primaryLabel: 'Save value',
                   onPrimaryPressed: () => Navigator.of(ctx).pop(true),
                 ),
               ],

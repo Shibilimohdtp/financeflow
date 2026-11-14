@@ -9,10 +9,10 @@ import '../../shared/widgets/ff_amount_field.dart';
 import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_asset_type_tiles.dart';
 import '../../shared/widgets/ff_badge.dart';
-import '../../shared/widgets/ff_card.dart';
 import '../../shared/widgets/ff_consequence_line.dart';
-import '../../shared/widgets/ff_divider.dart';
-import '../../shared/widgets/ff_icon_tile.dart';
+import '../../shared/widgets/ff_disclosure_row.dart';
+import '../../shared/widgets/ff_entity_preview_card.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_row.dart';
 import '../../shared/widgets/ff_select.dart';
@@ -67,20 +67,10 @@ class _AddEditInvestmentSheetState
               : '1',
     );
     _purchasePriceController = TextEditingController(
-      text:
-          init != null
-              ? (init.purchasePrice.truncateToDouble() == init.purchasePrice
-                  ? init.purchasePrice.toInt().toString()
-                  : init.purchasePrice.toString())
-              : '',
+      text: init != null ? FfAmountField.formatInput(init.purchasePrice) : '',
     );
     _currentValueController = TextEditingController(
-      text:
-          init != null
-              ? (init.currentValue.truncateToDouble() == init.currentValue
-                  ? init.currentValue.toInt().toString()
-                  : init.currentValue.toString())
-              : '',
+      text: init != null ? FfAmountField.formatInput(init.currentValue) : '',
     );
     _notesController = TextEditingController(text: init?.notes ?? '');
 
@@ -211,7 +201,8 @@ class _AddEditInvestmentSheetState
     String consequence;
     FfTone consequenceTone;
     if (!hasAmounts) {
-      consequence = 'Enter purchase price and valuation to track gains';
+      consequence =
+          'Enter what you paid and what it is worth to see the return.';
       consequenceTone = FfTone.neutral;
     } else if (units > 1.0) {
       consequence =
@@ -223,310 +214,207 @@ class _AddEditInvestmentSheetState
       consequenceTone = isGain ? FfTone.income : FfTone.error;
     }
 
+    final displayName =
+        _nameController.text.trim().isEmpty
+            ? 'New holding'
+            : _nameController.text.trim();
+
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
-          title: isEditing ? 'Edit Holding' : 'Add Investment',
-          subtitle: 'Manual on-device portfolio valuation',
+          title: isEditing ? 'Edit holding' : 'New holding',
+          subtitle: "Something you've invested in, valued by you",
         ),
-        const FfDivider(),
-
-        // Form Content
         Flexible(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: FfSpace.pageMargin),
-            child: Form(
-              key: _formKey,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: FfSpace.sm),
-
-                  // ── Live Squircle Preview Card ────────────────────────────
-                  _buildPreviewCard(
-                    context,
-                    name:
-                        _nameController.text.trim().isEmpty
-                            ? 'Holding Name'
-                            : _nameController.text.trim(),
-                    assetType: _assetType,
-                    currentValue: currentVal,
-                    invested: totalInvested,
-                    delta: delta,
-                    pctReturn: pctReturn,
-                    isGain: isGain,
-                    hasAmounts: hasAmounts,
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── 1. Asset Class Visual Selector ────────────────────────
-                  Text(
-                    'Asset Class',
-                    style: context.ff.text.labelSm.copyWith(
-                      color: context.ff.color.textSecondary,
-                      fontWeight: FontWeight.w600,
+                  // ── Live preview (archetype B) ───────────────────────────
+                  FfEntityPreviewCard(
+                    leading: FfEntityPreviewCard.disc(
+                      context,
+                      FfHeroTone.dusk,
+                      FfAssetTypeTiles.iconFor(_assetType),
                     ),
+                    title: displayName,
+                    subtitle: _assetType.displayName,
+                    figureCaption: 'Value',
+                    figure: FfAmountText(
+                      amount: currentVal,
+                      size: FfAmountSize.lg,
+                      style: FfAmountStyle.split,
+                      tone: FfTone.neutral,
+                      showSign: false,
+                    ),
+                    status:
+                        hasAmounts
+                            ? FfBadge(
+                              label:
+                                  '$returnSign${pctReturn.toStringAsFixed(1)}%',
+                              tone: isGain ? FfTone.income : FfTone.error,
+                              icon:
+                                  isGain
+                                      ? Icons.trending_up_rounded
+                                      : Icons.trending_down_rounded,
+                            )
+                            : null,
+                    semanticLabel:
+                        'Preview: $displayName, ${_assetType.displayName}, '
+                        'value ${CurrencyFormatter.formatAmount(currentVal)}'
+                        '${hasAmounts ? ', return $returnSign${pctReturn.toStringAsFixed(1)} percent' : ''}',
                   ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfAssetTypeTiles(
-                    selectedType: _assetType,
-                    onChanged: (type) => setState(() => _assetType = type),
-                  ),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── 2. Holding Name ───────────────────────────────────────
-                  FfTextField(
-                    controller: _nameController,
-                    textCapitalization: TextCapitalization.words,
-                    label: 'Holding / Asset Name',
-                    hint: 'e.g. Parag Parikh Flexi Cap, HDFC Bank Shares, SGB',
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter holding name';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 3. Amounts Row ────────────────────────────────────────
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // ── Asset class ──────────────────────────────────────────
+                  FfSheetGroup(
+                    label: 'Asset class',
                     children: [
-                      Expanded(
-                        child: FfAmountField(
-                          controller: _purchasePriceController,
-                          label: 'Purchase / Unit Price',
-                          tone: FfTone.neutral,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: FfSpace.md),
-                      Expanded(
-                        child: FfAmountField(
-                          controller: _currentValueController,
-                          label: 'Current Value',
-                          tone: FfTone.investment,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
-                        ),
+                      FfAssetTypeTiles(
+                        selectedType: _assetType,
+                        onChanged: (type) => setState(() => _assetType = type),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: FfSpace.sm),
-
-                  // ── 4. Live Consequence Feedback ──────────────────────────
-                  FfConsequenceLine(
-                    text: consequence,
-                    tone: consequenceTone,
-                    icon:
-                        hasAmounts
-                            ? (isGain
-                                ? Icons.trending_up_rounded
-                                : Icons.trending_down_rounded)
-                            : Icons.info_outline_rounded,
+                  // ── Name and amounts ─────────────────────────────────────
+                  FfSheetGroup(
+                    children: [
+                      FfTextField(
+                        controller: _nameController,
+                        textCapitalization: TextCapitalization.words,
+                        label: 'Holding name',
+                        hint: 'e.g. Parag Parikh Flexi Cap, SGB 2024',
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter holding name';
+                          }
+                          return null;
+                        },
+                      ),
+                      FfAmountField(
+                        controller: _purchasePriceController,
+                        label: 'Purchase price (per unit)',
+                        size: FfAmountSize.md,
+                        tone: FfTone.neutral,
+                        groupDigits: true,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                      FfAmountField(
+                        controller: _currentValueController,
+                        label: 'Current value',
+                        size: FfAmountSize.md,
+                        tone: FfTone.investment,
+                        groupDigits: true,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                      FfConsequenceLine(
+                        text: consequence,
+                        tone: consequenceTone,
+                        icon:
+                            hasAmounts
+                                ? (isGain
+                                    ? Icons.trending_up_rounded
+                                    : Icons.trending_down_rounded)
+                                : Icons.info_outline_rounded,
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 5. Purchase Date ──────────────────────────────────────
-                  FfRow(
-                    leading: const Icon(Icons.calendar_today_outlined),
-                    title: 'Purchase Date',
-                    detail: DateFormatter.formatShortDate(_purchaseDate),
-                    onTap: _selectDate,
-                  ),
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 6. Advanced Toggle ────────────────────────────────────
-                  InkWell(
-                    onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
-                      child: Row(
+                  // ── Purchase date ────────────────────────────────────────
+                  FfSheetGroup(
+                    children: [
+                      FfGroupedContainer(
                         children: [
-                          Icon(
-                            _showAdvanced
-                                ? Icons.keyboard_arrow_up_rounded
-                                : Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: context.ff.color.textSecondary,
-                          ),
-                          const SizedBox(width: FfSpace.xs),
-                          Text(
-                            _showAdvanced
-                                ? 'Hide units, source account & notes'
-                                : 'Units, Source Account & Notes (Optional)',
-                            style: context.ff.text.bodySm.copyWith(
-                              color: context.ff.color.actionPrimary,
-                              fontWeight: FontWeight.w600,
+                          FfRow(
+                            icon: Icons.calendar_today_outlined,
+                            title: 'Purchase date',
+                            detail: DateFormatter.formatShortDate(
+                              _purchaseDate,
                             ),
+                            showChevron: true,
+                            onTap: _selectDate,
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
 
-                  if (_showAdvanced) ...[
-                    const SizedBox(height: FfSpace.sm),
-                    // Quantity / Units
-                    FfTextField(
-                      controller: _unitsController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
+                  // ── More details ─────────────────────────────────────────
+                  FfDisclosureRow(
+                    subtitle: 'Units, account and a note',
+                    initiallyExpanded: _showAdvanced,
+                    onExpansionChanged: (v) => _showAdvanced = v,
+                    children: [
+                      FfTextField(
+                        controller: _unitsController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        label: 'Units',
+                        hint: '1',
                       ),
-                      label: 'Units / Quantity',
-                      hint: '1.0',
-                    ),
-
-                    const SizedBox(height: FfSpace.md),
-
-                    // Linked Account
-                    accountsAsync.when(
-                      data: (accounts) {
-                        final activeAccounts =
-                            accounts.where((a) => !a.isArchived).toList();
-                        return FfSelect<String?>(
-                          value: _selectedAccountId,
-                          label: 'Purchased From Account',
-                          items: [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('Not specified'),
-                            ),
-                            ...activeAccounts.map(
-                              (a) => DropdownMenuItem(
-                                value: a.id,
-                                child: Text(a.name),
+                      accountsAsync.when(
+                        data: (accounts) {
+                          final activeAccounts =
+                              accounts.where((a) => !a.isArchived).toList();
+                          return FfSelect<String?>(
+                            value: _selectedAccountId,
+                            label: 'Paid from account (optional)',
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('Not specified'),
                               ),
-                            ),
-                          ],
-                          onChanged:
-                              (val) => setState(() => _selectedAccountId = val),
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
-
-                    const SizedBox(height: FfSpace.md),
-
-                    // Notes
-                    FfTextField(
-                      controller: _notesController,
-                      maxLines: 2,
-                      label: 'Notes',
-                      hint: 'e.g. SIP started in 2024, Long term horizon',
-                    ),
-                  ],
-
-                  const SizedBox(height: FfSpace.lg),
+                              ...activeAccounts.map(
+                                (a) => DropdownMenuItem(
+                                  value: a.id,
+                                  child: Text(a.name),
+                                ),
+                              ),
+                            ],
+                            onChanged:
+                                (val) =>
+                                    setState(() => _selectedAccountId = val),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                      FfTextField(
+                        controller: _notesController,
+                        maxLines: 2,
+                        label: 'Notes (optional)',
+                        hint: 'e.g. SIP started in 2024',
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
         ),
         FfSheetFooter(
-          secondaryLabel: 'Cancel',
-          primaryLabel: isEditing ? 'Save Changes' : 'Add Holding',
+          primaryLabel: isEditing ? 'Save changes' : 'Add holding',
           isPrimaryLoading: _isSaving,
           onPrimaryPressed: _isSaving ? null : _save,
         ),
       ],
-    );
-  }
-
-  Widget _buildPreviewCard(
-    BuildContext context, {
-    required String name,
-    required AssetType assetType,
-    required double currentValue,
-    required double invested,
-    required double delta,
-    required double pctReturn,
-    required bool isGain,
-    required bool hasAmounts,
-  }) {
-    final ff = context.ff;
-    final c = ff.color;
-    final returnSign = isGain ? '+' : '';
-
-    return FfCard(
-      variant: FfCardVariant.elevated,
-      density: FfDensity.compact,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              FfIconTile(
-                icon: FfAssetTypeTiles.iconFor(assetType),
-                tone: FfTone.investment,
-              ),
-              const SizedBox(width: FfSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: ff.text.title.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      assetType.displayName,
-                      style: ff.text.labelSm.copyWith(color: c.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-              if (hasAmounts)
-                FfBadge(
-                  label:
-                      '$returnSign${CurrencyFormatter.formatAmount(delta)} ($returnSign${pctReturn.toStringAsFixed(1)}%)',
-                  tone: isGain ? FfTone.income : FfTone.error,
-                  icon:
-                      isGain
-                          ? Icons.trending_up_rounded
-                          : Icons.trending_down_rounded,
-                ),
-            ],
-          ),
-          const SizedBox(height: FfSpace.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Valuation',
-                style: ff.text.labelSm.copyWith(color: c.textSecondary),
-              ),
-              FfAmountText(
-                amount: currentValue,
-                size: FfAmountSize.md,
-                style: FfAmountStyle.inline,
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

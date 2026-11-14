@@ -35,7 +35,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Mutual Fund'), findsOneWidget);
+      expect(find.text('Mutual fund'), findsOneWidget);
       expect(find.text('Stocks'), findsOneWidget);
       expect(find.text('Gold'), findsOneWidget);
 

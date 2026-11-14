@@ -1,5 +1,6 @@
 // DS-B20: every migrated sheet lays out at 360 dp with 2x text, in light
 // and dark, all the way down, and follows the skeleton (no Cancel button).
+import 'package:financeflow/features/investments/add_edit_investment_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_edit_savings_goal_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_goal_contribution_sheet.dart';
 import 'package:financeflow/features/savings_goals/savings_goals_controller.dart';
@@ -35,6 +36,10 @@ final Map<String, (Widget, List<Override>)> sheets = {
         'g1',
       ).overrideWith((ref) => Stream.value([])),
     ],
+  ),
+  'investment': (
+    const AddEditInvestmentSheet(),
+    [allAccountsStreamProvider.overrideWith((ref) => Stream.value([]))],
   ),
 };
 

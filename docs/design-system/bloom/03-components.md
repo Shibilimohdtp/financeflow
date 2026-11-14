@@ -31,7 +31,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfInkButton` | Solid ink action circle; `.open` is the ↗ "open detail" | `FfInkButton.open(onPressed:, tooltip:, onHero:, small:)` |
 | `FfChip` | One choice pill (ink when selected, outlined otherwise) | `FfChip(label:, isSelected:, onSelected:, leading: Icon)` |
 | `FfAccountTypeTiles` (`ff_account_type_tiles.dart`) | Compact 6-tile grid selector for `AccountType` with 48 dp targets | `FfAccountTypeTiles(selectedType:, onChanged:)` |
-| `FfAssetTypeTiles` (`ff_asset_type_tiles.dart`) | Compact visual selector for `AssetType` with 48 dp targets and checkmarks | `FfAssetTypeTiles(selectedType:, onChanged:)` |
+| `FfAssetTypeTiles` (`ff_asset_type_tiles.dart`) | Asset class choice: an `FfChoiceTiles` grid (3 per row, all nine classes visible, labels wrap) | `FfAssetTypeTiles(selectedType:, onChanged:)`, `FfAssetTypeTiles.iconFor(type)` |
 | `FfSubscriptionTypeTiles` (`ff_subscription_type_tiles.dart`) | Horizontal selector for generic subscription categories with >=48 dp targets | `FfSubscriptionTypeTiles(selectedType:, onChanged:)` |
 | `FfQuickToggleStrip` / `FfQuickToggleTile` (`ff_quick_toggle.dart`) | 4-tile quick settings strip with 48+ dp targets, dual-signal icon+words | `FfQuickToggleStrip(tiles: [FfQuickToggleTile(icon:, title:, statusText:, statusIcon:, isActive:, onTap:)])` |
 | `FfThemePreviewCard` (`ff_theme_preview_card.dart`) | Miniature rendered Home preview card for Light / Dark / System themes | `FfThemePreviewCard(preference:, isSelected:, onTap:)` |
