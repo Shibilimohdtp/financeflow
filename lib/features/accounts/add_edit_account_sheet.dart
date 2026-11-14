@@ -7,8 +7,12 @@ import '../../models/account.dart';
 import '../../shared/widgets/ff_account_preview_card.dart';
 import '../../shared/widgets/ff_account_type_tiles.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_field_label.dart';
+import '../../shared/widgets/ff_disclosure_row.dart';
+import '../../shared/widgets/ff_consequence_line.dart';
 import '../../shared/widgets/ff_amount_text.dart';
-import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_sheet.dart';
@@ -17,6 +21,7 @@ import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
 import '../settings/settings_controller.dart';
 import 'accounts_controller.dart';
 
@@ -88,10 +93,7 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
               ? acc.openingBalance.abs()
               : acc.openingBalance;
       _openingBalanceController = TextEditingController(
-        text:
-            balanceVal.truncateToDouble() == balanceVal
-                ? balanceVal.toInt().toString()
-                : balanceVal.toString(),
+        text: FfAmountField.formatInput(balanceVal),
       );
     } else {
       _openingBalanceController = TextEditingController(text: '0');
@@ -130,7 +132,7 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
   String _balanceLabelForType(AccountType type) => switch (type) {
     AccountType.creditCard => 'Current balance owed',
     AccountType.investment => 'Opening portfolio value',
-    _ => 'Opening Balance',
+    _ => 'Opening balance',
   };
 
   String _balanceHelperForType(AccountType type) => switch (type) {
@@ -220,9 +222,7 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
       FfToast.show(
         context,
         message:
-            newArchived
-                ? 'Account archived.'
-                : 'Account restored to active.',
+            newArchived ? 'Account archived.' : 'Account restored to active.',
       );
     }
   }
@@ -249,8 +249,6 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
-    final c = ff.color;
     final isPrivacyBlur =
         ref.watch(settingsStreamProvider).value?.isPrivacyBlurEnabled ?? false;
     final accountsList =
@@ -285,37 +283,34 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
         !maskedText.contains('@') &&
         maskedText.length > 4;
 
-    // Dynamic CTA label
+    // Dynamic CTA label: says what is missing while the CTA cannot work.
     String primaryLabel;
     if (trimmedName.isEmpty) {
       primaryLabel = 'Enter account name';
     } else if (isEditing) {
-      primaryLabel = 'Save Changes';
+      primaryLabel = 'Save changes';
     } else {
-      primaryLabel = 'Add Account';
+      primaryLabel = 'Add account';
     }
 
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
-          title: isEditing ? 'Edit Account' : 'Add Financial Account',
-          subtitle: 'Stored 100% locally on device',
+          title: isEditing ? 'Edit account' : 'New account',
+          subtitle: 'Where your money is kept',
         ),
         Flexible(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.lg,
-              FfSpace.sm,
-              FfSpace.lg,
-              FfSpace.md,
-            ),
-            child: Form(
-              key: _formKey,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── 1. Live Account Preview Card ─────────────────────────────
+                  // ── Live preview (archetype B; the account keeps its
+                  //    gradient as a miniature of the Home account hero) ──
                   FfAccountPreviewCard(
                     accountType: _selectedType,
                     name: _nameController.text,
@@ -325,275 +320,159 @@ class _AddEditAccountSheetState extends ConsumerState<AddEditAccountSheet> {
                     balanceLabel: balanceLabel,
                     isPrivacyBlur: isPrivacyBlur,
                   ),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── 2. Account Type Selector Grid ────────────────────────────
-                  Text(
-                    'Account type',
-                    style: ff.text.label.copyWith(
-                      color: c.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.sm),
-                  FfAccountTypeTiles(
-                    selectedType: _selectedType,
-                    onChanged: (newType) {
-                      setState(() {
-                        _selectedType = newType;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── 3. Account Name ──────────────────────────────────────────
-                  FfTextField(
-                    controller: _nameController,
-                    focusNode: _nameFocusNode,
-                    label: 'Account Name',
-                    hint: _nameHintForType(_selectedType),
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(() {}),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter an account name.';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  // Duplicate name soft warning
-                  if (hasDuplicateName) ...[
-                    const SizedBox(height: FfSpace.xs),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber_rounded,
-                          size: 14,
-                          color: c.statusWarning,
-                        ),
-                        const SizedBox(width: FfSpace.xs),
-                        Expanded(
-                          child: Text(
-                            'An active account with this name already exists',
-                            style: ff.text.labelSm.copyWith(
-                              color: c.statusWarning,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── 4. Balance Entry (FfAmountField) ─────────────────────────
-                  FfAmountField(
-                    controller: _openingBalanceController,
-                    focusNode: _balanceFocusNode,
-                    label: _balanceLabelForType(_selectedType),
-                    hint: '0',
-                    size: FfAmountSize.lg,
-                    onChanged: (_) => setState(() {}),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter opening balance.';
-                      }
-                      if (double.tryParse(val) == null) {
-                        return 'Please enter a valid amount.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  Text(
-                    _balanceHelperForType(_selectedType),
-                    style: ff.text.labelSm.copyWith(color: c.textTertiary),
-                  ),
-
-                  const SizedBox(height: FfSpace.lg),
-
-                  // ── 5. Optional Details Disclosure ───────────────────────────
-                  InkWell(
-                    onTap: () {
-                      setState(() => _showDetails = !_showDetails);
-                    },
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: FfSpace.sm),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _showDetails
-                                ? Icons.expand_less_rounded
-                                : Icons.expand_more_rounded,
-                            size: 20,
-                            color: c.textSecondary,
-                          ),
-                          const SizedBox(width: FfSpace.sm),
-                          Expanded(
-                            child: Text(
-                              'Bank and identifier details (optional)',
-                              style: ff.text.titleSm.copyWith(
-                                color: c.textPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  if (_showDetails) ...[
-                    const SizedBox(height: FfSpace.sm),
-
-                    // Institution suggestion chips
-                    Text(
-                      'Common institutions',
-                      style: ff.text.labelSm.copyWith(color: c.textTertiary),
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                    Wrap(
-                      spacing: FfSpace.xs,
-                      runSpacing: FfSpace.xs,
-                      children: [
-                        for (final inst in _kSuggestedInstitutions)
-                          FfChip(
-                            label: inst,
-                            isSelected:
-                                _institutionController.text
-                                    .trim()
-                                    .toLowerCase() ==
-                                inst.toLowerCase(),
-                            onSelected: () => _onInstitutionChipSelected(inst),
-                          ),
-                      ],
-                    ),
-
-                    const SizedBox(height: FfSpace.md),
-
-                    // Institution field
-                    FfTextField(
-                      controller: _institutionController,
-                      label: 'Institution Name (Optional)',
-                      hint: 'e.g. HDFC Bank, SBI, Zerodha',
-                      textInputAction: TextInputAction.next,
-                      onChanged: (_) => setState(() {}),
-                    ),
-
-                    const SizedBox(height: FfSpace.md),
-
-                    // Masked identifier field
-                    FfTextField(
-                      controller: _maskedController,
-                      label: 'Masked Number / UPI ID (Optional)',
-                      hint:
-                          _selectedType == AccountType.upi
-                              ? 'e.g. user@okhdfcbank'
-                              : 'e.g. •••• 4235',
-                      onChanged: (_) => setState(() {}),
-                    ),
-
-                    const SizedBox(height: FfSpace.xs),
-                    Text(
-                      'Last 4 digits only, never enter the full card or account number.',
-                      style: ff.text.labelSm.copyWith(color: c.textTertiary),
-                    ),
-
-                    if (showMaskedLengthWarning) ...[
-                      const SizedBox(height: FfSpace.xs),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            size: 14,
-                            color: c.textSecondary,
-                          ),
-                          const SizedBox(width: FfSpace.xs),
-                          Expanded(
-                            child: Text(
-                              'Only 4 digits are needed for privacy.',
-                              style: ff.text.labelSm.copyWith(
-                                color: c.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
+                  // ── Type ─────────────────────────────────────────────────
+                  FfSheetGroup(
+                    label: 'Account type',
+                    children: [
+                      FfAccountTypeTiles(
+                        selectedType: _selectedType,
+                        onChanged:
+                            (newType) =>
+                                setState(() => _selectedType = newType),
                       ),
                     ],
-                  ],
+                  ),
 
-                  // ── 6. Edit-Mode Actions & Baseline History Note ─────────────
-                  if (isEditing) ...[
-                    const SizedBox(height: FfSpace.lg),
-                    Container(
-                      padding: const EdgeInsets.all(FfSpace.md),
-                      decoration: ShapeDecoration(
-                        color: c.surfaceCard,
-                        shape: FfShape.of(
-                          FfRadius.md,
-                          side: BorderSide(color: c.borderSubtle, width: 1),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  // ── Name and balance ─────────────────────────────────────
+                  FfSheetGroup(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            size: 16,
-                            color: c.textSecondary,
+                          FfTextField(
+                            controller: _nameController,
+                            focusNode: _nameFocusNode,
+                            label: 'Account name',
+                            hint: _nameHintForType(_selectedType),
+                            textInputAction: TextInputAction.next,
+                            onChanged: (_) => setState(() {}),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Please enter an account name.';
+                              }
+                              return null;
+                            },
                           ),
-                          const SizedBox(width: FfSpace.sm),
-                          Expanded(
-                            child: Text(
-                              'Editing the opening balance shifts your baseline balance without changing past transaction records.',
-                              style: ff.text.bodySm.copyWith(
-                                color: c.textSecondary,
-                              ),
+                          if (hasDuplicateName) ...[
+                            const SizedBox(height: FfSpace.xs),
+                            FfConsequenceLine(
+                              text:
+                                  'An active account with this name already exists',
+                              icon: Icons.warning_amber_rounded,
+                              tone: FfTone.warning,
                             ),
+                          ],
+                        ],
+                      ),
+                      FfAmountField(
+                        controller: _openingBalanceController,
+                        focusNode: _balanceFocusNode,
+                        label: _balanceLabelForType(_selectedType),
+                        helper: _balanceHelperForType(_selectedType),
+                        size: FfAmountSize.lg,
+                        groupDigits: true,
+                        onChanged: (_) => setState(() {}),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter opening balance.';
+                          }
+                          if (FfAmountField.parse(val) == null) {
+                            return 'Please enter a valid amount.';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // ── More details ─────────────────────────────────────────
+                  FfDisclosureRow(
+                    title: 'Bank and identifier details (optional)',
+                    subtitle: 'Bank name and the last 4 digits',
+                    initiallyExpanded: _showDetails,
+                    onExpansionChanged: (v) => _showDetails = v,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const FfFieldLabel('Common institutions'),
+                          const SizedBox(height: FfSheetTokens.labelGap),
+                          Wrap(
+                            spacing: FfChipTokens.gap,
+                            runSpacing: FfChipTokens.gap,
+                            children: [
+                              for (final inst in _kSuggestedInstitutions)
+                                FfChip(
+                                  label: inst,
+                                  isSelected:
+                                      _institutionController.text
+                                          .trim()
+                                          .toLowerCase() ==
+                                      inst.toLowerCase(),
+                                  onSelected:
+                                      () => _onInstitutionChipSelected(inst),
+                                ),
+                            ],
                           ),
                         ],
                       ),
+                      FfTextField(
+                        controller: _institutionController,
+                        label: 'Institution name (optional)',
+                        hint: 'e.g. HDFC Bank, SBI, Zerodha',
+                        textInputAction: TextInputAction.next,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      FfTextField(
+                        controller: _maskedController,
+                        label: 'Last 4 digits or UPI ID (optional)',
+                        hint:
+                            _selectedType == AccountType.upi
+                                ? 'e.g. user@okhdfcbank'
+                                : 'e.g. •••• 4235',
+                        helper:
+                            showMaskedLengthWarning
+                                ? 'Only 4 digits are needed for privacy.'
+                                : 'Last 4 digits only, never enter the full card or account number.',
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ],
+                  ),
+
+                  // ── Edit-mode note and actions (end of the body) ─────────
+                  if (isEditing) ...[
+                    const SizedBox(height: FfSheetTokens.groupGap),
+                    const FfConsequenceLine(
+                      text:
+                          'Editing the opening balance shifts your baseline balance without changing past transaction records.',
+                      icon: Icons.info_outline_rounded,
+                      tone: FfTone.neutral,
                     ),
-                    const SizedBox(height: FfSpace.lg),
-                    Row(
+                    const SizedBox(height: FfSheetTokens.itemGap),
+                    FfGroupedContainer(
                       children: [
-                        Expanded(
-                          child: FfButton(
-                            label:
-                                widget.account!.isArchived
-                                    ? 'Restore account'
-                                    : 'Archive account',
-                            leadingIcon: Icon(
+                        FfRow(
+                          title:
+                              widget.account!.isArchived
+                                  ? 'Restore account'
+                                  : 'Archive account',
+                          icon:
                               widget.account!.isArchived
                                   ? Icons.unarchive_outlined
                                   : Icons.archive_outlined,
-                              size: 18,
-                            ),
-                            variant: FfButtonVariant.secondary,
-                            onPressed: _archiveOrRestore,
-                          ),
+                          onTap: _archiveOrRestore,
                         ),
-                        const SizedBox(width: FfSpace.md),
-                        Expanded(
-                          child: FfButton(
-                            label: 'Delete account',
-                            leadingIcon: const Icon(
-                              Icons.delete_outline_rounded,
-                              size: 18,
-                            ),
-                            variant: FfButtonVariant.destructive,
-                            onPressed: _delete,
-                          ),
+                        FfRow(
+                          title: 'Delete account',
+                          icon: Icons.delete_outline_rounded,
+                          destructive: true,
+                          onTap: _delete,
                         ),
                       ],
                     ),
                   ],
-
-                  const SizedBox(height: FfSpace.md),
                 ],
               ),
             ),

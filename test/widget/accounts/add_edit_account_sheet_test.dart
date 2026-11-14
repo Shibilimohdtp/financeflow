@@ -70,10 +70,10 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Financial Account'), findsOneWidget);
+      expect(find.text('New account'), findsOneWidget);
       expect(find.text('Enter account name'), findsOneWidget);
-      expect(find.text('Account Name'), findsOneWidget);
-      expect(find.text('Opening Balance'), findsOneWidget);
+      expect(find.text('Account name'), findsOneWidget);
+      expect(find.text('Opening balance'), findsOneWidget);
     });
 
     testWidgets('validates required fields on submit', (tester) async {
@@ -82,18 +82,18 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter name so button switches from guidance to Add Account
-      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account name');
       await tester.enterText(nameFinder, 'My Bank');
 
       // Clear the default '0' in opening balance
       final balanceFinder = find.widgetWithText(
         FfAmountField,
-        'Opening Balance',
+        'Opening balance',
       );
       await tester.enterText(balanceFinder, '');
 
       // Tap save
-      await tester.tap(find.text('Add Account'));
+      await tester.tap(find.text('Add account'));
       await tester.pumpAndSettle();
 
       expect(find.text('Please enter opening balance.'), findsOneWidget);
@@ -104,16 +104,16 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account name');
       final balanceFinder = find.widgetWithText(
         FfAmountField,
-        'Opening Balance',
+        'Opening balance',
       );
 
       await tester.enterText(nameFinder, 'Primary Savings');
       await tester.enterText(balanceFinder, '12500');
 
-      await tester.tap(find.text('Add Account'));
+      await tester.tap(find.text('Add account'));
       await tester.pumpAndSettle();
 
       final saved = await fakeAccountRepo.getAllAccounts();
@@ -142,17 +142,17 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Edit Account'), findsOneWidget);
-      expect(find.text('Save Changes'), findsOneWidget);
+      expect(find.text('Edit account'), findsOneWidget);
+      expect(find.text('Save changes'), findsOneWidget);
       expect(
         find.widgetWithText(TextFormField, 'ICICI Savings'),
         findsOneWidget,
       );
 
-      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account name');
       await tester.enterText(nameFinder, 'ICICI Salary Account');
 
-      await tester.tap(find.text('Save Changes'));
+      await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
 
       final updated = await fakeAccountRepo.getAccountById('acc_edit_1');
@@ -200,7 +200,7 @@ void main() {
         await tester.tap(find.text('Open Sheet'));
         await tester.pumpAndSettle();
 
-        final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
+        final nameFinder = find.widgetWithText(FfTextField, 'Account name');
         await tester.enterText(nameFinder, 'hdfc salary');
         await tester.pumpAndSettle();
 
@@ -252,7 +252,7 @@ void main() {
       await tester.tap(find.text('Card'));
       await tester.pumpAndSettle();
 
-      final nameFinder = find.widgetWithText(FfTextField, 'Account Name');
+      final nameFinder = find.widgetWithText(FfTextField, 'Account name');
       await tester.enterText(nameFinder, 'ICICI Coral');
 
       final balanceFinder = find.widgetWithText(
@@ -261,7 +261,7 @@ void main() {
       );
       await tester.enterText(balanceFinder, '8500');
 
-      await tester.tap(find.text('Add Account'));
+      await tester.tap(find.text('Add account'));
       await tester.pumpAndSettle();
 
       final accounts = await fakeAccountRepo.getAllAccounts();
@@ -374,7 +374,7 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Financial Account'), findsOneWidget);
+      expect(find.text('New account'), findsOneWidget);
     });
 
     testWidgets(
@@ -386,7 +386,7 @@ void main() {
         await tester.tap(find.text('Open Sheet'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Add Financial Account'), findsOneWidget);
+        expect(find.text('New account'), findsOneWidget);
       },
     );
   });

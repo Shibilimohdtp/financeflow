@@ -1,16 +1,21 @@
 // DS-B20: every migrated sheet lays out at 360 dp with 2x text, in light
 // and dark, all the way down, and follows the skeleton (no Cancel button).
+import 'package:financeflow/features/accounts/add_edit_account_sheet.dart';
 import 'package:financeflow/features/investments/add_edit_investment_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_edit_savings_goal_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_goal_contribution_sheet.dart';
 import 'package:financeflow/features/savings_goals/savings_goals_controller.dart';
 import 'package:financeflow/models/savings_goal.dart';
 import 'package:financeflow/repositories/account_repository.dart';
+import 'package:financeflow/repositories/settings_repository.dart';
+import 'package:financeflow/repositories/transaction_repository.dart';
 import 'package:financeflow/shared/widgets/ff_sheet.dart';
 import 'package:financeflow/theme/ff_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/fake_repositories.dart';
 
 final _goal = SavingsGoal(
   id: 'g1',
@@ -40,6 +45,16 @@ final Map<String, (Widget, List<Override>)> sheets = {
   'investment': (
     const AddEditInvestmentSheet(),
     [allAccountsStreamProvider.overrideWith((ref) => Stream.value([]))],
+  ),
+  'account': (
+    const AddEditAccountSheet(),
+    [
+      settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),
+      accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),
+      transactionRepositoryProvider.overrideWithValue(
+        FakeTransactionRepository(),
+      ),
+    ],
   ),
 };
 
