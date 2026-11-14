@@ -3,11 +3,20 @@
 //   python tool/screenshots/compare.py ds-b20 tool/screenshots/sheets_b20_screenshots_test.dart \
 //     b20_loan b20_goal b20_contribution b20_investment b20_account b20_account_edit \
 //     b20_notifications b20_filter b20_category b20_csv b20_loan_2x b20_account_keyboard \
+//     b20_budget b20_subscription b20_lending b20_repayment b20_advance b20_lending_2x \
 //     --base 8a67cb9
 //
 // Uses only public APIs that exist before and after DS-B20, at 360 dp.
 import 'package:financeflow/features/accounts/add_edit_account_sheet.dart';
+import 'package:financeflow/features/accounts/accounts_controller.dart';
 import 'package:financeflow/features/alerts/alert_settings_sheet.dart';
+import 'package:financeflow/features/budgets/add_edit_budget_sheet.dart';
+import 'package:financeflow/features/categories/categories_controller.dart';
+import 'package:financeflow/features/personal_debts/add_advance_sheet.dart';
+import 'package:financeflow/features/personal_debts/add_edit_money_record_sheet.dart';
+import 'package:financeflow/features/personal_debts/add_repayment_sheet.dart';
+import 'package:financeflow/features/personal_debts/money_records_controller.dart';
+import 'package:financeflow/features/subscriptions/add_edit_subscription_sheet.dart';
 import 'package:financeflow/features/ingestion/widgets/csv_column_mapper_sheet.dart';
 import 'package:financeflow/features/investments/add_edit_investment_sheet.dart';
 import 'package:financeflow/features/loans/add_edit_loan_sheet.dart';
@@ -20,10 +29,12 @@ import 'package:financeflow/features/transactions/widgets/transaction_pickers.da
 import 'package:financeflow/models/account.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/category.dart';
+import 'package:financeflow/models/money_record.dart';
 import 'package:financeflow/models/savings_goal.dart';
 import 'package:financeflow/repositories/account_repository.dart';
 import 'package:financeflow/repositories/loan_repository.dart';
 import 'package:financeflow/repositories/settings_repository.dart';
+import 'package:financeflow/repositories/subscription_repository.dart';
 import 'package:financeflow/repositories/transaction_repository.dart';
 import 'package:financeflow/services/ingestion/parsers/csv_column_mapper.dart';
 import 'package:financeflow/services/notifications/local_notification_service.dart';
@@ -48,6 +59,18 @@ final _account = Account(
   openingBalance: 3246.32,
   currentBalance: 18637.11,
   currency: 'INR',
+  createdAt: _t,
+  updatedAt: _t,
+);
+
+final _record = MoneyRecord(
+  id: 'r1',
+  type: MoneyRecordType.lent,
+  personName: 'Ahmed',
+  normalizedPersonName: 'ahmed',
+  originalAmount: 10000,
+  transactionDate: DateTime(2026, 10, 1),
+  dueDate: DateTime(2026, 12, 14),
   createdAt: _t,
   updatedAt: _t,
 );
@@ -102,6 +125,14 @@ List<Override> _overrides() => [
   goalContributionsForGoalProvider(
     'g1',
   ).overrideWith((ref) => Stream.value([])),
+  categoriesStreamProvider.overrideWith((ref) => Stream.value(_categories())),
+  allSubscriptionsStreamProvider.overrideWith((ref) => Stream.value([])),
+  subscriptionRepositoryProvider.overrideWithValue(
+    FakeSubscriptionRepository(),
+  ),
+  allMoneyRecordsStreamProvider.overrideWith((ref) => Stream.value([])),
+  rawAccountsStreamProvider.overrideWith((ref) => Stream.value([_account])),
+  accountsWithBalancesProvider.overrideWithValue(AsyncValue.data([_account])),
 ];
 
 Future<void> _capture(
@@ -187,6 +218,13 @@ void main() {
     'b20_category': _sheet(
       CategoryPickerSheet(categories: _categories(), selected: null),
     ),
+    'b20_budget': _sheet(const AddEditBudgetSheet()),
+    'b20_subscription': _sheet(const AddEditSubscriptionSheet()),
+    'b20_lending': _sheet(const AddEditMoneyRecordSheet()),
+    'b20_repayment': _sheet(
+      AddRepaymentSheet(record: _record, remainingBalance: 7000),
+    ),
+    'b20_advance': _sheet(AddAdvanceSheet(record: _record)),
     'b20_csv': _sheet(
       CsvColumnMapperSheet(
         headers: const [
@@ -218,6 +256,16 @@ void main() {
         'b20_loan_2x_$mode',
         theme,
         _sheet(const AddEditLoanSheet()),
+        textScale: 2,
+      );
+    });
+
+    testWidgets('lending at 2x text, $mode', (tester) async {
+      await _capture(
+        tester,
+        'b20_lending_2x_$mode',
+        theme,
+        _sheet(const AddEditMoneyRecordSheet()),
         textScale: 2,
       );
     });

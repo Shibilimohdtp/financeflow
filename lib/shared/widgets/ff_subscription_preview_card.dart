@@ -51,11 +51,19 @@ class FfSubscriptionPreviewCard extends StatelessWidget {
             : category;
 
     return FfEntityPreviewCard(
-      leading: FfMonogramTile(
-        name: merchant.trim(),
-        size: FfHeroTokens.leadingSize,
-        radius: FfRadius.full,
-      ),
+      // A sand "renews" disc until a service name is typed.
+      leading:
+          merchant.trim().isEmpty
+              ? FfEntityPreviewCard.disc(
+                context,
+                FfHeroTone.sand,
+                Icons.autorenew_rounded,
+              )
+              : FfMonogramTile(
+                name: merchant.trim(),
+                size: FfHeroTokens.leadingSize,
+                radius: FfRadius.full,
+              ),
       title: displayName,
       subtitle: subline,
       status: FfRenewalChip(
