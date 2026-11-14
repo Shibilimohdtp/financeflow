@@ -16,7 +16,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfCard.decorationOf(context, density:)` / `FfCard.shapeOf(density)` | When you need your own `Material`/`InkWell`/`DecoratedSliver` | Use `Ink(decoration: …)` so ripples show | |
 | `FfGroupedContainer` | Rows grouped in one compact card; draws dividers and clips ink | `FfGroupedContainer(children: [FfRow…], dividerInset: FfRowLeading.tile)` | |
 | `FfAccountPreviewCard` (`ff_account_preview_card.dart`) | Miniature live card preview matching Home squircle hero | `FfAccountPreviewCard(accountType:, name:, institutionName:, maskedIdentifier:, balance:)` | Put in long scrollable lists |
-| `FfSubscriptionPreviewCard` (`ff_subscription_preview_card.dart`) | Live subscription card preview matching list card squircle | `FfSubscriptionPreviewCard(merchant:, amount:, frequency:, category:, nextRenewalDate:)` | Put in long scrollable lists |
+| `FfSubscriptionPreviewCard` (`ff_subscription_preview_card.dart`) | Live subscription preview at the top of its sheet; a wrapper over `FfEntityPreviewCard` (monogram, renewal chip, amount per period) | `FfSubscriptionPreviewCard(merchant:, amount:, frequency:, category:, nextRenewalDate:)` | Put in long scrollable lists |
 | `FfNotificationPreviewBubble` (`ff_notification_preview_bubble.dart`) | Miniature rendered Android notification preview demonstrating sensitive mask vs unmask | `FfNotificationPreviewBubble(hideSensitive:, merchant:, amount:, account:)` | |
 | `FfStatusCard` (`ff_status_card.dart`) | Domain status card with icon tile, status badge, subtitle and action | `FfStatusCard(icon:, title:, statusLabel:, statusTone:, subtitle:, onAction:)` | |
 | `FfSheet` + `showFfSheet` | Every bottom sheet | `showFfSheet(context, builder: …)`, `FfSheetHeader`, `FfSheetFooter` | Raw `showModalBottomSheet` (a test fails) |
@@ -32,7 +32,7 @@ file) rather than writing a one-off. Components take tones and variants, never r
 | `FfChip` | One choice pill (ink when selected, outlined otherwise) | `FfChip(label:, isSelected:, onSelected:, leading: Icon)` |
 | `FfAccountTypeTiles` (`ff_account_type_tiles.dart`) | Account type choice: an inline `FfChoiceTiles` grid of the six types | `FfAccountTypeTiles(selectedType:, onChanged:)` |
 | `FfAssetTypeTiles` (`ff_asset_type_tiles.dart`) | Asset class choice: an `FfChoiceTiles` grid (3 per row, all nine classes visible, labels wrap) | `FfAssetTypeTiles(selectedType:, onChanged:)`, `FfAssetTypeTiles.iconFor(type)` |
-| `FfSubscriptionTypeTiles` (`ff_subscription_type_tiles.dart`) | Horizontal selector for generic subscription categories with >=48 dp targets | `FfSubscriptionTypeTiles(selectedType:, onChanged:)` |
+| `FfSubscriptionTypeTiles` (`ff_subscription_type_tiles.dart`) | Service kind choice: an `FfChoiceTiles` grid of all ten kinds (no horizontal scroller, no cut labels) | `FfSubscriptionTypeTiles(selectedType:, onChanged:)` |
 | `FfQuickToggleStrip` / `FfQuickToggleTile` (`ff_quick_toggle.dart`) | 4-tile quick settings strip with 48+ dp targets, dual-signal icon+words | `FfQuickToggleStrip(tiles: [FfQuickToggleTile(icon:, title:, statusText:, statusIcon:, isActive:, onTap:)])` |
 | `FfThemePreviewCard` (`ff_theme_preview_card.dart`) | Miniature rendered Home preview card for Light / Dark / System themes | `FfThemePreviewCard(preference:, isSelected:, onTap:)` |
 | `FfHoldToConfirmButton` (`ff_hold_to_confirm_button.dart`) | Safety-gated hold-to-confirm button for destructive actions (2.5s hold) | `FfHoldToConfirmButton(label:, onConfirmed:, isDestructive:)` |
@@ -110,7 +110,7 @@ Recipe: `04-screen-recipes.md` → E1. Changes to existing widgets are marked "c
 | `FfEntityPreviewCard` (new) | Live preview at the top of an entity sheet (archetype B) | `FfEntityPreviewCard(leading: FfEntityPreviewCard.disc(context, FfHeroTone.tide, icon), title:, subtitle:, status:, figureCaption:, figure: FfAmountText(lg), footer:, semanticLabel:)`; `FfAccountPreviewCard`, `FfSubscriptionPreviewCard` and the investment/goal/lending previews become thin wrappers over it |
 | `FfChoiceTiles<T>` (new) | 3-up grid of icon-led options, ink fill + check when selected, labels wrap to 2 lines | `FfChoiceTiles(options: [FfChoiceTile(value:, icon:, label:)], selected:, onChanged:, columns: 3, layout: stacked/inline)`; `FfAccountTypeTiles`, `FfAssetTypeTiles`, `FfSubscriptionTypeTiles` and the lending direction tiles become wrappers over it |
 | `FfDisclosureRow` (new) | The single collapsible "More details" group at the end of a form | `FfDisclosureRow(title: 'More details', children: [...])` |
-| `FfMonogramTile` (pending, DS-B15 owns the file) | Initials should ignore tokens with no letter or digit ("Friend / Person" gives "F/" today); empty name should show a person icon | Reported to the Subscriptions chat; Lending can also pass an empty name |
+| `FfMonogramTile` (changed, DS-B20j) | Initials skip words with no letter or digit ("Friend / Person" gives "FP"); an empty name shows a person icon | API unchanged |
 
 ## Adding or changing a component
 

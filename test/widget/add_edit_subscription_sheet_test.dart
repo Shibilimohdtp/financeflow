@@ -77,7 +77,7 @@ void main() {
       await tester.pumpWidget(createSubject(accounts: [testAccount]));
       await tester.pumpAndSettle();
 
-      expect(find.text('New Subscription'), findsWidgets); // header + preview
+      expect(find.text('New subscription'), findsWidgets); // header + preview
       expect(
         find.text('Enter amount'),
         findsOneWidget,
@@ -85,7 +85,7 @@ void main() {
 
       // Enter merchant
       await tester.enterText(
-        find.widgetWithText(FfTextField, 'Service or Merchant Name'),
+        find.widgetWithText(FfTextField, 'Service name'),
         'Spotify',
       );
       await tester.pump();
@@ -95,12 +95,12 @@ void main() {
 
       // Enter amount
       await tester.enterText(
-        find.widgetWithText(FfAmountField, 'Recurring Amount'),
+        find.widgetWithText(FfAmountField, 'Amount each time'),
         '119',
       );
       await tester.pump();
 
-      expect(find.text('Create Subscription'), findsOneWidget); // primary ready
+      expect(find.text('Create subscription'), findsOneWidget); // primary ready
       expect(find.text('/mo'), findsOneWidget); // preview cadence suffix
     },
   );
@@ -142,7 +142,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(FfAmountField, 'Recurring Amount'),
+      find.widgetWithText(FfAmountField, 'Amount each time'),
       '200',
     );
     await tester.pump();
@@ -171,12 +171,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(
-        find.widgetWithText(FfTextField, 'Service or Merchant Name'),
+        find.widgetWithText(FfTextField, 'Service name'),
         'netflix',
       );
       await tester.pump();
 
-      expect(find.text('Duplicate Plan Detected'), findsOneWidget);
+      expect(find.text('Already tracked'), findsOneWidget);
     },
   );
 
@@ -190,14 +190,16 @@ void main() {
       await tester.pumpWidget(createSubject(accounts: [testAccount]));
       await tester.pumpAndSettle();
 
-      expect(find.text('PAYMENT ACCOUNT'), findsNothing);
+      expect(find.text('Paid from'), findsNothing);
 
       // Tap expander
-      await tester.tap(find.text('More options (Account, Reminder, Notes)'));
+      await tester.ensureVisible(find.text('More details'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('More details'));
       await tester.pumpAndSettle();
 
-      expect(find.text('PAYMENT ACCOUNT'), findsOneWidget);
-      expect(find.text('RENEWAL REMINDER'), findsOneWidget);
+      expect(find.text('Paid from'), findsOneWidget);
+      expect(find.text('Remind me'), findsOneWidget);
       expect(find.text('HDFC Salary'), findsOneWidget);
     },
   );
@@ -218,11 +220,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Edit Subscription'), findsOneWidget);
+      expect(find.text('Edit subscription'), findsOneWidget);
       expect(find.text('649'), findsOneWidget);
       expect(find.text('Netflix'), findsWidgets);
-      expect(find.text('Save Changes'), findsOneWidget);
-      expect(find.text('Delete Subscription'), findsOneWidget);
+      expect(find.text('Save changes'), findsOneWidget);
+      expect(find.text('Delete subscription'), findsOneWidget);
     },
   );
 }

@@ -1,16 +1,20 @@
 // DS-B20: every migrated sheet lays out at 360 dp with 2x text, in light
 // and dark, all the way down, and follows the skeleton (no Cancel button).
 import 'package:financeflow/features/accounts/add_edit_account_sheet.dart';
+import 'package:financeflow/features/categories/categories_controller.dart';
 import 'package:financeflow/features/alerts/alert_settings_sheet.dart';
 import 'package:financeflow/features/ingestion/widgets/csv_column_mapper_sheet.dart';
 import 'package:financeflow/features/investments/add_edit_investment_sheet.dart';
+import 'package:financeflow/features/budgets/add_edit_budget_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_edit_savings_goal_sheet.dart';
 import 'package:financeflow/features/savings_goals/add_goal_contribution_sheet.dart';
 import 'package:financeflow/features/savings_goals/savings_goals_controller.dart';
+import 'package:financeflow/features/subscriptions/add_edit_subscription_sheet.dart';
 import 'package:financeflow/models/app_settings.dart';
 import 'package:financeflow/models/savings_goal.dart';
 import 'package:financeflow/repositories/account_repository.dart';
 import 'package:financeflow/repositories/settings_repository.dart';
+import 'package:financeflow/repositories/subscription_repository.dart';
 import 'package:financeflow/repositories/transaction_repository.dart';
 import 'package:financeflow/services/ingestion/parsers/csv_column_mapper.dart';
 import 'package:financeflow/services/notifications/local_notification_service.dart';
@@ -85,6 +89,25 @@ final Map<String, (Widget, List<Override>)> sheets = {
       onApply: (_) {},
     ),
     const [],
+  ),
+  'budget': (
+    const AddEditBudgetSheet(),
+    [
+      categoriesStreamProvider.overrideWith((ref) => Stream.value([])),
+      allAccountsStreamProvider.overrideWith((ref) => Stream.value([])),
+    ],
+  ),
+  'subscription': (
+    const AddEditSubscriptionSheet(),
+    [
+      allAccountsStreamProvider.overrideWith((ref) => Stream.value([])),
+      accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),
+      allSubscriptionsStreamProvider.overrideWith((ref) => Stream.value([])),
+      subscriptionRepositoryProvider.overrideWithValue(
+        FakeSubscriptionRepository(),
+      ),
+      settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),
+    ],
   ),
 };
 

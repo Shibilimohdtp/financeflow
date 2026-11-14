@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/formatting/currency_formatter.dart';
 import '../../core/formatting/date_formatter.dart';
 import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_empty_state.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
-import '../../shared/widgets/ff_privacy_badge.dart';
-import '../../shared/widgets/ff_section_header.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
-import '../../theme/stillwater_typography.dart';
 import 'subscriptions_controller.dart';
 import '../../shared/widgets/ff_toast.dart';
+import '../../shared/widgets/ff_amount_text.dart';
+import '../../shared/widgets/ff_field_label.dart';
 import '../../shared/widgets/ff_sheet.dart';
-import '../../shared/widgets/ff_divider.dart';
 import '../../shared/widgets/ff_progress.dart';
 import '../../theme/ff.dart';
 
@@ -24,13 +21,12 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
     final suggestionsAsync = ref.watch(recurringSuggestionsProvider);
 
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const FfSheetHeader(
-          title: 'Recurring Patterns',
-          subtitle: 'Detected on-device from transaction history',
-          trailing: FfPrivacyBadge(label: 'On-device'),
+          title: 'Repeating payments',
+          subtitle: 'Found in your transactions; track the ones that matter',
         ),
-        const FfDivider(),
         Flexible(
           child: suggestionsAsync.when(
             data: (suggestions) {
@@ -49,14 +45,11 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
               }
 
               return ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: FfSpace.lg,
-                  vertical: FfSpace.md,
-                ),
+                shrinkWrap: true,
+                padding: FfSheetBody.standardPadding,
                 children: [
-                  FfSectionHeader(
-                    title: 'Detected Patterns (${suggestions.length})',
-                  ),
+                  FfFieldLabel('${suggestions.length} found'),
+                  const SizedBox(height: FfSheetTokens.labelGap),
                   FfGroupedContainer(
                     children:
                         suggestions.map((sug) {
@@ -72,17 +65,20 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                     Expanded(
                                       child: Text(
                                         sug.merchant,
-                                        style: context.ff.text.titleSm.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                        style: context.ff.text.title,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
+                                    FfAmountText(
+                                      amount: sug.suggestedAmount,
+                                      size: FfAmountSize.sm,
+                                      showSign: false,
+                                    ),
                                     Text(
-                                      '${CurrencyFormatter.formatAmount(sug.suggestedAmount)} / ${sug.suggestedFrequency.name}',
-                                      style: StillwaterTypography.numMd(
-                                        color: context.ff.color.actionPrimary,
+                                      '/${sug.suggestedFrequency.shortLabel}',
+                                      style: context.ff.text.label.copyWith(
+                                        color: context.ff.color.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -91,7 +87,7 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                 Text(
                                   'Matched ${sug.matchingTransactions.length} past payments · Last: ${DateFormatter.formatShortDate(sug.lastPaymentDate)}',
                                   style: context.ff.text.bodySm.copyWith(
-                                    color: context.ff.color.secondary,
+                                    color: context.ff.color.textSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: FfSpace.md),
@@ -99,11 +95,11 @@ class RecurringSuggestionsSheet extends ConsumerWidget {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     FfButton(
-                                      label: 'Track Subscription',
+                                      label: 'Track it',
                                       size: FfButtonSize.sm,
                                       leadingIcon: const Icon(
                                         Icons.add_rounded,
-                                        size: 16,
+                                        size: FfIconSize.sm,
                                       ),
                                       onPressed: () async {
                                         await ref

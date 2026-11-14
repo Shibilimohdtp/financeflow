@@ -11,13 +11,19 @@ import '../../repositories/subscription_repository.dart';
 import '../../services/merchant_normalization_service.dart';
 import '../../services/subscription_service.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_text.dart';
 import '../../shared/widgets/ff_banner.dart';
-import '../../shared/widgets/ff_button.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_consequence_line.dart';
 import '../../shared/widgets/ff_dialog.dart';
 import '../../shared/widgets/ff_pickers.dart';
 import '../../shared/widgets/ff_segmented_pill.dart';
+import '../../shared/widgets/ff_disclosure_row.dart';
+import '../../shared/widgets/ff_field_label.dart';
+import '../../shared/widgets/ff_grouped_container.dart';
+import '../../shared/widgets/ff_row.dart';
+import '../../shared/widgets/ff_select.dart';
+import '../../shared/widgets/ff_suggestion_chips.dart';
 import '../../shared/widgets/ff_sheet.dart';
 import '../../shared/widgets/ff_sheet_footer.dart';
 import '../../shared/widgets/ff_sheet_header.dart';
@@ -29,7 +35,8 @@ import '../../theme/ff.dart';
 import '../../theme/ff_tone.dart';
 import 'subscriptions_controller.dart';
 
-/// The Stillwater Bloom Add / Edit Subscription sheet (Pattern E).
+/// The Add / Edit Subscription sheet: sheet archetype B (entity with a live
+/// preview), on the shared skeleton.
 ///
 /// Designed around what people need:
 /// 1. Generic type tiles with smart merchant hints (no brand logos)
@@ -85,13 +92,9 @@ class _AddEditSubscriptionSheetState
     _amountController = TextEditingController(
       text:
           init != null
-              ? (init.amount.truncateToDouble() == init.amount
-                  ? init.amount.toInt().toString()
-                  : init.amount.toString())
+              ? FfAmountField.formatInput(init.amount)
               : sug != null
-              ? (sug.suggestedAmount.truncateToDouble() == sug.suggestedAmount
-                  ? sug.suggestedAmount.toInt().toString()
-                  : sug.suggestedAmount.toString())
+              ? FfAmountField.formatInput(sug.suggestedAmount)
               : '',
     );
     _notesController = TextEditingController(text: init?.notes ?? '');
@@ -317,7 +320,7 @@ class _AddEditSubscriptionSheetState
 
     final confirmed = await FfDialog.confirm(
       context,
-      title: 'Delete Subscription?',
+      title: 'Delete subscription?',
       message:
           'Are you sure you want to stop tracking "${sub.merchant}" on this device?',
       confirmLabel: 'Delete',
@@ -338,12 +341,30 @@ class _AddEditSubscriptionSheetState
   String get _saveButtonLabel {
     if (_currentAmount <= 0) return 'Enter amount';
     if (_merchantController.text.trim().isEmpty) return 'Enter service name';
-    return isEditing ? 'Save Changes' : 'Create Subscription';
+    return isEditing ? 'Save changes' : 'Create subscription';
   }
+
+  /// Which renewal preset (if any) the chosen date matches.
+  String? _renewalPreset() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(
+      _nextRenewalDate.year,
+      _nextRenewalDate.month,
+      _nextRenewalDate.day,
+    );
+    if (d == today) return 'today';
+    if (d == today.add(const Duration(days: 1))) return 'tomorrow';
+    if (d == today.add(const Duration(days: 7))) return 'week';
+    if (d == DateTime(now.year, now.month + 1, now.day)) return 'month';
+    return null;
+  }
+
+  /// More accounts than this pick from a list instead of chips.
+  static const _maxAccountChips = 6;
 
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
     final accounts = ref.watch(allAccountsStreamProvider).value ?? [];
     final allSubs = ref.watch(allSubscriptionsStreamProvider).value ?? [];
 
@@ -358,30 +379,25 @@ class _AddEditSubscriptionSheetState
     }
 
     final duplicateSub = _checkDuplicate(allSubs);
+    final preset = _renewalPreset();
 
     return FfSheet(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
-          title: isEditing ? 'Edit Subscription' : 'New Subscription',
-          subtitle:
-              isEditing
-                  ? 'Update renewal cadence, account, or reminder'
-                  : 'Track recurring renewals locally on device',
+          title: isEditing ? 'Edit subscription' : 'New subscription',
+          subtitle: 'A payment that renews on a schedule',
         ),
         Flexible(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              FfSpace.lg,
-              FfSpace.sm,
-              FfSpace.lg,
-              MediaQuery.of(context).viewInsets.bottom + FfSpace.lg,
-            ),
-            child: Form(
-              key: _formKey,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: FfSheetBody.standardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── 1. Live Preview Card ──────────────────────────
+                  // ── Live preview (archetype B) ───────────────────────────
                   FfSubscriptionPreviewCard(
                     merchant: _merchantController.text,
                     amount: _currentAmount,
@@ -393,371 +409,282 @@ class _AddEditSubscriptionSheetState
                         widget.initialSubscription?.status ??
                         SubscriptionStatus.active,
                   ),
+                  const SizedBox(height: FfSheetTokens.groupGap),
 
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 2. Generic Category Type Tiles ────────────────
-                  Text(
-                    'SERVICE KIND',
-                    style: ff.text.labelSm.copyWith(
-                      color: ff.color.textSecondary,
-                      letterSpacing: 1.0,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfSubscriptionTypeTiles(
-                    selectedType: _selectedType,
-                    onChanged: (type) {
-                      setState(() {
-                        _selectedType = type;
-                        _selectedCategory = type.defaultCategory;
-                      });
-                    },
-                  ),
-
-                  // Popular suggestions chips if selected type has them
-                  if (_selectedType != null &&
-                      _selectedType!.popularMerchants.isNotEmpty) ...[
-                    const SizedBox(height: FfSpace.xs),
-                    SizedBox(
-                      height: 36,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: _selectedType!.popularMerchants.length,
-                        separatorBuilder:
-                            (_, __) => const SizedBox(width: FfSpace.x2s),
-                        itemBuilder: (context, i) {
-                          final merchantHint =
-                              _selectedType!.popularMerchants[i];
-                          final isCurrent =
-                              _merchantController.text.trim().toLowerCase() ==
-                              merchantHint.toLowerCase();
-                          return FfChip(
-                            label: merchantHint,
-                            isSelected: isCurrent,
-                            onSelected: () {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _merchantController.text = merchantHint;
-                              });
-                            },
-                          );
+                  // ── Kind, with quick service names ───────────────────────
+                  FfSheetGroup(
+                    label: 'Service kind',
+                    children: [
+                      FfSubscriptionTypeTiles(
+                        selectedType: _selectedType,
+                        onChanged: (type) {
+                          setState(() {
+                            _selectedType = type;
+                            _selectedCategory = type.defaultCategory;
+                          });
                         },
                       ),
-                    ),
-                  ],
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 3. Merchant / Service Name ────────────────────
-                  FfTextField(
-                    controller: _merchantController,
-                    label: 'Service or Merchant Name',
-                    hint: 'e.g. Netflix, Spotify, iCloud, Cult Fit, Airtel',
-                    textInputAction: TextInputAction.next,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter service name.';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  // Soft Duplicate Warning
-                  if (duplicateSub != null) ...[
-                    const SizedBox(height: FfSpace.xs),
-                    FfBanner(
-                      tone: FfBannerTone.warning,
-                      title: 'Duplicate Plan Detected',
-                      message:
-                          'You already track an active subscription for "${duplicateSub.merchant}".',
-                    ),
-                  ],
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 4. Amount Hero Field ──────────────────────────
-                  FfAmountField(
-                    controller: _amountController,
-                    label: 'Recurring Amount',
-                    hint: '0',
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter recurring amount.';
-                      }
-                      final parsed = CurrencyFormatter.parse(val.trim());
-                      if (parsed == null || parsed <= 0) {
-                        return 'Please enter a valid amount.';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 5. Cadence / Frequency Selector ───────────────
-                  Text(
-                    'BILLING CADENCE',
-                    style: ff.text.labelSm.copyWith(
-                      color: ff.color.textSecondary,
-                      letterSpacing: 1.0,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  FfSegmentedPill<SubscriptionFrequency>(
-                    options: const [
-                      FfSegmentOption(
-                        value: SubscriptionFrequency.monthly,
-                        label: 'Monthly',
-                      ),
-                      FfSegmentOption(
-                        value: SubscriptionFrequency.yearly,
-                        label: 'Yearly',
-                      ),
-                      FfSegmentOption(
-                        value: SubscriptionFrequency.quarterly,
-                        label: 'Quarterly',
-                      ),
-                      FfSegmentOption(
-                        value: SubscriptionFrequency.weekly,
-                        label: 'Weekly',
-                      ),
-                    ],
-                    selectedValue: _frequency,
-                    onSelected: (val) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _frequency = val);
-                    },
-                  ),
-
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 6. Renewal Date by Intention ──────────────────
-                  Text(
-                    'NEXT RENEWAL DATE',
-                    style: ff.text.labelSm.copyWith(
-                      color: ff.color.textSecondary,
-                      letterSpacing: 1.0,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: FfSpace.xs),
-                  Wrap(
-                    spacing: FfSpace.x2s,
-                    runSpacing: FfSpace.x2s,
-                    children: [
-                      FfChip(
-                        label: 'Today',
-                        isSelected:
-                            _nextRenewalDate
-                                    .difference(DateTime.now())
-                                    .inDays ==
-                                0 &&
-                            _nextRenewalDate.day == DateTime.now().day,
-                        onSelected: () => _setDatePreset(0),
-                      ),
-                      FfChip(
-                        label: 'Tomorrow',
-                        isSelected:
-                            _nextRenewalDate
-                                    .difference(DateTime.now())
-                                    .inDays ==
-                                1 &&
-                            _nextRenewalDate.day ==
-                                DateTime.now().add(const Duration(days: 1)).day,
-                        onSelected: () => _setDatePreset(1),
-                      ),
-                      FfChip(
-                        label: 'In a week',
-                        isSelected:
-                            _nextRenewalDate
-                                .difference(DateTime.now())
-                                .inDays ==
-                            7,
-                        onSelected: () => _setDatePreset(7),
-                      ),
-                      FfChip(
-                        label: 'Same date next month',
-                        isSelected:
-                            _nextRenewalDate.month ==
-                            (DateTime.now().month % 12) + 1,
-                        onSelected: _setNextMonthPreset,
-                      ),
-                      FfChip(
-                        leading: const Icon(
-                          Icons.calendar_month_outlined,
-                          size: 14,
+                      if (_selectedType != null &&
+                          _selectedType!.popularMerchants.isNotEmpty)
+                        FfSuggestionChips<String>(
+                          items: [
+                            for (final m in _selectedType!.popularMerchants)
+                              FfSuggestionChipItem(value: m, label: m),
+                          ],
+                          selectedValue:
+                              _selectedType!.popularMerchants
+                                  .where(
+                                    (m) =>
+                                        m.toLowerCase() ==
+                                        _merchantController.text
+                                            .trim()
+                                            .toLowerCase(),
+                                  )
+                                  .firstOrNull,
+                          onSelected: (m) {
+                            HapticFeedback.selectionClick();
+                            setState(() => _merchantController.text = m);
+                          },
                         ),
-                        label: DateFormatter.formatShortDate(_nextRenewalDate),
-                        isSelected: false,
-                        onSelected: _pickDate,
+                    ],
+                  ),
+
+                  // ── Name and amount ──────────────────────────────────────
+                  FfSheetGroup(
+                    children: [
+                      FfTextField(
+                        controller: _merchantController,
+                        label: 'Service name',
+                        hint: 'e.g. Netflix, Spotify, iCloud, Airtel',
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.words,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter service name.';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (duplicateSub != null)
+                        FfBanner(
+                          tone: FfBannerTone.warning,
+                          title: 'Already tracked',
+                          message:
+                              'You already track an active subscription for "${duplicateSub.merchant}".',
+                        ),
+                      FfAmountField(
+                        controller: _amountController,
+                        label: 'Amount each time',
+                        size: FfAmountSize.md,
+                        groupDigits: true,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter recurring amount.';
+                          }
+                          final parsed = FfAmountField.parse(val);
+                          if (parsed == null || parsed <= 0) {
+                            return 'Please enter a valid amount.';
+                          }
+                          return null;
+                        },
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: FfSpace.md),
-
-                  // ── 7. Dynamic Consequence Line ───────────────────
-                  if (_currentAmount > 0) ...[
-                    FfConsequenceLine(
-                      text: _buildConsequenceText(),
-                      icon: Icons.autorenew_rounded,
-                      tone: FfTone.primary,
-                    ),
-                    const SizedBox(height: FfSpace.md),
-                  ],
-
-                  // ── 8. Progressive Disclosure Expander ────────────
-                  InkWell(
-                    borderRadius: BorderRadius.circular(FfRadius.md),
-                    onTap: () {
-                      setState(() => _showAdvanced = !_showAdvanced);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: FfSpace.xs),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _showAdvanced
-                                ? Icons.expand_less_rounded
-                                : Icons.expand_more_rounded,
-                            size: 20,
-                            color: ff.color.textSecondary,
+                  // ── Billing ──────────────────────────────────────────────
+                  FfSheetGroup(
+                    label: 'Billed',
+                    children: [
+                      FfSegmentedPill<SubscriptionFrequency>(
+                        options: const [
+                          FfSegmentOption(
+                            value: SubscriptionFrequency.monthly,
+                            label: 'Monthly',
                           ),
-                          const SizedBox(width: FfSpace.xs),
-                          Expanded(
-                            child: Text(
-                              _showAdvanced
-                                  ? 'Fewer options'
-                                  : 'More options (Account, Reminder, Notes)',
-                              style: ff.text.titleSm.copyWith(
-                                color: ff.color.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          FfSegmentOption(
+                            value: SubscriptionFrequency.yearly,
+                            label: 'Yearly',
+                          ),
+                          FfSegmentOption(
+                            value: SubscriptionFrequency.quarterly,
+                            label: 'Quarterly',
+                          ),
+                          FfSegmentOption(
+                            value: SubscriptionFrequency.weekly,
+                            label: 'Weekly',
+                          ),
+                        ],
+                        selectedValue: _frequency,
+                        onSelected: (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _frequency = val);
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // ── Next renewal ─────────────────────────────────────────
+                  FfSheetGroup(
+                    label: 'Next renewal',
+                    children: [
+                      Wrap(
+                        spacing: FfChipTokens.gap,
+                        runSpacing: FfChipTokens.gap,
+                        children: [
+                          FfChip(
+                            label: 'Today',
+                            isSelected: preset == 'today',
+                            onSelected: () => _setDatePreset(0),
+                          ),
+                          FfChip(
+                            label: 'Tomorrow',
+                            isSelected: preset == 'tomorrow',
+                            onSelected: () => _setDatePreset(1),
+                          ),
+                          FfChip(
+                            label: 'In a week',
+                            isSelected: preset == 'week',
+                            onSelected: () => _setDatePreset(7),
+                          ),
+                          FfChip(
+                            label: 'Same date next month',
+                            isSelected: preset == 'month',
+                            onSelected: _setNextMonthPreset,
+                          ),
+                          FfChip(
+                            leading: const Icon(
+                              Icons.calendar_month_outlined,
+                              size: FfIconSize.sm,
                             ),
+                            label: DateFormatter.formatShortDate(
+                              _nextRenewalDate,
+                            ),
+                            isSelected: preset == null,
+                            onSelected: _pickDate,
                           ),
                         ],
                       ),
-                    ),
+                      if (_currentAmount > 0)
+                        FfConsequenceLine(
+                          text: _buildConsequenceText(),
+                          icon: Icons.autorenew_rounded,
+                          tone: FfTone.primary,
+                        ),
+                    ],
                   ),
 
-                  if (_showAdvanced) ...[
-                    const SizedBox(height: FfSpace.sm),
-
-                    // Linked Payment Account
-                    Text(
-                      'PAYMENT ACCOUNT',
-                      style: ff.text.labelSm.copyWith(
-                        color: ff.color.textSecondary,
-                        letterSpacing: 1.0,
-                        fontWeight: FontWeight.w600,
+                  // ── More details ─────────────────────────────────────────
+                  FfDisclosureRow(
+                    subtitle: 'Paying account, reminder and a note',
+                    initiallyExpanded: _showAdvanced,
+                    onExpansionChanged: (v) => _showAdvanced = v,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (accounts.length > _maxAccountChips)
+                            FfSelect<String?>(
+                              value: _selectedAccountId,
+                              label: 'Paid from',
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('No linked account'),
+                                ),
+                                for (final acc in accounts)
+                                  DropdownMenuItem(
+                                    value: acc.id,
+                                    child: Text(acc.name),
+                                  ),
+                              ],
+                              onChanged:
+                                  (v) => setState(() => _selectedAccountId = v),
+                            )
+                          else ...[
+                            const FfFieldLabel('Paid from'),
+                            const SizedBox(height: FfSheetTokens.labelGap),
+                            Wrap(
+                              spacing: FfChipTokens.gap,
+                              runSpacing: FfChipTokens.gap,
+                              children: [
+                                FfChip(
+                                  label: 'No linked account',
+                                  isSelected: _selectedAccountId == null,
+                                  onSelected:
+                                      () => setState(
+                                        () => _selectedAccountId = null,
+                                      ),
+                                ),
+                                for (final acc in accounts)
+                                  FfChip(
+                                    label: acc.name,
+                                    isSelected: _selectedAccountId == acc.id,
+                                    onSelected:
+                                        () => setState(
+                                          () => _selectedAccountId = acc.id,
+                                        ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                    Wrap(
-                      spacing: FfSpace.x2s,
-                      runSpacing: FfSpace.x2s,
-                      children: [
-                        FfChip(
-                          label: 'No linked account',
-                          isSelected: _selectedAccountId == null,
-                          onSelected: () {
-                            setState(() => _selectedAccountId = null);
-                          },
-                        ),
-                        for (final acc in accounts)
-                          FfChip(
-                            label: acc.name,
-                            isSelected: _selectedAccountId == acc.id,
-                            onSelected: () {
-                              setState(() => _selectedAccountId = acc.id);
-                            },
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const FfFieldLabel('Remind me'),
+                          const SizedBox(height: FfSheetTokens.labelGap),
+                          Wrap(
+                            spacing: FfChipTokens.gap,
+                            runSpacing: FfChipTokens.gap,
+                            children: [
+                              for (final days in const [1, 3, 7])
+                                FfChip(
+                                  label:
+                                      '$days ${days == 1 ? 'day' : 'days'} before',
+                                  isSelected:
+                                      _isReminderEnabled &&
+                                      _reminderDays == days,
+                                  onSelected:
+                                      () => setState(() {
+                                        _isReminderEnabled = true;
+                                        _reminderDays = days;
+                                      }),
+                                ),
+                              FfChip(
+                                label: 'Off',
+                                isSelected: !_isReminderEnabled,
+                                onSelected:
+                                    () => setState(
+                                      () => _isReminderEnabled = false,
+                                    ),
+                              ),
+                            ],
                           ),
-                      ],
-                    ),
-
-                    const SizedBox(height: FfSpace.md),
-
-                    // Renewal Reminder Setting
-                    Text(
-                      'RENEWAL REMINDER',
-                      style: ff.text.labelSm.copyWith(
-                        color: ff.color.textSecondary,
-                        letterSpacing: 1.0,
-                        fontWeight: FontWeight.w600,
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: FfSpace.xs),
-                    Wrap(
-                      spacing: FfSpace.x2s,
-                      runSpacing: FfSpace.x2s,
+                      FfTextField(
+                        controller: _notesController,
+                        label: 'Notes (optional)',
+                        hint: 'Plan tier, family member, cancellation terms',
+                      ),
+                    ],
+                  ),
+
+                  // ── Delete (edit only, end of the body) ──────────────────
+                  if (isEditing) ...[
+                    const SizedBox(height: FfSheetTokens.groupGap),
+                    FfGroupedContainer(
                       children: [
-                        FfChip(
-                          label: '1 day before',
-                          isSelected: _isReminderEnabled && _reminderDays == 1,
-                          onSelected: () {
-                            setState(() {
-                              _isReminderEnabled = true;
-                              _reminderDays = 1;
-                            });
-                          },
-                        ),
-                        FfChip(
-                          label: '3 days before',
-                          isSelected: _isReminderEnabled && _reminderDays == 3,
-                          onSelected: () {
-                            setState(() {
-                              _isReminderEnabled = true;
-                              _reminderDays = 3;
-                            });
-                          },
-                        ),
-                        FfChip(
-                          label: '7 days before',
-                          isSelected: _isReminderEnabled && _reminderDays == 7,
-                          onSelected: () {
-                            setState(() {
-                              _isReminderEnabled = true;
-                              _reminderDays = 7;
-                            });
-                          },
-                        ),
-                        FfChip(
-                          label: 'Disabled',
-                          isSelected: !_isReminderEnabled,
-                          onSelected: () {
-                            setState(() => _isReminderEnabled = false);
-                          },
+                        FfRow(
+                          title: 'Delete subscription',
+                          icon: Icons.delete_outline_rounded,
+                          destructive: true,
+                          onTap: _delete,
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: FfSpace.md),
-
-                    // Notes
-                    FfTextField(
-                      controller: _notesController,
-                      label: 'Notes (Optional)',
-                      hint: 'Plan tier, family member, cancellation terms',
-                    ),
                   ],
-
-                  if (isEditing) ...[
-                    const SizedBox(height: FfSpace.xl),
-                    FfButton(
-                      label: 'Delete Subscription',
-                      variant: FfButtonVariant.destructive,
-                      leadingIcon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: _delete,
-                    ),
-                  ],
-
-                  const SizedBox(height: FfSpace.sm),
                 ],
               ),
             ),

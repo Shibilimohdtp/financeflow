@@ -35,16 +35,22 @@ class FfMonogramTile extends StatelessWidget {
   /// Accessibility label (e.g. "Netflix logo").
   final String? semanticLabel;
 
-  /// Extracts 1–2 uppercase initials from [name].
+  /// Extracts 1–2 uppercase initials from [name]. Words with no letter or
+  /// digit ("/", "&") are skipped, so "Friend / Person" gives "FP", not
+  /// "F/". Returns '?' when nothing is left; the tile then shows a person
+  /// icon instead of a question mark.
   static String initialsFor(String name) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return '?';
-
+    final hasLetter = RegExp(r'[\p{L}\p{N}]', unicode: true);
     final parts =
-        trimmed
-            .split(RegExp(r'[\s\-_\.]+'))
-            .where((p) => p.isNotEmpty)
+        name
+            .trim()
+            .split(RegExp(r'[\s\-_\./&+,]+'))
+            .map(
+              (p) => p.replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), ''),
+            )
+            .where((p) => p.isNotEmpty && hasLetter.hasMatch(p))
             .toList();
+    if (parts.isEmpty) return '?';
 
     if (parts.length >= 2) {
       final first = parts[0].characters.first;
@@ -97,17 +103,22 @@ class FfMonogramTile extends StatelessWidget {
         height: size,
         decoration: ShapeDecoration(color: bg, shape: FfShape.of(radius)),
         alignment: Alignment.center,
-        child: Text(
-          initials,
-          style: ff.text.titleSm.copyWith(
-            color: fg,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-        ),
+        child:
+            initials == '?'
+                ? Icon(
+                  Icons.person_outline_rounded,
+                  size: size * 0.5,
+                  color: fg,
+                )
+                : Text(
+                  initials,
+                  style: ff.text.titleSm.copyWith(
+                    color: fg,
+                    fontSize: fontSize,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                ),
       ),
     );
   }

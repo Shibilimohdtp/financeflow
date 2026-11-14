@@ -17,6 +17,9 @@ void main() {
       expect(FfMonogramTile.initialsFor('Amazon Prime Video'), equals('AP'));
       expect(FfMonogramTile.initialsFor('A'), equals('A'));
       expect(FfMonogramTile.initialsFor(''), equals('?'));
+      // Placeholder punctuation never becomes an initial.
+      expect(FfMonogramTile.initialsFor('Friend / Person'), equals('FP'));
+      expect(FfMonogramTile.initialsFor(' / '), equals('?'));
     });
 
     for (final (mode, theme) in [
@@ -234,7 +237,9 @@ void main() {
   });
 
   group('FfSubscriptionPreviewCard', () {
-    final ref = DateTime(2026, 11, 6);
+    // Relative to today, so the countdown does not drift as days pass.
+    final now = DateTime.now();
+    final ref = DateTime(now.year, now.month, now.day);
 
     testWidgets('renders live preview matching list card', (tester) async {
       await tester.pumpWidget(
