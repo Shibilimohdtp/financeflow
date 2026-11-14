@@ -135,13 +135,21 @@ class _Tile<T> extends StatelessWidget {
     );
 
     final Widget content = switch (layout) {
-      FfChoiceTileLayout.inline => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      // The check sits in the corner in both layouts so the label keeps
+      // the full width and never breaks inside a word.
+      FfChoiceTileLayout.inline => Stack(
         children: [
-          icon,
-          const SizedBox(width: FfSpace.xs),
-          Flexible(child: label),
-          if (isSelected) ...[const SizedBox(width: FfSpace.x2s), check],
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                icon,
+                const SizedBox(width: FfSpace.xs),
+                Flexible(child: label),
+              ],
+            ),
+          ),
+          if (isSelected) PositionedDirectional(top: 0, end: 0, child: check),
         ],
       ),
       FfChoiceTileLayout.stacked => Stack(

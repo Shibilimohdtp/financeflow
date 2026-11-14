@@ -5,7 +5,8 @@ import 'ff_account_visuals.dart';
 import 'ff_choice_tiles.dart';
 
 /// The account type choice: an [FfChoiceTiles] grid of the six types, three
-/// to a row, icon beside a short label. Selected is ink with a check.
+/// to a row, icon above the label (beside it, a 98 dp tile would break
+/// "Business" inside the word). Selected is ink with a check.
 class FfAccountTypeTiles extends StatelessWidget {
   const FfAccountTypeTiles({
     super.key,
@@ -30,7 +31,6 @@ class FfAccountTypeTiles extends StatelessWidget {
     return FfChoiceTiles<AccountType>(
       selected: selectedType,
       onChanged: onChanged,
-      layout: FfChoiceTileLayout.inline,
       options: [
         for (final (type, label) in _types)
           FfChoiceTile(

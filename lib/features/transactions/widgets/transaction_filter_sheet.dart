@@ -585,25 +585,24 @@ class _SectionHeader extends StatelessWidget {
     final ff = context.ff;
     return Padding(
       padding: const EdgeInsets.only(bottom: FfSheetTokens.labelGap),
-      child: Semantics(
-        header: true,
-        child: FfFieldLabel(
-          title,
-          trailing:
-              subtitle == null
-                  ? null
-                  : Flexible(
-                    child: Text(
-                      subtitle!,
-                      textAlign: TextAlign.end,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: ff.text.label.copyWith(
-                        color: ff.color.textPrimary,
-                      ),
-                    ),
-                  ),
-        ),
+      // The label keeps its width; the current value takes the rest and
+      // hugs the end, wrapping at large text.
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(header: true, child: FfFieldLabel(title)),
+          const SizedBox(width: FfSpace.sm),
+          if (subtitle != null)
+            Expanded(
+              child: Text(
+                subtitle!,
+                textAlign: TextAlign.end,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: ff.text.label.copyWith(color: ff.color.textPrimary),
+              ),
+            ),
+        ],
       ),
     );
   }

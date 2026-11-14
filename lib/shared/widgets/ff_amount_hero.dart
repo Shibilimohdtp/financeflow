@@ -165,7 +165,8 @@ class FfAmountHero extends StatelessWidget {
                   child: Text(
                     consequence!,
                     style: ff.text.bodySm.copyWith(color: c.textSecondary),
-                    maxLines: 1,
+                    // Wraps at large text instead of cutting the sentence.
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

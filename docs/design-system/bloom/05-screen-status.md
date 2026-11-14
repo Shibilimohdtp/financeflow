@@ -17,7 +17,7 @@ Owner: "—" means free to take. Check the **In flight** table in `../CHANGELOG.
 |---|---|---|---|
 | App shell + floating dock | `lib/app/router.dart` | Bloom (759f13b) | `FfDock` in the bottom-bar slot (not over content) |
 | Old bottom bar | `shared/widgets/stillwater_bottom_navigation_bar.dart` | unused | Delete in DS-9 |
-| Shared components | `lib/shared/widgets/` | Bloom (fe46fbc + later) | `FfBarChart` & `FfDonutChart` restyled in Bloom (DS-B8a). DS-B7a added hero/tone/semantics to `FfProgressBar`, a reference series to `FfLineChart`, within/over-plan months to `FfMonthGrid`, `FfHeroFigures`, `FfPeriodBar(units:)` |
+| Shared components | `lib/shared/widgets/` | Bloom (fe46fbc + later) | `FfBarChart` & `FfDonutChart` restyled in Bloom (DS-B8a). DS-B7a added hero/tone/semantics to `FfProgressBar`, a reference series to `FfLineChart`, within/over-plan months to `FfMonthGrid`, `FfHeroFigures`, `FfPeriodBar(units:)`. DS-B20 added the sheet skeleton (`FfSheetBody`, `FfSheetGroup`, scroll-aware hairlines), `FfFieldLabel`, `FfEntityPreviewCard`, `FfChoiceTiles`, `FfDisclosureRow`, labels above every field, and an always-visible currency in `FfAmountField` |
 | Brand identity & vector icons | `assets/branding/`, `android/app/src/main/res/` | Bloom (DS-B19) | Direction 1 Stillwater Ripple master SVGs, vector drawables, adaptive launcher with themed monochrome layer, SVG-driven generator & stricter verifier |
 
 ## Screens

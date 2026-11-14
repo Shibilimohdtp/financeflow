@@ -214,7 +214,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                                       crossAxisCount: crossAxisCount,
                                       crossAxisSpacing: FfSpace.sm,
                                       mainAxisSpacing: FfSpace.sm,
-                                      childAspectRatio: 1.1,
+                                      childAspectRatio: 1.3,
                                     ),
                                 itemBuilder: (context, index) {
                                   final category = filtered[index];

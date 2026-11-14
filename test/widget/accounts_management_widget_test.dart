@@ -90,9 +90,9 @@ void main() {
       await tester.tap(find.byIcon(Icons.add_rounded));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Financial Account'), findsOneWidget);
-      expect(find.text('Account Name'), findsOneWidget);
-      expect(find.text('Opening Balance'), findsOneWidget);
+      expect(find.text('New account'), findsOneWidget);
+      expect(find.text('Account name'), findsOneWidget);
+      expect(find.text('Opening balance'), findsOneWidget);
       // UX Goal 7: CTA guides user on what is missing ("Enter account name")
       expect(find.text('Enter account name'), findsOneWidget);
     });

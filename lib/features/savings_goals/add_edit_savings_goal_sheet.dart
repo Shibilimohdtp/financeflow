@@ -243,7 +243,7 @@ class _AddEditSavingsGoalSheetState
         CurrencyFormatter.parse(_amountController.text) ?? 0.0;
     final currentName =
         _nameController.text.trim().isEmpty
-            ? 'New Goal'
+            ? 'New goal'
             : _nameController.text.trim();
     final icon = SavingsGoalsScreen.getGoalIcon(currentName);
 

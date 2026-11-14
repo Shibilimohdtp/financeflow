@@ -89,7 +89,7 @@ showFfSheet → FfSheet
 Full-screen forms (Add transaction) follow the same order inside a Scaffold with `FfAppBar`. No section labels in
 ALL CAPS; use `text.label` sentence case.
 
-### E1. Sheet system (DS-B20, approved by the owner 2026-11-14)
+### E1. Sheet system (DS-B20, approved by the owner 2026-11-14; screenshots in `../screenshots/ds-b20/`)
 
 All sheets share **one skeleton**. The body follows **one of four archetypes**, chosen by the sheet's job. Each
 domain keeps its own tone (the hero tone of its money kind), so a loan sheet still feels like Loans and a goal
@@ -125,7 +125,7 @@ showFfSheet → FfSheet                          content-sized, grows to FfSheet
 | Group label | `FfFieldLabel` (`text.label`, sentence case, `textSecondary`) above a chip row, tile grid or segmented pill. Never ALL CAPS, never letter-spaced, never bold `FfSectionHeader` inside a sheet |
 | Text field | `FfTextField` with its **label above the box** (same `FfFieldLabel` style), hint inside, helper/error below. No placeholder-only fields, no notched/floating labels |
 | Amount field | `FfAmountField`: the **₹ is always visible** (also when empty and unfocused), digits group as you type in the app's convention (Indian: 1,00,000.00), hint is `0` (never a fake example like "1,00,000"), value read back with `FfAmountField.parse`. Edit mode shows the stored value grouped ("3,246.32") |
-| Choice | Chips (`FfChip`, wrap) for up to ~8 short options; icon tiles (`FfChoiceTiles`, 3-up grid, label may wrap to 2 lines, never truncated, never a horizontal scroller) for 4–6 icon-led kinds; `FfSegmentedPill` for 2–4 modes; more than 8 → a short row of likely options + "All ‹things›" that opens a Pattern C picker. Selected = ink fill; tiles also show a check. Horizontal chip scrollers only for suggestions (`FfSuggestionChips`), never for a required choice |
+| Choice | Chips (`FfChip`, wrap) for up to ~8 short options; icon tiles (`FfChoiceTiles`, 3-up grid, stacked icon over label by default, label may wrap to 2 lines, check in the corner, never truncated, never a horizontal scroller) for icon-led kinds (up to 9, as asset classes); `FfSegmentedPill` for 2–4 modes; more than 8 → a short row of likely options + "All ‹things›" that opens a Pattern C picker. Selected = ink fill; tiles also show a check. Horizontal chip scrollers only for suggestions (`FfSuggestionChips`), never for a required choice |
 | Dates | Quick chips (Today / Yesterday / …) + a calendar chip that shows the chosen date |
 | Live line | `FfConsequenceLine` under the input it explains |
 | Optional extras | One collapsible "More details" row (`FfDisclosureRow`) at the end of the form |
