@@ -66,10 +66,25 @@ final _history = [
     ),
 ];
 
+/// Twenty spending categories, more than the sheet shows as chips.
+final _many = [
+  for (var i = 0; i < 20; i++)
+    Category(
+      id: 'cat_$i',
+      name: 'Spend $i',
+      iconIdentifier: 'restaurant',
+      colorTokenIdentifier: 'clay',
+      typeCompatibility: const ['expense'],
+      createdAt: _t,
+      updatedAt: _t,
+    ),
+];
+
 Future<FakeBudgetRepository> _open(
   WidgetTester tester, {
   Budget? initial,
   double textScale = 1,
+  List<Category>? categories,
 }) async {
   tester.view.physicalSize = const Size(400, 900);
   tester.view.devicePixelRatio = 1;
@@ -81,7 +96,7 @@ Future<FakeBudgetRepository> _open(
         planNowProvider.overrideWithValue(_now),
         budgetRepositoryProvider.overrideWithValue(repo),
         categoriesStreamProvider.overrideWith(
-          (ref) => Stream.value([_dining, _fuel, _salary]),
+          (ref) => Stream.value(categories ?? [_dining, _fuel, _salary]),
         ),
         allTransactionsStreamProvider.overrideWith(
           (ref) => Stream.value(_history),
@@ -131,6 +146,7 @@ void main() {
       expect(find.text(label), findsOneWidget, reason: label);
     }
     expect(find.text('Create budget'), findsOneWidget);
+    expect(find.text('Cancel'), findsNothing);
     // Only spending categories are offered.
     expect(find.text('Salary'), findsNothing);
     final top = tester.getTopLeft(find.text('Limit')).dy;
@@ -162,7 +178,7 @@ void main() {
     expect(find.text('Usually ₹7,000 · use ₹7,000'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('budget-use-usual')));
     await tester.pump();
-    expect(tester.widget<EditableText>(_limit).controller.text, '7000');
+    expect(tester.widget<EditableText>(_limit).controller.text, '7,000');
   });
 
   testWidgets('missing fields are explained in words; nothing is saved', (
@@ -241,6 +257,33 @@ void main() {
     expect(saved.startDate, DateTime(2026, 6, 1));
     expect(saved.alertThreshold, 0.85);
     expect(saved.createdAt, _t);
+  });
+
+  testWidgets('many categories: a few chips, then All categories', (
+    tester,
+  ) async {
+    await _open(tester, categories: _many);
+    expect(find.byKey(const ValueKey('budget-category-all')), findsOneWidget);
+    expect(find.byKey(const ValueKey('budget-category-cat_19')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('budget-category-all')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Search categories...'),
+      'Spend 19',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(GridView),
+        matching: find.text('Spend 19'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // The chosen category joins the chip row, selected.
+    expect(
+      find.byKey(const ValueKey('budget-category-cat_19')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('no overflow at 2× text', (tester) async {

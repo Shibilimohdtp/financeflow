@@ -9,6 +9,8 @@ import '../../models/budget.dart';
 import '../../models/category.dart';
 import '../../models/category_icons.dart';
 import '../../shared/widgets/ff_amount_field.dart';
+import '../../shared/widgets/ff_amount_hero.dart';
+import '../../shared/widgets/ff_consequence_line.dart';
 import '../../shared/widgets/ff_chip.dart';
 import '../../shared/widgets/ff_grouped_container.dart';
 import '../../shared/widgets/ff_pickers.dart';
@@ -20,6 +22,8 @@ import '../../shared/widgets/ff_sheet_header.dart';
 import '../../shared/widgets/ff_text_field.dart';
 import '../../shared/widgets/ff_toast.dart';
 import '../../theme/ff.dart';
+import '../../theme/ff_tone.dart';
+import '../transactions/widgets/transaction_pickers.dart';
 import '../categories/categories_controller.dart';
 import 'budget_format.dart';
 import 'budgets_controller.dart';
@@ -28,8 +32,9 @@ import 'plan_providers.dart';
 /// Add or edit a budget (Stillwater Bloom recipe E), opened with
 /// `openBudgetSheet`.
 ///
-/// The limit comes first, large, with a live preview of what it means per
-/// day ("₹6,500 a month · about ₹217 a day"). Choosing a category offers
+/// Sheet archetype A (amount first): the limit is an `FfAmountHero` with a
+/// live preview of what it means per day ("₹6,500 a month · about ₹217 a
+/// day"). Choosing a category offers
 /// what it usually costs ("Usually ₹5,840 · use ₹6,000"). Then the category
 /// chips, how often it repeats, when to be nudged, and an optional name
 /// (the category's name otherwise). Group and rollover arrive with the
@@ -68,12 +73,7 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
     super.initState();
     final b = widget.initialBudget;
     _amount = TextEditingController(
-      text:
-          b == null
-              ? ''
-              : b.amountLimit.toStringAsFixed(
-                b.amountLimit == b.amountLimit.truncateToDouble() ? 0 : 2,
-              ),
+      text: b == null ? '' : FfAmountField.formatInput(b.amountLimit),
     );
     _name = TextEditingController(
       text: b == null || b.name == b.categoryName ? '' : b.name,
@@ -211,9 +211,26 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
     }
   }
 
+  /// Up to this many categories show as chips; more open a picker.
+  static const _maxChips = 8;
+
+  Future<void> _pickCategory(List<Category> categories) async {
+    final selected = categories.where((c) => c.id == _categoryId).firstOrNull;
+    final picked = await showFfSheet<Category>(
+      context,
+      builder:
+          (_) =>
+              CategoryPickerSheet(categories: categories, selected: selected),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _categoryId = picked.id;
+      _categoryError = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ff = context.ff;
     final all = ref.watch(categoriesStreamProvider).valueOrNull ?? const [];
     final categories = [
       for (final c in all)
@@ -226,55 +243,81 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
             ? null
             : ref.watch(categoryUsualProvider(_categoryId!));
 
+    // More than eight categories: the chosen one and the first few as
+    // chips, then "All categories" opens the full picker.
+    final many = categories.length > _maxChips;
+    final chipCategories =
+        many
+            ? [
+              ...categories.where((c) => c.id == _categoryId),
+              ...categories
+                  .where((c) => c.id != _categoryId)
+                  .take(_maxChips - 3),
+            ]
+            : categories;
+
     return FfSheet(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FfSheetHeader(
           title: _isEditing ? 'Edit budget' : 'New budget',
-          subtitle:
-              _isEditing
-                  ? 'Changes apply from this period on'
-                  : 'A spending limit for one category',
+          subtitle: 'A spending limit for one category',
         ),
-        Flexible(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              FfSpace.pageMargin,
-              FfSpace.xs,
-              FfSpace.pageMargin,
-              FfSpace.lg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        FfSheetBody(
+          children: [
+            // ── Limit first (archetype A) ──────────────────────────────────
+            FfSheetGroup(
               children: [
-                _LimitBlock(
+                FfAmountHero(
+                  key: const ValueKey('budget-limit'),
                   controller: _amount,
                   autofocus: !_isEditing,
-                  preview: _preview(),
-                  error: _amountError,
-                  usual: usual,
-                  onUseSuggestion:
-                      usual == null
-                          ? null
-                          : () =>
-                              _amount.text = MoneyMath.fromMinor(
-                                usual.suggestedMinor,
-                              ).toStringAsFixed(0),
+                  label: 'Limit',
+                  tone: FfTone.debt,
+                  groupDigits: true,
+                  consequence: _preview(),
+                  consequenceIcon: Icons.event_repeat_rounded,
+                  errorText: _amountError,
                 ),
-                const SizedBox(height: FfSpace.xl),
-                _Label('Category', error: _categoryError),
-                const SizedBox(height: FfSpace.xs),
+                if (usual != null)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FfChip(
+                      key: const ValueKey('budget-use-usual'),
+                      label:
+                          'Usually ${BudgetFormat.money(usual.medianMinor)} · '
+                          'use ${BudgetFormat.money(usual.suggestedMinor)}',
+                      isSelected: false,
+                      leading: const Icon(
+                        Icons.auto_graph_rounded,
+                        size: FfIconSize.sm,
+                      ),
+                      onSelected:
+                          () =>
+                              _amount.text = FfAmountField.formatInput(
+                                MoneyMath.fromMinor(usual.suggestedMinor),
+                              ),
+                    ),
+                  ),
+              ],
+            ),
+
+            // ── Category ───────────────────────────────────────────────────
+            FfSheetGroup(
+              label: 'Category',
+              children: [
+                if (_categoryError != null) _ErrorLine(_categoryError!),
                 if (categories.isEmpty)
                   Text(
                     'Add a spending category first, in Settings.',
-                    style: ff.text.bodySm,
+                    style: context.ff.text.bodySm,
                   )
                 else
                   Wrap(
-                    spacing: FfSpace.xs,
-                    runSpacing: FfSpace.xs,
+                    spacing: FfChipTokens.gap,
+                    runSpacing: FfChipTokens.gap,
                     children: [
-                      for (final c in categories)
+                      for (final c in chipCategories)
                         FfChip(
                           key: ValueKey('budget-category-${c.id}'),
                           label: c.name,
@@ -289,11 +332,26 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                                 _categoryError = null;
                               }),
                         ),
+                      if (many)
+                        FfChip(
+                          key: const ValueKey('budget-category-all'),
+                          label: 'All categories',
+                          isSelected: false,
+                          leading: const Icon(
+                            Icons.grid_view_rounded,
+                            size: FfIconSize.sm,
+                          ),
+                          onSelected: () => _pickCategory(categories),
+                        ),
                     ],
                   ),
-                const SizedBox(height: FfSpace.xl),
-                const _Label('Repeats'),
-                const SizedBox(height: FfSpace.xs),
+              ],
+            ),
+
+            // ── Repeats ────────────────────────────────────────────────────
+            FfSheetGroup(
+              label: 'Repeats',
+              children: [
                 FfSegmentedPill<BudgetPeriod>(
                   options: const [
                     FfSegmentOption(
@@ -313,8 +371,7 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                   selectedValue: _period,
                   onSelected: (p) => setState(() => _period = p),
                 ),
-                if (_period == BudgetPeriod.custom) ...[
-                  const SizedBox(height: FfSpace.sm),
+                if (_period == BudgetPeriod.custom)
                   FfGroupedContainer(
                     children: [
                       FfRow(
@@ -331,29 +388,51 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                       ),
                     ],
                   ),
-                  if (_datesError != null) ...[
-                    const SizedBox(height: FfSpace.x2s),
-                    _ErrorLine(_datesError!),
-                  ],
-                ],
-                const SizedBox(height: FfSpace.xl),
-                const _Label('Alert me at'),
-                const SizedBox(height: FfSpace.xs),
+                if (_period == BudgetPeriod.custom && _datesError != null)
+                  _ErrorLine(_datesError!),
+                if (!_isEditing && _period != BudgetPeriod.custom)
+                  FfConsequenceLine(
+                    text:
+                        'It starts with this '
+                        '${BudgetFormat.periodNoun(_period)}, and spending '
+                        'from earlier in it counts too.',
+                    icon: Icons.info_outline_rounded,
+                    tone: FfTone.neutral,
+                  ),
+                if (_isEditing)
+                  const FfConsequenceLine(
+                    text: 'Changes apply from this period on.',
+                    icon: Icons.info_outline_rounded,
+                    tone: FfTone.neutral,
+                  ),
+              ],
+            ),
+
+            // ── Alert ──────────────────────────────────────────────────────
+            FfSheetGroup(
+              label: 'Alert me at',
+              children: [
                 FfSegmentedPill<double>(
                   options: [
                     for (final t
                         in {..._thresholds, _threshold}.toList()..sort())
-                      FfSegmentOption(
-                        value: t,
-                        label: '${(t * 100).round()}%',
-                      ),
+                      FfSegmentOption(value: t, label: '${(t * 100).round()}%'),
                   ],
                   selectedValue: _threshold,
                   onSelected: (t) => setState(() => _threshold = t),
                 ),
-                const SizedBox(height: FfSpace.x2s),
-                Text(_alertLine(), style: ff.text.label),
-                const SizedBox(height: FfSpace.xl),
+                FfConsequenceLine(
+                  text: _alertLine(),
+                  icon: Icons.notifications_none_rounded,
+                  tone: FfTone.neutral,
+                ),
+              ],
+            ),
+
+            // ── Name ───────────────────────────────────────────────────────
+            FfSheetGroup(
+              last: true,
+              children: [
                 FfTextField(
                   controller: _name,
                   label: 'Name (optional)',
@@ -367,39 +446,14 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
                   textCapitalization: TextCapitalization.sentences,
                   textInputAction: TextInputAction.done,
                 ),
-                if (!_isEditing && _period != BudgetPeriod.custom) ...[
-                  const SizedBox(height: FfSpace.lg),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        size: FfIconSize.sm,
-                        color: ff.color.textSecondary,
-                      ),
-                      const SizedBox(width: FfSpace.xs),
-                      Expanded(
-                        child: Text(
-                          'It starts with this '
-                          '${BudgetFormat.periodNoun(_period)}, and spending '
-                          'from earlier in it counts too.',
-                          style: ff.text.label,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
-          ),
+          ],
         ),
         FfSheetFooter(
           primaryLabel: _isEditing ? 'Save changes' : 'Create budget',
           isPrimaryLoading: _saving,
           onPrimaryPressed: _saving ? null : () => _submit(categories),
-          secondaryLabel: 'Cancel',
-          onSecondaryPressed:
-              _saving ? null : () => Navigator.of(context).maybePop(),
         ),
       ],
     );
@@ -440,111 +494,6 @@ class _AddEditBudgetSheetState extends ConsumerState<AddEditBudgetSheet> {
         ? 'A nudge only when the limit is reached.'
         : 'A gentle nudge on this device at ${(_threshold * 100).round()}% '
             'of the limit$at.';
-  }
-}
-
-/// The sheet's lead: the limit as a large light amount on a soft card, the
-/// live preview under it, and the category's usual spending as a one-tap
-/// suggestion.
-class _LimitBlock extends StatelessWidget {
-  const _LimitBlock({
-    required this.controller,
-    required this.autofocus,
-    required this.preview,
-    required this.error,
-    required this.usual,
-    required this.onUseSuggestion,
-  });
-
-  final TextEditingController controller;
-  final bool autofocus;
-  final String preview;
-  final String? error;
-  final ({int medianMinor, int suggestedMinor})? usual;
-  final VoidCallback? onUseSuggestion;
-
-  @override
-  Widget build(BuildContext context) {
-    final ff = context.ff;
-    final u = usual;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        FfSpace.lg,
-        FfSpace.md,
-        FfSpace.lg,
-        FfSpace.md,
-      ),
-      decoration: ShapeDecoration(
-        color: ff.color.surfaceCard,
-        shape: FfShape.of(FfRadius.xl),
-        shadows: FfElevation.card(
-          ff.color.shadow,
-          Theme.of(context).brightness,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Limit', style: ff.text.label),
-          const SizedBox(height: FfSpace.x2s),
-          FfAmountField.bare(
-            key: const ValueKey('budget-limit'),
-            controller: controller,
-            autofocus: autofocus,
-          ),
-          const SizedBox(height: FfSpace.xs),
-          Text(
-            preview,
-            key: const ValueKey('budget-preview'),
-            style: ff.text.label.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-          if (error != null) ...[
-            const SizedBox(height: FfSpace.x2s),
-            _ErrorLine(error!),
-          ],
-          if (u != null) ...[
-            const SizedBox(height: FfSpace.sm),
-            FfChip(
-              key: const ValueKey('budget-use-usual'),
-              label:
-                  'Usually ${BudgetFormat.money(u.medianMinor)} · '
-                  'use ${BudgetFormat.money(u.suggestedMinor)}',
-              isSelected: false,
-              leading: const Icon(
-                Icons.auto_graph_rounded,
-                size: FfIconSize.sm,
-              ),
-              onSelected: () => onUseSuggestion?.call(),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// A sentence-case field label, with its error underneath.
-class _Label extends StatelessWidget {
-  const _Label(this.text, {this.error});
-
-  final String text;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final ff = context.ff;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(text, style: ff.text.titleSm),
-        if (error != null) ...[
-          const SizedBox(height: FfSpace.x3s),
-          _ErrorLine(error!),
-        ],
-      ],
-    );
   }
 }
 

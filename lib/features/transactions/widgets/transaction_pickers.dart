@@ -203,6 +203,20 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                           : LayoutBuilder(
                             builder: (context, constraints) {
                               final width = constraints.maxWidth;
+                              // Tall enough for the icon and two lines of
+                              // name at the current text size.
+                              final labelLine = MediaQuery.textScalerOf(
+                                context,
+                              ).scale(
+                                (context.ff.text.label.fontSize ?? 12) *
+                                    (context.ff.text.label.height ?? 1.4),
+                              );
+                              final tileHeight =
+                                  _CategoryGridTile.iconSize +
+                                  FfSpace.x2s +
+                                  2 * labelLine +
+                                  2 * FfSpace.sm +
+                                  FfSpace.xs;
                               final crossAxisCount =
                                   width < 340 ? 2 : (width < 600 ? 3 : 4);
 
@@ -214,7 +228,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                                       crossAxisCount: crossAxisCount,
                                       crossAxisSpacing: FfSpace.sm,
                                       mainAxisSpacing: FfSpace.sm,
-                                      childAspectRatio: 1.3,
+                                      mainAxisExtent: tileHeight,
                                     ),
                                 itemBuilder: (context, index) {
                                   final category = filtered[index];
@@ -243,6 +257,8 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
 
 /// Visual grid tile for selecting a category in the full picker sheet.
 class _CategoryGridTile extends StatelessWidget {
+  static const double iconSize = 32;
+
   final Category category;
   final bool isSelected;
   final VoidCallback onTap;
@@ -292,7 +308,7 @@ class _CategoryGridTile extends StatelessWidget {
                     FfCategoryTile(
                       iconIdentifier: category.iconIdentifier,
                       colorTokenIdentifier: category.colorTokenIdentifier,
-                      size: 32,
+                      size: _CategoryGridTile.iconSize,
                     ),
                     const SizedBox(height: FfSpace.x2s),
                     // Two lines before anything is cut ("Miscellaneous").
