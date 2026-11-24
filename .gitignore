@@ -44,3 +44,18 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 tool/screenshots/goldens/
+
+# Local tooling, signing and secrets (never commit)
+.kilo/
+local.properties
+*.ffbackup
+.env
+.env.*
+*.jks
+*.keystore
+key.properties
+android/key.properties
+*.p12
+*.pem
+google-services.json
+GoogleService-Info.plist
