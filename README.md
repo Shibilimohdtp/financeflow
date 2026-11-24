@@ -63,7 +63,12 @@ android/.../kotlin/ # native SMS receiver and notification listener
 Flutter and Dart · Riverpod · Isar · flutter_secure_storage and local_auth · flutter_local_notifications · Freezed and json_serializable · file_picker and share_plus.
 
 ## Testing
-__TEST_SUMMARY__
+`flutter analyze` reports no issues. The suite has 128 test files (unit, widget and integration), run against synthetic data only.
+
+Last full run (2026-11-24): **950 passed, 7 failed**. The 7 failures are widget tests whose expectations have drifted from the current UI copy or depend on today's date; they are known and listed here rather than hidden:
+- `backup_screens_test.dart`: 3 tests (expected labels such as "100% Local" no longer match the screen)
+- `subscriptions_screen_test.dart`, `subscription_detail_screen_test.dart`, `transaction_detail_screen_test.dart`: 1 test each (date-relative text such as "Later This Month" and "Renews in 3 days")
+- `emi_schedule_view_test.dart`: 1 overflow check on narrow screens
 
 ```bash
 flutter pub get
